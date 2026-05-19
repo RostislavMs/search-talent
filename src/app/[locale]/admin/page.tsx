@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { buttonStyles } from "@/components/ui/button-styles";
 import { getAdminOverviewStats } from "@/lib/db/admin";
-import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
 
@@ -77,50 +75,6 @@ export default async function AdminOverviewPage({
               </p>
             </article>
           ))}
-        </div>
-      </section>
-
-      <section className="rounded-[2rem] app-card p-8">
-        <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
-          {copy.quickLinks}
-        </h3>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link
-            href={createLocalePath(locale, "/admin/moderation")}
-            className={buttonStyles({ variant: "primary" })}
-          >
-            {copy.reviewQueue}
-          </Link>
-          <Link
-            href={createLocalePath(locale, "/admin/users")}
-            className={buttonStyles({ variant: "secondary" })}
-          >
-            {copy.manageUsers}
-          </Link>
-          <Link
-            href={createLocalePath(locale, "/admin/content/articles")}
-            className={buttonStyles({ variant: "secondary" })}
-          >
-            {dictionary.admin.contentNav.articles}
-          </Link>
-          <Link
-            href={createLocalePath(locale, "/admin/content/projects")}
-            className={buttonStyles({ variant: "secondary" })}
-          >
-            {dictionary.admin.contentNav.projects}
-          </Link>
-          <Link
-            href={createLocalePath(locale, "/admin/feedback")}
-            className={buttonStyles({ variant: "secondary" })}
-          >
-            {dictionary.admin.feedback.title}
-          </Link>
-          <Link
-            href={createLocalePath(locale, "/admin/audit")}
-            className={buttonStyles({ variant: "ghost" })}
-          >
-            {copy.viewAudit}
-          </Link>
         </div>
       </section>
     </div>

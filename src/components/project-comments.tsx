@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { startTransition, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 
 type Comment = {
@@ -58,6 +59,22 @@ function formatRelativeTime(isoDate: string, locale: string) {
   }).format(date);
 }
 
+function pluralizeReplies(count: number, locale: string, hide: boolean) {
+  if (locale === "uk") {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    let noun: string;
+    if (mod10 === 1 && mod100 !== 11) noun = "відповідь";
+    else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20))
+      noun = "відповіді";
+    else noun = "відповідей";
+    return hide ? `Сховати ${count} ${noun}` : `${count} ${noun}`;
+  }
+
+  const noun = count === 1 ? "reply" : "replies";
+  return hide ? `Hide ${count} ${noun}` : `${count} ${noun}`;
+}
+
 function buildCommentTree(comments: Comment[]) {
   const topLevel: Comment[] = [];
   const childrenMap = new Map<string, Comment[]>();
@@ -75,9 +92,12 @@ function buildCommentTree(comments: Comment[]) {
   return { topLevel, childrenMap };
 }
 
+const MAX_INDENT_DEPTH = 3;
+
 function CommentItem({
   comment,
-  replies,
+  childrenMap,
+  depth,
   locale,
   isAuthenticated,
   onReply,
@@ -89,7 +109,8 @@ function CommentItem({
   dictionary,
 }: {
   comment: Comment;
-  replies?: Comment[];
+  childrenMap: Map<string, Comment[]>;
+  depth: number;
   locale: string;
   isAuthenticated: boolean;
   onReply: (id: string | null) => void;
@@ -100,107 +121,149 @@ function CommentItem({
   submitting: boolean;
   dictionary: ReturnType<typeof useDictionary>;
 }) {
+  const [repliesOpen, setRepliesOpen] = useState(false);
+
   const authorName = comment.author_deleted
     ? dictionary.projectComments.deletedUser
     : comment.author.name ||
       comment.author.username ||
       dictionary.projectComments.anonymous;
 
+  const replies = childrenMap.get(comment.id);
+  const replyCount = replies?.length ?? 0;
+  const showIndent = depth < MAX_INDENT_DEPTH;
+  const nextDepth = depth + 1;
+
   return (
-    <div className="group">
-      <div className="flex gap-3">
-        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full app-panel text-xs font-semibold text-[color:var(--foreground)]">
-          {comment.author.avatar_url ? (
-            <Image
-              src={comment.author.avatar_url}
-              alt={authorName}
-              fill
-              className="object-cover"
-              sizes="32px"
-            />
-          ) : (
-            <span>{authorName.slice(0, 1).toUpperCase()}</span>
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold text-[color:var(--foreground)]">
-              {authorName}
-            </span>
-            <span className="text-xs app-muted">
-              {formatRelativeTime(comment.created_at, locale)}
-            </span>
-          </div>
-
-          <p className="mt-1 text-sm leading-6 app-muted whitespace-pre-line">
-            {comment.body}
-          </p>
-
-          {isAuthenticated && (
-            <button
-              type="button"
-              onClick={() =>
-                onReply(replyingTo === comment.id ? null : comment.id)
-              }
-              className="mt-1 text-xs font-medium app-soft hover:text-[color:var(--foreground)] transition-colors"
-            >
-              {dictionary.projectComments.reply}
-            </button>
-          )}
-
-          {replyingTo === comment.id && (
-            <div className="mt-3 space-y-2">
-              <textarea
-                value={replyBody}
-                onChange={(e) => onReplyBodyChange(e.target.value)}
-                placeholder={dictionary.projectComments.replyPlaceholder}
-                rows={2}
-                className="w-full rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)] resize-none"
-              />
-              <div className="flex gap-2">
-                <Button
-                  onClick={onSubmitReply}
-                  disabled={submitting || !replyBody.trim()}
-                  size="sm"
-                >
-                  {submitting
-                    ? dictionary.projectComments.sending
-                    : dictionary.projectComments.send}
-                </Button>
-                <Button
-                  onClick={() => onReply(null)}
-                  variant="ghost"
-                  size="sm"
-                >
-                  {dictionary.projectComments.cancel}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+    <article className="flex gap-2 sm:gap-3">
+      <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full app-panel text-xs font-semibold text-[color:var(--foreground)] sm:h-8 sm:w-8">
+        {comment.author.avatar_url ? (
+          <Image
+            src={comment.author.avatar_url}
+            alt={authorName}
+            fill
+            className="object-cover"
+            sizes="32px"
+          />
+        ) : (
+          <span>{authorName.slice(0, 1).toUpperCase()}</span>
+        )}
       </div>
 
-      {replies && replies.length > 0 && (
-        <div className="ml-11 mt-4 space-y-4 border-l app-border pl-4">
-          {replies.map((child) => (
-            <CommentItem
-              key={child.id}
-              comment={child}
-              locale={locale}
-              isAuthenticated={isAuthenticated}
-              onReply={onReply}
-              replyingTo={replyingTo}
-              replyBody={replyBody}
-              onReplyBodyChange={onReplyBodyChange}
-              onSubmitReply={onSubmitReply}
-              submitting={submitting}
-              dictionary={dictionary}
+      <div className="min-w-0 flex-1">
+        <header className="flex flex-wrap items-baseline gap-x-2 leading-tight">
+          <span className="break-words text-sm font-semibold text-[color:var(--foreground)]">
+            {authorName}
+          </span>
+          <span className="text-xs app-soft">
+            {formatRelativeTime(comment.created_at, locale)}
+          </span>
+        </header>
+
+        <p className="mt-0.5 break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6">
+          {comment.body}
+        </p>
+
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={() =>
+              onReply(replyingTo === comment.id ? null : comment.id)
+            }
+            className="mt-1 cursor-pointer text-xs font-medium app-soft transition-colors hover:text-[color:var(--foreground)] sm:mt-1.5"
+          >
+            {dictionary.projectComments.reply}
+          </button>
+        )}
+
+        {replyingTo === comment.id && (
+          <div className="mt-3 space-y-2">
+            <textarea
+              value={replyBody}
+              onChange={(e) => onReplyBodyChange(e.target.value)}
+              placeholder={dictionary.projectComments.replyPlaceholder}
+              rows={2}
+              className="w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
             />
-          ))}
-        </div>
-      )}
-    </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={onSubmitReply}
+                disabled={submitting || !replyBody.trim()}
+                size="sm"
+              >
+                {submitting
+                  ? dictionary.projectComments.sending
+                  : dictionary.projectComments.send}
+              </Button>
+              <Button
+                onClick={() => onReply(null)}
+                variant="ghost"
+                size="sm"
+              >
+                {dictionary.projectComments.cancel}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {replyCount > 0 && (
+          <div className="mt-2 sm:mt-3">
+            <button
+              type="button"
+              onClick={() => setRepliesOpen((open) => !open)}
+              className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[color:var(--foreground)] transition-colors hover:opacity-70"
+              aria-expanded={repliesOpen}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+                className={`transition-transform ${repliesOpen ? "rotate-180" : ""}`}
+              >
+                <path
+                  d="M6 9l6 6 6-6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span>{pluralizeReplies(replyCount, locale, repliesOpen)}</span>
+            </button>
+
+            {repliesOpen && (
+              <div
+                className={
+                  showIndent
+                    ? "mt-3 space-y-4 border-l app-border pl-2.5 sm:mt-4 sm:space-y-5 sm:pl-4"
+                    : "mt-3 space-y-4 sm:mt-4 sm:space-y-5"
+                }
+              >
+                {replies!.map((child) => (
+                  <CommentItem
+                    key={child.id}
+                    comment={child}
+                    childrenMap={childrenMap}
+                    depth={nextDepth}
+                    locale={locale}
+                    isAuthenticated={isAuthenticated}
+                    onReply={onReply}
+                    replyingTo={replyingTo}
+                    replyBody={replyBody}
+                    onReplyBodyChange={onReplyBodyChange}
+                    onSubmitReply={onSubmitReply}
+                    submitting={submitting}
+                    dictionary={dictionary}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </article>
   );
 }
 
@@ -221,15 +284,20 @@ export default function ProjectComments({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/projects/${projectId}/comments`)
-      .then((res) => res.json())
-      .then((data) => {
-        setComments(data.comments || []);
-      })
-      .catch(() => {
+    async function load() {
+      const result = await apiFetch<{ comments?: Comment[] }>(
+        `/api/projects/${projectId}/comments`,
+      );
+
+      if (!result.ok) {
         setError(dictionary.projectComments.loadError);
-      })
-      .finally(() => setLoading(false));
+      } else {
+        setComments(result.data.comments || []);
+      }
+      setLoading(false);
+    }
+
+    void load();
   }, [projectId, dictionary.projectComments.loadError]);
 
   const submitComment = async (parentId: string | null = null) => {
@@ -242,46 +310,45 @@ export default function ProjectComments({
     setSubmitting(true);
     setError(null);
 
-    try {
-      const response = await fetch(`/api/projects/${projectId}/comments`, {
+    const submitResult = await apiFetch(
+      `/api/projects/${projectId}/comments`,
+      {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: text, parent_id: parentId }),
-      });
+        body: { body: text, parent_id: parentId },
+      },
+    );
 
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.error || dictionary.projectComments.submitError);
-        return;
-      }
-
-      if (parentId) {
-        setReplyBody("");
-        setReplyingTo(null);
-      } else {
-        setBody("");
-      }
-
-      const refreshResponse = await fetch(
-        `/api/projects/${projectId}/comments`,
-      );
-      const refreshData = await refreshResponse.json();
-      setComments(refreshData.comments || []);
-
-      startTransition(() => {
-        router.refresh();
-      });
-    } catch {
-      setError(dictionary.projectComments.submitError);
-    } finally {
+    if (!submitResult.ok) {
+      setError(submitResult.error || dictionary.projectComments.submitError);
       setSubmitting(false);
+      return;
     }
+
+    if (parentId) {
+      setReplyBody("");
+      setReplyingTo(null);
+    } else {
+      setBody("");
+    }
+
+    const refreshResult = await apiFetch<{ comments?: Comment[] }>(
+      `/api/projects/${projectId}/comments`,
+    );
+    if (refreshResult.ok) {
+      setComments(refreshResult.data.comments || []);
+    }
+
+    setSubmitting(false);
+
+    startTransition(() => {
+      router.refresh();
+    });
   };
 
   const { topLevel, childrenMap } = buildCommentTree(comments);
 
   return (
-    <section className="rounded-[2rem] app-card p-6">
+    <section className="rounded-[2rem] app-card p-5 sm:p-6">
       <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
         {dictionary.projectComments.title}
         {comments.length > 0 && (
@@ -292,14 +359,14 @@ export default function ProjectComments({
       </h2>
 
       {isAuthenticated ? (
-        <div className="mt-6 space-y-3">
+        <div className="mt-5 space-y-3 sm:mt-6">
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={dictionary.projectComments.placeholder}
             rows={3}
             maxLength={4000}
-            className="w-full rounded-xl border app-border bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)] resize-none"
+            className="w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
           />
           <Button
             onClick={() => submitComment(null)}
@@ -327,12 +394,13 @@ export default function ProjectComments({
           {dictionary.projectComments.noComments}
         </p>
       ) : (
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-4 sm:space-y-6">
           {topLevel.map((comment) => (
             <CommentItem
               key={comment.id}
               comment={comment}
-              replies={childrenMap.get(comment.id)}
+              childrenMap={childrenMap}
+              depth={0}
               locale={locale}
               isAuthenticated={isAuthenticated}
               onReply={setReplyingTo}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { apiFetch } from "@/lib/api-client";
 
 type AdminFeedbackEntryProps = {
   id: string;
@@ -56,27 +57,19 @@ export default function AdminFeedbackEntry({
     setIsDeleting(true);
     setErrorMessage(null);
 
-    try {
-      const response = await fetch(`/api/admin/feedback/${id}`, {
-        method: "DELETE",
-      });
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
+    const result = await apiFetch(`/api/admin/feedback/${id}`, {
+      method: "DELETE",
+    });
 
-      if (!response.ok) {
-        setErrorMessage(payload.error || copy.errorFallback);
-        setIsDeleting(false);
-        return;
-      }
+    setIsDeleting(false);
 
-      setDialogOpen(false);
-      setIsDeleting(false);
-      router.refresh();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : copy.errorFallback);
-      setIsDeleting(false);
+    if (!result.ok) {
+      setErrorMessage(result.error || copy.errorFallback);
+      return;
     }
+
+    setDialogOpen(false);
+    router.refresh();
   };
 
   const displayAuthor =

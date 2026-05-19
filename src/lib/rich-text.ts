@@ -132,6 +132,73 @@ function sanitizeNode(node: Node): string {
   return `<${tag}>${content}</${tag}>`;
 }
 
+const allowedServerTagPattern = new RegExp(
+  `</?(?:${[
+    "a",
+    "blockquote",
+    "br",
+    "code",
+    "em",
+    "figure",
+    "figcaption",
+    "h3",
+    "iframe",
+    "img",
+    "li",
+    "mark",
+    "ol",
+    "p",
+    "strong",
+    "ul",
+  ].join("|")})(?:\\s[^<>]*)?>`,
+  "gi",
+);
+
+const youtubeIframeSrcPattern =
+  /src\s*=\s*("https:\/\/www\.youtube(?:-nocookie)?\.com\/embed\/[\w-]+"|'https:\/\/www\.youtube(?:-nocookie)?\.com\/embed\/[\w-]+')/i;
+
+/**
+ * Server-safe HTML sanitizer used during SSR or when DOMParser is unavailable.
+ * Strips dangerous constructs (scripts, event handlers, javascript: URLs, unsafe
+ * iframes, data: URLs) and removes any tag outside the allowlist. The client
+ * sanitizer (sanitizeNode) runs the more rigorous pass after hydration.
+ */
+function sanitizeOnServer(value: string): string {
+  let html = value;
+
+  // Drop scripts/styles entirely (with content).
+  html = html.replace(
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    "",
+  );
+  html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "");
+
+  // Strip inline event handlers (onclick, onerror, etc.).
+  html = html.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "");
+  html = html.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "");
+  html = html.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "");
+
+  // Neutralise javascript:/vbscript:/data: URLs (allow data:image/* for inline imgs).
+  html = html.replace(/\b(?:href|src|formaction|action)\s*=\s*"javascript:[^"]*"/gi, "");
+  html = html.replace(/\b(?:href|src|formaction|action)\s*=\s*'javascript:[^']*'/gi, "");
+  html = html.replace(/\b(?:href|src|formaction|action)\s*=\s*"vbscript:[^"]*"/gi, "");
+  html = html.replace(/\b(?:href|src|formaction|action)\s*=\s*"data:(?!image\/)[^"]*"/gi, "");
+
+  // Allow only youtube embed iframes.
+  html = html.replace(/<iframe\b([^>]*)>/gi, (match, attrs) =>
+    youtubeIframeSrcPattern.test(attrs) ? match : "",
+  );
+  html = html.replace(/<\/iframe>/gi, (match) => match);
+
+  // Remove any tag not in the server allowlist (keeps inner text).
+  html = html.replace(/<\/?([a-zA-Z][\w-]*)(?:\s[^<>]*)?>/g, (match) =>
+    allowedServerTagPattern.test(match) ? match : "",
+  );
+  allowedServerTagPattern.lastIndex = 0;
+
+  return html.trim();
+}
+
 export function sanitizeRichTextHtml(value: string) {
   const trimmed = value.trim();
 
@@ -140,7 +207,7 @@ export function sanitizeRichTextHtml(value: string) {
   }
 
   if (typeof window === "undefined") {
-    return trimmed;
+    return sanitizeOnServer(trimmed);
   }
 
   if (!/[<>&]/.test(trimmed)) {

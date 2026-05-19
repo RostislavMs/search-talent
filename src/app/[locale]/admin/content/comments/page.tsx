@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import CommentDeleteButton from "@/components/admin/comment-delete-button";
+import CommentsTableClient from "@/components/admin/comments-table-client";
 import { buttonStyles } from "@/components/ui/button-styles";
 import { getAdminCommentsList } from "@/lib/db/admin-content";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
@@ -144,84 +144,51 @@ export default async function AdminCommentsContentPage({
             <p className="text-sm app-muted">{copy.empty}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] app-soft">
-                  <th className="px-3 py-3">{copy.commentColumns.body}</th>
-                  <th className="px-3 py-3">{copy.commentColumns.author}</th>
-                  <th className="px-3 py-3">{copy.commentColumns.target}</th>
-                  <th className="px-3 py-3">{copy.commentColumns.created}</th>
-                  <th className="px-3 py-3 text-right">
-                    {copy.commentColumns.actions}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.items.map((comment) => (
-                  <tr
-                    key={`${comment.kind}-${comment.id}`}
-                    className="border-t border-[color:var(--border)] align-top"
-                  >
-                    <td className="px-3 py-3">
-                      <p className="max-w-md whitespace-pre-wrap text-[color:var(--foreground)]">
-                        {comment.body}
-                      </p>
-                      <p className="mt-1 text-xs app-soft">
-                        {comment.kind === "article"
-                          ? copy.typeArticle
-                          : copy.typeProject}
-                      </p>
-                    </td>
-                    <td className="px-3 py-3">
-                      {comment.authorHref ? (
-                        <Link
-                          href={createLocalePath(locale, comment.authorHref)}
-                          className="text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
-                        >
-                          {comment.authorLabel}
-                        </Link>
-                      ) : (
-                        <span className="app-muted">{comment.authorLabel}</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-3">
-                      {comment.targetHref ? (
-                        <Link
-                          href={createLocalePath(locale, comment.targetHref)}
-                          className="text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
-                        >
-                          {comment.targetLabel}
-                        </Link>
-                      ) : (
-                        <span className="app-muted">{comment.targetLabel}</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="app-muted">
-                        {formatDate(comment.createdAt)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <CommentDeleteButton
-                        commentId={comment.id}
-                        kind={comment.kind}
-                        labels={{
-                          delete: copy.bulkBar.bulkDelete,
-                          deleting: copy.bulkBar.applying,
-                          confirmTitle: copy.confirmDeleteCommentTitle,
-                          confirmMessage: copy.confirmDeleteCommentMessage,
-                          confirmButton: copy.confirmBulkButton,
-                          cancel: copy.cancel,
-                          errorFallback: copy.errorFallback,
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CommentsTableClient
+            items={result.items.map((comment) => ({
+              id: comment.id,
+              kind: comment.kind,
+              body: comment.body,
+              kindLabel:
+                comment.kind === "article"
+                  ? copy.typeArticle
+                  : copy.typeProject,
+              authorLabel: comment.authorLabel,
+              authorHref: comment.authorHref
+                ? createLocalePath(locale, comment.authorHref)
+                : null,
+              targetLabel: comment.targetLabel,
+              targetHref: comment.targetHref
+                ? createLocalePath(locale, comment.targetHref)
+                : null,
+              createdAtLabel: formatDate(comment.createdAt),
+            }))}
+            columnLabels={copy.commentColumns}
+            bulkLabels={{
+              selected: copy.bulkBar.selected,
+              clear: copy.bulkBar.clear,
+              bulkDelete: copy.bulkBar.bulkDelete,
+              applying: copy.bulkBar.applying,
+              confirmTitle: copy.confirmDeleteCommentTitle,
+              confirmMessage: copy.confirmDeleteCommentMessage,
+              confirmButton: copy.confirmBulkButton,
+              cancel: copy.cancel,
+              errorFallback: copy.errorFallback,
+            }}
+            rowDeleteLabels={{
+              delete: copy.bulkBar.bulkDelete,
+              deleting: copy.bulkBar.applying,
+              confirmTitle: copy.confirmDeleteCommentTitle,
+              confirmMessage: copy.confirmDeleteCommentMessage,
+              confirmButton: copy.confirmBulkButton,
+              cancel: copy.cancel,
+              errorFallback: copy.errorFallback,
+            }}
+            selectAllLabel={locale === "uk" ? "Обрати всі" : "Select all"}
+            selectRowLabel={
+              locale === "uk" ? "Обрати коментар" : "Select comment"
+            }
+          />
         )}
 
         {pageCount > 1 ? (

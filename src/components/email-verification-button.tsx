@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import VerifiedBadge from "@/components/verified-badge";
+import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
 
 export default function EmailVerificationButton({
@@ -27,21 +28,22 @@ export default function EmailVerificationButton({
     setLoading(true);
     setMessage(null);
 
-    try {
-      const response = await fetch("/api/email-verification", {
-        method: "POST",
-      });
-      const data = await response.json();
+    const result = await apiFetch<{ verified: boolean }>(
+      "/api/email-verification",
+      { method: "POST" },
+    );
 
-      if (data.verified) {
-        setVerified(true);
-      } else {
-        setMessage(dictionary.emailVerification.notConfirmed);
-      }
-    } catch {
+    setLoading(false);
+
+    if (!result.ok) {
       setMessage(dictionary.emailVerification.error);
-    } finally {
-      setLoading(false);
+      return;
+    }
+
+    if (result.data.verified) {
+      setVerified(true);
+    } else {
+      setMessage(dictionary.emailVerification.notConfirmed);
     }
   };
 

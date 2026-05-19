@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/toast";
+import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
 
 type FollowButtonProps = {
@@ -16,6 +18,7 @@ export default function FollowButton({
   isAuthenticated,
 }: FollowButtonProps) {
   const dictionary = useDictionary();
+  const toast = useToast();
   const [following, setFollowing] = useState(initialFollowing);
   const [loading, setLoading] = useState(false);
 
@@ -26,23 +29,19 @@ export default function FollowButton({
 
     setLoading(true);
 
-    try {
-      const response = await fetch("/api/follows", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ followingUserId }),
-      });
+    const result = await apiFetch<{ following: boolean }>("/api/follows", {
+      method: "POST",
+      body: { followingUserId },
+    });
 
-      const data = await response.json();
+    setLoading(false);
 
-      if (response.ok) {
-        setFollowing(data.following);
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
+    if (!result.ok) {
+      toast.error(result.error || dictionary.follows.toggleError);
+      return;
     }
+
+    setFollowing(result.data.following);
   };
 
   if (!isAuthenticated) {

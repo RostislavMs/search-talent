@@ -234,7 +234,7 @@ export default function CookieConsentBanner({
 
       {showBanner && (
         <div className="fixed inset-x-0 bottom-0 z-[60] px-4 pb-4 sm:px-6">
-          <section className="mx-auto max-w-6xl rounded-[2rem] border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8">
+          <section className="mx-auto max-w-[90rem] rounded-[2rem] border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-3xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] app-soft">

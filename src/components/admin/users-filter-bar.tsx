@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import FormSelect from "@/components/ui/form-select";
 
 type Props = {
   labels: {
@@ -57,9 +58,19 @@ export default function UsersFilterBar({ labels }: Props) {
   const currentRole = searchParams.get("role") || "all";
   const currentStatus = searchParams.get("status") || "all";
 
-  const inputClass =
-    "w-full rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--muted-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]";
-  const selectClass = inputClass;
+  const roleOptions = [
+    { value: "all", label: labels.filterAny },
+    { value: "admin", label: labels.filterAdmins },
+    { value: "user", label: labels.filterUsers },
+  ];
+
+  const statusOptions = [
+    { value: "all", label: labels.filterAny },
+    { value: "approved", label: labels.filterApproved },
+    { value: "under_review", label: labels.filterUnderReview },
+    { value: "restricted", label: labels.filterRestricted },
+    { value: "removed", label: labels.filterRemoved },
+  ];
 
   return (
     <form
@@ -73,41 +84,35 @@ export default function UsersFilterBar({ labels }: Props) {
           value={searchValue}
           onChange={(event) => setSearchValue(event.target.value)}
           placeholder={labels.searchPlaceholder}
-          className={inputClass}
+          className="app-input"
         />
       </div>
 
-      <label className="flex items-center gap-2 text-sm app-muted">
-        <span className="hidden sm:inline">{labels.filterRole}:</span>
-        <select
+      <div className="flex items-center gap-2 text-sm app-muted sm:min-w-48">
+        <span className="hidden sm:inline shrink-0">{labels.filterRole}:</span>
+        <FormSelect
+          className="flex-1"
+          triggerClassName="app-select-trigger--sm"
           value={currentRole}
-          onChange={(event) =>
-            updateParam("role", event.target.value === "all" ? null : event.target.value)
+          onChange={(value) =>
+            updateParam("role", value === "all" ? null : value)
           }
-          className={selectClass}
-        >
-          <option value="all">{labels.filterAny}</option>
-          <option value="admin">{labels.filterAdmins}</option>
-          <option value="user">{labels.filterUsers}</option>
-        </select>
-      </label>
+          options={roleOptions}
+        />
+      </div>
 
-      <label className="flex items-center gap-2 text-sm app-muted">
-        <span className="hidden sm:inline">{labels.filterStatus}:</span>
-        <select
+      <div className="flex items-center gap-2 text-sm app-muted sm:min-w-56">
+        <span className="hidden sm:inline shrink-0">{labels.filterStatus}:</span>
+        <FormSelect
+          className="flex-1"
+          triggerClassName="app-select-trigger--sm"
           value={currentStatus}
-          onChange={(event) =>
-            updateParam("status", event.target.value === "all" ? null : event.target.value)
+          onChange={(value) =>
+            updateParam("status", value === "all" ? null : value)
           }
-          className={selectClass}
-        >
-          <option value="all">{labels.filterAny}</option>
-          <option value="approved">{labels.filterApproved}</option>
-          <option value="under_review">{labels.filterUnderReview}</option>
-          <option value="restricted">{labels.filterRestricted}</option>
-          <option value="removed">{labels.filterRemoved}</option>
-        </select>
-      </label>
+          options={statusOptions}
+        />
+      </div>
     </form>
   );
 }

@@ -50,7 +50,7 @@ export default async function LocalizedProjectsPage({
   const marketing = getMarketingContent(locale);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
       <DiscoveryPage mode="projects" />
 
       <div className="mt-6 sm:mt-8">

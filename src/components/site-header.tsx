@@ -104,6 +104,15 @@ export default function SiteHeader({
     { href: "/articles", label: articlesLabel },
   ];
 
+  const wideExtraLinks = viewer
+    ? [
+        { href: "/dashboard", label: dictionary.nav.dashboard },
+        ...(viewer.isAdmin
+          ? [{ href: "/admin", label: dictionary.nav.adminConsole }]
+          : []),
+      ]
+    : [];
+
   const dashboardLinks = viewer
     ? [
         { href: "/dashboard", label: dictionary.nav.dashboard },
@@ -157,7 +166,7 @@ export default function SiteHeader({
 
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--border)] bg-[color:var(--surface)]/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-3 sm:px-6">
         <LocalizedLink
           href="/"
           className="relative block h-10 w-[124px] shrink-0"
@@ -176,11 +185,28 @@ export default function SiteHeader({
           {primaryLinks.map((link) => (
             <NavLink key={link.href} href={link.href} label={link.label} />
           ))}
+          {wideExtraLinks.length > 0 ? (
+            <span
+              aria-hidden="true"
+              className="mx-1 hidden h-5 w-px bg-[color:var(--border)] xl:inline-block"
+            />
+          ) : null}
+          {wideExtraLinks.map((link) => (
+            <span key={link.href} className="hidden xl:inline-flex">
+              <NavLink href={link.href} label={link.label} />
+            </span>
+          ))}
         </nav>
 
         <div className="ml-auto flex items-center lg:ml-0">
           <LanguageSwitcher />
         </div>
+
+        {viewer ? (
+          <div className="hidden xl:flex">
+            <ThemeToggle initialTheme={initialTheme} />
+          </div>
+        ) : null}
 
         <div className="hidden items-center gap-2 lg:flex">
           {viewer ? (
@@ -244,7 +270,7 @@ export default function SiteHeader({
                     ))}
                   </div>
 
-                  <div className="mt-4 rounded-2xl border border-[color:var(--border)] p-4">
+                  <div className="mt-4 rounded-2xl border border-[color:var(--border)] p-4 xl:hidden">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
                       {dictionary.theme.toggleLabel}
                     </p>

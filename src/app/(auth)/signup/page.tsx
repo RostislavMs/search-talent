@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  AUTH_LIMITS,
   buildAuthRedirectUrl,
   getAuthErrorMessage,
   getAuthFieldErrors,
@@ -12,6 +13,7 @@ import {
 import { useDictionary, useLocalizedHref, useLocalizedRouter } from "@/lib/i18n/client";
 import { createClient } from "@/lib/supabase/client";
 import LocalizedLink from "@/components/ui/localized-link";
+import PasswordInput from "@/components/ui/password-input";
 import { Button, ButtonLink } from "@/components/ui/Button";
 
 export default function SignupPage() {
@@ -100,63 +102,106 @@ export default function SignupPage() {
         </p>
 
         <form onSubmit={handleSignup} noValidate className="mt-8 flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder={dictionary.auth.email}
-            className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError(null);
-              setFieldErrors((current) => ({ ...current, email: undefined }));
-            }}
-            autoComplete="email"
-            autoCapitalize="none"
-            spellCheck={false}
-            inputMode="email"
-            maxLength={254}
-            aria-label={dictionary.auth.email}
-            aria-invalid={Boolean(fieldErrors.email)}
-          />
-          {fieldErrors.email && <p className="text-sm text-red-500">{fieldErrors.email}</p>}
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="signup-email"
+              className="text-sm font-medium text-[color:var(--foreground)]"
+            >
+              {dictionary.auth.email}
+            </label>
+            <input
+              id="signup-email"
+              type="email"
+              placeholder={dictionary.auth.email}
+              className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError(null);
+                setFieldErrors((current) => ({ ...current, email: undefined }));
+              }}
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              inputMode="email"
+              maxLength={AUTH_LIMITS.emailMaxLength}
+              aria-invalid={Boolean(fieldErrors.email)}
+              aria-describedby={
+                fieldErrors.email ? "signup-email-error" : undefined
+              }
+            />
+            {fieldErrors.email && (
+              <p id="signup-email-error" className="text-sm text-red-500">
+                {fieldErrors.email}
+              </p>
+            )}
+          </div>
 
-          <input
-            type="password"
-            placeholder={dictionary.auth.password}
-            className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setError(null);
-              setFieldErrors((current) => ({ ...current, password: undefined }));
-            }}
-            autoComplete="new-password"
-            maxLength={72}
-            aria-label={dictionary.auth.password}
-            aria-invalid={Boolean(fieldErrors.password)}
-          />
-          {fieldErrors.password && <p className="text-sm text-red-500">{fieldErrors.password}</p>}
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="signup-password"
+              className="text-sm font-medium text-[color:var(--foreground)]"
+            >
+              {dictionary.auth.password}
+            </label>
+            <PasswordInput
+              id="signup-password"
+              placeholder={dictionary.auth.password}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+                setFieldErrors((current) => ({ ...current, password: undefined }));
+              }}
+              autoComplete="new-password"
+              maxLength={AUTH_LIMITS.passwordMaxLength}
+              aria-invalid={Boolean(fieldErrors.password)}
+              aria-describedby={`signup-password-hint${fieldErrors.password ? " signup-password-error" : ""}`}
+            />
+            <p id="signup-password-hint" className="text-sm app-muted">
+              {dictionary.auth.passwordHint}
+            </p>
+            {fieldErrors.password && (
+              <p id="signup-password-error" className="text-sm text-red-500">
+                {fieldErrors.password}
+              </p>
+            )}
+          </div>
 
-          <p className="text-sm app-muted">{dictionary.auth.passwordHint}</p>
-
-          <input
-            type="password"
-            placeholder={dictionary.auth.confirmPassword}
-            className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              setError(null);
-              setFieldErrors((current) => ({ ...current, confirmPassword: undefined }));
-            }}
-            autoComplete="new-password"
-            maxLength={72}
-            aria-label={dictionary.auth.confirmPassword}
-            aria-invalid={Boolean(fieldErrors.confirmPassword)}
-          />
-          {fieldErrors.confirmPassword && (
-            <p className="text-sm text-red-500">{fieldErrors.confirmPassword}</p>
-          )}
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="signup-confirm-password"
+              className="text-sm font-medium text-[color:var(--foreground)]"
+            >
+              {dictionary.auth.confirmPassword}
+            </label>
+            <PasswordInput
+              id="signup-confirm-password"
+              placeholder={dictionary.auth.confirmPassword}
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setError(null);
+                setFieldErrors((current) => ({ ...current, confirmPassword: undefined }));
+              }}
+              autoComplete="new-password"
+              maxLength={AUTH_LIMITS.passwordMaxLength}
+              aria-invalid={Boolean(fieldErrors.confirmPassword)}
+              aria-describedby={
+                fieldErrors.confirmPassword
+                  ? "signup-confirm-password-error"
+                  : undefined
+              }
+            />
+            {fieldErrors.confirmPassword && (
+              <p
+                id="signup-confirm-password-error"
+                className="text-sm text-red-500"
+              >
+                {fieldErrors.confirmPassword}
+              </p>
+            )}
+          </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 

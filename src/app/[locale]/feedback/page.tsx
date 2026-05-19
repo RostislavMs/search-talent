@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
+import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
 
 export default function FeedbackPage() {
@@ -31,26 +32,18 @@ export default function FeedbackPage() {
     setLoading(true);
     setError(null);
 
-    try {
-      const res = await fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, category, message }),
-      });
+    const result = await apiFetch("/api/feedback", {
+      method: "POST",
+      body: { name, email, category, message },
+    });
 
-      if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
-        setError(data.error || "Something went wrong");
-        setLoading(false);
-        return;
-      }
-    } catch {
-      setError("Something went wrong");
-      setLoading(false);
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error || "Something went wrong");
       return;
     }
 
-    setLoading(false);
     setSent(true);
   };
 
@@ -106,10 +99,14 @@ export default function FeedbackPage() {
           >
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-[color:var(--foreground)]">
+                <label
+                  htmlFor="feedback-name"
+                  className="mb-2 block text-sm font-medium text-[color:var(--foreground)]"
+                >
                   {dictionary.feedbackPage.nameLabel}
                 </label>
                 <input
+                  id="feedback-name"
                   type="text"
                   placeholder={dictionary.feedbackPage.namePlaceholder}
                   className="app-input"
@@ -120,10 +117,14 @@ export default function FeedbackPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-[color:var(--foreground)]">
+                <label
+                  htmlFor="feedback-email"
+                  className="mb-2 block text-sm font-medium text-[color:var(--foreground)]"
+                >
                   {dictionary.feedbackPage.emailLabel}
                 </label>
                 <input
+                  id="feedback-email"
                   type="email"
                   placeholder={dictionary.feedbackPage.emailPlaceholder}
                   className="app-input"
@@ -148,10 +149,14 @@ export default function FeedbackPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-[color:var(--foreground)]">
+              <label
+                htmlFor="feedback-message"
+                className="mb-2 block text-sm font-medium text-[color:var(--foreground)]"
+              >
                 {dictionary.feedbackPage.messageLabel}
               </label>
               <FormTextarea
+                id="feedback-message"
                 placeholder={dictionary.feedbackPage.messagePlaceholder}
                 className="min-h-36 p-4 text-[color:var(--foreground)]"
                 value={message}

@@ -53,7 +53,7 @@ export default async function ArticlesPage({
   const ui = dictionary.articlesPage;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
       <section className="relative rounded-[2.25rem] app-card">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
           <div className="p-6 sm:p-8">
@@ -125,7 +125,10 @@ export default async function ArticlesPage({
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <button className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-950 shadow-sm transition hover:bg-white/90">
+                <button
+                  type="submit"
+                  className="cursor-pointer rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-950 shadow-sm transition hover:bg-white/90"
+                >
                   {ui.apply}
                 </button>
                 <ButtonLink

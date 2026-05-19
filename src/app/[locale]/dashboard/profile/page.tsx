@@ -67,7 +67,7 @@ export default async function DashboardProfilePage({
 
   if (!profile) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+      <main className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6">
         <section className="rounded-[2rem] app-card p-8">
           <h1 className="text-2xl font-semibold text-[color:var(--foreground)]">
             {dictionary.dashboardProfile.profileNotFound}
@@ -90,7 +90,7 @@ export default async function DashboardProfilePage({
     .toUpperCase();
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
       <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  AUTH_LIMITS,
   forgotPasswordSchema,
   getAuthErrorMessage,
   getAuthFieldErrors,
@@ -110,30 +111,43 @@ export default function ForgotPasswordPage() {
               noValidate
               className="mt-8 flex flex-col gap-4"
             >
-              <input
-                type="email"
-                placeholder={dictionary.auth.email}
-                className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError(null);
-                  setFieldErrors((current) => ({
-                    ...current,
-                    email: undefined,
-                  }));
-                }}
-                autoComplete="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                inputMode="email"
-                maxLength={254}
-                aria-label={dictionary.auth.email}
-                aria-invalid={Boolean(fieldErrors.email)}
-              />
-              {fieldErrors.email && (
-                <p className="text-sm text-red-500">{fieldErrors.email}</p>
-              )}
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="forgot-email"
+                  className="text-sm font-medium text-[color:var(--foreground)]"
+                >
+                  {dictionary.auth.email}
+                </label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  placeholder={dictionary.auth.email}
+                  className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(null);
+                    setFieldErrors((current) => ({
+                      ...current,
+                      email: undefined,
+                    }));
+                  }}
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  inputMode="email"
+                  maxLength={AUTH_LIMITS.emailMaxLength}
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={
+                    fieldErrors.email ? "forgot-email-error" : undefined
+                  }
+                />
+                {fieldErrors.email && (
+                  <p id="forgot-email-error" className="text-sm text-red-500">
+                    {fieldErrors.email}
+                  </p>
+                )}
+              </div>
 
               {error && <p className="text-sm text-red-500">{error}</p>}
 

@@ -202,11 +202,15 @@ function PersonalStatCard({
   return (
     <a
       href={href}
-      className="group rounded-2xl border app-border bg-[color:var(--surface)] p-5 transition-shadow hover:shadow-md"
+      className="group block rounded-2xl border app-border bg-[color:var(--surface)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-[0_18px_40px_rgba(2,6,23,0.18)]"
     >
-      <div className={`mb-3 h-1 w-10 rounded-full ${accent}`} />
-      <p className="text-2xl font-bold tracking-tight text-[color:var(--foreground)]">{value}</p>
-      <p className="mt-1 text-sm font-medium app-soft group-hover:text-[color:var(--foreground)] transition-colors">
+      <div
+        className={`mb-3 h-1 w-10 rounded-full ${accent} transition-all duration-200 group-hover:w-16`}
+      />
+      <p className="text-2xl font-bold tracking-tight text-[color:var(--foreground)]">
+        {value}
+      </p>
+      <p className="mt-1 text-sm font-medium app-soft transition-colors group-hover:text-[color:var(--foreground)]">
         {label}
       </p>
     </a>

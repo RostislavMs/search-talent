@@ -93,7 +93,7 @@ export default async function HireRolePage({
     .slice(0, 6);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
       <section className="rounded-[2rem] app-card p-5 sm:p-7">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
           {locale === "uk" ? "Найняти фахівця" : "Hire a specialist"}

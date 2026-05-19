@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
+import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { createClient } from "@/lib/supabase/server";
 import { articlePayloadSchema, routeArticleIdSchema } from "@/lib/validation/articles";
 import { ensureUniqueArticleSlug } from "@/lib/db/articles";
@@ -72,7 +73,7 @@ export async function PUT(
       title: payload.title,
       slug,
       excerpt: payload.excerpt,
-      content: payload.content,
+      content: sanitizeRichTextHtml(payload.content),
       cover_image_url: payload.cover_image_url,
       cover_image_storage_path: payload.cover_image_storage_path,
       hero_video_url: payload.hero_video_url,

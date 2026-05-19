@@ -48,7 +48,7 @@ export default function ThemeToggle({ initialTheme }: { initialTheme: Theme }) {
   }, []);
 
   return (
-    <div className="space-y-2">
+    <div className="inline-flex items-center gap-2">
       <div className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] p-1">
         {(["light", "dark"] as const).map((item) => {
           const active = theme === item;
@@ -68,7 +68,7 @@ export default function ThemeToggle({ initialTheme }: { initialTheme: Theme }) {
                 }
               }}
               className={[
-                "rounded-full px-3 py-2 text-xs font-medium transition-colors",
+                "cursor-pointer rounded-full px-3 py-2 text-xs font-medium transition-colors",
                 active
                   ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
                   : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
@@ -82,9 +82,14 @@ export default function ThemeToggle({ initialTheme }: { initialTheme: Theme }) {
       </div>
 
       {!canPersist && (
-        <p className="max-w-xs text-xs leading-5 app-muted">
-          {dictionary.cookieConsent.themeSessionOnly}
-        </p>
+        <span
+          className="inline-flex h-5 w-5 shrink-0 cursor-help items-center justify-center rounded-full border border-[color:var(--border)] text-[10px] font-semibold app-muted"
+          title={dictionary.cookieConsent.themeSessionOnly}
+          aria-label={dictionary.cookieConsent.themeSessionOnly}
+          role="img"
+        >
+          i
+        </span>
       )}
     </div>
   );

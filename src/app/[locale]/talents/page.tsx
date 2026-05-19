@@ -52,7 +52,7 @@ export default async function LocalizedTalentsPage({
   const technologies = await getPopularTechnologies(20);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
       <DiscoveryPage mode="creators" />
 
       <section className="mt-6 rounded-[2rem] app-card p-5 sm:mt-8 sm:p-7">

@@ -79,7 +79,7 @@ export default async function EditArticlePage({
     : null;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
       <ArticleComposer
         locale={safeLocale}
         userId={viewer.user.id}

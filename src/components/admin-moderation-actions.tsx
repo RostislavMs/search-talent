@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import FormTextarea from "@/components/ui/form-textarea";
+import { apiFetch } from "@/lib/api-client";
 import type { ModerationCopy } from "@/lib/moderation-copy";
 import type { ModerationStatus, ReportTargetType } from "@/lib/moderation";
 
@@ -37,39 +38,28 @@ export default function AdminModerationActions({
     setFeedback("");
     setError("");
 
-    try {
-      const response = await fetch("/api/admin/moderation", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          targetType,
-          targetId,
-          moderationStatus: action.moderationStatus,
-          reportId,
-          reportStatus: action.reportStatus,
-          resolutionNote: note,
-        }),
-      });
+    const result = await apiFetch("/api/admin/moderation", {
+      method: "POST",
+      body: {
+        targetType,
+        targetId,
+        moderationStatus: action.moderationStatus,
+        reportId,
+        reportStatus: action.reportStatus,
+        resolutionNote: note,
+      },
+    });
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
+    setPendingAction("");
 
-      if (!response.ok) {
-        setError(payload.error || copy.actions.errorFallback);
-        return;
-      }
-
-      setFeedback(copy.actions.success);
-      setNote("");
-      router.refresh();
-    } catch {
-      setError(copy.actions.errorFallback);
-    } finally {
-      setPendingAction("");
+    if (!result.ok) {
+      setError(result.error || copy.actions.errorFallback);
+      return;
     }
+
+    setFeedback(copy.actions.success);
+    setNote("");
+    router.refresh();
   }
 
   const fallbackStatus = currentStatus || "approved";

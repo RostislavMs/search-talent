@@ -62,19 +62,21 @@ export default function ConfirmDialog({
         }
       }}
     >
-      <div className="w-full max-w-md rounded-[1.75rem] border app-border bg-[color:var(--surface)] p-6 shadow-[0_28px_90px_rgba(2,6,23,0.4)]">
+      <div className="w-full max-w-md rounded-[1.75rem] border app-border bg-[color:var(--surface)] p-6 text-left shadow-[0_28px_90px_rgba(2,6,23,0.4)]">
         <h2
           id="confirm-dialog-title"
-          className="text-lg font-semibold text-[color:var(--foreground)]"
+          className="text-left text-lg font-semibold text-[color:var(--foreground)]"
         >
           {title}
         </h2>
         {description ? (
-          <p className="mt-3 text-sm leading-7 app-muted">{description}</p>
+          <p className="mt-3 text-left text-sm leading-7 app-muted">
+            {description}
+          </p>
         ) : null}
 
         {errorMessage ? (
-          <p className="mt-3 text-sm text-rose-500">{errorMessage}</p>
+          <p className="mt-3 text-left text-sm text-rose-500">{errorMessage}</p>
         ) : null}
 
         <div className="mt-6 flex flex-wrap justify-end gap-2">

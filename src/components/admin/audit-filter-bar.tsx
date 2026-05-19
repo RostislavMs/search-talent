@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
+import FormSelect from "@/components/ui/form-select";
 
 type Props = {
   labels: {
@@ -40,55 +41,46 @@ export default function AuditFilterBar({
   const currentAction = searchParams.get("action") || "all";
   const currentTarget = searchParams.get("target") || "all";
 
-  const selectClass =
-    "rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5 text-sm text-[color:var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]";
+  const actionItems = [
+    { value: "all", label: labels.all },
+    ...actionOptions,
+  ];
+
+  const targetItems = [
+    { value: "all", label: labels.all },
+    ...targetOptions,
+  ];
 
   return (
     <div
       className="flex flex-wrap items-center gap-3"
       aria-busy={isPending}
     >
-      <label className="flex items-center gap-2 text-sm app-muted">
-        <span>{labels.action}:</span>
-        <select
+      <div className="flex items-center gap-2 text-sm app-muted sm:min-w-56">
+        <span className="shrink-0">{labels.action}:</span>
+        <FormSelect
+          className="flex-1"
+          triggerClassName="app-select-trigger--sm"
           value={currentAction}
-          onChange={(event) =>
-            updateParam(
-              "action",
-              event.target.value === "all" ? null : event.target.value,
-            )
+          onChange={(value) =>
+            updateParam("action", value === "all" ? null : value)
           }
-          className={selectClass}
-        >
-          <option value="all">{labels.all}</option>
-          {actionOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
+          options={actionItems}
+        />
+      </div>
 
-      <label className="flex items-center gap-2 text-sm app-muted">
-        <span>{labels.target}:</span>
-        <select
+      <div className="flex items-center gap-2 text-sm app-muted sm:min-w-56">
+        <span className="shrink-0">{labels.target}:</span>
+        <FormSelect
+          className="flex-1"
+          triggerClassName="app-select-trigger--sm"
           value={currentTarget}
-          onChange={(event) =>
-            updateParam(
-              "target",
-              event.target.value === "all" ? null : event.target.value,
-            )
+          onChange={(value) =>
+            updateParam("target", value === "all" ? null : value)
           }
-          className={selectClass}
-        >
-          <option value="all">{labels.all}</option>
-          {targetOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
+          options={targetItems}
+        />
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import RichTextComposer from "@/components/rich-text-composer";
 import { Button } from "@/components/ui/Button";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
+import { apiFetch } from "@/lib/api-client";
 import {
   getCategoryDisplayName,
   sortArticleCategories,
@@ -206,12 +207,9 @@ export default function ArticleComposer({
     const url = isEditing ? `/api/articles/${editArticle!.id}` : "/api/articles";
     const method = isEditing ? "PUT" : "POST";
 
-    const response = await fetch(url, {
+    const result = await apiFetch<{ article?: { slug?: string } }>(url, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+      body: {
         title,
         excerpt: excerpt.trim() || null,
         content,
@@ -221,16 +219,13 @@ export default function ArticleComposer({
         cover_image_storage_path: coverImageStoragePath,
         hero_video_url: heroVideoUrl,
         hero_video_storage_path: heroVideoStoragePath,
-      }),
+      },
     });
 
     setSaving(false);
 
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
-      setErrorMessage(payload.error || ui.error);
+    if (!result.ok) {
+      setErrorMessage(result.error || ui.error);
       return;
     }
 

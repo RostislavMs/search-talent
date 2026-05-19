@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { ButtonSize, ButtonVariant } from "@/components/ui/button-styles";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { apiFetch } from "@/lib/api-client";
 import { useLocalizedRouter } from "@/lib/i18n/client";
 
 type DeleteArticleButtonProps = {
@@ -44,32 +45,26 @@ export default function DeleteArticleButton({
     setIsDeleting(true);
     setErrorMessage(null);
 
-    try {
-      const endpoint = adminEndpoint
-        ? `/api/admin/articles/${articleId}`
-        : `/api/articles/${articleId}`;
-      const response = await fetch(endpoint, { method: "DELETE" });
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    const endpoint = adminEndpoint
+      ? `/api/admin/articles/${articleId}`
+      : `/api/articles/${articleId}`;
+    const result = await apiFetch(endpoint, { method: "DELETE" });
 
-      if (!response.ok) {
-        setErrorMessage(payload.error || errorFallback);
-        setIsDeleting(false);
-        return;
-      }
+    setIsDeleting(false);
 
-      setDialogOpen(false);
-      setIsDeleting(false);
-
-      if (redirectHref) {
-        router.replace(redirectHref);
-        return;
-      }
-
-      router.refresh();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : errorFallback);
-      setIsDeleting(false);
+    if (!result.ok) {
+      setErrorMessage(result.error || errorFallback);
+      return;
     }
+
+    setDialogOpen(false);
+
+    if (redirectHref) {
+      router.replace(redirectHref);
+      return;
+    }
+
+    router.refresh();
   };
 
   return (

@@ -7,6 +7,7 @@ import { buttonStyles } from "@/components/ui/button-styles";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
 import LocalizedLink from "@/components/ui/localized-link";
+import { apiFetch } from "@/lib/api-client";
 import type { ModerationCopy } from "@/lib/moderation-copy";
 import {
   reportReasons,
@@ -54,39 +55,22 @@ export default function ContentReportButton({
     setError("");
     setSuccess("");
 
-    try {
-      const response = await fetch("/api/reports", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          targetType,
-          targetId,
-          reason,
-          details,
-        }),
-      });
+    const result = await apiFetch("/api/reports", {
+      method: "POST",
+      body: { targetType, targetId, reason, details },
+    });
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        success?: boolean;
-      };
+    setIsSubmitting(false);
 
-      if (!response.ok) {
-        setError(payload.error || reportCopy.errorFallback);
-        return;
-      }
-
-      setSuccess(reportCopy.success);
-      setDetails("");
-      setReason("inappropriate_content");
-      router.refresh();
-    } catch {
-      setError(reportCopy.errorFallback);
-    } finally {
-      setIsSubmitting(false);
+    if (!result.ok) {
+      setError(result.error || reportCopy.errorFallback);
+      return;
     }
+
+    setSuccess(reportCopy.success);
+    setDetails("");
+    setReason("inappropriate_content");
+    router.refresh();
   }
 
   return (

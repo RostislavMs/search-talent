@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import DashboardAnalytics from "@/components/dashboard-analytics";
+import dynamic from "next/dynamic";
 import { getDashboardStats, getUserDashboardStats } from "@/lib/db/dashboard";
+
+const DashboardAnalytics = dynamic(
+  () => import("@/components/dashboard-analytics"),
+);
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
@@ -62,7 +66,7 @@ export default async function DashboardPage({
     : dictionary.dashboard.welcomeBack;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
       <div className="mb-8">
         <h1 className="text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
           {greeting}

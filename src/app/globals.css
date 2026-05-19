@@ -48,13 +48,15 @@ html[data-theme="dark"] {
   color-scheme: dark;
 }
 
-body {
+html {
   background: var(--background);
+}
+
+body {
+  background: transparent;
   color: var(--foreground);
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  transition:
-    background-color 180ms ease,
-    color 180ms ease;
+  transition: color 180ms ease;
 }
 
 * {
@@ -104,14 +106,16 @@ select {
 }
 
 .app-card {
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
   box-shadow: var(--shadow);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
 
 .app-panel {
   border: 1px solid var(--border);
-  background: var(--surface-muted);
+  background: color-mix(in srgb, var(--surface-muted) 86%, transparent);
 }
 
 .app-panel-dashed {
@@ -311,6 +315,14 @@ select {
   text-align: left;
   color: var(--foreground);
   outline: none;
+  cursor: pointer;
+}
+
+.app-select-trigger.app-select-trigger--sm {
+  min-height: 2.5rem;
+  border-radius: 9999px;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.875rem;
 }
 
 .app-select-trigger:hover {
@@ -383,6 +395,7 @@ select {
   line-height: 1.4;
   color: var(--foreground);
   outline: none;
+  cursor: pointer;
 }
 
 .app-select-option:hover,

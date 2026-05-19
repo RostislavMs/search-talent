@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  AUTH_LIMITS,
   getAuthErrorMessage,
   getAuthFieldErrors,
   resetPasswordSchema,
@@ -9,6 +10,7 @@ import {
 } from "@/lib/auth/validation";
 import { useDictionary, useLocalizedHref } from "@/lib/i18n/client";
 import { createClient } from "@/lib/supabase/client";
+import PasswordInput from "@/components/ui/password-input";
 import { Button, ButtonLink } from "@/components/ui/Button";
 
 type SessionState = "loading" | "ready" | "invalid";
@@ -176,53 +178,77 @@ export default function ResetPasswordPage() {
               noValidate
               className="mt-8 flex flex-col gap-4"
             >
-              <input
-                type="password"
-                placeholder={dictionary.auth.password}
-                className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError(null);
-                  setFieldErrors((current) => ({
-                    ...current,
-                    password: undefined,
-                  }));
-                }}
-                autoComplete="new-password"
-                maxLength={72}
-                aria-label={dictionary.auth.password}
-                aria-invalid={Boolean(fieldErrors.password)}
-              />
-              {fieldErrors.password && (
-                <p className="text-sm text-red-500">{fieldErrors.password}</p>
-              )}
-
-              <p className="text-sm app-muted">{dictionary.auth.passwordHint}</p>
-
-              <input
-                type="password"
-                placeholder={dictionary.auth.confirmPassword}
-                className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  setError(null);
-                  setFieldErrors((current) => ({
-                    ...current,
-                    confirmPassword: undefined,
-                  }));
-                }}
-                autoComplete="new-password"
-                maxLength={72}
-                aria-label={dictionary.auth.confirmPassword}
-                aria-invalid={Boolean(fieldErrors.confirmPassword)}
-              />
-              {fieldErrors.confirmPassword && (
-                <p className="text-sm text-red-500">
-                  {fieldErrors.confirmPassword}
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="reset-password"
+                  className="text-sm font-medium text-[color:var(--foreground)]"
+                >
+                  {dictionary.auth.password}
+                </label>
+                <PasswordInput
+                  id="reset-password"
+                  placeholder={dictionary.auth.password}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                    setFieldErrors((current) => ({
+                      ...current,
+                      password: undefined,
+                    }));
+                  }}
+                  autoComplete="new-password"
+                  maxLength={AUTH_LIMITS.passwordMaxLength}
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={`reset-password-hint${fieldErrors.password ? " reset-password-error" : ""}`}
+                />
+                <p id="reset-password-hint" className="text-sm app-muted">
+                  {dictionary.auth.passwordHint}
                 </p>
-              )}
+                {fieldErrors.password && (
+                  <p id="reset-password-error" className="text-sm text-red-500">
+                    {fieldErrors.password}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="reset-confirm-password"
+                  className="text-sm font-medium text-[color:var(--foreground)]"
+                >
+                  {dictionary.auth.confirmPassword}
+                </label>
+                <PasswordInput
+                  id="reset-confirm-password"
+                  placeholder={dictionary.auth.confirmPassword}
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setError(null);
+                    setFieldErrors((current) => ({
+                      ...current,
+                      confirmPassword: undefined,
+                    }));
+                  }}
+                  autoComplete="new-password"
+                  maxLength={AUTH_LIMITS.passwordMaxLength}
+                  aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                  aria-describedby={
+                    fieldErrors.confirmPassword
+                      ? "reset-confirm-password-error"
+                      : undefined
+                  }
+                />
+                {fieldErrors.confirmPassword && (
+                  <p
+                    id="reset-confirm-password-error"
+                    className="text-sm text-red-500"
+                  >
+                    {fieldErrors.confirmPassword}
+                  </p>
+                )}
+              </div>
 
               {error && <p className="text-sm text-red-500">{error}</p>}
 

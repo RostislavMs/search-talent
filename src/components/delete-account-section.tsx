@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 
 type Step = "confirm" | "code" | "done";
@@ -48,47 +49,32 @@ export default function DeleteAccountSection({ email }: { email: string }) {
     setPending(true);
     setError(null);
 
-    try {
-      const response = await fetch("/api/profile/delete/request", {
-        method: "POST",
-      });
+    const result = await apiFetch("/api/profile/delete/request", {
+      method: "POST",
+    });
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        setError(payload.error || t.sendFailed);
-        setPending(false);
-        return;
-      }
+    setPending(false);
 
-      setStep("code");
-      setPending(false);
-    } catch {
-      setError(t.sendFailed);
-      setPending(false);
+    if (!result.ok) {
+      setError(result.error || t.sendFailed);
+      return;
     }
+
+    setStep("code");
   };
 
   const resendCode = async () => {
     setResending(true);
     setError(null);
 
-    try {
-      const response = await fetch("/api/profile/delete/request", {
-        method: "POST",
-      });
+    const result = await apiFetch("/api/profile/delete/request", {
+      method: "POST",
+    });
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        setError(payload.error || t.sendFailed);
-      }
-    } catch {
-      setError(t.sendFailed);
-    } finally {
-      setResending(false);
+    setResending(false);
+
+    if (!result.ok) {
+      setError(result.error || t.sendFailed);
     }
   };
 
@@ -103,45 +89,35 @@ export default function DeleteAccountSection({ email }: { email: string }) {
     setPending(true);
     setError(null);
 
-    try {
-      const response = await fetch("/api/profile/delete/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: trimmed, mode }),
-      });
+    const result = await apiFetch("/api/profile/delete/confirm", {
+      method: "POST",
+      body: { code: trimmed, mode },
+    });
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        const reason = payload.error;
+    setPending(false);
 
-        if (reason === "code_expired") {
-          setError(t.codeExpired);
-        } else if (
-          reason === "invalid_code" ||
-          reason === "Invalid code format"
-        ) {
-          setError(t.codeInvalid);
-        } else {
-          setError(reason || t.deleteFailed);
-        }
+    if (!result.ok) {
+      const reason = result.error;
 
-        setPending(false);
-        return;
+      if (reason === "code_expired") {
+        setError(t.codeExpired);
+      } else if (
+        reason === "invalid_code" ||
+        reason === "Invalid code format"
+      ) {
+        setError(t.codeInvalid);
+      } else {
+        setError(reason || t.deleteFailed);
       }
-
-      setStep("done");
-      setPending(false);
-
-      setTimeout(() => {
-        router.replace("/");
-        router.refresh();
-      }, 1600);
-    } catch {
-      setError(t.deleteFailed);
-      setPending(false);
+      return;
     }
+
+    setStep("done");
+
+    setTimeout(() => {
+      router.replace("/");
+      router.refresh();
+    }, 1600);
   };
 
   return (

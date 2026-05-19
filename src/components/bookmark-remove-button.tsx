@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/toast";
+import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
 
 type BookmarkRemoveButtonProps = {
@@ -14,6 +16,7 @@ export default function BookmarkRemoveButton({
   targetId,
 }: BookmarkRemoveButtonProps) {
   const dictionary = useDictionary();
+  const toast = useToast();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [loading, setLoading] = useState(false);
@@ -25,23 +28,21 @@ export default function BookmarkRemoveButton({
     if (loading || pending) return;
     setLoading(true);
 
-    try {
-      const response = await fetch("/api/bookmarks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetType, targetId }),
-      });
+    const result = await apiFetch("/api/bookmarks", {
+      method: "POST",
+      body: { targetType, targetId },
+    });
 
-      if (response.ok) {
-        startTransition(() => {
-          router.refresh();
-        });
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
+    setLoading(false);
+
+    if (!result.ok) {
+      toast.error(result.error || dictionary.bookmarks.removeError);
+      return;
     }
+
+    startTransition(() => {
+      router.refresh();
+    });
   };
 
   return (

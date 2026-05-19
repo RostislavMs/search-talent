@@ -2,7 +2,9 @@
 
 import { startTransition, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/Button";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import OptimizedImage from "@/components/ui/optimized-image";
+import { apiFetch } from "@/lib/api-client";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { compressImageFile } from "@/lib/image-compression";
@@ -53,6 +55,9 @@ export default function ProjectMediaUpload({
   const [coverUrl, setCoverUrl] = useState<string | null>(initialCoverUrl);
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const syncServerState = () => {
     startTransition(() => {
@@ -101,12 +106,12 @@ export default function ProjectMediaUpload({
           data: { publicUrl },
         } = supabase.storage.from("project-media").getPublicUrl(filePath);
 
-        const response = await fetch("/project-media", {
+        const uploadResult = await apiFetch<{
+          coverUrl?: string | null;
+          media?: ProjectMediaItem;
+        }>("/project-media", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+          body: {
             projectId,
             url: publicUrl,
             storagePath: filePath,
@@ -114,24 +119,20 @@ export default function ProjectMediaUpload({
             mimeType: file.type || null,
             fileSize: file.size,
             mediaKind,
-          }),
+          },
         });
 
-        const payload = (await response.json()) as {
-          error?: string;
-          coverUrl?: string | null;
-          media?: ProjectMediaItem;
-        };
-
-        if (!response.ok || !payload.media) {
+        if (!uploadResult.ok || !uploadResult.data.media) {
           await supabase.storage.from("project-media").remove([filePath]);
           throw new Error(
-            payload.error || dictionary.dashboardProjects.uploadFailed,
+            uploadResult.ok
+              ? dictionary.dashboardProjects.uploadFailed
+              : uploadResult.error || dictionary.dashboardProjects.uploadFailed,
           );
         }
 
-        uploadedItems.push(payload.media);
-        nextCoverUrl = payload.coverUrl ?? nextCoverUrl;
+        uploadedItems.push(uploadResult.data.media);
+        nextCoverUrl = uploadResult.data.coverUrl ?? nextCoverUrl;
       }
 
       setMediaItems((prev) => [...prev, ...uploadedItems]);
@@ -152,63 +153,70 @@ export default function ProjectMediaUpload({
   const setAsCover = async (mediaId: string) => {
     setErrorMessage(null);
 
-    const response = await fetch("/project-media", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
+    const result = await apiFetch<{ coverUrl?: string | null }>(
+      "/project-media",
+      {
+        method: "PATCH",
+        body: { projectId, mediaId },
       },
-      body: JSON.stringify({
-        projectId,
-        mediaId,
-      }),
-    });
+    );
 
-    const payload = (await response.json()) as {
-      error?: string;
-      coverUrl?: string | null;
-    };
-
-    if (!response.ok) {
-      setErrorMessage(payload.error || dictionary.dashboardProjects.coverFailed);
+    if (!result.ok) {
+      setErrorMessage(result.error || dictionary.dashboardProjects.coverFailed);
       return;
     }
 
-    setCoverUrl(payload.coverUrl ?? null);
+    setCoverUrl(result.data.coverUrl ?? null);
     syncServerState();
   };
 
-  const removeFile = async (mediaId: string) => {
-    if (!window.confirm(dictionary.dashboardProjects.confirmDeleteFile)) {
-      return;
+  const requestRemoveFile = (mediaId: string) => {
+    setDeleteError(null);
+    setPendingDeleteId(mediaId);
+  };
+
+  const cancelRemoveFile = () => {
+    if (deleting) return;
+    setPendingDeleteId(null);
+    setDeleteError(null);
+  };
+
+  const confirmRemoveFile = async () => {
+    if (!pendingDeleteId) return;
+    const mediaId = pendingDeleteId;
+
+    setDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const result = await apiFetch<{ coverUrl?: string | null }>(
+        "/project-media",
+        {
+          method: "DELETE",
+          body: { projectId, mediaId },
+        },
+      );
+
+      if (!result.ok) {
+        setDeleteError(
+          result.error || dictionary.dashboardProjects.deleteFileFailed,
+        );
+        return;
+      }
+
+      setMediaItems((prev) => prev.filter((item) => item.id !== mediaId));
+      setCoverUrl(result.data.coverUrl ?? null);
+      setPendingDeleteId(null);
+      syncServerState();
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : dictionary.dashboardProjects.deleteFileFailed,
+      );
+    } finally {
+      setDeleting(false);
     }
-
-    setErrorMessage(null);
-
-    const response = await fetch("/project-media", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        projectId,
-        mediaId,
-      }),
-    });
-
-    const payload = (await response.json()) as {
-      error?: string;
-      coverUrl?: string | null;
-      mediaId?: string;
-    };
-
-    if (!response.ok) {
-      setErrorMessage(payload.error || dictionary.dashboardProjects.deleteFileFailed);
-      return;
-    }
-
-    setMediaItems((prev) => prev.filter((item) => item.id !== mediaId));
-    setCoverUrl(payload.coverUrl ?? null);
-    syncServerState();
   };
 
   return (
@@ -347,7 +355,7 @@ export default function ProjectMediaUpload({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeFile(item.id)}
+                      onClick={() => requestRemoveFile(item.id)}
                     >
                       {dictionary.dashboardProjects.deleteFile}
                     </Button>
@@ -358,6 +366,20 @@ export default function ProjectMediaUpload({
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title={dictionary.dashboardProjects.confirmDeleteFileTitle}
+        description={dictionary.dashboardProjects.confirmDeleteFile}
+        confirmLabel={dictionary.dashboardProjects.deleteFile}
+        cancelLabel={dictionary.dashboardProjects.cancel}
+        confirmVariant="primary"
+        pending={deleting}
+        pendingLabel={dictionary.dashboardProjects.uploading}
+        errorMessage={deleteError}
+        onCancel={cancelRemoveFile}
+        onConfirm={() => void confirmRemoveFile()}
+      />
     </section>
   );
 }

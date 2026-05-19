@@ -1,10 +1,14 @@
 import type { CSSProperties, ReactNode } from "react";
+import dynamic from "next/dynamic";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import BookmarkButton from "@/components/bookmark-button";
 import ExpandableProfileBio from "@/components/expandable-profile-bio";
 import FollowButton from "@/components/follow-button";
-import ProfilePdfExport from "@/components/profile-pdf-export";
 import ProfileVoteButtons from "@/components/profile-vote-buttons";
+
+const ProfilePdfExport = dynamic(
+  () => import("@/components/profile-pdf-export"),
+);
 import ProjectCard from "@/components/project-card";
 import VerifiedBadge from "@/components/verified-badge";
 import { ButtonLink } from "@/components/ui/Button";

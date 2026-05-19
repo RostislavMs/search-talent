@@ -60,11 +60,18 @@ export function buildMetadata({
       title,
       description,
       siteName: dictionary.site.name,
+      images: [
+        {
+          url: new URL("/logo.webp", getMetadataBase()).toString(),
+          alt: dictionary.site.name,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [new URL("/logo.webp", getMetadataBase()).toString()],
     },
   };
 

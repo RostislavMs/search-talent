@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { createClient } from "@/lib/supabase/server";
 import { profilePayloadSchema } from "@/lib/validation/profile";
 import { parseJsonRequest } from "@/lib/validation/request";
@@ -57,7 +58,7 @@ export async function PUT(request: Request) {
       name: payload.name,
       category_id: payload.category_id,
       headline: payload.headline,
-      bio: payload.bio,
+      bio: payload.bio ? sanitizeRichTextHtml(payload.bio) : payload.bio,
       country_id: payload.country_id,
       city: payload.city,
       website: payload.website,

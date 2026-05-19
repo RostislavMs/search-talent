@@ -1,23 +1,29 @@
 import { z } from "zod";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
+export const AUTH_LIMITS = {
+  emailMaxLength: 254,
+  passwordMinLength: 8,
+  passwordMaxLength: 72,
+} as const;
+
 const emailSchema = z
   .string()
   .trim()
   .min(1, "email_required")
-  .max(254, "email_invalid")
+  .max(AUTH_LIMITS.emailMaxLength, "email_invalid")
   .email("email_invalid")
   .transform((value) => value.toLowerCase());
 
 const loginPasswordSchema = z
   .string()
   .min(1, "password_required")
-  .max(72, "password_too_long");
+  .max(AUTH_LIMITS.passwordMaxLength, "password_too_long");
 
 const signupPasswordSchema = z
   .string()
-  .min(8, "password_too_short")
-  .max(72, "password_too_long")
+  .min(AUTH_LIMITS.passwordMinLength, "password_too_short")
+  .max(AUTH_LIMITS.passwordMaxLength, "password_too_long")
   .refine((value) => value === value.trim(), {
     message: "password_edge_spaces",
   })

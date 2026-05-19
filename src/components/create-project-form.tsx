@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import TagSelect from "@/components/ui/tag-select";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
+import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { projectPayloadSchema } from "@/lib/validation/project";
@@ -108,9 +109,10 @@ export default function CreateProjectForm({
 
   useEffect(() => {
     async function loadMeta() {
-      const response = await fetch("/api/meta");
-      const data = (await response.json()) as { skills?: MetaOption[] };
-      setMetaSkills(data.skills || []);
+      const result = await apiFetch<{ skills?: MetaOption[] }>("/api/meta");
+      if (result.ok) {
+        setMetaSkills(result.data.skills || []);
+      }
     }
 
     loadMeta();
@@ -172,24 +174,19 @@ export default function CreateProjectForm({
       ? `/api/projects/${project?.id}`
       : "/api/projects";
     const method = isEditMode ? "PATCH" : "POST";
-    const res = await fetch(endpoint, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(parsedPayload.data),
-    });
-
-    const data = (await res.json()) as {
-      error?: string;
+    const result = await apiFetch<{
       projectId?: string;
       slug?: string;
-    };
+    }>(endpoint, {
+      method,
+      body: parsedPayload.data,
+    });
+
     setLoading(false);
 
-    if (!res.ok) {
+    if (!result.ok) {
       setErrorMessage(
-        data.error ||
+        result.error ||
           (isEditMode
             ? dictionary.forms.errorUpdatingProject
             : dictionary.forms.errorCreatingProject),
@@ -200,16 +197,18 @@ export default function CreateProjectForm({
     router.refresh();
 
     if (project?.id) {
-      router.push(buildProjectPath(project.id, data.slug || slug));
+      router.push(buildProjectPath(project.id, result.data.slug || slug));
       return;
     }
 
-    if (data.projectId) {
-      router.push(buildProjectPath(data.projectId, data.slug || slug));
+    if (result.data.projectId) {
+      router.push(
+        buildProjectPath(result.data.projectId, result.data.slug || slug),
+      );
       return;
     }
 
-    router.push(`/projects/${data.slug || slug}`);
+    router.push(`/projects/${result.data.slug || slug}`);
   };
 
   return (

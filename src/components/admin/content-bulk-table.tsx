@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { apiFetch } from "@/lib/api-client";
 
 type BulkAction = "approve" | "hide" | "restrict" | "delete";
 
@@ -91,24 +92,21 @@ export default function ContentBulkTable({
       body.moderationStatus = actionToStatus[dialog];
     }
 
-    try {
-      const response = await fetch("/api/admin/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        throw new Error(data?.error || labels.errorFallback);
-      }
-      setDialog(null);
-      setSelected(new Set());
-      router.refresh();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : labels.errorFallback);
-    } finally {
-      setPendingAction(null);
+    const result = await apiFetch("/api/admin/bulk", {
+      method: "POST",
+      body,
+    });
+
+    setPendingAction(null);
+
+    if (!result.ok) {
+      setError(result.error || labels.errorFallback);
+      return;
     }
+
+    setDialog(null);
+    setSelected(new Set());
+    router.refresh();
   }
 
   const hasSelection = selected.size > 0;

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/toast";
+import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
 
 type BookmarkButtonProps = {
@@ -18,6 +20,7 @@ export default function BookmarkButton({
   isAuthenticated,
 }: BookmarkButtonProps) {
   const dictionary = useDictionary();
+  const toast = useToast();
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
   const [loading, setLoading] = useState(false);
 
@@ -28,23 +31,19 @@ export default function BookmarkButton({
 
     setLoading(true);
 
-    try {
-      const response = await fetch("/api/bookmarks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetType, targetId }),
-      });
+    const result = await apiFetch<{ bookmarked: boolean }>("/api/bookmarks", {
+      method: "POST",
+      body: { targetType, targetId },
+    });
 
-      const data = await response.json();
+    setLoading(false);
 
-      if (response.ok) {
-        setBookmarked(data.bookmarked);
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
+    if (!result.ok) {
+      toast.error(result.error || dictionary.bookmarks.toggleError);
+      return;
     }
+
+    setBookmarked(result.data.bookmarked);
   };
 
   if (!isAuthenticated) {

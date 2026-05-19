@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import FormTextarea from "@/components/ui/form-textarea";
+import { apiFetch } from "@/lib/api-client";
 
 type ArticleModerationStatus =
   | "approved"
@@ -56,33 +57,23 @@ export default function ArticleModerationActions({
     setFeedback("");
     setErrorMessage("");
 
-    try {
-      const response = await fetch(`/api/admin/articles/${articleId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          moderation_status: moderationStatus,
-          moderation_note: note.trim() || null,
-        }),
-      });
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
+    const result = await apiFetch(`/api/admin/articles/${articleId}`, {
+      method: "PATCH",
+      body: {
+        moderation_status: moderationStatus,
+        moderation_note: note.trim() || null,
+      },
+    });
 
-      if (!response.ok) {
-        setErrorMessage(payload.error || ui.error);
-        return;
-      }
+    setPendingAction("");
 
-      setFeedback(ui.success);
-      router.refresh();
-    } catch {
-      setErrorMessage(ui.error);
-    } finally {
-      setPendingAction("");
+    if (!result.ok) {
+      setErrorMessage(result.error || ui.error);
+      return;
     }
+
+    setFeedback(ui.success);
+    router.refresh();
   }
 
   return (

@@ -8,6 +8,8 @@ import LocalizedLink from "@/components/ui/localized-link";
 import SearchSelect from "@/components/ui/search-select";
 import TagSelect from "@/components/ui/tag-select";
 import FormSelect from "@/components/ui/form-select";
+import { useToast } from "@/components/ui/toast";
+import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
 import type { Locale } from "@/lib/i18n/config";
 import type { ProfileCategory } from "@/lib/profile-categories";
@@ -100,6 +102,7 @@ type DiscoveryCopy = {
     mediaCount: string;
     loading: string;
     searchFailed: string;
+    saveSearchFailed: string;
     projectsMatched: string;
     creatorsMatched: string;
   };
@@ -276,6 +279,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
         mediaCount: "Медіа",
         loading: "Оновлення результатів...",
         searchFailed: "Зараз не вдалося завантажити результати пошуку.",
+        saveSearchFailed: "Не вдалося зберегти пошук. Спробуйте ще раз.",
         projectsMatched: "Знайдено проєктів",
         creatorsMatched: "Знайдено талантів",
       },
@@ -378,6 +382,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       mediaCount: "Media",
       loading: "Refreshing results...",
       searchFailed: "Could not load search results right now.",
+      saveSearchFailed: "Could not save this search right now. Please try again.",
       projectsMatched: "Projects found",
       creatorsMatched: "Talents found",
     },
@@ -455,6 +460,7 @@ export default function DiscoveryPage({
   initialCategoryId = null,
 }: DiscoveryPageProps) {
   const dictionary = useDictionary();
+  const toast = useToast();
   const locale = useCurrentLocale();
   const copy = useMemo(() => getDiscoveryCopy(locale), [locale]);
   const pageUi = copy.modes[mode];
@@ -503,22 +509,44 @@ export default function DiscoveryPage({
     projects: 0,
     users: 0,
   });
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = mobileFiltersOpen ? "hidden" : previous;
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileFiltersOpen]);
+
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileFiltersOpen(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [mobileFiltersOpen]);
 
   useEffect(() => {
     async function loadMeta() {
-      const response = await fetch("/api/meta");
-      const payload = (await response.json()) as {
+      const result = await apiFetch<{
         countries?: MetaOption[];
         languages?: MetaOption[];
         skills?: MetaOption[];
         categories?: ProfileCategory[];
-      };
+      }>("/api/meta");
+
+      if (!result.ok) {
+        return;
+      }
 
       setMeta({
-        countries: payload.countries || [],
-        languages: payload.languages || [],
-        skills: payload.skills || [],
-        categories: payload.categories || [],
+        countries: result.data.countries || [],
+        languages: result.data.languages || [],
+        skills: result.data.skills || [],
+        categories: result.data.categories || [],
       });
     }
 
@@ -527,15 +555,15 @@ export default function DiscoveryPage({
 
   useEffect(() => {
     async function loadSavedSearches() {
-      try {
-        const response = await fetch("/api/saved-searches");
+      const result = await apiFetch<{ searches?: unknown[] }>(
+        "/api/saved-searches",
+      );
 
-        if (response.ok) {
-          const payload = await response.json();
-          setSavedSearches(payload.searches || []);
-        }
-      } catch {
-        // ignore — user might not be authenticated
+      // ignore failure — user might not be authenticated
+      if (result.ok) {
+        setSavedSearches(
+          (result.data.searches as typeof savedSearches) || [],
+        );
       }
     }
 
@@ -546,45 +574,45 @@ export default function DiscoveryPage({
     if (!saveSearchName.trim()) return;
     setSavingSearch(true);
 
-    try {
-      const params: Record<string, unknown> = {};
-      if (query.trim()) params.query = query.trim();
-      if (sort !== "relevance") params.sort = sort;
-      if (countryId) params.countryId = countryId;
-      if (categoryId) params.categoryId = categoryId;
-      if (skillIds.length > 0) params.skillIds = skillIds;
-      if (languageIds.length > 0) params.languageIds = languageIds;
-      if (experienceLevel) params.experienceLevel = experienceLevel;
-      if (employmentTypeFilters.length > 0) params.employmentTypes = employmentTypeFilters;
-      if (workFormatFilters.length > 0) params.workFormats = workFormatFilters;
-      if (projectStatus) params.projectStatus = projectStatus;
-      if (hasMedia) params.hasMedia = true;
-      if (hasAvatar) params.hasAvatar = true;
-      if (minScore !== null) params.minScore = minScore;
-      if (maxScore !== null) params.maxScore = maxScore;
+    const params: Record<string, unknown> = {};
+    if (query.trim()) params.query = query.trim();
+    if (sort !== "relevance") params.sort = sort;
+    if (countryId) params.countryId = countryId;
+    if (categoryId) params.categoryId = categoryId;
+    if (skillIds.length > 0) params.skillIds = skillIds;
+    if (languageIds.length > 0) params.languageIds = languageIds;
+    if (experienceLevel) params.experienceLevel = experienceLevel;
+    if (employmentTypeFilters.length > 0) params.employmentTypes = employmentTypeFilters;
+    if (workFormatFilters.length > 0) params.workFormats = workFormatFilters;
+    if (projectStatus) params.projectStatus = projectStatus;
+    if (hasMedia) params.hasMedia = true;
+    if (hasAvatar) params.hasAvatar = true;
+    if (minScore !== null) params.minScore = minScore;
+    if (maxScore !== null) params.maxScore = maxScore;
 
-      const response = await fetch("/api/saved-searches", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: saveSearchName.trim(), mode, params }),
-      });
+    const result = await apiFetch<{ search: unknown }>("/api/saved-searches", {
+      method: "POST",
+      body: { name: saveSearchName.trim(), mode, params },
+    });
 
-      if (response.ok) {
-        const payload = await response.json();
-        setSavedSearches((prev) => [payload.search, ...prev]);
-        setSaveSearchName("");
-        setShowSaveForm(false);
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setSavingSearch(false);
+    setSavingSearch(false);
+
+    if (!result.ok) {
+      toast.error(result.error || commonUi.saveSearchFailed);
+      return;
     }
+
+    setSavedSearches((prev) => [
+      result.data.search as (typeof prev)[number],
+      ...prev,
+    ]);
+    setSaveSearchName("");
+    setShowSaveForm(false);
   };
 
   const deleteSavedSearch = async (id: string) => {
     setSavedSearches((prev) => prev.filter((s) => s.id !== id));
-    await fetch(`/api/saved-searches?id=${id}`, { method: "DELETE" });
+    await apiFetch(`/api/saved-searches?id=${id}`, { method: "DELETE" });
   };
 
   const applySavedSearch = (params: Record<string, unknown>) => {
@@ -609,7 +637,6 @@ export default function DiscoveryPage({
       setLoading(true);
       setErrorMessage(null);
 
-      try {
         const params = new URLSearchParams();
 
         if (query.trim()) {
@@ -667,29 +694,26 @@ export default function DiscoveryPage({
           params.set("maxScore", String(maxScore));
         }
 
-        const response = await fetch(`/api/search?${params.toString()}`);
-        const payload = (await response.json()) as SearchResponse & {
-          error?: string;
-        };
+        const result = await apiFetch<SearchResponse>(
+          `/api/search?${params.toString()}`,
+        );
 
-        if (!response.ok) {
-          throw new Error(payload.error || commonUi.searchFailed);
+        if (!result.ok) {
+          setProjects([]);
+          setUsers([]);
+          setTotals({ projects: 0, users: 0 });
+          setErrorMessage(result.error || commonUi.searchFailed);
+          setLoading(false);
+          return;
         }
 
-        setProjects(payload.projects || []);
-        setUsers(payload.users || []);
+        setProjects(result.data.projects || []);
+        setUsers(result.data.users || []);
         setTotals({
-          projects: payload.totals?.projects || 0,
-          users: payload.totals?.users || 0,
+          projects: result.data.totals?.projects || 0,
+          users: result.data.totals?.users || 0,
         });
-      } catch {
-        setProjects([]);
-        setUsers([]);
-        setTotals({ projects: 0, users: 0 });
-        setErrorMessage(commonUi.searchFailed);
-      } finally {
         setLoading(false);
-      }
     }, 250);
 
     return () => {
@@ -814,31 +838,32 @@ export default function DiscoveryPage({
 
   return (
     <section>
-      <section className="rounded-[2.25rem] border app-border bg-[linear-gradient(145deg,_rgba(15,23,42,0.97),_rgba(30,64,175,0.9)_58%,_rgba(245,158,11,0.72))] p-8 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:p-10">
+      <section className="rounded-2xl border app-border bg-[linear-gradient(145deg,_rgba(15,23,42,0.97),_rgba(30,64,175,0.9)_58%,_rgba(245,158,11,0.72))] p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:rounded-[2.25rem] sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-white/70">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70 sm:text-sm">
               {pageUi.eyebrow}
             </p>
-            <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="mt-2 max-w-3xl text-2xl font-semibold tracking-tight sm:mt-3 sm:text-3xl md:text-4xl">
               {pageUi.title}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 text-white/78">
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-white/78 sm:mt-4 sm:text-base sm:leading-8">
               {pageUi.description}
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <ButtonLink href={pageUi.secondaryHref} variant="secondary">
-              {pageUi.secondaryLabel}
-            </ButtonLink>
-            <ButtonLink href="/dashboard" variant="ghost">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <ButtonLink
+              href="/dashboard"
+              variant="ghost"
+              className="border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+            >
               {dictionary.search.dashboard}
             </ButtonLink>
           </div>
         </div>
 
-        <div className="mt-8 rounded-[1.75rem] bg-white/10 p-4 backdrop-blur">
+        <div className="mt-5 rounded-2xl bg-white/10 p-3 backdrop-blur sm:mt-8 sm:rounded-[1.75rem] sm:p-4">
           <div className="flex flex-wrap gap-2">
             <DiscoveryModeLink
               active={mode === "projects"}
@@ -855,14 +880,14 @@ export default function DiscoveryPage({
           <input
             type="text"
             placeholder={pageUi.placeholder}
-            className="mt-4 w-full rounded-2xl border border-white/15 bg-white/90 px-4 py-4 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-slate-900"
+            className="mt-3 w-full rounded-xl border border-white/15 bg-white/90 px-3 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-slate-900 sm:mt-4 sm:rounded-2xl sm:px-4 sm:py-4 sm:text-base"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
 
         {!hasFilters && (
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="mt-5 hidden gap-4 sm:mt-8 md:grid md:grid-cols-3">
             {pageUi.heroCards.map((card) => (
               <div
                 key={card.title}
@@ -878,8 +903,59 @@ export default function DiscoveryPage({
         )}
       </section>
 
-      <section className="mt-8 grid gap-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 xl:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileFiltersOpen(true)}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-full border app-border bg-[color:var(--surface)] px-4 py-2 text-sm font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
+          aria-expanded={mobileFiltersOpen}
+          aria-controls="discovery-filters-drawer"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          <span>{commonUi.filters}</span>
+          {activeFilterItems.length > 0 ? (
+            <span className="rounded-full bg-[color:var(--foreground)] px-2 py-0.5 text-xs font-semibold text-[color:var(--background)]">
+              {activeFilterItems.length}
+            </span>
+          ) : null}
+        </button>
+        <span className="text-sm app-muted">
+          {resultCount} {dictionary.search.results}
+        </span>
+      </div>
+
+      <section className="mt-5 grid gap-8 sm:mt-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside
+          id="discovery-filters-drawer"
+          className={[
+            "space-y-4 xl:block xl:sticky xl:top-24 xl:self-start xl:bg-transparent xl:p-0 xl:backdrop-blur-none",
+            mobileFiltersOpen
+              ? "fixed inset-0 z-50 overflow-y-auto bg-[color:var(--background)]/95 px-4 pb-10 pt-4 backdrop-blur-md"
+              : "hidden",
+          ].join(" ")}
+          {...(mobileFiltersOpen
+            ? ({ role: "dialog", "aria-modal": true } as const)
+            : {})}
+        >
+          {mobileFiltersOpen && (
+            <div className="sticky top-0 z-10 -mx-4 mb-2 flex items-center justify-between border-b app-border bg-[color:var(--background)]/95 px-4 py-3 backdrop-blur xl:hidden">
+              <h2 className="text-base font-semibold text-[color:var(--foreground)]">
+                {commonUi.filters}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen(false)}
+                aria-label={locale === "uk" ? "Закрити фільтри" : "Close filters"}
+                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border app-border bg-[color:var(--surface)] text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          )}
           <section className="rounded-[2rem] app-card p-5">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
@@ -888,7 +964,7 @@ export default function DiscoveryPage({
               <button
                 type="button"
                 onClick={resetFilters}
-                className="text-sm app-muted transition hover:text-[color:var(--foreground)]"
+                className="cursor-pointer text-sm app-muted transition hover:text-[color:var(--foreground)]"
               >
                 {commonUi.resetFilters}
               </button>
@@ -1050,7 +1126,7 @@ export default function DiscoveryPage({
                             )
                           }
                           className={[
-                            "rounded-full border px-3 py-2 text-sm transition-colors",
+                            "cursor-pointer rounded-full border px-3 py-2 text-sm transition-colors",
                             selected
                               ? "border-[color:var(--foreground)] bg-[color:var(--foreground)] text-[color:var(--background)]"
                               : "app-border bg-[color:var(--surface)] text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
@@ -1085,7 +1161,7 @@ export default function DiscoveryPage({
                             )
                           }
                           className={[
-                            "rounded-full border px-3 py-2 text-sm transition-colors",
+                            "cursor-pointer rounded-full border px-3 py-2 text-sm transition-colors",
                             selected
                               ? "border-[color:var(--foreground)] bg-[color:var(--foreground)] text-[color:var(--background)]"
                               : "app-border bg-[color:var(--surface)] text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
@@ -1163,7 +1239,7 @@ export default function DiscoveryPage({
                 <button
                   type="button"
                   onClick={() => setShowSaveForm((v) => !v)}
-                  className="text-sm font-medium text-[color:var(--foreground)] transition hover:opacity-70"
+                  className="cursor-pointer text-sm font-medium text-[color:var(--foreground)] transition hover:opacity-70"
                 >
                   + {commonUi.saveSearch}
                 </button>
@@ -1186,7 +1262,7 @@ export default function DiscoveryPage({
                   type="button"
                   disabled={savingSearch || !saveSearchName.trim()}
                   onClick={saveCurrentSearch}
-                  className="shrink-0 rounded-xl bg-[color:var(--foreground)] px-3 py-2 text-sm font-medium text-[color:var(--background)] transition hover:opacity-80 disabled:opacity-40"
+                  className="shrink-0 cursor-pointer rounded-xl bg-[color:var(--foreground)] px-3 py-2 text-sm font-medium text-[color:var(--background)] transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   OK
                 </button>
@@ -1207,14 +1283,14 @@ export default function DiscoveryPage({
                       <button
                         type="button"
                         onClick={() => applySavedSearch(search.params)}
-                        className="min-w-0 truncate text-left text-sm font-medium text-[color:var(--foreground)]"
+                        className="min-w-0 cursor-pointer truncate text-left text-sm font-medium text-[color:var(--foreground)]"
                       >
                         {search.name}
                       </button>
                       <button
                         type="button"
                         onClick={() => deleteSavedSearch(search.id)}
-                        className="shrink-0 text-sm app-muted opacity-0 transition hover:text-red-500 group-hover:opacity-100"
+                        className="shrink-0 cursor-pointer text-sm app-muted opacity-0 transition hover:text-red-500 group-hover:opacity-100 group-focus-within:opacity-100"
                         aria-label="Delete"
                       >
                         &times;
@@ -1263,7 +1339,7 @@ export default function DiscoveryPage({
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="text-sm app-muted transition hover:text-[color:var(--foreground)]"
+                  className="cursor-pointer text-sm app-muted transition hover:text-[color:var(--foreground)]"
                 >
                   {commonUi.resetFilters}
                 </button>
@@ -1275,7 +1351,7 @@ export default function DiscoveryPage({
                     key={item.key}
                     type="button"
                     onClick={item.remove}
-                    className="group flex items-center gap-1.5 rounded-full app-panel px-3 py-1 text-sm app-muted transition hover:bg-[color:var(--surface-muted)]"
+                    className="group flex cursor-pointer items-center gap-1.5 rounded-full app-panel px-3 py-1 text-sm app-muted transition hover:bg-[color:var(--surface-muted)]"
                   >
                     {item.label}
                     <span className="text-xs opacity-50 transition group-hover:opacity-100">&times;</span>

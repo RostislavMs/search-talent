@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import FormTextarea from "@/components/ui/form-textarea";
 import OptimizedImage from "@/components/ui/optimized-image";
+import { apiFetch } from "@/lib/api-client";
 import { createLocalePath } from "@/lib/i18n/config";
 import type { ArticleComment } from "@/lib/articles";
 
@@ -35,6 +36,193 @@ function formatCommentDate(value: string | null, locale: string) {
   }).format(date);
 }
 
+const MAX_INDENT_DEPTH = 3;
+
+function pluralizeReplies(count: number, locale: string, hide: boolean) {
+  if (locale === "uk") {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    let noun: string;
+    if (mod10 === 1 && mod100 !== 11) noun = "відповідь";
+    else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20))
+      noun = "відповіді";
+    else noun = "відповідей";
+    return hide ? `Сховати ${count} ${noun}` : `${count} ${noun}`;
+  }
+
+  const noun = count === 1 ? "reply" : "replies";
+  return hide ? `Hide ${count} ${noun}` : `${count} ${noun}`;
+}
+
+function CommentNode({
+  comment,
+  depth,
+  locale,
+  canComment,
+  replyLabel,
+  replyPlaceholder,
+  sendLabel,
+  replyingTo,
+  setReplyingTo,
+  replyDrafts,
+  setReplyDrafts,
+  submittingFor,
+  submitReply,
+}: {
+  comment: ArticleComment;
+  depth: number;
+  locale: string;
+  canComment: boolean;
+  replyLabel: string;
+  replyPlaceholder: string;
+  sendLabel: string;
+  replyingTo: string | null;
+  setReplyingTo: React.Dispatch<React.SetStateAction<string | null>>;
+  replyDrafts: Record<string, string>;
+  setReplyDrafts: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  submittingFor: string | null;
+  submitReply: (parentId: string) => void;
+}) {
+  const [repliesOpen, setRepliesOpen] = useState(false);
+  const replyCount = comment.replies.length;
+  const showIndent = depth < MAX_INDENT_DEPTH;
+  const authorName = comment.authorDeleted
+    ? locale === "uk"
+      ? "Видалений користувач"
+      : "Deleted user"
+    : comment.author?.name ||
+      comment.author?.username ||
+      (locale === "uk" ? "Користувач" : "User");
+
+  return (
+    <article className="flex gap-2 sm:gap-3">
+      <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-[color:var(--surface-muted)] sm:h-8 sm:w-8">
+        {comment.author?.avatarUrl ? (
+          <OptimizedImage
+            src={comment.author.avatarUrl}
+            alt={authorName}
+            fill
+            sizes="32px"
+            className="object-cover"
+          />
+        ) : null}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <header className="flex flex-wrap items-baseline gap-x-2 leading-tight">
+          <span className="break-words text-sm font-semibold text-[color:var(--foreground)]">
+            {authorName}
+          </span>
+          {comment.createdAt ? (
+            <span className="text-xs app-soft">
+              {formatCommentDate(comment.createdAt, locale)}
+            </span>
+          ) : null}
+        </header>
+
+        <p className="mt-0.5 break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6">
+          {comment.body}
+        </p>
+
+        {canComment ? (
+          <button
+            type="button"
+            className="mt-1 cursor-pointer text-xs font-medium app-soft transition-colors hover:text-[color:var(--foreground)] sm:mt-1.5"
+            onClick={() =>
+              setReplyingTo((prev) =>
+                prev === comment.id ? null : comment.id,
+              )
+            }
+          >
+            {replyLabel}
+          </button>
+        ) : null}
+
+        {replyingTo === comment.id ? (
+          <div className="mt-3 space-y-2">
+            <FormTextarea
+              className="min-h-20 w-full p-3 text-sm text-[color:var(--foreground)]"
+              placeholder={replyPlaceholder}
+              value={replyDrafts[comment.id] || ""}
+              onChange={(event) =>
+                setReplyDrafts((prev) => ({
+                  ...prev,
+                  [comment.id]: event.target.value,
+                }))
+              }
+            />
+            <Button
+              size="sm"
+              onClick={() => submitReply(comment.id)}
+              disabled={submittingFor === comment.id}
+            >
+              {sendLabel}
+            </Button>
+          </div>
+        ) : null}
+
+        {replyCount > 0 && (
+          <div className="mt-2 sm:mt-3">
+            <button
+              type="button"
+              onClick={() => setRepliesOpen((open) => !open)}
+              className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[color:var(--foreground)] transition-colors hover:opacity-70"
+              aria-expanded={repliesOpen}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+                className={`transition-transform ${repliesOpen ? "rotate-180" : ""}`}
+              >
+                <path
+                  d="M6 9l6 6 6-6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span>{pluralizeReplies(replyCount, locale, repliesOpen)}</span>
+            </button>
+
+            {repliesOpen && (
+              <div
+                className={
+                  showIndent
+                    ? "mt-3 space-y-4 border-l app-border pl-2.5 sm:mt-4 sm:space-y-5 sm:pl-4"
+                    : "mt-3 space-y-4 sm:mt-4 sm:space-y-5"
+                }
+              >
+                {comment.replies.map((child) => (
+                  <CommentNode
+                    key={child.id}
+                    comment={child}
+                    depth={depth + 1}
+                    locale={locale}
+                    canComment={canComment}
+                    replyLabel={replyLabel}
+                    replyPlaceholder={replyPlaceholder}
+                    sendLabel={sendLabel}
+                    replyingTo={replyingTo}
+                    setReplyingTo={setReplyingTo}
+                    replyDrafts={replyDrafts}
+                    setReplyDrafts={setReplyDrafts}
+                    submittingFor={submittingFor}
+                    submitReply={submitReply}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function CommentThread({
   comments,
   locale,
@@ -58,29 +246,18 @@ function CommentThread({
 
   const submitReply = async (parentId: string) => {
     const body = replyDrafts[parentId]?.trim();
-
-    if (!body) {
-      return;
-    }
+    if (!body) return;
 
     setSubmittingFor(parentId);
 
-    const response = await fetch(`/api/articles/${articleId}/comments`, {
+    const result = await apiFetch(`/api/articles/${articleId}/comments`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        body,
-        parent_id: parentId,
-      }),
+      body: { body, parent_id: parentId },
     });
 
     setSubmittingFor(null);
 
-    if (!response.ok) {
-      return;
-    }
+    if (!result.ok) return;
 
     setReplyDrafts((prev) => ({ ...prev, [parentId]: "" }));
     setReplyingTo(null);
@@ -88,94 +265,24 @@ function CommentThread({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sm:space-y-6">
       {comments.map((comment) => (
-        <div key={comment.id} className="rounded-[1.5rem] app-panel p-4">
-          <div className="flex items-start gap-3">
-            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[color:var(--surface-muted)]">
-              {comment.author?.avatarUrl ? (
-                <OptimizedImage
-                  src={comment.author.avatarUrl}
-                  alt={
-                    comment.author.name || comment.author.username || "author"
-                  }
-                  fill
-                  sizes="40px"
-                  className="object-cover"
-                />
-              ) : null}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-medium text-[color:var(--foreground)]">
-                  {comment.authorDeleted
-                    ? locale === "uk"
-                      ? "Видалений користувач"
-                      : "Deleted user"
-                    : comment.author?.name ||
-                      comment.author?.username ||
-                      (locale === "uk" ? "Користувач" : "User")}
-                </p>
-                {comment.createdAt ? (
-                  <span className="text-xs app-soft">
-                    {formatCommentDate(comment.createdAt, locale)}
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-3 text-sm leading-7 app-muted">{comment.body}</p>
-
-              {canComment ? (
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    className="text-sm font-medium text-[color:var(--foreground)]"
-                    onClick={() =>
-                      setReplyingTo((prev) =>
-                        prev === comment.id ? null : comment.id,
-                      )
-                    }
-                  >
-                    {replyLabel}
-                  </button>
-                  {replyingTo === comment.id ? (
-                    <div className="mt-3 space-y-3">
-                      <FormTextarea
-                        className="min-h-24 w-full p-4 text-sm text-[color:var(--foreground)]"
-                        placeholder={replyPlaceholder}
-                        value={replyDrafts[comment.id] || ""}
-                        onChange={(event) =>
-                          setReplyDrafts((prev) => ({
-                            ...prev,
-                            [comment.id]: event.target.value,
-                          }))
-                        }
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => void submitReply(comment.id)}
-                        disabled={submittingFor === comment.id}
-                      >
-                        {sendLabel}
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {comment.replies.length > 0 ? (
-                <div className="mt-4 border-l app-border pl-4">
-                  <CommentThread
-                    comments={comment.replies}
-                    locale={locale}
-                    canComment={canComment}
-                    articleId={articleId}
-                    onCommentPosted={onCommentPosted}
-                  />
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
+        <CommentNode
+          key={comment.id}
+          comment={comment}
+          depth={0}
+          locale={locale}
+          canComment={canComment}
+          replyLabel={replyLabel}
+          replyPlaceholder={replyPlaceholder}
+          sendLabel={sendLabel}
+          replyingTo={replyingTo}
+          setReplyingTo={setReplyingTo}
+          replyDrafts={replyDrafts}
+          setReplyDrafts={setReplyDrafts}
+          submittingFor={submittingFor}
+          submitReply={(id) => void submitReply(id)}
+        />
       ))}
     </div>
   );
@@ -215,22 +322,15 @@ export default function ArticleInteractions({
       return;
     }
 
-    void fetch(`/api/articles/${articleId}/view`, {
-      method: "POST",
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          return null;
-        }
-
-        return (await response.json()) as { viewsCount?: number };
-      })
-      .then((payload) => {
-        if (payload?.viewsCount) {
-          setViewsCount(payload.viewsCount);
-          window.localStorage.setItem(storageKey, "1");
-        }
-      });
+    void apiFetch<{ viewsCount?: number }>(
+      `/api/articles/${articleId}/view`,
+      { method: "POST" },
+    ).then((result) => {
+      if (result.ok && result.data.viewsCount) {
+        setViewsCount(result.data.viewsCount);
+        window.localStorage.setItem(storageKey, "1");
+      }
+    });
   }, [articleId]);
 
   const toggleLike = async () => {
@@ -241,23 +341,19 @@ export default function ArticleInteractions({
 
     setSubmittingLike(true);
 
-    const response = await fetch(`/api/articles/${articleId}/like`, {
-      method: "POST",
-    });
+    const result = await apiFetch<{
+      liked?: boolean;
+      likesCount?: number;
+    }>(`/api/articles/${articleId}/like`, { method: "POST" });
 
     setSubmittingLike(false);
 
-    if (!response.ok) {
+    if (!result.ok) {
       return;
     }
 
-    const payload = (await response.json()) as {
-      liked?: boolean;
-      likesCount?: number;
-    };
-
-    setLiked(Boolean(payload.liked));
-    setLikesCount(payload.likesCount ?? likesCount);
+    setLiked(Boolean(result.data.liked));
+    setLikesCount(result.data.likesCount ?? likesCount);
   };
 
   const submitComment = async () => {
@@ -273,20 +369,14 @@ export default function ArticleInteractions({
 
     setSubmittingComment(true);
 
-    const response = await fetch(`/api/articles/${articleId}/comments`, {
+    const result = await apiFetch(`/api/articles/${articleId}/comments`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        body,
-        parent_id: null,
-      }),
+      body: { body, parent_id: null },
     });
 
     setSubmittingComment(false);
 
-    if (!response.ok) {
+    if (!result.ok) {
       return;
     }
 

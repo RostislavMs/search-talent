@@ -55,10 +55,12 @@ import {
   type ProfileSettings,
   type ProfileTextScale,
 } from "@/lib/profile-presentation";
+import { apiFetch } from "@/lib/api-client";
 import { profilePayloadSchema } from "@/lib/validation/profile";
 import type { ProfileCategory } from "@/lib/profile-categories";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import OptimizedImage from "@/components/ui/optimized-image";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
@@ -810,6 +812,9 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
             "Якщо підете зі сторінки зараз, ці правки можуть загубитися.",
           confirmLeave:
             "У вас є незбережені зміни профілю. Справді перейти зі сторінки?",
+          confirmLeaveTitle: "Залишити сторінку?",
+          confirmLeaveContinue: "Так, піти",
+          confirmLeaveStay: "Залишитись",
         }
       : {
           resetCustomization: "Reset customization",
@@ -820,6 +825,9 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
             "If you leave now, those profile edits may be lost.",
           confirmLeave:
             "You have unsaved profile changes. Do you really want to leave this page?",
+          confirmLeaveTitle: "Leave this page?",
+          confirmLeaveContinue: "Leave",
+          confirmLeaveStay: "Stay",
         };
 
   const [meta, setMeta] = useState<MetaState>({
@@ -909,18 +917,17 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
   useEffect(() => {
     async function loadMeta() {
-      const res = await fetch("/api/meta");
+      const result = await apiFetch<Partial<MetaState>>("/api/meta");
 
-      if (!res.ok) {
+      if (!result.ok) {
         return;
       }
 
-      const data = (await res.json()) as Partial<MetaState>;
       setMeta({
-        countries: normalizeMetaOptions(data.countries),
-        skills: normalizeMetaOptions(data.skills),
-        languages: normalizeMetaOptions(data.languages),
-        categories: normalizeMetaCategories(data.categories),
+        countries: normalizeMetaOptions(result.data.countries),
+        skills: normalizeMetaOptions(result.data.skills),
+        languages: normalizeMetaOptions(result.data.languages),
+        categories: normalizeMetaCategories(result.data.categories),
       });
     }
 
@@ -959,6 +966,8 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
   const savedDraftSnapshotRef = useRef(currentDraftSnapshot);
   const hasUnsavedChanges =
     currentDraftSnapshot !== savedDraftSnapshotRef.current;
+
+  const [pendingLeaveUrl, setPendingLeaveUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasUnsavedChanges) {
@@ -1006,10 +1015,9 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         return;
       }
 
-      if (!window.confirm(draftUi.confirmLeave)) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingLeaveUrl(nextUrl.href);
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -1019,7 +1027,15 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("click", handleDocumentClick, true);
     };
-  }, [draftUi.confirmLeave, hasUnsavedChanges]);
+  }, [hasUnsavedChanges]);
+
+  const cancelLeave = () => setPendingLeaveUrl(null);
+  const confirmLeave = () => {
+    if (!pendingLeaveUrl) return;
+    const target = pendingLeaveUrl;
+    setPendingLeaveUrl(null);
+    window.location.href = target;
+  };
 
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -1492,20 +1508,15 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       return;
     }
 
-    const response = await fetch("/api/profile", {
+    const result = await apiFetch("/api/profile", {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(parsedPayload.data),
+      body: parsedPayload.data,
     });
 
-    const responseData = (await response.json()) as { error?: string };
-
-    if (!response.ok) {
+    if (!result.ok) {
       setErrorMessage(
         getProfileErrorMessage(
-          responseData.error,
+          result.error,
           dictionary.forms.errorSavingProfile,
           dictionary.forms.usernameTaken,
         ),
@@ -2531,6 +2542,9 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           />
           <input
             className="app-input"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             placeholder={dictionary.forms.phone}
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
@@ -2943,6 +2957,17 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         {saving ? dictionary.forms.saving : dictionary.forms.saveProfile}
       </Button>
       {errorMessage && <p className="text-sm text-rose-500">{errorMessage}</p>}
+
+      <ConfirmDialog
+        open={pendingLeaveUrl !== null}
+        title={draftUi.confirmLeaveTitle}
+        description={draftUi.confirmLeave}
+        confirmLabel={draftUi.confirmLeaveContinue}
+        cancelLabel={draftUi.confirmLeaveStay}
+        confirmVariant="primary"
+        onConfirm={confirmLeave}
+        onCancel={cancelLeave}
+      />
     </div>
   );
 }

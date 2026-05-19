@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { apiFetch } from "@/lib/api-client";
 
 type PinDuration = "24h" | "3d" | "1w" | "unpin";
 
@@ -74,26 +75,20 @@ export default function ArticlePinButton({
     setSaving(true);
     setError("");
 
-    try {
-      const response = await fetch(`/api/articles/${articleId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pinned_until: getPinnedUntil(duration) }),
-      });
+    const result = await apiFetch(`/api/articles/${articleId}`, {
+      method: "PATCH",
+      body: { pinned_until: getPinnedUntil(duration) },
+    });
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(payload.error || ui.error);
-        return;
-      }
+    setSaving(false);
 
-      setIsOpen(false);
-      router.refresh();
-    } catch {
-      setError(ui.error);
-    } finally {
-      setSaving(false);
+    if (!result.ok) {
+      setError(result.error || ui.error);
+      return;
     }
+
+    setIsOpen(false);
+    router.refresh();
   }
 
   const pinOptions: { duration: PinDuration; label: string }[] = [

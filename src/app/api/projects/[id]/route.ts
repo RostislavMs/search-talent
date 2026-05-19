@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateUniqueProjectSlug } from "@/lib/projects";
+import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { createClient } from "@/lib/supabase/server";
 import { projectPayloadSchema, routeProjectIdSchema } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
@@ -53,7 +54,9 @@ export async function PATCH(
     .update({
       title: payload.title,
       slug: nextSlug,
-      description: payload.description,
+      description: payload.description
+        ? sanitizeRichTextHtml(payload.description)
+        : payload.description,
       role: payload.role,
       project_status: payload.projectStatus,
       team_size: payload.teamSize,

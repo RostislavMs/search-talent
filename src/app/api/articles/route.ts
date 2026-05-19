@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ensureUniqueArticleSlug } from "@/lib/db/articles";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
+import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { articlePayloadSchema } from "@/lib/validation/articles";
 import { parseJsonRequest } from "@/lib/validation/request";
 
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
       title: payload.title,
       slug,
       excerpt: payload.excerpt,
-      content: payload.content,
+      content: sanitizeRichTextHtml(payload.content),
       cover_image_url: payload.cover_image_url,
       cover_image_storage_path: payload.cover_image_storage_path,
       hero_video_url: payload.hero_video_url,

@@ -33,7 +33,7 @@ function ToggleButton({
       type="button"
       onClick={onClick}
       className={[
-        "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+        "cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors",
         active
           ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
           : "border app-border bg-[color:var(--surface)] text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",

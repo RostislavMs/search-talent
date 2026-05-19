@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
+import { apiFetch } from "@/lib/api-client";
 import {
   reportReasons,
   type ReportReason,
@@ -44,36 +45,27 @@ export default function ReportArticleButton({
     setError("");
     setSuccess("");
 
-    try {
-      const response = await fetch("/api/reports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetType: "article",
-          targetId: articleId,
-          reason,
-          details,
-        }),
-      });
+    const result = await apiFetch("/api/reports", {
+      method: "POST",
+      body: {
+        targetType: "article",
+        targetId: articleId,
+        reason,
+        details,
+      },
+    });
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
+    setIsSubmitting(false);
 
-      if (!response.ok) {
-        setError(payload.error || copy.report.errorFallback);
-        return;
-      }
-
-      setSuccess(copy.report.success);
-      setDetails("");
-      setReason("inappropriate_content");
-      router.refresh();
-    } catch {
-      setError(copy.report.errorFallback);
-    } finally {
-      setIsSubmitting(false);
+    if (!result.ok) {
+      setError(result.error || copy.report.errorFallback);
+      return;
     }
+
+    setSuccess(copy.report.success);
+    setDetails("");
+    setReason("inappropriate_content");
+    router.refresh();
   }
 
   return (

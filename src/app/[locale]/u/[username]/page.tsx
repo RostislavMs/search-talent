@@ -158,7 +158,7 @@ export default async function PublicProfilePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       {generatedSummary ? (
-        <section className="mx-auto mb-5 max-w-6xl px-4 sm:mb-6 sm:px-6">
+        <section className="mx-auto mb-5 max-w-[90rem] px-4 sm:mb-6 sm:px-6">
           <div className="rounded-[1.75rem] app-card p-4 sm:p-5">
             <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
               {locale === "uk" ? "Короткий огляд профілю" : "Profile overview"}

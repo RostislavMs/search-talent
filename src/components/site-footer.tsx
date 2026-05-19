@@ -35,7 +35,7 @@ export default function SiteFooter({
 
   return (
     <footer className="border-t border-[color:var(--border)] bg-[color:var(--surface)]">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 sm:py-10">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="sm:col-span-2 lg:col-span-1">
             <LocalizedLink

@@ -76,7 +76,7 @@ export default async function LocalizedHomePage({
   const webSiteSchema = buildWebSiteSchema();
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
@@ -107,11 +107,21 @@ export default async function LocalizedHomePage({
                 {dictionary.home.browseProjects}
               </ButtonLink>
               {isAuthenticated ? (
-                <ButtonLink href="/dashboard" variant="ghost" size="lg">
+                <ButtonLink
+                  href="/dashboard"
+                  variant="ghost"
+                  size="lg"
+                  className="border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                >
                   {dictionary.home.openDashboard}
                 </ButtonLink>
               ) : (
-                <ButtonLink href="/signup" variant="ghost" size="lg">
+                <ButtonLink
+                  href="/signup"
+                  variant="ghost"
+                  size="lg"
+                  className="border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                >
                   {dictionary.home.createAccount}
                 </ButtonLink>
               )}

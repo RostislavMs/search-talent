@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { ButtonSize, ButtonVariant } from "@/components/ui/button-styles";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { apiFetch } from "@/lib/api-client";
 import { useLocalizedRouter } from "@/lib/i18n/client";
 import {
   normalizeModerationStatus,
@@ -128,63 +129,40 @@ export default function AdminContentQuickActions({
     setIsSaving(true);
     setErrorMessage(null);
 
-    try {
-      const nextStatus: ModerationStatus = isHidden ? "approved" : "removed";
-      const response = await fetch("/api/admin/moderation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetType,
-          targetId,
-          moderationStatus: nextStatus,
-        }),
-      });
+    const nextStatus: ModerationStatus = isHidden ? "approved" : "removed";
+    const result = await apiFetch("/api/admin/moderation", {
+      method: "POST",
+      body: { targetType, targetId, moderationStatus: nextStatus },
+    });
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
+    setIsSaving(false);
 
-      if (!response.ok) {
-        setErrorMessage(payload.error || copy.hideError);
-        setIsSaving(false);
-        return;
-      }
-
-      setVisibilityDialogOpen(false);
-      setIsSaving(false);
-      router.refresh();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : copy.hideError);
-      setIsSaving(false);
+    if (!result.ok) {
+      setErrorMessage(result.error || copy.hideError);
+      return;
     }
+
+    setVisibilityDialogOpen(false);
+    router.refresh();
   };
 
   const handleDelete = async () => {
     setIsDeleting(true);
     setErrorMessage(null);
 
-    try {
-      const response = await fetch(getDeleteEndpoint(targetType, targetId), {
-        method: "DELETE",
-      });
+    const result = await apiFetch(getDeleteEndpoint(targetType, targetId), {
+      method: "DELETE",
+    });
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
+    setIsDeleting(false);
 
-      if (!response.ok) {
-        setErrorMessage(payload.error || copy.deleteError);
-        setIsDeleting(false);
-        return;
-      }
-
-      setDeleteDialogOpen(false);
-      setIsDeleting(false);
-      router.replace(redirectAfterDelete);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : copy.deleteError);
-      setIsDeleting(false);
+    if (!result.ok) {
+      setErrorMessage(result.error || copy.deleteError);
+      return;
     }
+
+    setDeleteDialogOpen(false);
+    router.replace(redirectAfterDelete);
   };
 
   return (

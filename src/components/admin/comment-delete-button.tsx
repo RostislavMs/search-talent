@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { apiFetch } from "@/lib/api-client";
 
 type Props = {
   commentId: string;
@@ -28,22 +29,21 @@ export default function CommentDeleteButton({ commentId, kind, labels }: Props) 
   async function confirm() {
     setPending(true);
     setError(null);
-    try {
-      const response = await fetch(
-        `/api/admin/comments/${commentId}?kind=${kind}`,
-        { method: "DELETE" },
-      );
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error || labels.errorFallback);
-      }
-      setOpen(false);
-      router.refresh();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : labels.errorFallback);
-    } finally {
-      setPending(false);
+
+    const result = await apiFetch(
+      `/api/admin/comments/${commentId}?kind=${kind}`,
+      { method: "DELETE" },
+    );
+
+    setPending(false);
+
+    if (!result.ok) {
+      setError(result.error || labels.errorFallback);
+      return;
     }
+
+    setOpen(false);
+    router.refresh();
   }
 
   return (

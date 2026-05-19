@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { apiFetch, type ApiResult } from "@/lib/api-client";
 
 type ActionLabels = {
   openProfile: string;
@@ -55,39 +56,35 @@ export default function UserRowActions({
     setPending(true);
     setError(null);
 
-    try {
-      let response: Response;
-      if (dialog === "promote") {
-        response = await fetch(`/api/admin/users/${userId}/admin-role`, {
-          method: "POST",
-        });
-      } else if (dialog === "demote") {
-        response = await fetch(`/api/admin/users/${userId}/admin-role`, {
-          method: "DELETE",
-        });
-      } else {
-        if (!profileId) {
-          throw new Error(labels.errorFallback);
-        }
-        response = await fetch(`/api/admin/profiles/${profileId}`, {
-          method: "DELETE",
-        });
+    let result: ApiResult<unknown>;
+    if (dialog === "promote") {
+      result = await apiFetch(`/api/admin/users/${userId}/admin-role`, {
+        method: "POST",
+      });
+    } else if (dialog === "demote") {
+      result = await apiFetch(`/api/admin/users/${userId}/admin-role`, {
+        method: "DELETE",
+      });
+    } else {
+      if (!profileId) {
+        setPending(false);
+        setError(labels.errorFallback);
+        return;
       }
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error || labels.errorFallback);
-      }
-
-      setDialog(null);
-      router.refresh();
-    } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : labels.errorFallback,
-      );
-    } finally {
-      setPending(false);
+      result = await apiFetch(`/api/admin/profiles/${profileId}`, {
+        method: "DELETE",
+      });
     }
+
+    setPending(false);
+
+    if (!result.ok) {
+      setError(result.error || labels.errorFallback);
+      return;
+    }
+
+    setDialog(null);
+    router.refresh();
   }
 
   const dialogConfig =

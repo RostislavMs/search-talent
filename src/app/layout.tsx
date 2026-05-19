@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import HydrationCleanupScript from "@/components/hydration-cleanup-script";
+import InteractiveBackground from "@/components/interactive-background";
 import ThemeScript from "@/components/theme-script";
 import {
   allowsCookieCategory,
@@ -73,7 +74,8 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-screen" suppressHydrationWarning>
-        <div className="flex min-h-screen flex-col">{children}</div>
+        <InteractiveBackground />
+        <div className="relative flex min-h-screen flex-col">{children}</div>
         <SpeedInsights />
       </body>
     </html>

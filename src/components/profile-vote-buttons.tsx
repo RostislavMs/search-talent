@@ -3,6 +3,7 @@
 import { startTransition, useState } from "react";
 import ContentReportButton from "@/components/content-report-button";
 import { Button } from "@/components/ui/Button";
+import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { getModerationCopy } from "@/lib/moderation-copy";
 
@@ -90,49 +91,35 @@ export default function ProfileVoteButtons({
     setErrorMessage(null);
     setVoteState(optimisticState);
 
-    try {
-      const response = await fetch("/api/profile-vote", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          profileId,
-          value,
-        }),
-      });
+    const result = await apiFetch<{
+      likes?: number;
+      dislikes?: number;
+      currentVote?: VoteValue;
+    }>("/api/profile-vote", {
+      method: "POST",
+      body: { profileId, value },
+    });
 
-      const data = (await response.json()) as {
-        error?: string;
-        likes?: number;
-        dislikes?: number;
-        currentVote?: VoteValue;
-      };
+    setLoading(false);
 
-      if (!response.ok) {
-        setVoteState(previousState);
-        setErrorMessage(data.error || dictionary.creatorProfile.ratingError);
-        return;
-      }
-
-      setVoteState({
-        likes: data.likes ?? optimisticState.likes,
-        dislikes: data.dislikes ?? optimisticState.dislikes,
-        currentVote:
-          data.currentVote === 1 || data.currentVote === -1
-            ? data.currentVote
-            : null,
-      });
-
-      startTransition(() => {
-        router.refresh();
-      });
-    } catch {
+    if (!result.ok) {
       setVoteState(previousState);
-      setErrorMessage(dictionary.creatorProfile.ratingError);
-    } finally {
-      setLoading(false);
+      setErrorMessage(result.error || dictionary.creatorProfile.ratingError);
+      return;
     }
+
+    setVoteState({
+      likes: result.data.likes ?? optimisticState.likes,
+      dislikes: result.data.dislikes ?? optimisticState.dislikes,
+      currentVote:
+        result.data.currentVote === 1 || result.data.currentVote === -1
+          ? result.data.currentVote
+          : null,
+    });
+
+    startTransition(() => {
+      router.refresh();
+    });
   };
 
   return (
