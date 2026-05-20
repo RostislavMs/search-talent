@@ -38,6 +38,7 @@ export const profileSectionIds = [
   "qa",
   "contacts",
   "projects",
+  "articles",
 ] as const;
 
 export type ProfileFontPreset = (typeof profileFontPresets)[number];
@@ -87,6 +88,7 @@ function getDefaultSectionSize(sectionId: ProfileSectionId): ProfileSectionSize 
     case "education":
       return "wide";
     case "projects":
+    case "articles":
     default:
       return "full";
   }

@@ -65,7 +65,6 @@ export default function ArticleComposer({
       availableCategories[0]?.slug ||
       "",
   );
-  const [status, setStatus] = useState<"draft" | "published">(editArticle?.status || "draft");
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(editArticle?.coverImageUrl || null);
   const [coverImageStoragePath, setCoverImageStoragePath] = useState<
     string | null
@@ -74,7 +73,7 @@ export default function ArticleComposer({
   const [heroVideoStoragePath, setHeroVideoStoragePath] = useState<
     string | null
   >(editArticle?.heroVideoStoragePath || null);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<null | "draft" | "published">(null);
   const [uploadingAsset, setUploadingAsset] = useState<
     null | "cover" | "hero" | "inline"
   >(null);
@@ -201,7 +200,7 @@ export default function ArticleComposer({
   };
 
   const saveArticle = async (nextStatus: "draft" | "published") => {
-    setSaving(true);
+    setSaving(nextStatus);
     setErrorMessage(null);
 
     const url = isEditing ? `/api/articles/${editArticle!.id}` : "/api/articles";
@@ -222,7 +221,7 @@ export default function ArticleComposer({
       },
     });
 
-    setSaving(false);
+    setSaving(null);
 
     if (!result.ok) {
       setErrorMessage(result.error || ui.error);
@@ -241,7 +240,6 @@ export default function ArticleComposer({
     setCoverImageStoragePath(null);
     setHeroVideoUrl(null);
     setHeroVideoStoragePath(null);
-    setStatus("draft");
     router.refresh();
   };
 
@@ -333,28 +331,6 @@ export default function ArticleComposer({
             />
           </div>
 
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-[color:var(--foreground)]">
-              {ui.status}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={status === "draft" ? "primary" : "secondary"}
-                size="sm"
-                onClick={() => setStatus("draft")}
-              >
-                {ui.draft}
-              </Button>
-              <Button
-                variant={status === "published" ? "primary" : "secondary"}
-                size="sm"
-                onClick={() => setStatus("published")}
-              >
-                {ui.published}
-              </Button>
-            </div>
-          </div>
-
           <div className="space-y-3 rounded-[1.4rem] border app-border bg-[color:var(--surface-muted)] p-4">
             <div>
               <p className="text-sm font-medium text-[color:var(--foreground)]">
@@ -384,19 +360,23 @@ export default function ArticleComposer({
               />
             </label>
             {coverImageUrl ? (
-              <div className="rounded-[1.15rem] border app-border bg-[color:var(--surface)] px-4 py-3 text-sm">
-                <p className="truncate text-[color:var(--foreground)]">
-                  {coverImageUrl}
-                </p>
+              <div className="relative overflow-hidden rounded-[1.15rem] border app-border bg-[color:var(--surface)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={coverImageUrl}
+                  alt=""
+                  className="block max-h-56 w-full object-contain"
+                />
                 <button
                   type="button"
-                  className="mt-2 text-sm font-medium text-rose-400"
+                  aria-label={ui.remove}
+                  className="absolute right-2 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
                   onClick={() => {
                     setCoverImageUrl(null);
                     setCoverImageStoragePath(null);
                   }}
                 >
-                  {ui.remove}
+                  <span aria-hidden>✕</span>
                 </button>
               </div>
             ) : null}
@@ -431,19 +411,23 @@ export default function ArticleComposer({
               />
             </label>
             {heroVideoUrl ? (
-              <div className="rounded-[1.15rem] border app-border bg-[color:var(--surface)] px-4 py-3 text-sm">
-                <p className="truncate text-[color:var(--foreground)]">
-                  {heroVideoUrl}
-                </p>
+              <div className="relative overflow-hidden rounded-[1.15rem] border app-border bg-[color:var(--surface)]">
+                <video
+                  src={heroVideoUrl}
+                  controls
+                  preload="metadata"
+                  className="block max-h-56 w-full object-contain"
+                />
                 <button
                   type="button"
-                  className="mt-2 text-sm font-medium text-rose-400"
+                  aria-label={ui.remove}
+                  className="absolute right-2 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
                   onClick={() => {
                     setHeroVideoUrl(null);
                     setHeroVideoStoragePath(null);
                   }}
                 >
-                  {ui.remove}
+                  <span aria-hidden>✕</span>
                 </button>
               </div>
             ) : null}
@@ -453,20 +437,20 @@ export default function ArticleComposer({
         <div className="border-t app-border bg-[color:var(--surface-muted)]/45 p-5">
           <div className="space-y-3">
             <Button
-              disabled={saving}
-              variant={status === "draft" ? "primary" : "secondary"}
+              disabled={saving !== null}
+              variant="secondary"
               onClick={() => void saveArticle("draft")}
               className="w-full justify-center"
             >
-              {ui.saveDraft}
+              {saving === "draft" ? ui.uploading : ui.saveDraft}
             </Button>
             <Button
-              disabled={saving}
-              variant={status === "published" ? "primary" : "secondary"}
+              disabled={saving !== null}
+              variant="primary"
               onClick={() => void saveArticle("published")}
               className="w-full justify-center"
             >
-              {ui.publishNow}
+              {saving === "published" ? ui.uploading : ui.publishNow}
             </Button>
             {errorMessage ? (
               <p className="text-sm text-rose-500">{errorMessage}</p>

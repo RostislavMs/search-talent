@@ -202,9 +202,16 @@ async function renderOwnerView({
                           {formatDate(project.created_at, locale) || "\u2014"}
                         </p>
                       </div>
-                      <span className="rounded-full border app-border px-3 py-1 text-xs font-medium app-soft">
-                        {formatModerationBadge(project.moderation_status, locale)}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        {project.status === "draft" && (
+                          <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600">
+                            {dictionary.forms.draftBadge}
+                          </span>
+                        )}
+                        <span className="rounded-full border app-border px-3 py-1 text-xs font-medium app-soft">
+                          {formatModerationBadge(project.moderation_status, locale)}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-2">

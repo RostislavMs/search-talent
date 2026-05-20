@@ -45,8 +45,9 @@ export async function POST(request: Request) {
       problem: payload.problem,
       solution: payload.solution,
       results: payload.results,
+      status: payload.status,
     })
-    .select("id, slug")
+    .select("id, slug, status")
     .single();
 
   if (error || !project) {
@@ -74,5 +75,10 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ success: true, projectId: project.id, slug: project.slug });
+  return NextResponse.json({
+    success: true,
+    projectId: project.id,
+    slug: project.slug,
+    status: project.status,
+  });
 }

@@ -12,6 +12,8 @@ const ProfilePdfExport = dynamic(
 import ProjectCard from "@/components/project-card";
 import VerifiedBadge from "@/components/verified-badge";
 import { ButtonLink } from "@/components/ui/Button";
+import HorizontalCarousel from "@/components/ui/horizontal-carousel";
+import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 import type { PublicProfilePageData } from "@/lib/db/public";
 import {
@@ -231,6 +233,7 @@ export default function PublicProfileShowcase({
     qas,
     workExperience,
     projects,
+    articles,
     voteSummary,
     isAuthenticated,
     isOwner,
@@ -250,7 +253,65 @@ export default function PublicProfileShowcase({
     ["certificates", { title: dictionary.creatorProfile.certificates, visible: profile.visibility.certificates && certificates.length > 0, content: <div className="space-y-4">{certificates.map((item) => <article key={item.id} className="rounded-[1.25rem] app-panel p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.title || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.issuer, item.issued_on].filter(Boolean).join(" • ")}</p><div className="mt-3 flex flex-wrap gap-2">{item.credential_url && <a href={item.credential_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{dictionary.creatorProfile.openCertificateLink}</a>}{item.file_url && <a href={item.file_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{item.file_name || dictionary.creatorProfile.openCertificateFile}</a>}</div></article>)}</div> }],
     ["qa", { title: dictionary.creatorProfile.qa, visible: profile.visibility.qa && qas.length > 0, content: <div className="space-y-4">{qas.map((item) => <article key={item.id} className="rounded-[1.25rem] app-panel p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.question || "—"}</h3><p className="mt-3 text-sm leading-7 app-muted">{item.answer || "—"}</p></article>)}</div> }],
     ["contacts", { title: dictionary.creatorProfile.contacts, visible: profile.visibility.links && Boolean(profile.contact_email || profile.telegram_username || profile.phone || profile.website || profile.github || profile.twitter || profile.linkedin), content: <div className="space-y-6"><div className="space-y-3 text-sm">{profile.contact_email && <a href={`mailto:${profile.contact_email}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.contactEmail}: {profile.contact_email}</a>}{profile.telegram_username && <a href={`https://t.me/${profile.telegram_username.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.telegram}: @{profile.telegram_username.replace(/^@/, "")}</a>}{profile.phone && <a href={`tel:${profile.phone}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.phone}: {profile.phone}</a>}{profile.preferred_contact_method && <p className="app-muted">{dictionary.creatorProfile.preferredContactMethod}: {getPreferredContactMethodLabel(profile.preferred_contact_method, dictionary)}</p>}</div><div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.links}</p><div className="mt-3 flex flex-wrap gap-2">{profile.website && <a href={profile.website} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Website</a>}{profile.github && <a href={profile.github} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">GitHub</a>}{profile.twitter && <a href={profile.twitter} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">X / Twitter</a>}{profile.linkedin && <a href={profile.linkedin} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">LinkedIn</a>}</div></div></div> }],
-    ["projects", { title: dictionary.creatorProfile.projects, visible: true, content: projects.length > 0 ? (() => { const previewProjects = projects.slice(0, 4); const hasMore = projects.length > 4; return <><p className="text-sm leading-7 app-muted">{dictionary.creatorProfile.publishedWork}</p><div className="mt-5 grid gap-4 md:grid-cols-2">{previewProjects.map((project) => <ProjectCard key={project.id} dictionary={dictionary} project={{ ...project, slug: project.slug || "", ownerName: profile.name, ownerUsername: profile.username }} />)}</div>{hasMore && profile.username && <div className="mt-5"><ButtonLink href={`/u/${profile.username}/projects`} variant="secondary" size="sm">{dictionary.creatorProfile.viewAllProjects} ({projects.length})</ButtonLink></div>}</>; })() : <p className="text-sm app-muted">{dictionary.creatorProfile.noProjects}</p> }],
+    [
+      "projects",
+      {
+        title: dictionary.creatorProfile.projects,
+        visible: projects.length > 0,
+        content: (
+          <ProfileItemsBlock
+            description={dictionary.creatorProfile.publishedWork}
+            viewAllLabel={dictionary.creatorProfile.viewAllProjects}
+            viewAllHref={
+              profile.username ? `/u/${profile.username}/projects` : null
+            }
+            totalCount={projects.length}
+            carouselPrev={dictionary.creatorProfile.carouselPrev}
+            carouselNext={dictionary.creatorProfile.carouselNext}
+          >
+            {projects.slice(0, 10).map((project) => (
+              <ProjectCard
+                key={project.id}
+                dictionary={dictionary}
+                project={{
+                  ...project,
+                  slug: project.slug || "",
+                  ownerName: profile.name,
+                  ownerUsername: profile.username,
+                }}
+              />
+            ))}
+          </ProfileItemsBlock>
+        ),
+      },
+    ],
+    [
+      "articles",
+      {
+        title: dictionary.creatorProfile.articles,
+        visible: articles.length > 0,
+        content: (
+          <ProfileItemsBlock
+            description={dictionary.creatorProfile.publishedArticles}
+            viewAllLabel={dictionary.creatorProfile.viewAllArticles}
+            viewAllHref={
+              profile.username ? `/u/${profile.username}/articles` : null
+            }
+            totalCount={articles.length}
+            carouselPrev={dictionary.creatorProfile.carouselPrev}
+            carouselNext={dictionary.creatorProfile.carouselNext}
+          >
+            {articles.slice(0, 10).map((item) => (
+              <ProfileArticleCard
+                key={item.id}
+                article={item}
+                locale={locale}
+              />
+            ))}
+          </ProfileItemsBlock>
+        ),
+      },
+    ],
   ]);
   const visibleSections = presentation.sectionOrder
     .map((sectionId) => {
@@ -337,5 +398,111 @@ export default function PublicProfileShowcase({
         </div>
       </div>
     </main>
+  );
+}
+
+const CAROUSEL_THRESHOLD = 4;
+const VIEW_ALL_THRESHOLD = 10;
+
+function ProfileItemsBlock({
+  children,
+  description,
+  viewAllLabel,
+  viewAllHref,
+  totalCount,
+  carouselPrev,
+  carouselNext,
+}: {
+  children: ReactNode;
+  description: string;
+  viewAllLabel: string;
+  viewAllHref: string | null;
+  totalCount: number;
+  carouselPrev: string;
+  carouselNext: string;
+}) {
+  const items = Array.isArray(children) ? children : [children];
+  const showCarousel = totalCount >= CAROUSEL_THRESHOLD;
+  const showViewAll = totalCount > VIEW_ALL_THRESHOLD && Boolean(viewAllHref);
+
+  return (
+    <>
+      <p className="text-sm leading-7 app-muted">{description}</p>
+
+      <div className="mt-5">
+        {showCarousel ? (
+          <HorizontalCarousel
+            itemMinWidth={300}
+            ariaLabelPrev={carouselPrev}
+            ariaLabelNext={carouselNext}
+          >
+            {items}
+          </HorizontalCarousel>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">{items}</div>
+        )}
+      </div>
+
+      {showViewAll && viewAllHref ? (
+        <div className="mt-5">
+          <ButtonLink href={viewAllHref} variant="secondary" size="sm">
+            {viewAllLabel} ({totalCount})
+          </ButtonLink>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+type ProfileArticleSummary = PublicProfilePageData["articles"][number];
+
+function ProfileArticleCard({
+  article,
+  locale,
+}: {
+  article: ProfileArticleSummary;
+  locale: string;
+}) {
+  const dateLabel = (() => {
+    const value = article.published_at || article.created_at;
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  })();
+
+  return (
+    <LocalizedLink
+      href={`/articles/${article.slug}`}
+      className="group block h-full overflow-hidden rounded-[1.75rem] app-card transition hover:-translate-y-0.5 hover:shadow-xl"
+    >
+      <div className="relative aspect-[16/10] bg-[color:var(--surface-muted)]">
+        {article.cover_image_url ? (
+          <OptimizedImage
+            src={article.cover_image_url}
+            alt={article.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover transition duration-300 group-hover:scale-[1.02]"
+          />
+        ) : null}
+      </div>
+
+      <div className="space-y-2 p-4">
+        <h3 className="line-clamp-2 text-base font-semibold text-[color:var(--foreground)]">
+          {article.title}
+        </h3>
+        {article.excerpt ? (
+          <p className="line-clamp-3 text-sm app-muted">{article.excerpt}</p>
+        ) : null}
+        {dateLabel ? (
+          <p className="text-xs app-soft">{dateLabel}</p>
+        ) : null}
+      </div>
+    </LocalizedLink>
   );
 }

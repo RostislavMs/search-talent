@@ -27,9 +27,24 @@ export const createProjectMediaSchema = z.object({
     .union([z.number(), z.null(), z.undefined()])
     .transform((value) => (typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null)),
   mediaKind: mediaKindSchema,
+  sortIndex: z
+    .union([z.number(), z.null(), z.undefined()])
+    .transform((value) =>
+      typeof value === "number" && Number.isInteger(value) && value >= 0
+        ? value
+        : null,
+    ),
 });
 
 export const updateProjectMediaSchema = z.object({
   projectId: z.string().uuid("Invalid project id"),
   mediaId: z.string().uuid("Invalid media id"),
+});
+
+export const reorderProjectMediaSchema = z.object({
+  projectId: z.string().uuid("Invalid project id"),
+  mediaIds: z
+    .array(z.string().uuid("Invalid media id"))
+    .min(1, "At least one media id is required")
+    .max(50, "Too many media items"),
 });

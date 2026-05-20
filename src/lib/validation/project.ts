@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { projectStatuses, slugify, type ProjectStatus } from "@/lib/projects";
+import {
+  projectStatuses,
+  projectVisibilityStatuses,
+  slugify,
+  type ProjectStatus,
+  type ProjectVisibilityStatus,
+} from "@/lib/projects";
 
 function normalizeOptionalString(value: unknown) {
   if (typeof value !== "string") {
@@ -87,6 +93,13 @@ export const projectPayloadSchema = z
     solution: optionalText("Solution", 5000),
     results: optionalText("Results", 5000),
     skillIds: skillIdsSchema,
+    status: z
+      .union([z.enum(projectVisibilityStatuses), z.null(), z.undefined()])
+      .transform((value): ProjectVisibilityStatus =>
+        value && projectVisibilityStatuses.includes(value as ProjectVisibilityStatus)
+          ? (value as ProjectVisibilityStatus)
+          : "published",
+      ),
   })
   .transform((value) => {
     const explicitSlug = normalizeOptionalString(value.slug);

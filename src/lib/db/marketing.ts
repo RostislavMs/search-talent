@@ -351,6 +351,7 @@ export async function getProjectsBySkillId(
     )
     .in("id", projectIds)
     .eq("moderation_status", "approved")
+    .eq("status", "published")
     .order("score", { ascending: false })
     .limit(limit);
 

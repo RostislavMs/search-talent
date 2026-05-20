@@ -14,7 +14,6 @@ const CreateProjectForm = dynamic(
     ),
   },
 );
-import ProjectMediaUpload from "@/components/project-media-upload";
 import { ButtonLink } from "@/components/ui/Button";
 import { getMyProjectById } from "@/lib/db/projects";
 import { buildProjectPath } from "@/lib/projects";
@@ -129,14 +128,6 @@ export default async function ProjectEditPage({
 
       <section className="mt-8 rounded-[2rem] app-card p-6 sm:p-8">
         <CreateProjectForm project={project} />
-      </section>
-
-      <section className="mt-8">
-        <ProjectMediaUpload
-          projectId={project.id}
-          initialMedia={project.media}
-          initialCoverUrl={project.cover_url || null}
-        />
       </section>
 
       <section className="mt-8 rounded-[2rem] app-card p-6">

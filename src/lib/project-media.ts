@@ -12,11 +12,60 @@ export type ProjectMediaItem = {
   mime_type: string | null;
   file_size: number | null;
   media_kind: ProjectMediaKind | null;
+  sort_index?: number | null;
   created_at?: string | null;
 };
 
 const imageExtensionPattern = /\.(avif|gif|heic|jpeg|jpg|png|svg|webp)$/i;
 const videoExtensionPattern = /\.(m4v|mov|mp4|mpeg|mpg|ogv|webm)$/i;
+
+const youTubeHostPattern = /(?:^|\.)((?:youtube\.com)|(?:youtu\.be))$/i;
+
+export function getYouTubeVideoId(value: string | null | undefined): string | null {
+  if (!value) return null;
+
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+
+  const hostname = url.hostname.toLowerCase();
+
+  if (!youTubeHostPattern.test(hostname)) {
+    return null;
+  }
+
+  if (hostname.endsWith("youtu.be")) {
+    const id = url.pathname.replace(/^\/+/, "").split("/")[0];
+    return /^[\w-]{6,15}$/.test(id) ? id : null;
+  }
+
+  if (url.pathname === "/watch") {
+    const id = url.searchParams.get("v");
+    return id && /^[\w-]{6,15}$/.test(id) ? id : null;
+  }
+
+  const embedMatch = url.pathname.match(/^\/(?:embed|shorts|live)\/([\w-]{6,15})/);
+  if (embedMatch) {
+    return embedMatch[1];
+  }
+
+  return null;
+}
+
+export function isYouTubeMediaUrl(value: string | null | undefined): boolean {
+  return getYouTubeVideoId(value) !== null;
+}
+
+export function buildYouTubeEmbedUrl(videoId: string): string {
+  return `https://www.youtube-nocookie.com/embed/${videoId}`;
+}
+
+export function buildYouTubeThumbnailUrl(videoId: string): string {
+  return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+}
 
 export function inferProjectMediaKind(
   mimeType?: string | null,

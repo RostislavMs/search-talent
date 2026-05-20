@@ -211,7 +211,8 @@ export async function GET(request: Request) {
     .from("projects")
     .select(
       "id, title, slug, description, score, cover_url, project_status, owner_id, created_at, moderation_status",
-    );
+    )
+    .eq("status", "published");
 
   let profileQuery = supabase
     .from("profiles")

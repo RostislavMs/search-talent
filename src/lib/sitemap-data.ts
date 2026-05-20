@@ -100,6 +100,7 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
       .from("projects")
       .select("slug, updated_at")
       .eq("moderation_status", "approved")
+      .eq("status", "published")
       .not("slug", "is", null)
       .order("updated_at", { ascending: false })
       .limit(SITEMAP_PAGE_SIZE);

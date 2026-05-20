@@ -175,6 +175,7 @@ export default async function FollowingPage({
       .select("id, owner_id, title, slug, description, cover_url, created_at")
       .in("owner_id", followedUserIds)
       .eq("moderation_status", "approved")
+      .eq("status", "published")
       .order("created_at", { ascending: false })
       .limit(100),
   ]);

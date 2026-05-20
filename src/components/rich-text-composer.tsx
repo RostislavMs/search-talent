@@ -399,9 +399,7 @@ export default function RichTextComposer({
       try {
         const result = await onUploadInlineAsset(file, "image");
         if (result) {
-          insertHtml(
-            `<figure><img src="${result.url}" alt="${result.label || file.name}"><figcaption>${result.label || file.name}</figcaption></figure>`,
-          );
+          insertHtml(`<figure><img src="${result.url}" alt=""></figure>`);
         }
       } finally {
         e.target.value = "";

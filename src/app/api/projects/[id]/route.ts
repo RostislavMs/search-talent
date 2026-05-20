@@ -67,10 +67,11 @@ export async function PATCH(
       problem: payload.problem,
       solution: payload.solution,
       results: payload.results,
+      status: payload.status,
     })
     .eq("id", project.id)
     .eq("owner_id", user.id)
-    .select("slug")
+    .select("slug, status")
     .single();
 
   if (projectError || !updatedProject) {
@@ -108,7 +109,12 @@ export async function PATCH(
     }
   }
 
-  return NextResponse.json({ success: true, projectId: project.id, slug: updatedProject.slug });
+  return NextResponse.json({
+    success: true,
+    projectId: project.id,
+    slug: updatedProject.slug,
+    status: updatedProject.status,
+  });
 }
 
 export async function DELETE(

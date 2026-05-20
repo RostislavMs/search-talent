@@ -117,7 +117,16 @@ export default function SiteHeader({
     ? [
         { href: "/dashboard", label: dictionary.nav.dashboard },
         ...(viewer.username
-          ? [{ href: `/u/${viewer.username}/projects`, label: dictionary.nav.myProjects }]
+          ? [
+              {
+                href: `/u/${viewer.username}/projects`,
+                label: dictionary.nav.myProjects,
+              },
+              {
+                href: `/u/${viewer.username}/articles`,
+                label: dictionary.nav.myArticles,
+              },
+            ]
           : []),
         ...(viewer.isAdmin
           ? [{ href: "/admin", label: dictionary.nav.adminConsole }]

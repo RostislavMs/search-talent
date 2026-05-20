@@ -71,12 +71,13 @@ async function attachMedia<T extends { id: string }>(
   const { data: mediaItems } = await supabase
     .from("project_media")
     .select(
-      "id, project_id, owner_id, url, storage_path, file_name, mime_type, file_size, media_kind, created_at",
+      "id, project_id, owner_id, url, storage_path, file_name, mime_type, file_size, media_kind, sort_index, created_at",
     )
     .in(
       "project_id",
       projects.map((project) => project.id),
     )
+    .order("sort_index", { ascending: true })
     .order("created_at", { ascending: true });
 
   const mediaMap = new Map<string, ProjectMediaItem[]>();
@@ -138,7 +139,7 @@ export async function getMyProjectsPage({
 
   const initialResponse = await supabase
     .from("projects")
-    .select("id, title, slug, cover_url, created_at, moderation_status", {
+    .select("id, title, slug, cover_url, created_at, moderation_status, status", {
       count: "exact",
     })
     .eq("owner_id", user.id)
@@ -155,7 +156,7 @@ export async function getMyProjectsPage({
 
     const adjustedResponse = await supabase
       .from("projects")
-      .select("id, title, slug, cover_url, created_at, moderation_status", {
+      .select("id, title, slug, cover_url, created_at, moderation_status, status", {
         count: "exact",
       })
       .eq("owner_id", user.id)

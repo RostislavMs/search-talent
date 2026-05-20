@@ -7,6 +7,19 @@ export const projectStatuses = [
 
 export type ProjectStatus = (typeof projectStatuses)[number];
 
+export const projectVisibilityStatuses = ["draft", "published"] as const;
+
+export type ProjectVisibilityStatus = (typeof projectVisibilityStatuses)[number];
+
+export function normalizeProjectVisibilityStatus(
+  value: unknown,
+): ProjectVisibilityStatus {
+  return typeof value === "string" &&
+    projectVisibilityStatuses.includes(value as ProjectVisibilityStatus)
+    ? (value as ProjectVisibilityStatus)
+    : "published";
+}
+
 const transliterationMap: Record<string, string> = {
   а: "a",
   б: "b",

@@ -129,6 +129,16 @@ function sanitizeNode(node: Node): string {
     return "";
   }
 
+  if (tag === "p") {
+    const stripped = content
+      .replace(/<br\s*\/?>/gi, "")
+      .replace(/&nbsp;/gi, "")
+      .replace(/\s+/g, "");
+    if (!stripped) {
+      return "";
+    }
+  }
+
   return `<${tag}>${content}</${tag}>`;
 }
 
@@ -230,13 +240,14 @@ export function extractPlainTextFromRichText(value: string) {
     return "";
   }
 
-  if (typeof window === "undefined") {
-    return value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  }
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(sanitizeRichTextHtml(value), "text/html");
-  return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
+  // Use the same regex-based approach on server and client so the rendered
+  // preview text matches between SSR and hydration. The DOM-based path used
+  // `textContent`, which concatenates block-level text without separators
+  // (e.g. "<p>foo</p><p>bar</p>" became "foobar"), while the regex path
+  // replaces each tag with a space ("foo bar"), causing hydration mismatches.
+  const sanitized =
+    typeof window === "undefined" ? value : sanitizeRichTextHtml(value);
+  return sanitized.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 const youtubeUrlPatterns = [

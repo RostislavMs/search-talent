@@ -514,9 +514,9 @@ select {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 28rem;
-  object-fit: cover;
-  background: #000;
+  max-height: 32rem;
+  object-fit: contain;
+  background: var(--surface-muted);
 }
 
 .rich-text-editor iframe,
@@ -542,4 +542,25 @@ select {
   padding: 0.85rem 1rem;
   font-size: 0.92rem;
   color: var(--muted-foreground);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.drag-scroller {
+  touch-action: pan-y;
+}
+
+.drag-scroller a,
+.drag-scroller img,
+.drag-scroller video,
+.drag-scroller iframe {
+  -webkit-user-drag: none;
+  user-select: none;
 }

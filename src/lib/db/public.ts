@@ -51,6 +51,7 @@ type PublicProjectRow = {
   results: string | null;
   created_at: string | null;
   moderation_status: string | null;
+  status: string | null;
 };
 
 type PublicProfileRow = {
@@ -153,6 +154,15 @@ export type PublicProfilePageData = {
     score: number | null;
     cover_url: string | null;
   }>;
+  articles: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    excerpt: string | null;
+    cover_image_url: string | null;
+    published_at: string | null;
+    created_at: string | null;
+  }>;
   voteSummary: Awaited<ReturnType<typeof getProfileVoteSummary>>;
   isAuthenticated: boolean;
   isOwner: boolean;
@@ -173,7 +183,7 @@ export async function getPublicProjectPageData(
   let projectQuery = supabase
     .from("projects")
     .select(
-      "id, owner_id, title, slug, description, role, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status",
+      "id, owner_id, title, slug, description, role, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status, status",
     )
     .limit(1);
 
@@ -205,7 +215,12 @@ export async function getPublicProjectPageData(
     isAdmin = Boolean(adminRecord);
   }
 
-  if (!isOwner && !isAdmin && !isPublicModerationStatus(typedProject.moderation_status)) {
+  if (
+    !isOwner &&
+    !isAdmin &&
+    (!isPublicModerationStatus(typedProject.moderation_status) ||
+      typedProject.status !== "published")
+  ) {
     return null;
   }
 
@@ -230,9 +245,10 @@ export async function getPublicProjectPageData(
       supabase
         .from("project_media")
         .select(
-          "id, project_id, owner_id, url, storage_path, file_name, mime_type, file_size, media_kind, created_at",
+          "id, project_id, owner_id, url, storage_path, file_name, mime_type, file_size, media_kind, sort_index, created_at",
         )
         .eq("project_id", typedProject.id)
+        .order("sort_index", { ascending: true })
         .order("created_at", { ascending: true }),
       getProjectVoteSummary(supabase, typedProject.id, user?.id),
       user
@@ -347,6 +363,7 @@ export async function getPublicProfilePageData(
     qasResponse,
     workExperienceResponse,
     projectsResponse,
+    articlesResponse,
     voteSummary,
     countryResponse,
     categoryResponse,
@@ -401,9 +418,21 @@ export async function getPublicProfilePageData(
       .order("started_year", { ascending: false }),
     supabase
       .from("projects")
-      .select("id, title, slug, description, score, cover_url, moderation_status")
+      .select(
+        "id, title, slug, description, score, cover_url, moderation_status, status",
+      )
       .eq("owner_id", typedProfile.user_id)
+      .eq("status", "published")
       .order("created_at", { ascending: false }),
+    supabase
+      .from("articles")
+      .select(
+        "id, slug, title, excerpt, cover_image_url, published_at, created_at",
+      )
+      .eq("author_user_id", typedProfile.user_id)
+      .eq("status", "published")
+      .eq("moderation_status", "approved")
+      .order("published_at", { ascending: false }),
     getProfileVoteSummary(supabase, typedProfile.id, user?.id),
     typedProfile.country_id
       ? dataClient
@@ -510,6 +539,8 @@ export async function getPublicProfilePageData(
       cover_url: string | null;
       moderation_status: string | null;
     }>).filter((project) => isPublicModerationStatus(project.moderation_status)),
+    articles:
+      (articlesResponse.data || []) as PublicProfilePageData["articles"],
     voteSummary,
     isAuthenticated: Boolean(user),
     isOwner,
@@ -766,7 +797,8 @@ export async function getUserProjectsPage(
     .from("projects")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", profile.user_id)
-    .eq("moderation_status", "approved");
+    .eq("moderation_status", "approved")
+    .eq("status", "published");
 
   const totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / options.perPage));
@@ -779,6 +811,7 @@ export async function getUserProjectsPage(
     .select("id, title, slug, description, score, cover_url")
     .eq("owner_id", profile.user_id)
     .eq("moderation_status", "approved")
+    .eq("status", "published")
     .order("created_at", { ascending: false })
     .range(from, to);
 

@@ -168,7 +168,8 @@ export async function getLeaderboards(): Promise<LeaderboardsResult> {
       .from("projects")
       .select(
         "id, owner_id, title, slug, description, role, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, cover_url, created_at",
-      ),
+      )
+      .eq("status", "published"),
     supabase.from("votes").select("project_id, value, created_at"),
     supabase.from("project_media").select("project_id, created_at"),
     supabase.from("project_skills").select("project_id, skill_id"),

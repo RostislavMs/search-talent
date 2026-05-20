@@ -3,6 +3,7 @@ import { normalizeProjectMediaItem } from "@/lib/project-media";
 import { createClient } from "@/lib/supabase/server";
 import {
   createProjectMediaSchema,
+  reorderProjectMediaSchema,
   updateProjectMediaSchema,
 } from "@/lib/validation/project-media";
 import { parseJsonRequest } from "@/lib/validation/request";
@@ -46,7 +47,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const { projectId, url, storagePath, fileName, mimeType, fileSize, mediaKind } = parsed.data;
+  const {
+    projectId,
+    url,
+    storagePath,
+    fileName,
+    mimeType,
+    fileSize,
+    mediaKind,
+    sortIndex,
+  } = parsed.data;
 
   const ownership = await getOwnedProject(projectId, user.id);
 
@@ -59,6 +69,20 @@ export async function POST(request: Request) {
 
   const { project } = ownership;
 
+  let resolvedSortIndex = sortIndex;
+
+  if (resolvedSortIndex === null) {
+    const { data: maxRow } = await ownership.supabase
+      .from("project_media")
+      .select("sort_index")
+      .eq("project_id", projectId)
+      .order("sort_index", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    resolvedSortIndex = (maxRow?.sort_index ?? -1) + 1;
+  }
+
   const { data: media, error: mediaError } = await ownership.supabase
     .from("project_media")
     .insert({
@@ -70,9 +94,10 @@ export async function POST(request: Request) {
       mime_type: mimeType,
       file_size: fileSize,
       media_kind: mediaKind,
+      sort_index: resolvedSortIndex,
     })
     .select(
-      "id, project_id, owner_id, url, storage_path, file_name, mime_type, file_size, media_kind, created_at",
+      "id, project_id, owner_id, url, storage_path, file_name, mime_type, file_size, media_kind, sort_index, created_at",
     )
     .single();
 
@@ -172,6 +197,88 @@ export async function PATCH(request: Request) {
     success: true,
     coverUrl: media.url,
   });
+}
+
+export async function PUT(request: Request) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const parsed = await parseJsonRequest(request, reorderProjectMediaSchema);
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  const { projectId, mediaIds } = parsed.data;
+
+  const ownership = await getOwnedProject(projectId, user.id);
+
+  if (ownership.error) {
+    return NextResponse.json(
+      { error: ownership.error.message },
+      { status: ownership.error.message === "Forbidden" ? 403 : 400 },
+    );
+  }
+
+  const { data: existing, error: existingError } = await ownership.supabase
+    .from("project_media")
+    .select("id")
+    .eq("project_id", projectId);
+
+  if (existingError) {
+    return NextResponse.json({ error: existingError.message }, { status: 400 });
+  }
+
+  const existingIds = new Set((existing || []).map((item) => item.id));
+  const invalid = mediaIds.filter((id) => !existingIds.has(id));
+
+  if (invalid.length > 0) {
+    return NextResponse.json(
+      { error: "Some media items do not belong to this project" },
+      { status: 400 },
+    );
+  }
+
+  for (let index = 0; index < mediaIds.length; index += 1) {
+    const { error: updateError } = await ownership.supabase
+      .from("project_media")
+      .update({ sort_index: index })
+      .eq("id", mediaIds[index])
+      .eq("project_id", projectId);
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+  }
+
+  const { data: firstImage } = await ownership.supabase
+    .from("project_media")
+    .select("url")
+    .eq("project_id", projectId)
+    .eq("media_kind", "image")
+    .order("sort_index", { ascending: true })
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const nextCoverUrl = firstImage?.url ?? null;
+
+  if (nextCoverUrl !== ownership.project.cover_url) {
+    await ownership.supabase
+      .from("projects")
+      .update({ cover_url: nextCoverUrl })
+      .eq("id", projectId)
+      .eq("owner_id", user.id);
+  }
+
+  return NextResponse.json({ success: true, coverUrl: nextCoverUrl });
 }
 
 export async function DELETE(request: Request) {
