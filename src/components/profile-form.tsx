@@ -451,9 +451,9 @@ function getSectionOrderLabel(
         ? "\u041a\u043e\u043d\u0442\u0430\u043a\u0442\u0438 \u0442\u0430 \u043f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f"
         : "Contacts and links";
     case "projects":
-      return locale === "uk"
-        ? "\u041f\u0440\u043e\u0454\u043a\u0442\u0438"
-        : "Projects";
+      return locale === "uk" ? "\u041f\u0440\u043e\u0454\u043a\u0442\u0438" : "Projects";
+    case "articles":
+      return locale === "uk" ? "\u0421\u0442\u0430\u0442\u0442\u0456" : "Articles";
     default:
       return getVisibilityLabel(sectionId as ProfileVisibilityKey, dictionary);
   }
@@ -1737,6 +1737,19 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
               (locale === "uk"
                 ? "Додайте способи зв'язку"
                 : "Add contact methods"),
+          ],
+        };
+      case "articles":
+        return {
+          id: sectionId,
+          title,
+          lines: [
+            locale === "uk"
+              ? "Блок показує опубліковані статті з публічної сторінки."
+              : "This block shows published articles on the public page.",
+            locale === "uk"
+              ? "У конструкторі ви керуєте розташуванням і шириною."
+              : "Use the builder to control its position and width.",
           ],
         };
       case "projects":

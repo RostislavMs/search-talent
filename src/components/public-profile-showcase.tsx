@@ -322,14 +322,51 @@ export default function PublicProfileShowcase({
 
   return (
     <main className="mx-auto max-w-[88rem] px-3 py-4 sm:px-6 sm:py-8">
-      <div className="relative overflow-hidden rounded-[2.5rem] border" style={{ ...getThemeStyle(presentation), background: !presentation.backgroundUrl || presentation.backgroundMode === "gradient" ? `linear-gradient(135deg, ${presentation.surfaceColor} 0%, ${presentation.panelColor} 58%, ${presentation.accentColor} 100%)` : presentation.surfaceColor, color: presentation.textColor, fontFamily: getProfileFontStack(presentation.fontPreset) }}>
-        {presentation.backgroundUrl && presentation.backgroundMode === "image" && <div className="absolute inset-0"><OptimizedImage src={presentation.backgroundUrl} alt={displayName} fill sizePreset="banner" className="object-cover" /></div>}
-        {presentation.backgroundUrl && presentation.backgroundMode === "video" && <div className="absolute inset-0"><video autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover"><source src={presentation.backgroundUrl} /></video></div>}
-        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${withAlpha(presentation.surfaceColor, Math.min(0.95, 0.45 + presentation.overlayStrength / 100))} 0%, ${withAlpha(presentation.panelColor, Math.min(0.92, 0.34 + presentation.overlayStrength / 120))} 55%, ${withAlpha(presentation.accentColor, 0.42)} 100%)` }} />
-
+      <div
+        className="relative overflow-hidden rounded-[2.5rem] border"
+        style={{
+          ...getThemeStyle(presentation),
+          background: `linear-gradient(135deg, ${presentation.surfaceColor} 0%, ${presentation.panelColor} 58%, ${presentation.accentColor} 100%)`,
+          color: presentation.textColor,
+          fontFamily: getProfileFontStack(presentation.fontPreset),
+        }}
+      >
         <div className="relative p-4 sm:p-6 lg:p-8">
-          <section className="overflow-hidden rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-6 lg:p-10">
-            <div className="grid gap-6 sm:gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+          <section className="relative overflow-hidden rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-6 lg:p-10">
+            {presentation.backgroundUrl && presentation.backgroundMode === "image" && (
+              <div className="absolute inset-0 -z-0">
+                <OptimizedImage
+                  src={presentation.backgroundUrl}
+                  alt={displayName}
+                  fill
+                  sizePreset="banner"
+                  className="object-cover"
+                />
+              </div>
+            )}
+            {presentation.backgroundUrl && presentation.backgroundMode === "video" && (
+              <div className="absolute inset-0 -z-0">
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  className="h-full w-full object-cover"
+                >
+                  <source src={presentation.backgroundUrl} />
+                </video>
+              </div>
+            )}
+            {presentation.backgroundUrl && (
+              <div
+                className="absolute inset-0 -z-0"
+                style={{
+                  background: `linear-gradient(135deg, ${withAlpha(presentation.surfaceColor, Math.min(0.95, 0.45 + presentation.overlayStrength / 100))} 0%, ${withAlpha(presentation.panelColor, Math.min(0.92, 0.34 + presentation.overlayStrength / 120))} 55%, ${withAlpha(presentation.accentColor, 0.42)} 100%)`,
+                }}
+              />
+            )}
+            <div className="relative grid gap-6 sm:gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
               <div className={presentation.heroAlignment === "center" ? "text-center" : "text-left"}>
                 <div className={`flex flex-wrap items-center gap-3 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
                   <ButtonLink href="/talents" variant="ghost" size="sm">
