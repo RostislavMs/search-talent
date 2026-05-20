@@ -1,6 +1,8 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
+import { LEADERBOARDS_CACHE_TAG } from "@/lib/db/leaderboards";
 import { getProjectVoteSummary } from "@/lib/db/project-votes";
-import { rateLimit } from "@/lib/rate-limit";
+import { dbRateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { projectVoteSchema } from "@/lib/validation/vote";
@@ -17,7 +19,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = rateLimit(`vote:${user.id}`, 20, 60_000);
+  if (!user.email_confirmed_at) {
+    return NextResponse.json(
+      { error: "Please verify your email before voting" },
+      { status: 403 },
+    );
+  }
+
+  const limited = await dbRateLimit(supabase, `vote:${user.id}`, 20, 60_000);
 
   if (limited) {
     return limited;
@@ -33,7 +42,7 @@ export async function POST(request: Request) {
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id")
+    .select("id, owner_id")
     .eq("id", projectId)
     .maybeSingle();
 
@@ -43,6 +52,13 @@ export async function POST(request: Request) {
 
   if (!project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  if (project.owner_id === user.id) {
+    return NextResponse.json(
+      { error: "You cannot vote on your own project" },
+      { status: 400 },
+    );
   }
 
   const { data: existingVotes, error: existingVoteError } = await supabase
@@ -108,6 +124,8 @@ export async function POST(request: Request) {
   if (scoreError) {
     return NextResponse.json({ error: scoreError.message }, { status: 400 });
   }
+
+  revalidateTag(LEADERBOARDS_CACHE_TAG, "max");
 
   return NextResponse.json({ success: true, ...summary });
 }

@@ -21,6 +21,7 @@ export default defineConfig({
         "src/lib/articles.ts",
         "src/lib/auth/validation.ts",
         "src/lib/cookie-consent.ts",
+        "src/lib/leaderboards.ts",
         "src/lib/moderation.ts",
         "src/lib/projects.ts",
         "src/lib/rate-limit.ts",

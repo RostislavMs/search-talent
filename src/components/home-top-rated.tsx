@@ -122,66 +122,66 @@ export default function HomeTopRated({
         </div>
 
         {creatorItems.length > 0 ? (
-          <div className="mt-5 grid gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-2">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-2">
             {creatorItems.map((creator, index) => (
               <LocalizedLink
                 key={creator.id}
                 href={`/u/${creator.username}`}
                 className="group rounded-2xl border app-border bg-[color:var(--surface)] p-4 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-[1.75rem] sm:p-5"
               >
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--foreground)] text-xs font-semibold text-[color:var(--background)] sm:h-11 sm:w-11 sm:rounded-2xl sm:text-sm">
-                    #{index + 1}
-                  </div>
+                <div className="flex flex-col gap-3 sm:gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--foreground)] text-xs font-semibold text-[color:var(--background)] sm:h-11 sm:w-11 sm:rounded-2xl sm:text-sm">
+                      #{index + 1}
+                    </div>
 
-                  <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-sm font-semibold text-[color:var(--foreground)] sm:h-14 sm:w-14 sm:text-base">
-                    {creator.avatar_url ? (
-                      <OptimizedImage
-                        src={creator.avatar_url}
-                        alt={creator.name || creator.username}
-                        fill
-                        sizes="(max-width: 640px) 44px, 56px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <span>
-                        {(creator.name || creator.username || dictionary.common.creator)
-                          .slice(0, 1)
-                          .toUpperCase()}
-                      </span>
-                    )}
-                  </div>
+                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-sm font-semibold text-[color:var(--foreground)] sm:h-14 sm:w-14 sm:text-base">
+                      {creator.avatar_url ? (
+                        <OptimizedImage
+                          src={creator.avatar_url}
+                          alt={creator.name || creator.username}
+                          fill
+                          sizes="(max-width: 640px) 44px, 56px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <span>
+                          {(creator.name || creator.username || dictionary.common.creator)
+                            .slice(0, 1)
+                            .toUpperCase()}
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1">
                       <div className="min-w-0">
-                        <h3 className="truncate text-lg font-semibold text-[color:var(--foreground)]">
+                        <h3 className="truncate text-base font-semibold text-[color:var(--foreground)] sm:text-lg">
                           {creator.name || creator.username}
                         </h3>
                         <p className="truncate text-sm app-muted">@{creator.username}</p>
                       </div>
                       <LeaderboardScore score={creator.rating} dictionary={dictionary} />
                     </div>
+                  </div>
 
-                    {creator.headline && (
-                      <p className="mt-3 line-clamp-2 text-sm leading-6 app-muted">
-                        {creator.headline}
-                      </p>
+                  {creator.headline && (
+                    <p className="line-clamp-2 text-sm leading-6 app-muted">
+                      {creator.headline}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap gap-2 text-xs app-soft">
+                    <span className="rounded-full app-panel px-3 py-1">
+                      {dictionary.home.profileCompletionLabel}: {creator.profileCompleteness}%
+                    </span>
+                    <span className="rounded-full app-panel px-3 py-1">
+                      {dictionary.home.projectsCountLabel}: {creator.projectCount}
+                    </span>
+                    {creator.topProjectTitle && (
+                      <span className="rounded-full app-panel px-3 py-1">
+                        {dictionary.home.topProjectLabel}: {creator.topProjectTitle}
+                      </span>
                     )}
-
-                    <div className="mt-4 flex flex-wrap gap-2 text-xs app-soft">
-                      <span className="rounded-full app-panel px-3 py-1">
-                        {dictionary.home.profileCompletionLabel}: {creator.profileCompleteness}%
-                      </span>
-                      <span className="rounded-full app-panel px-3 py-1">
-                        {dictionary.home.projectsCountLabel}: {creator.projectCount}
-                      </span>
-                      {creator.topProjectTitle && (
-                        <span className="rounded-full app-panel px-3 py-1">
-                          {dictionary.home.topProjectLabel}: {creator.topProjectTitle}
-                        </span>
-                      )}
-                    </div>
                   </div>
                 </div>
               </LocalizedLink>
@@ -222,26 +222,29 @@ export default function HomeTopRated({
         </div>
 
         {projectItems.length > 0 ? (
-          <div className="mt-5 grid gap-3 sm:mt-8 sm:gap-4">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:mt-8 sm:gap-4">
             {projectItems.map((project, index) => (
               <LocalizedLink
                 key={project.id}
                 href={buildProjectPath(project.id, project.slug)}
                 className="group rounded-2xl border app-border bg-[color:var(--surface)] p-4 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-[1.75rem] sm:p-5"
               >
-                <div className="grid gap-4 sm:gap-5 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--foreground)] text-xs font-semibold text-[color:var(--background)] sm:h-11 sm:w-11 sm:rounded-2xl sm:text-sm">
+                <div className="flex flex-col gap-4 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-5">
+                  <div className="md:flex md:items-center md:gap-4">
+                    <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--foreground)] text-sm font-semibold text-[color:var(--background)] md:flex">
                       #{index + 1}
                     </div>
 
-                    <div className="relative h-16 w-24 overflow-hidden rounded-2xl border app-border bg-[color:var(--surface-muted)] sm:h-20 sm:w-28 sm:rounded-[1.25rem]">
+                    <div className="relative h-48 w-full overflow-hidden rounded-2xl border app-border bg-[color:var(--surface-muted)] sm:h-56 md:h-20 md:w-28 md:rounded-[1.25rem]">
+                      <div className="absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl bg-[color:var(--foreground)] text-xs font-semibold text-[color:var(--background)] shadow-sm md:hidden">
+                        #{index + 1}
+                      </div>
                       {project.cover_url ? (
                         <OptimizedImage
                           src={project.cover_url}
                           alt={project.title}
                           fill
-                          sizes="(max-width: 640px) 96px, 112px"
+                          sizes="(max-width: 768px) 100vw, 112px"
                           className="object-cover"
                         />
                       ) : (
@@ -288,7 +291,7 @@ export default function HomeTopRated({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end">
+                  <div className="flex justify-end md:items-center">
                     <span className="rounded-full border app-border px-4 py-2 text-sm font-medium app-muted transition group-hover:bg-[color:var(--surface-muted)] group-hover:text-[color:var(--foreground)]">
                       {dictionary.common.viewProject}
                     </span>

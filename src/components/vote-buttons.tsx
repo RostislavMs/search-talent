@@ -97,7 +97,11 @@ export default function VoteButtons({
 
     if (!result.ok) {
       setVoteState(previousState);
-      setErrorMessage(result.error || dictionary.projectPage.voteError);
+      setErrorMessage(
+        result.status === 403
+          ? dictionary.projectPage.voteEmailUnverified
+          : result.error || dictionary.projectPage.voteError,
+      );
       return;
     }
 

@@ -1,3 +1,6 @@
+import "server-only";
+
+import { unstable_cache } from "next/cache";
 import {
   calculateProjectRating,
   calculateUserRating,
@@ -6,7 +9,7 @@ import {
   isWithinTimeframe,
   type LeaderboardTimeframe,
 } from "@/lib/leaderboards";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
 
 // ---- row types ------------------------------------------------------------
 
@@ -105,6 +108,56 @@ export type LeaderboardsResult = {
 
 // ---- helpers --------------------------------------------------------------
 
+export const LEADERBOARDS_CACHE_TAG = "leaderboards";
+export const LEADERBOARDS_CACHE_REVALIDATE_SECONDS = 300;
+
+// PostgREST silently caps each response at the server's max_rows setting
+// (1000 on Supabase by default). Page through the result set explicitly so
+// the leaderboard never quietly drops data once the platform grows.
+const FETCH_ALL_PAGE_SIZE = 1000;
+
+type PagedQuery<T> = {
+  range: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>;
+};
+
+async function fetchAll<T>(build: () => PagedQuery<T>): Promise<T[]> {
+  const collected: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await build().range(
+      from,
+      from + FETCH_ALL_PAGE_SIZE - 1,
+    );
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const rows = data ?? [];
+    collected.push(...rows);
+
+    if (rows.length < FETCH_ALL_PAGE_SIZE) {
+      break;
+    }
+
+    from += FETCH_ALL_PAGE_SIZE;
+  }
+
+  return collected;
+}
+
+async function fetchAllTolerant<T>(build: () => PagedQuery<T>): Promise<T[]> {
+  try {
+    return await fetchAll<T>(build);
+  } catch {
+    return [];
+  }
+}
+
 function countVotes(
   rows: VoteRow[] | ProfileVoteRow[],
   timeframe: LeaderboardTimeframe,
@@ -133,66 +186,104 @@ function countByKey<T extends Record<string, unknown>>(
   return map;
 }
 
-async function trySelect(table: string) {
-  const supabase = await createClient();
-  const r = await supabase.from(table).select("profile_id");
-  return (r.error ? [] : r.data || []) as ProfileSectionRow[];
+type ReadOnlyClient = NonNullable<ReturnType<typeof createPublicReadOnlyClient>>;
+
+function trySelectSections(supabase: ReadOnlyClient, table: string) {
+  return fetchAllTolerant<ProfileSectionRow>(
+    () =>
+      supabase.from(table).select("profile_id") as unknown as PagedQuery<
+        ProfileSectionRow
+      >,
+  );
 }
 
 // ---- main loader ----------------------------------------------------------
 
-export async function getLeaderboards(): Promise<LeaderboardsResult> {
-  const supabase = await createClient();
+const EMPTY_RESULT: LeaderboardsResult = {
+  creators: { all: [], month: [] },
+  projects: { all: [], month: [] },
+};
+
+async function loadLeaderboards(): Promise<LeaderboardsResult> {
+  const supabase = createPublicReadOnlyClient();
+
+  if (!supabase) {
+    return EMPTY_RESULT;
+  }
 
   const [
-    profilesRes,
-    projectsRes,
-    votesRes,
-    mediaRes,
-    projectSkillsRes,
-    profileSkillsRes,
-    profileLanguagesRes,
+    profiles,
+    projects,
+    votes,
+    media,
+    projectSkills,
+    profileSkills,
+    profileLanguages,
     educationRows,
     certificateRows,
     qaRows,
     workExpRows,
-    profileVotesRes,
+    profileVotes,
   ] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select(
-        "id, user_id, username, name, avatar_url, headline, bio, country_id, city, website, github, twitter, linkedin, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info",
-      )
-      .not("username", "is", null),
-    supabase
-      .from("projects")
-      .select(
-        "id, owner_id, title, slug, description, role, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, cover_url, created_at",
-      )
-      .eq("status", "published"),
-    supabase.from("votes").select("project_id, value, created_at"),
-    supabase.from("project_media").select("project_id, created_at"),
-    supabase.from("project_skills").select("project_id, skill_id"),
-    supabase.from("profile_skills").select("profile_id, skill_id"),
-    supabase.from("profile_languages").select("profile_id, language_id"),
-    trySelect("profile_education"),
-    trySelect("profile_certificates"),
-    trySelect("profile_qas"),
-    trySelect("profile_work_experience"),
-    supabase
-      .from("profile_votes")
-      .select("profile_id, value, created_at")
-      .then((r) => (r.error ? { data: [] } : r)),
+    fetchAll<PublicProfileRow>(
+      () =>
+        supabase
+          .from("profiles")
+          .select(
+            "id, user_id, username, name, avatar_url, headline, bio, country_id, city, website, github, twitter, linkedin, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info",
+          )
+          .not("username", "is", null) as unknown as PagedQuery<PublicProfileRow>,
+    ),
+    fetchAll<PublicProjectRow>(
+      () =>
+        supabase
+          .from("projects")
+          .select(
+            "id, owner_id, title, slug, description, role, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, cover_url, created_at",
+          )
+          .eq("status", "published") as unknown as PagedQuery<PublicProjectRow>,
+    ),
+    fetchAll<VoteRow>(
+      () =>
+        supabase
+          .from("votes")
+          .select("project_id, value, created_at") as unknown as PagedQuery<VoteRow>,
+    ),
+    fetchAll<MediaRow>(
+      () =>
+        supabase
+          .from("project_media")
+          .select("project_id, created_at") as unknown as PagedQuery<MediaRow>,
+    ),
+    fetchAll<ProjectSkillRow>(
+      () =>
+        supabase
+          .from("project_skills")
+          .select("project_id, skill_id") as unknown as PagedQuery<ProjectSkillRow>,
+    ),
+    fetchAll<ProfileRelationRow>(
+      () =>
+        supabase
+          .from("profile_skills")
+          .select("profile_id, skill_id") as unknown as PagedQuery<ProfileRelationRow>,
+    ),
+    fetchAll<ProfileRelationRow>(
+      () =>
+        supabase
+          .from("profile_languages")
+          .select("profile_id, language_id") as unknown as PagedQuery<ProfileRelationRow>,
+    ),
+    trySelectSections(supabase, "profile_education"),
+    trySelectSections(supabase, "profile_certificates"),
+    trySelectSections(supabase, "profile_qas"),
+    trySelectSections(supabase, "profile_work_experience"),
+    fetchAllTolerant<ProfileVoteRow>(
+      () =>
+        supabase
+          .from("profile_votes")
+          .select("profile_id, value, created_at") as unknown as PagedQuery<ProfileVoteRow>,
+    ),
   ]);
-
-  const profiles = (profilesRes.data || []) as PublicProfileRow[];
-  const projects = (projectsRes.data || []) as PublicProjectRow[];
-  const votes = (votesRes.data || []) as VoteRow[];
-  const media = (mediaRes.data || []) as MediaRow[];
-  const projectSkills = (projectSkillsRes.data || []) as ProjectSkillRow[];
-  const profileSkills = (profileSkillsRes.data || []) as ProfileRelationRow[];
-  const profileLanguages = (profileLanguagesRes.data || []) as ProfileRelationRow[];
-  const profileVotes = (profileVotesRes.data || []) as ProfileVoteRow[];
 
   // index: profile by user_id
   const profileByUserId = new Map(profiles.map((p) => [p.user_id, p]));
@@ -489,3 +580,15 @@ export async function getLeaderboards(): Promise<LeaderboardsResult> {
     },
   };
 }
+
+// Cached entry point. The leaderboard reads only public data, so we use the
+// anon read-only client (cookies are not allowed inside `unstable_cache`).
+// Mutations invalidate the cache via `revalidateTag(LEADERBOARDS_CACHE_TAG)`.
+export const getLeaderboards = unstable_cache(
+  loadLeaderboards,
+  ["leaderboards-v1"],
+  {
+    revalidate: LEADERBOARDS_CACHE_REVALIDATE_SECONDS,
+    tags: [LEADERBOARDS_CACHE_TAG],
+  },
+);

@@ -628,6 +628,8 @@ export const dictionaries = {
       dislikeProject: "Dislike project",
       signInToVote: "Sign in to vote for this project.",
       voteError: "Could not save your vote. Please try again.",
+      voteEmailUnverified:
+        "Please verify your email address before voting. Check your inbox for the verification link.",
       voteStateLiked: "You like this project. Click again to remove your vote.",
       voteStateDisliked:
         "You dislike this project. Click again to remove your vote.",
@@ -1003,6 +1005,8 @@ export const dictionaries = {
       rateProfileDown: "Skip profile",
       signInToRate: "Sign in to rate this profile.",
       ratingError: "Could not save your profile rating right now.",
+      ratingEmailUnverified:
+        "Please verify your email address before rating. Check your inbox for the verification link.",
       cannotRateOwnProfile: "You cannot rate your own profile.",
       ownerRatingHint:
         "Other users can rate your profile based on quality and trust.",
@@ -1915,6 +1919,8 @@ export const dictionaries = {
       dislikeProject: "Не подобається",
       signInToVote: "Увійдіть, щоб оцінювати цей проєкт.",
       voteError: "Не вдалося зберегти ваш голос. Спробуйте ще раз.",
+      voteEmailUnverified:
+        "Підтвердьте email-адресу, щоб голосувати. Перевірте свою пошту та перейдіть за посиланням з листа.",
       voteStateLiked:
         "Ви вподобали цей проєкт. Натисніть ще раз, щоб прибрати голос.",
       voteStateDisliked:
@@ -2293,6 +2299,8 @@ export const dictionaries = {
       rateProfileDown: "Пропустити профіль",
       signInToRate: "Увійдіть, щоб оцінити цей профіль.",
       ratingError: "Зараз не вдалося зберегти оцінку профілю.",
+      ratingEmailUnverified:
+        "Підтвердьте email-адресу, щоб оцінювати. Перевірте свою пошту та перейдіть за посиланням з листа.",
       cannotRateOwnProfile: "Ви не можете оцінювати власний профіль.",
       ownerRatingHint:
         "Інші користувачі можуть оцінювати ваш профіль за якістю та довірою.",

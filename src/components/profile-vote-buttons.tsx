@@ -104,7 +104,11 @@ export default function ProfileVoteButtons({
 
     if (!result.ok) {
       setVoteState(previousState);
-      setErrorMessage(result.error || dictionary.creatorProfile.ratingError);
+      setErrorMessage(
+        result.status === 403
+          ? dictionary.creatorProfile.ratingEmailUnverified
+          : result.error || dictionary.creatorProfile.ratingError,
+      );
       return;
     }
 
