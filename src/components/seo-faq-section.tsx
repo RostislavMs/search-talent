@@ -1,4 +1,7 @@
-import { buildFaqSchema } from "@/lib/seo";
+import {
+  buildFaqSchema,
+  safeJsonLd,
+} from "@/lib/seo";
 
 export default function SeoFaqSection({
   title,
@@ -15,7 +18,7 @@ export default function SeoFaqSection({
     <section className="rounded-[2rem] app-card p-5 sm:p-7">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
       />
       <div className="max-w-3xl">
         <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">

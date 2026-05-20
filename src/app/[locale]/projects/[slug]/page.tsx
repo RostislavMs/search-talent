@@ -16,6 +16,7 @@ import {
   buildBreadcrumbSchema,
   buildProjectPageMetadata,
   getMetadataBase,
+  safeJsonLd,
 } from "@/lib/seo";
 
 async function getRouteParams(
@@ -175,11 +176,11 @@ export default async function PublicProjectPage({
     <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(projectSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(projectSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
       <section className="overflow-hidden rounded-2xl app-card sm:rounded-[2.25rem]">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">

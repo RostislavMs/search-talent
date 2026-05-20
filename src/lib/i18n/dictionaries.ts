@@ -324,6 +324,11 @@ export const dictionaries = {
       openProfile: "Open profile",
       open: "Open",
       profile: "Profile",
+      unsavedChangesTitle: "Unsaved changes",
+      unsavedChangesDescription:
+        "If you leave this page now, your changes will be lost.",
+      unsavedChangesLeave: "Leave page",
+      unsavedChangesStay: "Stay",
     },
     metadata: {
       home: {
@@ -1637,6 +1642,11 @@ export const dictionaries = {
       openProfile: "Відкрити профіль",
       open: "Відкрити",
       profile: "Профіль",
+      unsavedChangesTitle: "Незбережені зміни",
+      unsavedChangesDescription:
+        "Якщо ви залишите цю сторінку, незбережені зміни буде втрачено.",
+      unsavedChangesLeave: "Залишити сторінку",
+      unsavedChangesStay: "Залишитися",
     },
     metadata: {
       home: {

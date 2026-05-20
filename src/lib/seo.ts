@@ -15,6 +15,31 @@ export function getMetadataBase() {
   return new URL(getSiteUrl());
 }
 
+/**
+ * Serialize a value as JSON-LD safe to embed inside a <script> tag.
+ *
+ * Why: `JSON.stringify` does not escape `</script>` or other HTML/JSON-in-HTML
+ * hazards. User-controlled fields (article title, profile name, etc.) flow
+ * into our JSON-LD blocks, so an unescaped `</script>` would terminate the
+ * script element early and turn into stored XSS — and also break Google rich
+ * results parsing.
+ */
+const JSON_LD_DANGEROUS_CHARS = new RegExp("[<>&" + String.fromCharCode(0x2028) + String.fromCharCode(0x2029) + "]", "g");
+const JSON_LD_ESCAPES: Record<string, string> = {
+  "<": "\\u003c",
+  ">": "\\u003e",
+  "&": "\\u0026",
+  " ": "\\u2028",
+  " ": "\\u2029",
+};
+
+export function safeJsonLd(value: unknown) {
+  return JSON.stringify(value).replace(
+    JSON_LD_DANGEROUS_CHARS,
+    (char) => JSON_LD_ESCAPES[char] ?? char,
+  );
+}
+
 export function buildMetadata({
   locale,
   pathname,

@@ -252,7 +252,7 @@ function ActivityChart({
   locale: Locale;
 }) {
   const maxValue = Math.max(
-    ...items.flatMap((item) => [item.profiles, item.projects, item.votes]),
+    ...items.flatMap((item) => [item.profiles, item.projects]),
     1,
   );
 
@@ -270,13 +270,6 @@ function ActivityChart({
       color: "bg-emerald-500",
       dot: "bg-emerald-500",
       value: (item: DashboardStats["monthlyActivity"][number]) => item.projects,
-    },
-    {
-      key: "votes",
-      label: dictionary.dashboard.votesCast,
-      color: "bg-amber-500",
-      dot: "bg-amber-500",
-      value: (item: DashboardStats["monthlyActivity"][number]) => item.votes,
     },
   ];
 
@@ -296,19 +289,25 @@ function ActivityChart({
         </div>
       </div>
 
-      <div className="flex h-56 items-end gap-2 sm:gap-3">
+      <div className="flex h-56 gap-2 sm:gap-3">
         {items.map((item) => (
-          <div key={item.key} className="flex min-w-0 flex-1 flex-col items-stretch gap-1">
-            <div className="flex flex-1 items-end gap-0.5 sm:gap-1">
+          <div
+            key={item.key}
+            className="flex min-w-0 flex-1 flex-col items-stretch gap-1"
+          >
+            <div className="relative flex flex-1 items-stretch gap-0.5 sm:gap-1">
               {series.map((entry) => {
                 const v = entry.value(item);
-                const height = `${Math.max((v / maxValue) * 100, v > 0 ? 8 : 0)}%`;
+                const height = Math.max((v / maxValue) * 100, v > 0 ? 6 : 0);
                 return (
-                  <div key={`${item.key}-${entry.key}`} className="flex-1">
+                  <div
+                    key={`${item.key}-${entry.key}`}
+                    className="relative flex-1"
+                    title={`${entry.label}: ${v}`}
+                  >
                     <div
-                      className={`w-full rounded-t-lg ${entry.color} transition-all`}
-                      style={{ height }}
-                      title={`${entry.label}: ${v}`}
+                      className={`absolute inset-x-0 bottom-0 rounded-t-lg ${entry.color} transition-all`}
+                      style={{ height: `${height}%` }}
                     />
                   </div>
                 );
@@ -638,7 +637,6 @@ export default function DashboardAnalytics({
   const salaryRangeLabels = ui.salaryRanges as Record<string, string>;
   const workFormatLabels = ui.workFormats as Record<string, string>;
   const employmentTypeLabels = ui.employmentTypes as Record<string, string>;
-  const contactMethodLabels = ui.contactMethods as Record<string, string>;
 
   function relabel(
     items: Array<{ key: string; label: string; value: number }>,
@@ -829,13 +827,6 @@ export default function DashboardAnalytics({
         />
       </div>
 
-      {/* ─── Contact method ─── */}
-      <ExpandableDistributionChart
-        title={ui.contactMethodDistribution}
-        locale={locale}
-        items={relabel(stats.contactMethodBreakdown, contactMethodLabels)}
-        ui={ui}
-      />
     </div>
   );
 }

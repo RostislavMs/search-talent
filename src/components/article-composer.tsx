@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import RichTextComposer from "@/components/rich-text-composer";
 import { Button } from "@/components/ui/Button";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
 import { apiFetch } from "@/lib/api-client";
@@ -13,8 +14,11 @@ import {
   type ArticleCategory,
 } from "@/lib/articles";
 import { createClient } from "@/lib/supabase/client";
+import { isLocale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { compressImageFile } from "@/lib/image-compression";
 import { sanitizeStorageFileName } from "@/lib/profile-sections";
+import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 
 function inferAssetKind(file: File) {
   return file.type.startsWith("video/") ? "video" : "image";
@@ -79,6 +83,34 @@ export default function ArticleComposer({
   >(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isEditing = Boolean(editArticle?.id);
+
+  const initialSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        title: editArticle?.title || "",
+        excerpt: editArticle?.excerpt || "",
+        content: editArticle?.content || "",
+        categorySlug:
+          editArticle?.categorySlug || availableCategories[0]?.slug || "",
+        coverImageUrl: editArticle?.coverImageUrl || null,
+        heroVideoUrl: editArticle?.heroVideoUrl || null,
+      }),
+    [editArticle, availableCategories],
+  );
+
+  const currentSnapshot = JSON.stringify({
+    title,
+    excerpt,
+    content,
+    categorySlug,
+    coverImageUrl,
+    heroVideoUrl,
+  });
+  const isDirty = saving === null && currentSnapshot !== initialSnapshot;
+
+  const dictionaryCommon = getDictionary(isLocale(locale) ? locale : "en").common;
+  const { isWarningOpen, confirmLeave, cancelLeave } =
+    useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
     if (availableCategories.some((item) => item.slug === categorySlug)) {
@@ -458,6 +490,17 @@ export default function ArticleComposer({
           </div>
         </div>
       </aside>
+
+      <ConfirmDialog
+        open={isWarningOpen}
+        title={dictionaryCommon.unsavedChangesTitle}
+        description={dictionaryCommon.unsavedChangesDescription}
+        confirmLabel={dictionaryCommon.unsavedChangesLeave}
+        cancelLabel={dictionaryCommon.unsavedChangesStay}
+        confirmVariant="primary"
+        onConfirm={confirmLeave}
+        onCancel={cancelLeave}
+      />
     </div>
   );
 }

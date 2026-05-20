@@ -13,6 +13,7 @@ import {
   buildBreadcrumbSchema,
   buildProfilePageMetadata,
   getMetadataBase,
+  safeJsonLd,
 } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -151,11 +152,11 @@ export default async function PublicProfilePage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(profilePageSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(profilePageSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
       {generatedSummary ? (
         <section className="mx-auto mb-5 max-w-[90rem] px-4 sm:mb-6 sm:px-6">

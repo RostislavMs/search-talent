@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import { ButtonLink } from "@/components/ui/Button";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { buildFaqSchema, buildMetadata } from "@/lib/seo";
+import {
+  buildFaqSchema,
+  buildMetadata,
+  safeJsonLd,
+} from "@/lib/seo";
 
 async function getLocaleValue(params: Promise<{ locale: string }>) {
   const { locale } = await params;
@@ -49,7 +53,7 @@ export default async function FaqPage({
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }}
       />
       <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

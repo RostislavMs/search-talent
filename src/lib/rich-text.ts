@@ -161,7 +161,7 @@ const allowedServerTagPattern = new RegExp(
     "strong",
     "ul",
   ].join("|")})(?:\\s[^<>]*)?>`,
-  "gi",
+  "i",
 );
 
 const youtubeIframeSrcPattern =
@@ -204,7 +204,6 @@ function sanitizeOnServer(value: string): string {
   html = html.replace(/<\/?([a-zA-Z][\w-]*)(?:\s[^<>]*)?>/g, (match) =>
     allowedServerTagPattern.test(match) ? match : "",
   );
-  allowedServerTagPattern.lastIndex = 0;
 
   return html.trim();
 }

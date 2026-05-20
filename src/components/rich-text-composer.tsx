@@ -186,6 +186,8 @@ export default function RichTextComposer({
   const editorRef = useRef<HTMLDivElement | null>(null);
   const blocksMenuRef = useRef<HTMLDivElement | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
+  const mediaInsertRangeRef = useRef<Range | null>(null);
+  const pendingMediaInsertRef = useRef(false);
   const lastSyncRef = useRef("");
   const imageInputId = useId();
 
@@ -352,6 +354,64 @@ export default function RichTextComposer({
     [emitChange],
   );
 
+  // Insert a block-level node (figure/iframe) and leave the cursor in a
+  // fresh empty paragraph directly after it, so the user can keep typing
+  // without ending up inside the figure.
+  const insertBlockNode = useCallback(
+    (blockHtml: string) => {
+      const el = editorRef.current;
+      if (!el) return;
+      el.focus();
+
+      // Prefer the range captured at the moment the user clicked the media
+      // trigger — the editor's blur handler overwrites savedRangeRef with the
+      // (collapsed) selection that exists once focus leaves the editor.
+      const range = mediaInsertRangeRef.current ?? savedRangeRef.current;
+      mediaInsertRangeRef.current = null;
+      pendingMediaInsertRef.current = false;
+
+      if (range && el.contains(range.startContainer)) {
+        restoreSelection(range);
+      } else {
+        const sel = window.getSelection();
+        if (sel) {
+          sel.selectAllChildren(el);
+          sel.collapseToEnd();
+        }
+      }
+
+      // Sentinel marks the trailing paragraph so we can reliably move
+      // the cursor into it after the browser settles the DOM.
+      const marker = `rt-cursor-${Date.now()}`;
+      document.execCommand(
+        "insertHTML",
+        false,
+        `${blockHtml}<p data-rt-marker="${marker}"><br></p>`,
+      );
+
+      const target = el.querySelector(
+        `p[data-rt-marker="${marker}"]`,
+      ) as HTMLElement | null;
+      if (target) {
+        target.removeAttribute("data-rt-marker");
+        const sel = window.getSelection();
+        if (sel) {
+          const placement = document.createRange();
+          placement.setStart(target, 0);
+          placement.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(placement);
+          savedRangeRef.current = placement.cloneRange();
+        }
+      } else {
+        savedRangeRef.current = saveSelection();
+      }
+
+      emitChange();
+    },
+    [emitChange],
+  );
+
   /* ---- toolbar actions ---- */
   const applyBlock = useCallback(
     (tag: "P" | "H3" | "BLOCKQUOTE") => {
@@ -381,11 +441,11 @@ export default function RichTextComposer({
     (url: string) => {
       const videoId = extractYouTubeVideoId(url);
       if (!videoId) return;
-      insertHtml(
+      insertBlockNode(
         `<figure><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></figure>`,
       );
     },
-    [insertHtml],
+    [insertBlockNode],
   );
 
   const handleImageUpload = useCallback(
@@ -399,14 +459,14 @@ export default function RichTextComposer({
       try {
         const result = await onUploadInlineAsset(file, "image");
         if (result) {
-          insertHtml(`<figure><img src="${result.url}" alt=""></figure>`);
+          insertBlockNode(`<figure><img src="${result.url}" alt=""></figure>`);
         }
       } finally {
         e.target.value = "";
         setUploadingImage(false);
       }
     },
-    [onUploadInlineAsset, insertHtml],
+    [onUploadInlineAsset, insertBlockNode],
   );
 
   /* ---- keyboard shortcuts ---- */
@@ -458,7 +518,10 @@ export default function RichTextComposer({
   }, [refreshActiveFormats]);
 
   const editorPlainText = extractPlainTextFromRichText(value);
-  const isEmpty = editorPlainText.length === 0;
+  // Treat the editor as non-empty also when it embeds media (images, video, YouTube),
+  // otherwise the placeholder keeps overlapping the inserted block.
+  const hasEmbeddedMedia = /<(?:img|iframe|video|figure)\b/i.test(value);
+  const isEmpty = editorPlainText.length === 0 && !hasEmbeddedMedia;
 
   /* ---- prevent default on toolbar mousedown to not steal focus ---- */
   const pd = (e: React.MouseEvent) => e.preventDefault();
@@ -591,6 +654,15 @@ export default function RichTextComposer({
                   htmlFor={imageInputId}
                   className={cls(btnBase, btnIdle, "cursor-pointer")}
                   title={ui.image}
+                  onMouseDown={() => {
+                    // Capture the cursor position *before* focus shifts to the
+                    // hidden file input. Without this, the editor's blur
+                    // handler may run normalizeEditorDom which rewrites the
+                    // innerHTML and invalidates savedRangeRef's nodes — then
+                    // the image would land at the beginning of the editor.
+                    mediaInsertRangeRef.current = saveSelection();
+                    pendingMediaInsertRef.current = true;
+                  }}
                 >
                   <span className="text-xs font-semibold">
                     {uploadingImage ? ui.uploading : "IMG"}
@@ -666,7 +738,12 @@ export default function RichTextComposer({
               savedRangeRef.current = saveSelection();
               // Don't normalize DOM when a popover or upload is active —
               // it would invalidate the saved cursor position
-              if (!popover && !uploadingImage && !emojiOpen) {
+              if (
+                !popover &&
+                !uploadingImage &&
+                !emojiOpen &&
+                !pendingMediaInsertRef.current
+              ) {
                 normalizeEditorDom();
               }
             }}

@@ -17,8 +17,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
   title: {
-    default:
-      "SearchTalent — Best Freelancing Platform | Hire Talent & Portfolios",
+    default: "SearchTalent — Hire Freelancers & Browse Portfolios",
     template: "%s | SearchTalent",
   },
   description:

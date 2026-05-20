@@ -12,12 +12,14 @@ import {
   type ReactNode,
 } from "react";
 import { Button } from "@/components/ui/Button";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import TagSelect from "@/components/ui/tag-select";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
 import { apiFetch } from "@/lib/api-client";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { compressImageFile } from "@/lib/image-compression";
 import {
@@ -202,6 +204,41 @@ export default function CreateProjectForm({
   const [youTubeInput, setYouTubeInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const objectUrlsRef = useRef<Set<string>>(new Set());
+
+  const initialFormSnapshot = useMemo(
+    () => JSON.stringify(getInitialFormState(project)),
+    [project],
+  );
+  const initialSkillsSnapshot = useMemo(
+    () =>
+      JSON.stringify(
+        [...(project?.technologies.map((t) => t.id) || [])].sort(),
+      ),
+    [project],
+  );
+  const initialRemoteMediaSnapshot = useMemo(
+    () =>
+      JSON.stringify((project?.media || []).map((item) => item.id)),
+    [project],
+  );
+
+  const hasLocalOrYouTubeMedia = mediaItems.some(
+    (item) => item.kind === "local" || item.kind === "youtube",
+  );
+  const currentRemoteMediaSnapshot = JSON.stringify(
+    mediaItems
+      .filter((item): item is RemoteMediaItem => item.kind === "remote")
+      .map((item) => item.remoteId),
+  );
+  const isDirty =
+    pendingSaveMode === null &&
+    (JSON.stringify(form) !== initialFormSnapshot ||
+      JSON.stringify([...skillIds].sort()) !== initialSkillsSnapshot ||
+      currentRemoteMediaSnapshot !== initialRemoteMediaSnapshot ||
+      hasLocalOrYouTubeMedia);
+
+  const { isWarningOpen, confirmLeave, cancelLeave } =
+    useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
     const stored = objectUrlsRef.current;
@@ -908,6 +945,17 @@ export default function CreateProjectForm({
         onChange={handleFileSelect}
         className="sr-only"
         aria-label={dictionary.forms.mediaBrowseFiles}
+      />
+
+      <ConfirmDialog
+        open={isWarningOpen}
+        title={dictionary.common.unsavedChangesTitle}
+        description={dictionary.common.unsavedChangesDescription}
+        confirmLabel={dictionary.common.unsavedChangesLeave}
+        cancelLabel={dictionary.common.unsavedChangesStay}
+        confirmVariant="primary"
+        onConfirm={confirmLeave}
+        onCancel={cancelLeave}
       />
     </div>
   );

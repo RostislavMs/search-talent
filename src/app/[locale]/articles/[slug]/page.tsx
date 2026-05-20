@@ -24,6 +24,7 @@ import {
   buildBreadcrumbSchema,
   countWords,
   getMetadataBase,
+  safeJsonLd,
 } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -178,11 +179,11 @@ export default async function ArticleDetailPage({
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
       <div className="rounded-[2.25rem] app-card">
         <div className="border-b app-border p-6 sm:p-8">
