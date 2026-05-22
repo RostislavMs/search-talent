@@ -3,7 +3,11 @@
 import Image from "next/image";
 import { startTransition, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import MentionText from "@/components/ui/mention-text";
+import MentionTextarea from "@/components/ui/mention-textarea";
+import ReactionPicker from "@/components/ui/reaction-picker";
 import { apiFetch } from "@/lib/api-client";
+import type { ReactionSummary } from "@/lib/constants/reactions";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 
 type Comment = {
@@ -19,6 +23,7 @@ type Comment = {
     name: string | null;
     avatar_url: string | null;
   };
+  reactions?: ReactionSummary[];
 };
 
 type ProjectCommentsProps = {
@@ -135,7 +140,7 @@ function CommentItem({
   const nextDepth = depth + 1;
 
   return (
-    <article className="flex gap-2 sm:gap-3">
+    <article id={`comment-${comment.id}`} className="flex gap-2 sm:gap-3">
       <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full app-panel text-xs font-semibold text-[color:var(--foreground)] sm:h-8 sm:w-8">
         {comment.author.avatar_url ? (
           <Image
@@ -160,27 +165,38 @@ function CommentItem({
           </span>
         </header>
 
-        <p className="mt-0.5 break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6">
-          {comment.body}
-        </p>
+        <MentionText
+          body={comment.body}
+          className="mt-0.5 block break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6"
+        />
 
-        {isAuthenticated && (
-          <button
-            type="button"
-            onClick={() =>
-              onReply(replyingTo === comment.id ? null : comment.id)
-            }
-            className="mt-1 cursor-pointer text-xs font-medium app-soft transition-colors hover:text-[color:var(--foreground)] sm:mt-1.5"
-          >
-            {dictionary.projectComments.reply}
-          </button>
-        )}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mt-2.5">
+          <ReactionPicker
+            targetType="project_comment"
+            targetId={comment.id}
+            initialReactions={comment.reactions || []}
+            isAuthenticated={isAuthenticated}
+            size="sm"
+          />
+
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={() =>
+                onReply(replyingTo === comment.id ? null : comment.id)
+              }
+              className="cursor-pointer text-xs font-medium app-soft transition-colors hover:text-[color:var(--foreground)]"
+            >
+              {dictionary.projectComments.reply}
+            </button>
+          )}
+        </div>
 
         {replyingTo === comment.id && (
           <div className="mt-3 space-y-2">
-            <textarea
+            <MentionTextarea
               value={replyBody}
-              onChange={(e) => onReplyBodyChange(e.target.value)}
+              onChange={onReplyBodyChange}
               placeholder={dictionary.projectComments.replyPlaceholder}
               rows={2}
               className="w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
@@ -360,9 +376,9 @@ export default function ProjectComments({
 
       {isAuthenticated ? (
         <div className="mt-5 space-y-3 sm:mt-6">
-          <textarea
+          <MentionTextarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
             placeholder={dictionary.projectComments.placeholder}
             rows={3}
             maxLength={4000}
@@ -383,7 +399,7 @@ export default function ProjectComments({
         </p>
       )}
 
-      {error && <p className="mt-3 text-sm text-rose-500">{error}</p>}
+      {error && <p className="mt-3 text-sm text-rose-500" role="alert">{error}</p>}
 
       {loading ? (
         <p className="mt-6 text-sm app-muted">

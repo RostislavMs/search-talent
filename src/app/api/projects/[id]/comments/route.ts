@@ -6,6 +6,8 @@ import {
   routeProjectIdSchema,
 } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
+import { dispatchCommentSideEffects } from "@/lib/db/comment-events";
+import { getReactionsForTargets } from "@/lib/db/reactions";
 
 export async function GET(
   _request: Request,
@@ -78,6 +80,16 @@ export async function GET(
     }
   }
 
+  const commentIds = (comments || []).map((c) => c.id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const reactionsMap = await getReactionsForTargets(supabase, {
+    targetType: "project_comment",
+    targetIds: commentIds,
+    viewerUserId: user?.id ?? null,
+  });
+
   const enriched = (comments || []).map((c) => ({
     ...c,
     author_deleted: c.author_user_id === null,
@@ -86,6 +98,7 @@ export async function GET(
       name: null,
       avatar_url: null,
     },
+    reactions: reactionsMap[c.id] || [],
   }));
 
   return NextResponse.json({ comments: enriched });
@@ -122,7 +135,7 @@ export async function POST(
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, moderation_status")
+    .select("id, owner_id, moderation_status")
     .eq("id", id)
     .maybeSingle();
 
@@ -130,16 +143,46 @@ export async function POST(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const { error } = await supabase.from("project_comments").insert({
-    project_id: id,
-    author_user_id: user.id,
-    parent_id: parsed.data.parent_id,
-    body: parsed.data.body,
-  });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  let parentAuthorUserId: string | null = null;
+  if (parsed.data.parent_id) {
+    const { data: parent } = await supabase
+      .from("project_comments")
+      .select("author_user_id")
+      .eq("id", parsed.data.parent_id)
+      .maybeSingle();
+    parentAuthorUserId = parent?.author_user_id ?? null;
   }
 
-  return NextResponse.json({ success: true });
+  const { data: inserted, error } = await supabase
+    .from("project_comments")
+    .insert({
+      project_id: id,
+      author_user_id: user.id,
+      parent_id: parsed.data.parent_id,
+      body: parsed.data.body,
+    })
+    .select("id")
+    .single();
+
+  if (error || !inserted) {
+    return NextResponse.json(
+      { error: error?.message || "Failed to create comment" },
+      { status: 400 },
+    );
+  }
+
+  void dispatchCommentSideEffects({
+    sourceType: "project_comment",
+    commentId: inserted.id,
+    body: parsed.data.body,
+    authorUserId: user.id,
+    parentAuthorUserId,
+    contentOwnerUserId: project.owner_id ?? null,
+    metadata: {
+      projectId: id,
+      excerpt: parsed.data.body.slice(0, 160),
+    },
+  });
+
+  return NextResponse.json({ success: true, id: inserted.id });
 }

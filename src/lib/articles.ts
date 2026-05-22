@@ -47,6 +47,7 @@ export type ArticleComment = {
   author: ArticleAuthor | null;
   authorDeleted: boolean;
   replies: ArticleComment[];
+  reactions?: import("@/lib/constants/reactions").ReactionSummary[];
 };
 
 export type ArticleDetail = ArticleFeedItem & {
@@ -57,6 +58,7 @@ export type ArticleDetail = ArticleFeedItem & {
   coverImageStoragePath: string | null;
   heroVideoStoragePath: string | null;
   currentUserLiked: boolean;
+  reactions: import("@/lib/constants/reactions").ReactionSummary[];
   comments: ArticleComment[];
 };
 

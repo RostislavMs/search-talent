@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import FormTextarea from "@/components/ui/form-textarea";
+import MentionText from "@/components/ui/mention-text";
+import MentionTextarea from "@/components/ui/mention-textarea";
 import OptimizedImage from "@/components/ui/optimized-image";
+import ReactionPicker from "@/components/ui/reaction-picker";
 import { apiFetch } from "@/lib/api-client";
+import type { ReactionSummary } from "@/lib/constants/reactions";
 import { createLocalePath } from "@/lib/i18n/config";
 import type { ArticleComment } from "@/lib/articles";
 
@@ -95,7 +98,7 @@ function CommentNode({
       (locale === "uk" ? "Користувач" : "User");
 
   return (
-    <article className="flex gap-2 sm:gap-3">
+    <article id={`comment-${comment.id}`} className="flex gap-2 sm:gap-3">
       <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-[color:var(--surface-muted)] sm:h-8 sm:w-8">
         {comment.author?.avatarUrl ? (
           <OptimizedImage
@@ -120,35 +123,43 @@ function CommentNode({
           ) : null}
         </header>
 
-        <p className="mt-0.5 break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6">
-          {comment.body}
-        </p>
+        <MentionText
+          body={comment.body}
+          className="mt-0.5 block break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6"
+        />
 
-        {canComment ? (
-          <button
-            type="button"
-            className="mt-1 cursor-pointer text-xs font-medium app-soft transition-colors hover:text-[color:var(--foreground)] sm:mt-1.5"
-            onClick={() =>
-              setReplyingTo((prev) =>
-                prev === comment.id ? null : comment.id,
-              )
-            }
-          >
-            {replyLabel}
-          </button>
-        ) : null}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mt-2.5">
+          <ReactionPicker
+            targetType="article_comment"
+            targetId={comment.id}
+            initialReactions={comment.reactions || []}
+            isAuthenticated={canComment}
+            size="sm"
+          />
+
+          {canComment ? (
+            <button
+              type="button"
+              className="cursor-pointer text-xs font-medium app-soft transition-colors hover:text-[color:var(--foreground)]"
+              onClick={() =>
+                setReplyingTo((prev) =>
+                  prev === comment.id ? null : comment.id,
+                )
+              }
+            >
+              {replyLabel}
+            </button>
+          ) : null}
+        </div>
 
         {replyingTo === comment.id ? (
           <div className="mt-3 space-y-2">
-            <FormTextarea
-              className="min-h-20 w-full p-3 text-sm text-[color:var(--foreground)]"
+            <MentionTextarea
+              className="min-h-20 w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] p-3 text-sm text-[color:var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
               placeholder={replyPlaceholder}
               value={replyDrafts[comment.id] || ""}
-              onChange={(event) =>
-                setReplyDrafts((prev) => ({
-                  ...prev,
-                  [comment.id]: event.target.value,
-                }))
+              onChange={(value) =>
+                setReplyDrafts((prev) => ({ ...prev, [comment.id]: value }))
               }
             />
             <Button
@@ -294,6 +305,7 @@ export default function ArticleInteractions({
   initialLikesCount,
   initialViewsCount,
   initialLiked,
+  initialReactions,
   comments,
   isAuthenticated,
 }: {
@@ -302,6 +314,7 @@ export default function ArticleInteractions({
   initialLikesCount: number;
   initialViewsCount: number;
   initialLiked: boolean;
+  initialReactions?: ReactionSummary[];
   comments: ArticleComment[];
   isAuthenticated: boolean;
 }) {
@@ -386,7 +399,7 @@ export default function ArticleInteractions({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button
           variant={liked ? "primary" : "secondary"}
           onClick={() => void toggleLike()}
@@ -402,6 +415,15 @@ export default function ArticleInteractions({
         </span>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <ReactionPicker
+          targetType="article"
+          targetId={articleId}
+          initialReactions={initialReactions || []}
+          isAuthenticated={isAuthenticated}
+        />
+      </div>
+
       <section className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-[color:var(--foreground)]">
@@ -415,15 +437,15 @@ export default function ArticleInteractions({
         </div>
 
         <div className="rounded-[1.75rem] app-card p-5">
-          <FormTextarea
-            className="min-h-32 w-full p-4 text-sm text-[color:var(--foreground)]"
+          <MentionTextarea
+            className="min-h-32 w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] p-4 text-sm text-[color:var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
             placeholder={
               locale === "uk"
                 ? "Поділіться думкою про статтю..."
                 : "Share your thoughts about the article..."
             }
             value={commentBody}
-            onChange={(event) => setCommentBody(event.target.value)}
+            onChange={setCommentBody}
           />
           <div className="mt-4 flex justify-end">
             <Button

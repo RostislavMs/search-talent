@@ -8,6 +8,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { buildNewFollowerEmail } from "@/lib/email/templates";
 import { defaultLocale, isLocale, type Locale } from "@/lib/i18n/config";
 import { getSiteUrl } from "@/lib/seo";
+import { createNotifications } from "@/lib/db/notifications";
 
 const followPayloadSchema = z.object({
   followingUserId: z.string().uuid(),
@@ -75,6 +76,21 @@ export async function POST(request: Request) {
     followingUserId,
   }).catch((err) => {
     console.error("[follows] notify failed", err);
+  });
+
+  // In-app notification (separate from the email channel).
+  void (async () => {
+    const admin = createAdminClient();
+    if (!admin) return;
+    await createNotifications(admin, {
+      recipientUserId: followingUserId,
+      actorUserId: user.id,
+      type: "new_follower",
+      targetType: "profile",
+      targetId: null,
+    });
+  })().catch((err) => {
+    console.error("[follows] in-app notify failed", err);
   });
 
   return NextResponse.json({ following: true });

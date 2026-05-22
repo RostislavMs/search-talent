@@ -330,6 +330,7 @@ export default async function ArticleDetailPage({
             initialLikesCount={article.likesCount}
             initialViewsCount={article.viewsCount}
             initialLiked={article.currentUserLiked}
+            initialReactions={article.reactions}
             comments={article.comments}
             isAuthenticated={Boolean(viewerUserId)}
           />

@@ -7,6 +7,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries";
 import NavLink from "@/components/nav-link";
 import LogoutButton from "@/components/logout-button";
 import LanguageSwitcher from "@/components/language-switcher";
+import NotificationsBell from "@/components/notifications-bell";
 import ThemeToggle from "@/components/theme-toggle";
 import { buttonStyles } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
@@ -217,6 +218,12 @@ export default function SiteHeader({
           </div>
         ) : null}
 
+        {viewer ? (
+          <div className="hidden lg:flex">
+            <NotificationsBell />
+          </div>
+        ) : null}
+
         <div className="hidden items-center gap-2 lg:flex">
           {viewer ? (
             <>
@@ -398,6 +405,13 @@ export default function SiteHeader({
                       </LocalizedLink>
                     ))}
                   </div>
+                </div>
+
+                <div className="mt-3 rounded-2xl border border-[color:var(--border)] p-3">
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+                    {dictionary.notifications.title}
+                  </p>
+                  <NotificationsBell />
                 </div>
 
                 <div className="mt-3 rounded-2xl border border-[color:var(--border)] p-3">

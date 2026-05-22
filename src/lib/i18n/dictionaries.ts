@@ -34,6 +34,7 @@ export const dictionaries = {
       signedInAs: "Signed in as",
       logout: "Log out",
       adminConsole: "Admin console",
+      notifications: "Notifications",
     },
     admin: {
       shell: {
@@ -650,6 +651,40 @@ export const dictionaries = {
       submitError: "Could not post your comment. Please try again.",
       anonymous: "User",
       deletedUser: "Deleted user",
+    },
+    reactions: {
+      addReaction: "Add reaction",
+      toggleAria: "React with {emoji}",
+      reactedAria: "Reacted with {emoji} — {count} reactions",
+      toggleError: "Could not update your reaction. Please try again.",
+    },
+    mentions: {
+      suggestionsLabel: "User suggestions",
+      loading: "Searching…",
+      noResults: "No users found",
+    },
+    notifications: {
+      title: "Notifications",
+      pageTitle: "Notifications",
+      pageDescription:
+        "Mentions, reactions, comments, and new followers — all in one place.",
+      openLabel: "Open notifications",
+      openAll: "View all",
+      markAllRead: "Mark all as read",
+      empty: "No notifications yet.",
+      loading: "Loading…",
+      loadMore: "Load more",
+      loadError: "Could not load notifications. Please try again.",
+      deleteOne: "Remove notification",
+      deleteError: "Could not remove the notification.",
+      someone: "Someone",
+      actions: {
+        mention: "mentioned you in a comment",
+        commentReply: "replied to your comment",
+        newComment: "commented on your content",
+        reaction: "reacted with {emoji} to your post",
+        newFollower: "started following you",
+      },
     },
     verifiedBadge: {
       label: "Email verified",
@@ -1356,6 +1391,7 @@ export const dictionaries = {
       signedInAs: "Увійшли як",
       logout: "Вийти",
       adminConsole: "Адмін-панель",
+      notifications: "Сповіщення",
     },
     admin: {
       shell: {
@@ -1943,6 +1979,40 @@ export const dictionaries = {
       submitError: "Не вдалося надіслати коментар. Спробуйте ще раз.",
       anonymous: "Користувач",
       deletedUser: "Видалений користувач",
+    },
+    reactions: {
+      addReaction: "Додати реакцію",
+      toggleAria: "Поставити реакцію {emoji}",
+      reactedAria: "Реакція {emoji} — {count}",
+      toggleError: "Не вдалося оновити реакцію. Спробуйте ще раз.",
+    },
+    mentions: {
+      suggestionsLabel: "Підказки користувачів",
+      loading: "Пошук…",
+      noResults: "Користувачів не знайдено",
+    },
+    notifications: {
+      title: "Сповіщення",
+      pageTitle: "Сповіщення",
+      pageDescription:
+        "Згадки, реакції, коментарі та нові підписники — все в одному місці.",
+      openLabel: "Відкрити сповіщення",
+      openAll: "Переглянути всі",
+      markAllRead: "Позначити всі як прочитані",
+      empty: "Поки що немає сповіщень.",
+      loading: "Завантаження…",
+      loadMore: "Завантажити ще",
+      loadError: "Не вдалося завантажити сповіщення. Спробуйте ще раз.",
+      deleteOne: "Видалити сповіщення",
+      deleteError: "Не вдалося видалити сповіщення.",
+      someone: "Хтось",
+      actions: {
+        mention: "згадав(ла) вас у коментарі",
+        commentReply: "відповів(ла) на ваш коментар",
+        newComment: "залишив(ла) коментар до вашого контенту",
+        reaction: "поставив(ла) реакцію {emoji} на ваш пост",
+        newFollower: "почав(ла) стежити за вами",
+      },
     },
     verifiedBadge: {
       label: "Email підтверджено",

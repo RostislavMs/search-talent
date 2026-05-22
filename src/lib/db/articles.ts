@@ -13,6 +13,7 @@ import {
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { createClient } from "@/lib/supabase/server";
+import { getReactionsForTargets } from "@/lib/db/reactions";
 
 type ArticleRow = {
   id: string;
@@ -438,6 +439,30 @@ export async function getArticleDetail(slug: string) {
     commentsCountMap,
   );
 
+  const commentTree = buildCommentTree(commentRows, commentAuthorMap);
+
+  const commentIds = commentRows.map((row) => row.id);
+  const [articleReactionsMap, commentReactionsMap] = await Promise.all([
+    getReactionsForTargets(supabase, {
+      targetType: "article",
+      targetIds: [article.id],
+      viewerUserId: viewer.user?.id ?? null,
+    }),
+    getReactionsForTargets(supabase, {
+      targetType: "article_comment",
+      targetIds: commentIds,
+      viewerUserId: viewer.user?.id ?? null,
+    }),
+  ]);
+
+  const annotateReactions = (comments: ArticleComment[]) => {
+    for (const comment of comments) {
+      comment.reactions = commentReactionsMap[comment.id] || [];
+      if (comment.replies.length) annotateReactions(comment.replies);
+    }
+  };
+  annotateReactions(commentTree);
+
   const detail: ArticleDetail = {
     ...feedItem,
     status,
@@ -447,7 +472,8 @@ export async function getArticleDetail(slug: string) {
     coverImageStoragePath: article.cover_image_storage_path,
     heroVideoStoragePath: article.hero_video_storage_path,
     currentUserLiked: Boolean(currentLikeResponse.data),
-    comments: buildCommentTree(commentRows, commentAuthorMap),
+    reactions: articleReactionsMap[article.id] || [],
+    comments: commentTree,
   };
 
   return {
