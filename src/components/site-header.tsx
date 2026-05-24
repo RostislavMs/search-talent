@@ -320,6 +320,10 @@ export default function SiteHeader({
           )}
         </div>
 
+        {viewer ? (
+          <NotificationsBell mode="link" className="lg:hidden" />
+        ) : null}
+
         <details ref={mobileMenuRef} className="relative lg:hidden">
           <summary
             className={`${buttonStyles({
@@ -405,13 +409,6 @@ export default function SiteHeader({
                       </LocalizedLink>
                     ))}
                   </div>
-                </div>
-
-                <div className="mt-3 rounded-2xl border border-[color:var(--border)] p-3">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
-                    {dictionary.notifications.title}
-                  </p>
-                  <NotificationsBell />
                 </div>
 
                 <div className="mt-3 rounded-2xl border border-[color:var(--border)] p-3">

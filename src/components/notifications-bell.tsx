@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-client";
 import {
@@ -17,7 +18,22 @@ import {
 
 const PREVIEW_LIMIT = 6;
 
-export default function NotificationsBell() {
+type NotificationsBellProps = {
+  /**
+   * `dropdown` (default, desktop): clicking the bell opens an in-place
+   * preview list. `link` (mobile): clicking navigates straight to the
+   * full /notifications page. The link variant skips polling for the
+   * preview but still polls the unread count for the badge.
+   */
+  mode?: "dropdown" | "link";
+  /** Extra classes for the outer wrapper (e.g. responsive visibility). */
+  className?: string;
+};
+
+export default function NotificationsBell({
+  mode = "dropdown",
+  className,
+}: NotificationsBellProps = {}) {
   const dictionary = useDictionary();
   const dict = dictionary.notifications;
   const router = useLocalizedRouter();
@@ -26,9 +42,9 @@ export default function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [items, setItems] = useState<NotificationItem[]>([]);
-  const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDetailsElement>(null);
+  const pathname = usePathname();
 
   const refreshUnread = useCallback(async () => {
     const result = await apiFetch<{ count: number }>(
@@ -45,9 +61,27 @@ export default function NotificationsBell() {
     setLoading(false);
     if (result.ok) {
       setItems(result.data.notifications);
-      setLoaded(true);
     }
   }, []);
+
+  // When the viewer lands on the /notifications page, the server-side
+  // page handler marks every notification as read. Mirror that on the
+  // client so the badge drops to 0 immediately — no need to wait for
+  // the next poll cycle (up to 45 s).
+  useEffect(() => {
+    if (!pathname) return;
+    if (!/\/notifications(?:\/|$|\?)/.test(pathname)) return;
+    queueMicrotask(() => {
+      setUnreadCount(0);
+      setItems((current) =>
+        current.map((entry) =>
+          entry.readAt
+            ? entry
+            : { ...entry, readAt: new Date().toISOString() },
+        ),
+      );
+    });
+  }, [pathname]);
 
   // Initial fetch + polling. Pauses when the tab is hidden to save tokens.
   useEffect(() => {
@@ -110,7 +144,10 @@ export default function NotificationsBell() {
   const handleToggle = (event: React.SyntheticEvent<HTMLDetailsElement>) => {
     const next = event.currentTarget.open;
     setOpen(next);
-    if (next && !loaded) void loadPreview();
+    // Always re-fetch on open so the preview matches the badge count.
+    // Caching across opens leads to a stale empty list when new
+    // notifications arrived since the dropdown was first shown.
+    if (next) void loadPreview();
   };
 
   const markAllRead = async () => {
@@ -127,24 +164,101 @@ export default function NotificationsBell() {
     );
   };
 
+  /**
+   * Clicking a notification in the dropdown navigates the user to the
+   * target. We optimistically mark just that one as read so the badge
+   * decrements without waiting for the next poll. The server call is
+   * fire-and-forget; if it fails the next poll will reconcile.
+   */
+  const handleItemClick = (item: NotificationItem) => {
+    if (item.readAt) return;
+    setUnreadCount((current) => Math.max(0, current - 1));
+    setItems((current) =>
+      current.map((entry) =>
+        entry.id === item.id
+          ? { ...entry, readAt: new Date().toISOString() }
+          : entry,
+      ),
+    );
+    void apiFetch("/api/notifications/mark-read", {
+      method: "POST",
+      body: { ids: [item.id] },
+    });
+  };
+
+  const bellIcon = (
+    <>
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M6 8a6 6 0 1 1 12 0v4l1.5 3h-15L6 12V8Z"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M10 18a2 2 0 0 0 4 0"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+        />
+      </svg>
+      {unreadCount > 0 ? (
+        <span
+          aria-hidden="true"
+          className="absolute -top-1 -right-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white"
+        >
+          {unreadCount > 99 ? "99+" : unreadCount}
+        </span>
+      ) : null}
+    </>
+  );
+
+  // ---------------------------------------------------------------- link mode
+  // On small screens the dropdown is too cramped; tapping the bell
+  // navigates straight to /notifications. We still poll for the badge
+  // count so the unread number stays fresh.
+  if (mode === "link") {
+    return (
+      <LocalizedLink
+        href="/notifications"
+        aria-label={dict.openLabel}
+        className={`${buttonStyles({
+          size: "sm",
+          variant: "secondary",
+          className:
+            "relative h-11 w-11 cursor-pointer p-0 justify-center",
+        })} ${className ?? ""}`}
+      >
+        {bellIcon}
+      </LocalizedLink>
+    );
+  }
+
+  // ---------------------------------------------------------------- dropdown
   return (
     <details
       ref={containerRef}
       onToggle={handleToggle}
-      className="relative"
+      className={`relative ${className ?? ""}`}
     >
       <summary
         className={`${buttonStyles({
           size: "sm",
           variant: "secondary",
           className:
-            "relative h-9 w-9 cursor-pointer list-none p-0 justify-center [&::-webkit-details-marker]:hidden",
+            "relative h-11 w-11 cursor-pointer list-none p-0 justify-center [&::-webkit-details-marker]:hidden",
         })}`}
         aria-label={dict.openLabel}
       >
         <svg
-          width="18"
-          height="18"
+          width="22"
+          height="22"
           viewBox="0 0 24 24"
           fill="none"
           aria-hidden="true"
@@ -165,7 +279,7 @@ export default function NotificationsBell() {
         {unreadCount > 0 ? (
           <span
             aria-hidden="true"
-            className="absolute -top-1 -right-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white"
+            className="absolute -top-1 -right-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white"
           >
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
@@ -209,6 +323,7 @@ export default function NotificationsBell() {
                 <li key={item.id}>
                   <LocalizedLink
                     href={href}
+                    onClick={() => handleItemClick(item)}
                     className={[
                       "flex items-start gap-2 rounded-2xl px-2.5 py-2 transition-colors hover:bg-[color:var(--surface-muted)]",
                       item.readAt ? "" : "bg-[color:var(--surface-muted)]/60",
