@@ -15,6 +15,7 @@
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
+    "@google/genai": "^2.6.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.1",
     "@vercel/speed-insights": "^2.0.0",
@@ -33,6 +34,7 @@
     "@types/react-dom": "^19",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
+    "@vitest/coverage-v8": "^2.1.9",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "eslint-config-prettier": "^10.1.8",
@@ -41,7 +43,6 @@
     "supabase": "^2.78.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^2.1.9",
-    "@vitest/coverage-v8": "^2.1.9"
+    "vitest": "^2.1.9"
   }
 }

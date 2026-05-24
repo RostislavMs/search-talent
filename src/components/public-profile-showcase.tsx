@@ -4,6 +4,7 @@ import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import BookmarkButton from "@/components/bookmark-button";
 import ExpandableProfileBio from "@/components/expandable-profile-bio";
 import FollowButton from "@/components/follow-button";
+import ProfileAiSummaryPublic from "@/components/profile-ai-summary-public";
 import ProfileVoteButtons from "@/components/profile-vote-buttons";
 
 const ProfilePdfExport = dynamic(
@@ -399,6 +400,12 @@ export default function PublicProfileShowcase({
                       <VerifiedBadge verified={profile.email_verified} />
                     </div>
                     {profile.headline && <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:mt-5 sm:text-base sm:leading-8" style={{ fontSize: undefined }}>{profile.headline}</p>}
+                    {profile.username ? (
+                      <ProfileAiSummaryPublic
+                        username={profile.username}
+                        isAuthenticated={isAuthenticated}
+                      />
+                    ) : null}
                     <div className={`mt-4 flex flex-wrap gap-2 sm:mt-6 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
                       {(profile.city || profile.countryName) && <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">{[profile.city, profile.countryName].filter(Boolean).join(", ")}</span>}
                       {profile.experience_level && <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getExperienceLabel(profile.experience_level, locale)}</span>}

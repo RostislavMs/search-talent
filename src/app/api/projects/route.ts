@@ -4,6 +4,9 @@ import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { createClient } from "@/lib/supabase/server";
 import { projectPayloadSchema } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
+import { getIntegrationForUser } from "@/lib/db/github-integrations";
+import { fetchRepoFullDetail } from "@/lib/integrations/github";
+import { mapRepoToProjectColumns } from "@/lib/db/github-sync";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -26,6 +29,29 @@ export async function POST(request: Request) {
 
   const uniqueSlug = await generateUniqueProjectSlug(supabase, payload.slug);
 
+  // If the form supplied a GitHub repo, snapshot it server-side so the
+  // denormalized columns (stats, languages, sync timestamp) are filled
+  // on create. Failure to reach GitHub is non-fatal: the project still
+  // saves with whatever fields the user filled manually.
+  let githubColumns: Record<string, unknown> = {};
+  if (payload.githubFullName) {
+    const integration = await getIntegrationForUser(supabase, user.id);
+    if (integration) {
+      const detail = await fetchRepoFullDetail(
+        integration.access_token,
+        payload.githubFullName,
+      );
+      if (detail) {
+        githubColumns = mapRepoToProjectColumns(detail, {
+          description: payload.description,
+          project_status: payload.projectStatus,
+          team_size: payload.teamSize,
+          started_on: payload.startedOn,
+        });
+      }
+    }
+  }
+
   const { data: project, error } = await supabase
     .from("projects")
     .insert({
@@ -46,6 +72,16 @@ export async function POST(request: Request) {
       solution: payload.solution,
       results: payload.results,
       status: payload.status,
+      github_role: payload.githubRole,
+      github_contribution: payload.githubContribution,
+      github_motivation: payload.githubMotivation,
+      github_tech_decisions: payload.githubTechDecisions,
+      github_learnings: payload.githubLearnings,
+      github_showcase_notes: payload.githubShowcaseNotes,
+      github_production_usage: payload.githubProductionUsage,
+      github_display_options: payload.githubDisplayOptions ?? undefined,
+      github_auto_sync: payload.githubAutoSync,
+      ...githubColumns,
     })
     .select("id, slug, status")
     .single();

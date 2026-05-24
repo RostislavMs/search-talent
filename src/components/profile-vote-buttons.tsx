@@ -144,46 +144,54 @@ export default function ProfileVoteButtons({
         </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3">
-        <Button
-          onClick={() => vote(1)}
-          disabled={loading || isOwner}
-          variant={voteState.currentVote === 1 ? "primary" : "secondary"}
-          aria-pressed={voteState.currentVote === 1}
-        >
-          {dictionary.creatorProfile.rateProfileUp} ({voteState.likes})
-        </Button>
+      {isOwner ? (
+        <p className="mt-3 text-sm app-muted">
+          {dictionary.creatorProfile.ownerRatingHint}
+        </p>
+      ) : (
+        <>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button
+              onClick={() => vote(1)}
+              disabled={loading}
+              variant={voteState.currentVote === 1 ? "primary" : "secondary"}
+              aria-pressed={voteState.currentVote === 1}
+            >
+              {dictionary.creatorProfile.rateProfileUp} ({voteState.likes})
+            </Button>
 
-        <Button
-          onClick={() => vote(-1)}
-          disabled={loading || isOwner}
-          variant={voteState.currentVote === -1 ? "primary" : "ghost"}
-          aria-pressed={voteState.currentVote === -1}
-        >
-          {dictionary.creatorProfile.rateProfileDown} ({voteState.dislikes})
-        </Button>
+            <Button
+              onClick={() => vote(-1)}
+              disabled={loading}
+              variant={voteState.currentVote === -1 ? "primary" : "ghost"}
+              aria-pressed={voteState.currentVote === -1}
+            >
+              {dictionary.creatorProfile.rateProfileDown} ({voteState.dislikes})
+            </Button>
 
-        {!isOwner && (
-          <ContentReportButton
-            copy={moderationCopy}
-            targetType="profile"
-            targetId={profileId}
-            isAuthenticated={isAuthenticated}
-          />
-        )}
-      </div>
+            <ContentReportButton
+              copy={moderationCopy}
+              targetType="profile"
+              targetId={profileId}
+              isAuthenticated={isAuthenticated}
+            />
+          </div>
 
-      <p className="mt-3 text-sm app-muted">
-        {isOwner
-          ? dictionary.creatorProfile.ownerRatingHint
-          : voteState.currentVote === 1
-            ? dictionary.creatorProfile.ratingStateLiked
-            : voteState.currentVote === -1
-              ? dictionary.creatorProfile.ratingStateDisliked
-              : dictionary.creatorProfile.ratingStateIdle}
-      </p>
+          <p className="mt-3 text-sm app-muted">
+            {voteState.currentVote === 1
+              ? dictionary.creatorProfile.ratingStateLiked
+              : voteState.currentVote === -1
+                ? dictionary.creatorProfile.ratingStateDisliked
+                : dictionary.creatorProfile.ratingStateIdle}
+          </p>
 
-      {errorMessage && <p className="mt-3 text-sm text-rose-500">{errorMessage}</p>}
+          {errorMessage && (
+            <p className="mt-3 text-sm text-rose-500" role="alert">
+              {errorMessage}
+            </p>
+          )}
+        </>
+      )}
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import AvatarUpload from "@/components/avatar-upload";
 import DeleteAccountSection from "@/components/delete-account-section";
 import EmailVerificationButton from "@/components/email-verification-button";
+import GithubIntegrationCard from "@/components/github-integration-card";
 import { ButtonLink } from "@/components/ui/Button";
 
 const ProfileForm = dynamic(() => import("@/components/profile-form"), {
@@ -134,6 +135,10 @@ export default async function DashboardProfilePage({
       <section className="mt-8 rounded-[2rem] app-card p-6 sm:p-8">
         <ProfileForm profile={profile} />
       </section>
+
+      <div className="mt-8">
+        <GithubIntegrationCard returnTo="/profile/edit" />
+      </div>
 
       <DeleteAccountSection email={user.email ?? ""} />
     </main>

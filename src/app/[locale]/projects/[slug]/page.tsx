@@ -4,10 +4,16 @@ import BookmarkButton from "@/components/bookmark-button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import ProjectComments from "@/components/project-comments";
 import ProjectGallery from "@/components/project-gallery";
+import GithubSyncButton from "@/components/github-sync-button";
+import GithubInsightsPanel from "@/components/github-insights-panel";
+import GithubAuthorNarrative from "@/components/github-author-narrative";
 import VoteButtons from "@/components/vote-buttons";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import { ButtonLink } from "@/components/ui/Button";
 import { getPublicProjectPageData } from "@/lib/db/public";
+import { syncProjectFromGitHub } from "@/lib/db/github-sync";
+import { GITHUB_AUTO_SYNC_INTERVAL_MS } from "@/lib/constants/github";
+import { createClient } from "@/lib/supabase/server";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -149,6 +155,42 @@ export default async function PublicProjectPage({
   const isAdmin = viewer.isAdmin;
   const statusLabel = getStatusLabel(project.project_status, dictionary);
 
+  // Auto-sync GitHub data when the owner opens a linked project and
+  // the last sync is older than the configured interval. This runs in a
+  // Server Component (async page), not a render-phase hook — Date.now()
+  // is safe here.
+  const lastSyncMs = project.github_synced_at
+    ? new Date(project.github_synced_at).getTime()
+    : 0;
+  // eslint-disable-next-line react-hooks/purity
+  const nowMs = Date.now();
+  if (
+    isOwner &&
+    project.github_full_name &&
+    (!project.github_synced_at ||
+      nowMs - lastSyncMs > GITHUB_AUTO_SYNC_INTERVAL_MS)
+  ) {
+    const supabase = await createClient();
+    const result = await syncProjectFromGitHub(supabase, {
+      projectId: project.id,
+      ownerUserId: project.owner_id,
+    });
+    if (result.ok) {
+      project.github_synced_at = result.syncedAt;
+      project.github_stats = {
+        ...(project.github_stats || {}),
+        stars: result.stats.stars,
+        forks: result.stats.forks,
+        watchers: result.stats.watchers,
+        openIssues: result.stats.openIssues,
+        defaultBranch: result.stats.defaultBranch,
+        pushedAt: result.stats.pushedAt,
+        homepage: result.stats.homepage,
+      };
+      project.tech_stack = result.techStack;
+    }
+  }
+
   const siteUrl = getMetadataBase().toString().replace(/\/$/, "");
   const projectUrl = `${siteUrl}/${locale}/projects/${slug}`;
 
@@ -200,6 +242,12 @@ export default async function PublicProjectPage({
                   {dictionary.projectPage.manageProject}
                 </ButtonLink>
               )}
+              {isOwner && project.github_full_name ? (
+                <GithubSyncButton
+                  projectId={project.id}
+                  initialSyncedAt={project.github_synced_at}
+                />
+              ) : null}
               {!isOwner && isAdmin && (
                 <AdminContentQuickActions
                   targetType="project"
@@ -234,6 +282,16 @@ export default async function PublicProjectPage({
                   {owner.name || owner.username || dictionary.projectPage.creatorFallback}
                 </span>
               )}
+              {project.github_full_name ? (
+                <a
+                  href={`https://github.com/${project.github_full_name}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer rounded-full app-panel px-3 py-1 text-sm app-muted transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
+                >
+                  🔗 {dictionary.githubIntegration.syncedFromGithubBadge}
+                </a>
+              ) : null}
             </div>
           </div>
 
@@ -377,6 +435,30 @@ export default async function PublicProjectPage({
             </div>
           </section>
 
+          {project.github_full_name ? (
+            <>
+              <GithubAuthorNarrative
+                role={project.github_role ?? null}
+                contribution={project.github_contribution}
+                motivation={project.github_motivation}
+                techDecisions={project.github_tech_decisions}
+                learnings={project.github_learnings}
+                showcaseNotes={project.github_showcase_notes}
+                productionUsage={project.github_production_usage}
+              />
+
+              <GithubInsightsPanel
+                fullName={project.github_full_name}
+                syncedAt={project.github_synced_at}
+                stats={project.github_stats}
+                techStack={project.tech_stack}
+                readme={project.github_readme}
+                displayOptions={project.github_display_options}
+                locale={locale}
+              />
+            </>
+          ) : null}
+
           <ProjectComments
             projectId={project.id}
             isAuthenticated={isAuthenticated}
@@ -390,6 +472,7 @@ export default async function PublicProjectPage({
             initialLikes={voteSummary.likes}
             initialDislikes={voteSummary.dislikes}
             isAuthenticated={isAuthenticated}
+            isOwner={isOwner}
           />
 
           <BookmarkButton

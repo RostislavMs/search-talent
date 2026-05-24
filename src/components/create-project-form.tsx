@@ -13,6 +13,9 @@ import {
 } from "react";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import GithubRepoImporter, {
+  type GithubImportPayload,
+} from "@/components/github-repo-importer";
 import TagSelect from "@/components/ui/tag-select";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
@@ -30,6 +33,13 @@ import {
   type ProjectVisibilityStatus,
 } from "@/lib/projects";
 import {
+  DEFAULT_GITHUB_DISPLAY_OPTIONS,
+  GITHUB_FIELD_LIMITS,
+  GITHUB_PROJECT_ROLES,
+  type GithubDisplayOptions,
+  type GithubProjectRole,
+} from "@/lib/constants/github";
+import {
   buildYouTubeEmbedUrl,
   getYouTubeVideoId,
   inferProjectMediaKind,
@@ -41,7 +51,7 @@ import { projectPayloadSchema } from "@/lib/validation/project";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
-const TOTAL_STEPS = 4;
+const BASE_TOTAL_STEPS = 4;
 const DEFAULT_ASPECT_RATIO = 16 / 10;
 
 type MetaOption = {
@@ -67,6 +77,16 @@ export type EditableProject = {
   status?: ProjectVisibilityStatus | null;
   technologies: { id: number; name: string }[];
   media?: ProjectMediaItem[];
+  github_full_name?: string | null;
+  github_role?: GithubProjectRole | null;
+  github_contribution?: string | null;
+  github_motivation?: string | null;
+  github_tech_decisions?: string | null;
+  github_learnings?: string | null;
+  github_showcase_notes?: string | null;
+  github_production_usage?: string | null;
+  github_display_options?: Partial<GithubDisplayOptions> | null;
+  github_auto_sync?: boolean | null;
 };
 
 type ProjectFormState = {
@@ -82,6 +102,15 @@ type ProjectFormState = {
   problem: string;
   solution: string;
   results: string;
+  githubRole: GithubProjectRole | "";
+  githubContribution: string;
+  githubMotivation: string;
+  githubTechDecisions: string;
+  githubLearnings: string;
+  githubShowcaseNotes: string;
+  githubProductionUsage: string;
+  githubDisplayOptions: GithubDisplayOptions;
+  githubAutoSync: boolean;
 };
 
 type SaveMode = "draft" | "publish";
@@ -137,6 +166,10 @@ function getStatusLabel(status: ProjectStatus, dictionary: Dictionary) {
 function getInitialFormState(
   project?: EditableProject | null,
 ): ProjectFormState {
+  const role = project?.github_role;
+  const isValidRole =
+    role && (GITHUB_PROJECT_ROLES as readonly string[]).includes(role);
+
   return {
     title: project?.title || "",
     description: project?.description || "",
@@ -150,6 +183,21 @@ function getInitialFormState(
     problem: project?.problem || "",
     solution: project?.solution || "",
     results: project?.results || "",
+    githubRole: isValidRole ? (role as GithubProjectRole) : "",
+    githubContribution: project?.github_contribution || "",
+    githubMotivation: project?.github_motivation || "",
+    githubTechDecisions: project?.github_tech_decisions || "",
+    githubLearnings: project?.github_learnings || "",
+    githubShowcaseNotes: project?.github_showcase_notes || "",
+    githubProductionUsage: project?.github_production_usage || "",
+    githubDisplayOptions: {
+      ...DEFAULT_GITHUB_DISPLAY_OPTIONS,
+      ...(project?.github_display_options || {}),
+    },
+    githubAutoSync:
+      typeof project?.github_auto_sync === "boolean"
+        ? project.github_auto_sync
+        : true,
   };
 }
 
@@ -192,6 +240,9 @@ export default function CreateProjectForm({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<ProjectFormState>(() =>
     getInitialFormState(project),
+  );
+  const [githubFullName, setGithubFullName] = useState<string | null>(
+    project?.github_full_name || null,
   );
 
   const [mediaItems, setMediaItems] = useState<WizardMediaItem[]>(
@@ -485,7 +536,10 @@ export default function CreateProjectForm({
 
   const goToStep = useCallback(
     (target: number) => {
-      const safe = Math.min(Math.max(target, 1), TOTAL_STEPS);
+      const dynamicTotal = githubFullName
+        ? BASE_TOTAL_STEPS + 1
+        : BASE_TOTAL_STEPS;
+      const safe = Math.min(Math.max(target, 1), dynamicTotal);
 
       if (safe > step && !reachedStep(safe)) {
         setErrorMessage(dictionary.forms.mediaTitleRequired);
@@ -496,7 +550,7 @@ export default function CreateProjectForm({
       setSuccessMessage(null);
       setStep(safe);
     },
-    [dictionary.forms.mediaTitleRequired, reachedStep, step],
+    [dictionary.forms.mediaTitleRequired, reachedStep, step, githubFullName],
   );
 
   const uploadLocalFile = useCallback(
@@ -613,11 +667,111 @@ export default function CreateProjectForm({
         solution: form.solution,
         results: form.results,
         skillIds,
+        githubFullName,
+        githubRole: form.githubRole || null,
+        githubContribution: form.githubContribution,
+        githubMotivation: form.githubMotivation,
+        githubTechDecisions: form.githubTechDecisions,
+        githubLearnings: form.githubLearnings,
+        githubShowcaseNotes: form.githubShowcaseNotes,
+        githubProductionUsage: form.githubProductionUsage,
+        githubDisplayOptions: form.githubDisplayOptions,
+        githubAutoSync: form.githubAutoSync,
         status,
       };
     },
-    [form, skillIds],
+    [form, skillIds, githubFullName],
   );
+
+  const applyGithubImport = useCallback(
+    ({ repo }: GithubImportPayload) => {
+      setGithubFullName(repo.fullName);
+
+      const startedOn = repo.createdAt
+        ? repo.createdAt.slice(0, 10)
+        : "";
+      const archivedStatus: ProjectStatus | "" = repo.isArchived
+        ? "completed"
+        : "";
+
+      // README is intentionally NOT copied into `solution` — it lives
+      // in its own `github_readme` column and renders as a collapsible
+      // "Project README" card on the project page. Solution is for the
+      // author's voice, set via the AI draft or manual edit.
+      setForm((prev) => ({
+        ...prev,
+        title: prev.title || repo.name,
+        description: prev.description || repo.description || "",
+        projectUrl: prev.projectUrl || repo.homepage || "",
+        repositoryUrl: prev.repositoryUrl || repo.htmlUrl,
+        startedOn: prev.startedOn || startedOn,
+        teamSize:
+          prev.teamSize ||
+          (repo.contributorsCount > 0
+            ? String(repo.contributorsCount)
+            : ""),
+        projectStatus: prev.projectStatus || archivedStatus,
+      }));
+
+      // Merge GitHub topics into the technology tags (deduped, only if
+      // the catalogue already contains a matching skill).
+      if (repo.topics.length > 0 && metaSkills.length > 0) {
+        const lookup = new Map(
+          metaSkills.map((skill) => [skill.name.toLowerCase(), skill.id]),
+        );
+        const matched: number[] = [];
+        for (const topic of repo.topics) {
+          const id = lookup.get(topic.toLowerCase());
+          if (id) matched.push(id);
+        }
+        if (matched.length > 0) {
+          setSkillIds((prev) =>
+            Array.from(new Set([...prev, ...matched])),
+          );
+        }
+      }
+
+      setSuccessMessage(dictionary.githubIntegration.importApplied);
+      setErrorMessage(null);
+    },
+    [dictionary.githubIntegration.importApplied, metaSkills],
+  );
+
+  const updateGithubDisplayOption = useCallback(
+    <K extends keyof GithubDisplayOptions>(
+      key: K,
+      value: GithubDisplayOptions[K],
+    ) => {
+      setForm((prev) => ({
+        ...prev,
+        githubDisplayOptions: {
+          ...prev.githubDisplayOptions,
+          [key]: value,
+        },
+      }));
+    },
+    [],
+  );
+
+  const handleGithubUnlink = useCallback(() => {
+    setGithubFullName(null);
+    setForm((prev) => ({
+      ...prev,
+      githubRole: "",
+      githubContribution: "",
+      githubMotivation: "",
+      githubTechDecisions: "",
+      githubLearnings: "",
+      githubShowcaseNotes: "",
+      githubProductionUsage: "",
+      githubAutoSync: false,
+      githubDisplayOptions: { ...DEFAULT_GITHUB_DISPLAY_OPTIONS },
+    }));
+    // Move user away from the now-gone "GitHub" step.
+    setStep(1);
+    setSuccessMessage(dictionary.githubIntegration.unlinkedMessage);
+    setErrorMessage(null);
+  }, [dictionary.githubIntegration.unlinkedMessage]);
 
   const handleSave = useCallback(
     async (mode: SaveMode) => {
@@ -773,35 +927,55 @@ export default function CreateProjectForm({
     ],
   );
 
-  const stepDescriptors = useMemo(
-    () => [
+  // The "GitHub details" step is inserted between Basics and Details
+  // only when the project is linked to a GitHub repository. This keeps
+  // the wizard 4 steps for manual projects and 5 for imported ones.
+  const hasGithubStep = Boolean(githubFullName);
+
+  const stepDescriptors = useMemo(() => {
+    const descriptors: Array<{
+      key: string;
+      title: string;
+      description: string;
+    }> = [
       {
-        index: 1,
+        key: "basics",
         title: dictionary.forms.stepBasicsTitle,
         description: dictionary.forms.stepBasicsDescription,
       },
+    ];
+    if (hasGithubStep) {
+      descriptors.push({
+        key: "github",
+        title: dictionary.forms.stepGithubTitle,
+        description: dictionary.forms.stepGithubDescription,
+      });
+    }
+    descriptors.push(
       {
-        index: 2,
+        key: "details",
         title: dictionary.forms.stepDetailsTitle,
         description: dictionary.forms.stepDetailsDescription,
       },
       {
-        index: 3,
+        key: "story",
         title: dictionary.forms.stepStoryTitle,
         description: dictionary.forms.stepStoryDescription,
       },
       {
-        index: 4,
+        key: "media",
         title: dictionary.forms.stepMediaTitle,
         description: dictionary.forms.stepMediaDescription,
       },
-    ],
-    [dictionary.forms],
-  );
+    );
+    return descriptors.map((entry, idx) => ({ ...entry, index: idx + 1 }));
+  }, [dictionary.forms, hasGithubStep]);
 
+  const totalSteps = stepDescriptors.length;
   const currentDescriptor = stepDescriptors[step - 1];
+  const currentStepKey = currentDescriptor?.key;
   const submitting = pendingSaveMode !== null;
-  const isLastStep = step === TOTAL_STEPS;
+  const isLastStep = step === totalSteps;
   const draftLabel =
     pendingSaveMode === "draft"
       ? dictionary.forms.savingDraft
@@ -841,7 +1015,7 @@ export default function CreateProjectForm({
         }}
         className="space-y-6"
       >
-        {step === 1 && (
+        {currentStepKey === "basics" && (
           <StepBasics
             dictionary={dictionary}
             form={form}
@@ -849,10 +1023,23 @@ export default function CreateProjectForm({
             metaSkills={metaSkills}
             skillIds={skillIds}
             onSkillsChange={setSkillIds}
+            onGithubImport={isEditMode ? undefined : applyGithubImport}
           />
         )}
 
-        {step === 2 && (
+        {currentStepKey === "github" && githubFullName && (
+          <StepGithub
+            dictionary={dictionary}
+            form={form}
+            update={update}
+            updateDisplayOption={updateGithubDisplayOption}
+            githubFullName={githubFullName}
+            projectId={project?.id || null}
+            onUnlinked={handleGithubUnlink}
+          />
+        )}
+
+        {currentStepKey === "details" && (
           <StepDetails
             dictionary={dictionary}
             form={form}
@@ -862,11 +1049,11 @@ export default function CreateProjectForm({
           />
         )}
 
-        {step === 3 && (
+        {currentStepKey === "story" && (
           <StepStory dictionary={dictionary} form={form} update={update} />
         )}
 
-        {step === 4 && (
+        {currentStepKey === "media" && (
           <StepMedia
             dictionary={dictionary}
             mediaItems={mediaItems}
@@ -965,6 +1152,7 @@ type StepDescriptor = {
   index: number;
   title: string;
   description: string;
+  key?: string;
 };
 
 function StepHeader({
@@ -978,10 +1166,13 @@ function StepHeader({
   onSelect: (target: number) => void;
   dictionary: Dictionary;
 }) {
+  const total = descriptors.length;
   return (
     <ol
       aria-label={dictionary.forms.stepLabel}
-      className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+      className={`grid gap-3 ${
+        total >= 5 ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-2 sm:grid-cols-4"
+      }`}
     >
       {descriptors.map((descriptor) => {
         const isActive = current === descriptor.index;
@@ -1006,7 +1197,7 @@ function StepHeader({
               aria-current={isActive ? "step" : undefined}
             >
               <span className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
-                {dictionary.forms.stepLabel} {descriptor.index} / {TOTAL_STEPS}
+                {dictionary.forms.stepLabel} {descriptor.index} / {total}
               </span>
               <span className="text-sm font-semibold text-[color:var(--foreground)]">
                 {descriptor.title}
@@ -1026,6 +1217,7 @@ function StepBasics({
   metaSkills,
   skillIds,
   onSkillsChange,
+  onGithubImport,
 }: {
   dictionary: Dictionary;
   form: ProjectFormState;
@@ -1036,9 +1228,15 @@ function StepBasics({
   metaSkills: MetaOption[];
   skillIds: number[];
   onSkillsChange: (next: number[]) => void;
+  onGithubImport?: (payload: GithubImportPayload) => void;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
+      {onGithubImport ? (
+        <div className="md:col-span-2">
+          <GithubRepoImporter onImport={onGithubImport} />
+        </div>
+      ) : null}
       <Field
         label={dictionary.forms.projectTitle}
         htmlFor="project-title"
@@ -1088,6 +1286,431 @@ function StepBasics({
           onChange={(values) => onSkillsChange(values.map(Number))}
         />
       </Field>
+    </div>
+  );
+}
+
+function StepGithub({
+  dictionary,
+  form,
+  update,
+  updateDisplayOption,
+  githubFullName,
+  projectId,
+  onUnlinked,
+}: {
+  dictionary: Dictionary;
+  form: ProjectFormState;
+  update: <K extends keyof ProjectFormState>(
+    field: K,
+    value: ProjectFormState[K],
+  ) => void;
+  updateDisplayOption: <K extends keyof GithubDisplayOptions>(
+    key: K,
+    value: GithubDisplayOptions[K],
+  ) => void;
+  githubFullName: string;
+  projectId: string | null;
+  onUnlinked: () => void;
+}) {
+  const dict = dictionary.githubIntegration;
+  const aiDict = dictionary.aiDraft;
+  const router = useLocalizedRouter();
+  const [confirmingUnlink, setConfirmingUnlink] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
+  const [unlinkError, setUnlinkError] = useState<string | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiMessage, setAiMessage] = useState<
+    | { kind: "ok"; appliedCount: number }
+    | { kind: "info"; reason: "all_filled" }
+    | { kind: "error"; message: string }
+    | null
+  >(null);
+
+  const roleOptions = useMemo(
+    () =>
+      GITHUB_PROJECT_ROLES.map((role) => ({
+        value: role,
+        label: dict.roles[role],
+      })),
+    [dict.roles],
+  );
+
+  const generateAiDraft = async () => {
+    setAiGenerating(true);
+    setAiMessage(null);
+
+    const result = await apiFetch<{
+      draft: {
+        role: GithubProjectRole | null;
+        contribution: string;
+        motivation: string;
+        techDecisions: string;
+        learnings: string;
+        showcaseNotes: string;
+        productionUsage: string;
+        projectRole: string;
+        problem: string;
+        solution: string;
+        results: string;
+      };
+    }>("/api/ai/github-draft", {
+      method: "POST",
+      body: {
+        fullName: githubFullName,
+        locale: router.locale,
+        existing: {
+          role: form.githubRole || null,
+          contribution: form.githubContribution,
+          motivation: form.githubMotivation,
+          techDecisions: form.githubTechDecisions,
+          learnings: form.githubLearnings,
+          showcaseNotes: form.githubShowcaseNotes,
+          productionUsage: form.githubProductionUsage,
+          projectRole: form.role,
+          problem: form.problem,
+          solution: form.solution,
+          results: form.results,
+        },
+      },
+    });
+
+    setAiGenerating(false);
+
+    if (!result.ok) {
+      setAiMessage({
+        kind: "error",
+        message: result.error || aiDict.error,
+      });
+      return;
+    }
+
+    const draft = result.data.draft;
+
+    // Apply only to empty fields — never overwrite the user's text.
+    let applied = 0;
+    if (!form.githubRole && draft.role) {
+      update("githubRole", draft.role);
+      applied += 1;
+    }
+    const setIfEmpty = <K extends keyof ProjectFormState>(
+      field: K,
+      value: string,
+    ) => {
+      if (typeof form[field] === "string" && (form[field] as string).trim().length === 0 && value.trim().length > 0) {
+        update(field, value as ProjectFormState[K]);
+        applied += 1;
+      }
+    };
+    setIfEmpty("githubContribution", draft.contribution);
+    setIfEmpty("githubMotivation", draft.motivation);
+    setIfEmpty("githubTechDecisions", draft.techDecisions);
+    setIfEmpty("githubLearnings", draft.learnings);
+    setIfEmpty("githubShowcaseNotes", draft.showcaseNotes);
+    setIfEmpty("githubProductionUsage", draft.productionUsage);
+    // Standard project narrative fields (Steps 1 + 3).
+    setIfEmpty("role", draft.projectRole);
+    setIfEmpty("problem", draft.problem);
+    setIfEmpty("solution", draft.solution);
+    setIfEmpty("results", draft.results);
+
+    setAiMessage(
+      applied === 0
+        ? { kind: "info", reason: "all_filled" }
+        : { kind: "ok", appliedCount: applied },
+    );
+  };
+
+  const requestUnlink = () => {
+    setUnlinkError(null);
+    setConfirmingUnlink(true);
+  };
+
+  const cancelUnlink = () => {
+    setConfirmingUnlink(false);
+  };
+
+  const performUnlink = async () => {
+    setUnlinking(true);
+    setUnlinkError(null);
+
+    if (projectId) {
+      const result = await apiFetch(
+        `/api/projects/${projectId}/unlink-github`,
+        { method: "POST" },
+      );
+      if (!result.ok) {
+        setUnlinking(false);
+        setUnlinkError(result.error || dict.unlinkError);
+        return;
+      }
+    }
+
+    setUnlinking(false);
+    setConfirmingUnlink(false);
+    onUnlinked();
+  };
+
+  const togglesGroup: Array<{
+    key: keyof GithubDisplayOptions;
+    label: string;
+  }> = [
+    { key: "showStats", label: dict.toggleStats },
+    { key: "showLanguages", label: dict.toggleLanguages },
+    { key: "showTopics", label: dict.toggleTopics },
+    { key: "showRelease", label: dict.toggleRelease },
+    { key: "showLicense", label: dict.toggleLicense },
+    { key: "showContributors", label: dict.toggleContributors },
+    { key: "showActivity", label: dict.toggleActivity },
+    { key: "showReadme", label: dict.toggleReadme },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border app-border bg-[color:var(--surface-muted)] p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+              {dict.linkedHeader}
+            </p>
+            <a
+              href={`https://github.com/${githubFullName}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-block break-all text-sm font-semibold text-[color:var(--foreground)] hover:underline"
+            >
+              {githubFullName}
+            </a>
+          </div>
+          {!confirmingUnlink ? (
+            <button
+              type="button"
+              onClick={requestUnlink}
+              className="cursor-pointer rounded-full app-panel px-3 py-1.5 text-xs font-medium app-soft transition-colors hover:bg-[color:var(--surface)] hover:text-[color:var(--foreground)]"
+            >
+              {dict.unlink}
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void performUnlink()}
+                disabled={unlinking}
+                className="cursor-pointer rounded-full bg-rose-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-rose-600 disabled:opacity-60"
+              >
+                {unlinking ? dict.unlinking : dict.confirmUnlink}
+              </button>
+              <button
+                type="button"
+                onClick={cancelUnlink}
+                disabled={unlinking}
+                className="cursor-pointer rounded-full app-panel px-3 py-1.5 text-xs font-medium app-soft transition-colors hover:bg-[color:var(--surface)]"
+              >
+                {dict.cancel}
+              </button>
+            </div>
+          )}
+        </div>
+        {confirmingUnlink ? (
+          <p className="mt-2 text-xs app-muted">{dict.unlinkConfirm}</p>
+        ) : null}
+        {unlinkError ? (
+          <p role="alert" className="mt-2 text-xs text-rose-500">
+            {unlinkError}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="rounded-2xl border border-dashed app-border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[color:var(--foreground)]">
+              ✨ {aiDict.title}
+            </p>
+            <p className="mt-0.5 text-xs app-muted">{aiDict.description}</p>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => void generateAiDraft()}
+            disabled={aiGenerating}
+          >
+            {aiGenerating ? aiDict.generating : aiDict.button}
+          </Button>
+        </div>
+
+        {aiMessage?.kind === "error" ? (
+          <p role="alert" className="mt-2 text-xs text-rose-500">
+            {aiMessage.message}
+          </p>
+        ) : null}
+        {aiMessage?.kind === "ok" ? (
+          <p role="status" className="mt-2 text-xs text-emerald-600">
+            {aiDict.applied.replace("{count}", String(aiMessage.appliedCount))}
+          </p>
+        ) : null}
+        {aiMessage?.kind === "info" ? (
+          <p role="status" className="mt-2 text-xs app-muted">
+            {aiDict.allFilled}
+          </p>
+        ) : null}
+      </div>
+
+      <Field label={dict.roleLabel}>
+        <FormSelect
+          value={form.githubRole || ""}
+          onChange={(value) =>
+            update("githubRole", value as ProjectFormState["githubRole"])
+          }
+          placeholder={dict.rolePlaceholder}
+          options={roleOptions}
+        />
+      </Field>
+
+      <Field
+        label={dict.contributionLabel}
+        htmlFor="github-contribution"
+        description={dict.contributionHint}
+      >
+        <FormTextarea
+          id="github-contribution"
+          value={form.githubContribution}
+          onChange={(event) =>
+            update("githubContribution", event.target.value)
+          }
+          placeholder={dict.contributionPlaceholder}
+          className="min-h-28 p-3 text-sm text-[color:var(--foreground)]"
+          maxLength={GITHUB_FIELD_LIMITS.contribution}
+        />
+      </Field>
+
+      <Field
+        label={dict.motivationLabel}
+        htmlFor="github-motivation"
+        description={dict.motivationHint}
+      >
+        <FormTextarea
+          id="github-motivation"
+          value={form.githubMotivation}
+          onChange={(event) => update("githubMotivation", event.target.value)}
+          placeholder={dict.motivationPlaceholder}
+          className="min-h-24 p-3 text-sm text-[color:var(--foreground)]"
+          maxLength={GITHUB_FIELD_LIMITS.motivation}
+        />
+      </Field>
+
+      <Field
+        label={dict.techDecisionsLabel}
+        htmlFor="github-tech-decisions"
+        description={dict.techDecisionsHint}
+      >
+        <FormTextarea
+          id="github-tech-decisions"
+          value={form.githubTechDecisions}
+          onChange={(event) =>
+            update("githubTechDecisions", event.target.value)
+          }
+          placeholder={dict.techDecisionsPlaceholder}
+          className="min-h-28 p-3 text-sm text-[color:var(--foreground)]"
+          maxLength={GITHUB_FIELD_LIMITS.techDecisions}
+        />
+      </Field>
+
+      <Field
+        label={dict.learningsLabel}
+        htmlFor="github-learnings"
+        description={dict.learningsHint}
+      >
+        <FormTextarea
+          id="github-learnings"
+          value={form.githubLearnings}
+          onChange={(event) => update("githubLearnings", event.target.value)}
+          placeholder={dict.learningsPlaceholder}
+          className="min-h-24 p-3 text-sm text-[color:var(--foreground)]"
+          maxLength={GITHUB_FIELD_LIMITS.learnings}
+        />
+      </Field>
+
+      <Field
+        label={dict.showcaseLabel}
+        htmlFor="github-showcase"
+        description={dict.showcaseHint}
+      >
+        <FormTextarea
+          id="github-showcase"
+          value={form.githubShowcaseNotes}
+          onChange={(event) =>
+            update("githubShowcaseNotes", event.target.value)
+          }
+          placeholder={dict.showcasePlaceholder}
+          className="min-h-24 p-3 text-sm text-[color:var(--foreground)]"
+          maxLength={GITHUB_FIELD_LIMITS.showcaseNotes}
+        />
+      </Field>
+
+      <Field
+        label={dict.productionUsageLabel}
+        htmlFor="github-production-usage"
+        description={dict.productionUsageHint}
+      >
+        <FormTextarea
+          id="github-production-usage"
+          value={form.githubProductionUsage}
+          onChange={(event) =>
+            update("githubProductionUsage", event.target.value)
+          }
+          placeholder={dict.productionUsagePlaceholder}
+          className="min-h-20 p-3 text-sm text-[color:var(--foreground)]"
+          maxLength={GITHUB_FIELD_LIMITS.productionUsage}
+        />
+      </Field>
+
+      <fieldset className="rounded-2xl border app-border p-4">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+          {dict.displayPreferences}
+        </legend>
+        <p className="mt-1 mb-3 text-xs app-muted">
+          {dict.displayPreferencesHint}
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {togglesGroup.map((toggle) => (
+            <label
+              key={toggle.key}
+              className="flex cursor-pointer items-center gap-2 rounded-xl p-2 hover:bg-[color:var(--surface-muted)]"
+            >
+              <input
+                type="checkbox"
+                checked={form.githubDisplayOptions[toggle.key]}
+                onChange={(event) =>
+                  updateDisplayOption(toggle.key, event.target.checked)
+                }
+                className="h-4 w-4 cursor-pointer accent-[color:var(--accent)]"
+              />
+              <span className="text-sm text-[color:var(--foreground)]">
+                {toggle.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="rounded-2xl border app-border p-4">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+          {dict.syncPreferences}
+        </legend>
+        <label className="mt-2 flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={form.githubAutoSync}
+            onChange={(event) => update("githubAutoSync", event.target.checked)}
+            className="h-4 w-4 cursor-pointer accent-[color:var(--accent)]"
+          />
+          <span className="text-sm text-[color:var(--foreground)]">
+            {dict.autoSyncLabel}
+          </span>
+        </label>
+        <p className="mt-1 ml-6 text-xs app-muted">{dict.autoSyncHint}</p>
+      </fieldset>
     </div>
   );
 }
@@ -1504,11 +2127,13 @@ function Field({
   children,
   htmlFor,
   className,
+  description,
 }: {
   label: string;
   children: ReactNode;
   htmlFor?: string;
   className?: string;
+  description?: string;
 }) {
   return (
     <div className={className}>
@@ -1518,6 +2143,9 @@ function Field({
       >
         {label}
       </label>
+      {description ? (
+        <p className="-mt-1 mb-2 text-xs app-muted">{description}</p>
+      ) : null}
       {children}
     </div>
   );

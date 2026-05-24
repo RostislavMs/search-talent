@@ -6,6 +6,10 @@ import {
   type ProjectStatus,
   type ProjectVisibilityStatus,
 } from "@/lib/projects";
+import {
+  GITHUB_FIELD_LIMITS,
+  GITHUB_PROJECT_ROLES,
+} from "@/lib/constants/github";
 
 function normalizeOptionalString(value: unknown) {
   if (typeof value !== "string") {
@@ -93,6 +97,76 @@ export const projectPayloadSchema = z
     solution: optionalText("Solution", 5000),
     results: optionalText("Results", 5000),
     skillIds: skillIdsSchema,
+    githubFullName: z
+      .union([
+        z
+          .string()
+          .trim()
+          .regex(
+            /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/,
+            "Invalid GitHub repository identifier",
+          ),
+        z.literal(""),
+        z.null(),
+        z.undefined(),
+      ])
+      .transform((value) =>
+        typeof value === "string" && value.length > 0 ? value : null,
+      ),
+    githubRole: z
+      .union([
+        z.enum(GITHUB_PROJECT_ROLES),
+        z.literal(""),
+        z.null(),
+        z.undefined(),
+      ])
+      .transform((value) =>
+        value && GITHUB_PROJECT_ROLES.includes(value as never)
+          ? (value as (typeof GITHUB_PROJECT_ROLES)[number])
+          : null,
+      ),
+    githubContribution: optionalText(
+      "Contribution",
+      GITHUB_FIELD_LIMITS.contribution,
+    ),
+    githubMotivation: optionalText(
+      "Motivation",
+      GITHUB_FIELD_LIMITS.motivation,
+    ),
+    githubTechDecisions: optionalText(
+      "Technical decisions",
+      GITHUB_FIELD_LIMITS.techDecisions,
+    ),
+    githubLearnings: optionalText(
+      "Learnings",
+      GITHUB_FIELD_LIMITS.learnings,
+    ),
+    githubShowcaseNotes: optionalText(
+      "Showcase notes",
+      GITHUB_FIELD_LIMITS.showcaseNotes,
+    ),
+    githubProductionUsage: optionalText(
+      "Production usage",
+      GITHUB_FIELD_LIMITS.productionUsage,
+    ),
+    githubDisplayOptions: z
+      .object({
+        showStats: z.boolean(),
+        showLanguages: z.boolean(),
+        showRelease: z.boolean(),
+        showLicense: z.boolean(),
+        showContributors: z.boolean(),
+        showActivity: z.boolean(),
+        showTopics: z.boolean(),
+        showReadme: z.boolean(),
+      })
+      .partial()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
+    githubAutoSync: z
+      .union([z.boolean(), z.null(), z.undefined()])
+      .transform((value) => (typeof value === "boolean" ? value : true)),
     status: z
       .union([z.enum(projectVisibilityStatuses), z.null(), z.undefined()])
       .transform((value): ProjectVisibilityStatus =>

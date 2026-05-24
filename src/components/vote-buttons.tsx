@@ -15,6 +15,7 @@ type VoteButtonsProps = {
   initialLikes: number;
   initialDislikes: number;
   isAuthenticated: boolean;
+  isOwner: boolean;
 };
 
 type VoteState = {
@@ -58,6 +59,7 @@ export default function VoteButtons({
   initialLikes,
   initialDislikes,
   isAuthenticated,
+  isOwner,
 }: VoteButtonsProps) {
   const locale = useCurrentLocale();
   const dictionary = useDictionary();
@@ -137,42 +139,54 @@ export default function VoteButtons({
         </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3">
-        <Button
-          onClick={() => vote(1)}
-          disabled={loading}
-          variant={voteState.currentVote === 1 ? "primary" : "secondary"}
-          aria-pressed={voteState.currentVote === 1}
-        >
-          {dictionary.projectPage.likeProject} ({voteState.likes})
-        </Button>
+      {isOwner ? (
+        <p className="mt-3 text-sm app-muted">
+          {dictionary.projectPage.ownerVoteHint}
+        </p>
+      ) : (
+        <>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button
+              onClick={() => vote(1)}
+              disabled={loading}
+              variant={voteState.currentVote === 1 ? "primary" : "secondary"}
+              aria-pressed={voteState.currentVote === 1}
+            >
+              {dictionary.projectPage.likeProject} ({voteState.likes})
+            </Button>
 
-        <Button
-          onClick={() => vote(-1)}
-          disabled={loading}
-          variant={voteState.currentVote === -1 ? "primary" : "ghost"}
-          aria-pressed={voteState.currentVote === -1}
-        >
-          {dictionary.projectPage.dislikeProject} ({voteState.dislikes})
-        </Button>
+            <Button
+              onClick={() => vote(-1)}
+              disabled={loading}
+              variant={voteState.currentVote === -1 ? "primary" : "ghost"}
+              aria-pressed={voteState.currentVote === -1}
+            >
+              {dictionary.projectPage.dislikeProject} ({voteState.dislikes})
+            </Button>
 
-        <ContentReportButton
-          copy={moderationCopy}
-          targetType="project"
-          targetId={projectId}
-          isAuthenticated={isAuthenticated}
-        />
-      </div>
+            <ContentReportButton
+              copy={moderationCopy}
+              targetType="project"
+              targetId={projectId}
+              isAuthenticated={isAuthenticated}
+            />
+          </div>
 
-      <p className="mt-3 text-sm app-muted">
-        {voteState.currentVote === 1
-          ? dictionary.projectPage.voteStateLiked
-          : voteState.currentVote === -1
-            ? dictionary.projectPage.voteStateDisliked
-            : dictionary.projectPage.voteStateIdle}
-      </p>
+          <p className="mt-3 text-sm app-muted">
+            {voteState.currentVote === 1
+              ? dictionary.projectPage.voteStateLiked
+              : voteState.currentVote === -1
+                ? dictionary.projectPage.voteStateDisliked
+                : dictionary.projectPage.voteStateIdle}
+          </p>
 
-      {errorMessage && <p className="mt-3 text-sm text-rose-500">{errorMessage}</p>}
+          {errorMessage && (
+            <p className="mt-3 text-sm text-rose-500" role="alert">
+              {errorMessage}
+            </p>
+          )}
+        </>
+      )}
     </section>
   );
 }

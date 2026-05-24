@@ -635,6 +635,8 @@ export const dictionaries = {
       voteStateDisliked:
         "You dislike this project. Click again to remove your vote.",
       voteStateIdle: "Choose whether this project helped or impressed you.",
+      ownerVoteHint:
+        "This is your project. Community ratings show how visitors react to it.",
     },
     projectComments: {
       title: "Comments",
@@ -685,6 +687,141 @@ export const dictionaries = {
         reaction: "reacted with {emoji} to your post",
         newFollower: "started following you",
       },
+    },
+    githubIntegration: {
+      title: "GitHub integration",
+      description:
+        "Connect your GitHub account to import repositories as projects and keep their stats in sync.",
+      connect: "Connect GitHub",
+      disconnect: "Disconnect",
+      disconnecting: "Disconnecting…",
+      loading: "Checking connection…",
+      scopes: "Scopes",
+      connectedMessage: "GitHub connected successfully.",
+      connectError: "Could not finish GitHub connect ({code}). Please try again.",
+      disconnectedMessage: "GitHub disconnected.",
+      disconnectError: "Could not disconnect GitHub. Please try again.",
+      loadError: "Could not load GitHub status.",
+      importTitle: "Import from GitHub",
+      notConnectedHint: "Connect GitHub to pick a repository for this project.",
+      connectedAs: "Connected as @{login}",
+      pickRepo: "Pick a repository",
+      hideRepos: "Hide",
+      filterPlaceholder: "Filter repositories…",
+      loadingRepos: "Loading repositories…",
+      noRepos: "No repositories match the filter.",
+      reposError: "Could not load repositories.",
+      fetchRepoError: "Could not load the repository.",
+      importApplied: "Repository data applied. You can still edit any field.",
+      syncNow: "Sync now",
+      syncing: "Syncing…",
+      lastSynced: "Last synced",
+      syncError: "Could not sync from GitHub.",
+      archivedBadge: "Archived",
+      linkedHeader: "Linked GitHub repository",
+      unlink: "Unlink",
+      unlinking: "Unlinking…",
+      unlinkConfirm:
+        "This will clear all GitHub-linked data on this project, including stats, README, and your contribution notes.",
+      confirmUnlink: "Unlink anyway",
+      cancel: "Cancel",
+      unlinkError: "Could not unlink the GitHub repository.",
+      unlinkedMessage: "GitHub link removed. Save the project to apply.",
+      roles: {
+        solo: "Solo creator",
+        founder: "Founder",
+        maintainer: "Maintainer",
+        core_contributor: "Core contributor",
+        contributor: "Contributor",
+        fork_owner: "Fork owner",
+      },
+      roleLabel: "Your role in this repository",
+      rolePlaceholder: "Pick your role…",
+      contributionLabel: "What you specifically built",
+      contributionHint:
+        "Describe the parts you personally built. README describes the project; this describes you.",
+      contributionPlaceholder:
+        "e.g. designed the schema, wrote the OAuth flow, set up CI…",
+      motivationLabel: "Why you built it",
+      motivationHint:
+        "The story behind the project — the itch you scratched, the problem you saw.",
+      motivationPlaceholder:
+        "What sparked this project? Why open source it?",
+      techDecisionsLabel: "Key technical decisions",
+      techDecisionsHint:
+        "Architecture trade-offs, library choices, or non-obvious design decisions you made.",
+      techDecisionsPlaceholder:
+        "e.g. chose Postgres over MongoDB because…",
+      learningsLabel: "What you learned",
+      learningsHint:
+        "Skills sharpened, mistakes made, lessons that would help others.",
+      learningsPlaceholder:
+        "Concrete takeaways a recruiter or peer would find interesting.",
+      showcaseLabel: "What this project demonstrates",
+      showcaseHint:
+        "Which of your skills or strengths does this project show off?",
+      showcasePlaceholder:
+        "e.g. full-stack delivery, performance optimization, accessibility…",
+      productionUsageLabel: "Where it's used",
+      productionUsageHint:
+        "If this is running in production somewhere, where? Optional.",
+      productionUsagePlaceholder: "e.g. used internally at Acme Inc.",
+      displayPreferences: "Display on the project page",
+      displayPreferencesHint:
+        "Choose which GitHub-derived sections appear publicly.",
+      toggleStats: "Stats (stars, forks, contributors)",
+      toggleLanguages: "Language breakdown",
+      toggleTopics: "Repository topics",
+      toggleRelease: "Latest release",
+      toggleLicense: "License",
+      toggleContributors: "Contributors count",
+      toggleActivity: "Activity dates",
+      toggleReadme: "README preview",
+      syncPreferences: "Sync settings",
+      autoSyncLabel: "Auto-refresh from GitHub",
+      autoSyncHint:
+        "Refresh stats and README at most once a day when the project page is opened.",
+      insightsTitle: "GitHub Insights",
+      languageBreakdown: "Language breakdown",
+      topics: "Topics",
+      techStack: "Tech stack",
+      startedLabel: "Started",
+      lastCommitLabel: "Last commit",
+      latestReleaseLabel: "Latest release",
+      licenseLabel: "License",
+      readmeTitle: "Project README",
+      contributionSectionTitle: "Author's contribution",
+      narrativeSectionTitle: "Behind the scenes",
+      syncedFromGithubBadge: "Synced from GitHub",
+    },
+    aiDraft: {
+      title: "AI draft",
+      description:
+        "Let AI suggest drafts for the empty fields above (incl. role, problem, solution, results). You can edit anything afterwards.",
+      button: "Generate with AI",
+      generating: "Generating…",
+      applied: "AI filled {count} field(s). You can edit them.",
+      allFilled: "All fields are already filled — nothing to draft.",
+      error: "Could not generate a draft. Please try again.",
+    },
+    aiProfileSummary: {
+      title: "AI profile summary",
+      description:
+        "A two-sentence elevator pitch displayed at the top of the public profile. Visitors can also (re)generate it from the profile page.",
+      generate: "Generate",
+      regenerate: "Regenerate",
+      generating: "Generating…",
+      clear: "Clear",
+      emptyState:
+        "No AI summary yet. Generate one to give visitors a quick read on who you are.",
+      generatedAt: "Last generated",
+      error: "Could not generate a summary. Please try again.",
+      deleteError: "Could not clear the summary.",
+      publicLabel: "AI-generated summary",
+      publicGenerate: "Generate AI summary",
+      publicEmpty:
+        "No AI summary yet — generate a 2-sentence read on this person.",
+      publicHint: "Powered by AI · regeneratable",
     },
     verifiedBadge: {
       label: "Email verified",
@@ -1138,6 +1275,9 @@ export const dictionaries = {
       stepBasicsTitle: "Basics",
       stepBasicsDescription:
         "Start with a clear title, a short description, and the role you took on.",
+      stepGithubTitle: "GitHub details",
+      stepGithubDescription:
+        "Add the open-source context — your role, contribution, and what visitors should see.",
       stepDetailsTitle: "Details",
       stepDetailsDescription:
         "Add timeline, status, team size, and where to find the project.",
@@ -1963,6 +2103,8 @@ export const dictionaries = {
         "Вам не сподобався цей проєкт. Натисніть ще раз, щоб прибрати голос.",
       voteStateIdle:
         "Оцініть проєкт, якщо він був корисним або справив враження.",
+      ownerVoteHint:
+        "Це ваш проєкт. Оцінки спільноти показують, як на нього реагують відвідувачі.",
     },
     projectComments: {
       title: "Коментарі",
@@ -2013,6 +2155,141 @@ export const dictionaries = {
         reaction: "поставив(ла) реакцію {emoji} на ваш пост",
         newFollower: "почав(ла) стежити за вами",
       },
+    },
+    githubIntegration: {
+      title: "Інтеграція GitHub",
+      description:
+        "Підключіть GitHub, щоб імпортувати репозиторії як проєкти та автоматично оновлювати їхні метадані.",
+      connect: "Підключити GitHub",
+      disconnect: "Відключити",
+      disconnecting: "Відключаємо…",
+      loading: "Перевіряємо підключення…",
+      scopes: "Доступи",
+      connectedMessage: "GitHub успішно підключено.",
+      connectError: "Не вдалося завершити підключення GitHub ({code}). Спробуйте ще раз.",
+      disconnectedMessage: "GitHub відключено.",
+      disconnectError: "Не вдалося відключити GitHub. Спробуйте ще раз.",
+      loadError: "Не вдалося завантажити стан GitHub.",
+      importTitle: "Імпорт з GitHub",
+      notConnectedHint: "Підключіть GitHub, щоб обрати репозиторій для цього проєкту.",
+      connectedAs: "Підключено як @{login}",
+      pickRepo: "Обрати репозиторій",
+      hideRepos: "Сховати",
+      filterPlaceholder: "Фільтр репозиторіїв…",
+      loadingRepos: "Завантаження репозиторіїв…",
+      noRepos: "Жоден репозиторій не відповідає фільтру.",
+      reposError: "Не вдалося завантажити репозиторії.",
+      fetchRepoError: "Не вдалося завантажити репозиторій.",
+      importApplied: "Дані репозиторію застосовано. Ви можете редагувати будь-яке поле.",
+      syncNow: "Синхронізувати",
+      syncing: "Синхронізація…",
+      lastSynced: "Остання синхронізація",
+      syncError: "Не вдалося синхронізувати з GitHub.",
+      archivedBadge: "Архівований",
+      linkedHeader: "Прив'язаний репозиторій GitHub",
+      unlink: "Відв'язати",
+      unlinking: "Відв'язуємо…",
+      unlinkConfirm:
+        "Це очистить усі GitHub-дані цього проєкту: статистику, README та ваші нотатки про внесок.",
+      confirmUnlink: "Все одно відв'язати",
+      cancel: "Скасувати",
+      unlinkError: "Не вдалося відв'язати репозиторій GitHub.",
+      unlinkedMessage: "GitHub-зв'язок прибрано. Збережіть проєкт, щоб застосувати.",
+      roles: {
+        solo: "Соло-розробник",
+        founder: "Засновник",
+        maintainer: "Maintainer",
+        core_contributor: "Основний контриб'ютор",
+        contributor: "Контриб'ютор",
+        fork_owner: "Власник форка",
+      },
+      roleLabel: "Ваша роль у цьому репозиторії",
+      rolePlaceholder: "Оберіть роль…",
+      contributionLabel: "Що саме ви збудували",
+      contributionHint:
+        "Опишіть, що ви особисто зробили. README описує проєкт; це описує вас.",
+      contributionPlaceholder:
+        "Напр.: спроектував схему БД, написав OAuth-flow, налаштував CI…",
+      motivationLabel: "Чому ви це зробили",
+      motivationHint:
+        "Історія за проєктом — який біль ви розв'язали, що вас зачепило.",
+      motivationPlaceholder:
+        "Що спонукало вас зробити це? Чому open source?",
+      techDecisionsLabel: "Ключові технічні рішення",
+      techDecisionsHint:
+        "Архітектурні trade-offs, вибір бібліотек, нетривіальні дизайн-рішення.",
+      techDecisionsPlaceholder:
+        "Напр.: обрав Postgres замість MongoDB тому що…",
+      learningsLabel: "Чого ви навчилися",
+      learningsHint:
+        "Поліровані навички, помилки, уроки, які стануть у пригоді іншим.",
+      learningsPlaceholder:
+        "Конкретні висновки, які зацікавлять рекрутера чи колегу.",
+      showcaseLabel: "Що демонструє цей проєкт",
+      showcaseHint:
+        "Які саме ваші навички або сильні сторони показує цей проєкт?",
+      showcasePlaceholder:
+        "Напр.: full-stack delivery, оптимізація продуктивності, accessibility…",
+      productionUsageLabel: "Де використовується",
+      productionUsageHint:
+        "Якщо це працює в production десь — де саме? Опційно.",
+      productionUsagePlaceholder: "Напр.: внутрішньо в Acme Inc.",
+      displayPreferences: "Що показувати на сторінці проєкту",
+      displayPreferencesHint:
+        "Оберіть, які GitHub-секції відображати публічно.",
+      toggleStats: "Статистика (зірки, форки, контриб'ютори)",
+      toggleLanguages: "Розклад мов",
+      toggleTopics: "Теги репозиторію",
+      toggleRelease: "Останній реліз",
+      toggleLicense: "Ліцензія",
+      toggleContributors: "Кількість контриб'юторів",
+      toggleActivity: "Дати активності",
+      toggleReadme: "Превʼю README",
+      syncPreferences: "Налаштування синхронізації",
+      autoSyncLabel: "Автооновлення з GitHub",
+      autoSyncHint:
+        "Оновлювати статистику та README не частіше одного разу на добу при відкритті сторінки.",
+      insightsTitle: "GitHub Insights",
+      languageBreakdown: "Розклад мов",
+      topics: "Теми",
+      techStack: "Технології",
+      startedLabel: "Створено",
+      lastCommitLabel: "Останній коміт",
+      latestReleaseLabel: "Останній реліз",
+      licenseLabel: "Ліцензія",
+      readmeTitle: "README проєкту",
+      contributionSectionTitle: "Внесок автора",
+      narrativeSectionTitle: "За лаштунками",
+      syncedFromGithubBadge: "Підтягнуто з GitHub",
+    },
+    aiDraft: {
+      title: "AI чернетка",
+      description:
+        "AI пропонує draft-варіанти для порожніх полів (включно з роллю, problem, solution, results). Усе можна відредагувати.",
+      button: "Згенерувати з AI",
+      generating: "Генеруємо…",
+      applied: "AI заповнив {count} пол(е/ів). Ви можете їх редагувати.",
+      allFilled: "Усі поля вже заповнені — нема для чого генерувати.",
+      error: "Не вдалося згенерувати draft. Спробуйте ще раз.",
+    },
+    aiProfileSummary: {
+      title: "AI-резюме профілю",
+      description:
+        "Двореченнєвий опис кандидата вгорі публічного профілю. Відвідувачі теж можуть (пере)згенерувати його прямо зі сторінки профілю.",
+      generate: "Згенерувати",
+      regenerate: "Згенерувати знову",
+      generating: "Генеруємо…",
+      clear: "Прибрати",
+      emptyState:
+        "AI-резюме ще не створено. Згенеруйте, щоб відвідувачі за 5 секунд зрозуміли, хто ви.",
+      generatedAt: "Згенеровано",
+      error: "Не вдалося згенерувати резюме. Спробуйте ще раз.",
+      deleteError: "Не вдалося прибрати резюме.",
+      publicLabel: "AI-згенероване резюме",
+      publicGenerate: "Згенерувати AI-резюме",
+      publicEmpty:
+        "Поки що немає AI-резюме — згенеруйте короткий 2-реченнєвий опис цієї людини.",
+      publicHint: "Створено AI · можна перегенерувати",
     },
     verifiedBadge: {
       label: "Email підтверджено",
@@ -2468,6 +2745,9 @@ export const dictionaries = {
       stepBasicsTitle: "Основне",
       stepBasicsDescription:
         "Почніть із зрозумілої назви, короткого опису та вашої ролі у проєкті.",
+      stepGithubTitle: "GitHub-деталі",
+      stepGithubDescription:
+        "Контекст open-source — ваша роль, внесок та що показувати відвідувачам.",
       stepDetailsTitle: "Деталі",
       stepDetailsDescription:
         "Додайте терміни, статус, розмір команди та де знайти проєкт.",

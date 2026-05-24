@@ -52,6 +52,22 @@ type PublicProjectRow = {
   created_at: string | null;
   moderation_status: string | null;
   status: string | null;
+  github_full_name: string | null;
+  github_synced_at: string | null;
+  github_stats: import("@/lib/constants/github").GithubProjectStats | null;
+  tech_stack: string[] | null;
+  github_readme: string | null;
+  github_role: import("@/lib/constants/github").GithubProjectRole | null;
+  github_contribution: string | null;
+  github_motivation: string | null;
+  github_tech_decisions: string | null;
+  github_learnings: string | null;
+  github_showcase_notes: string | null;
+  github_production_usage: string | null;
+  github_display_options:
+    | Partial<import("@/lib/constants/github").GithubDisplayOptions>
+    | null;
+  github_auto_sync: boolean | null;
 };
 
 type PublicProfileRow = {
@@ -183,7 +199,7 @@ export async function getPublicProjectPageData(
   let projectQuery = supabase
     .from("projects")
     .select(
-      "id, owner_id, title, slug, description, role, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status, status",
+      "id, owner_id, title, slug, description, role, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status, status, github_full_name, github_synced_at, github_stats, tech_stack, github_readme, github_role, github_contribution, github_motivation, github_tech_decisions, github_learnings, github_showcase_notes, github_production_usage, github_display_options, github_auto_sync",
     )
     .limit(1);
 

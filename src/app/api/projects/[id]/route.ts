@@ -68,6 +68,15 @@ export async function PATCH(
       solution: payload.solution,
       results: payload.results,
       status: payload.status,
+      github_role: payload.githubRole,
+      github_contribution: payload.githubContribution,
+      github_motivation: payload.githubMotivation,
+      github_tech_decisions: payload.githubTechDecisions,
+      github_learnings: payload.githubLearnings,
+      github_showcase_notes: payload.githubShowcaseNotes,
+      github_production_usage: payload.githubProductionUsage,
+      github_display_options: payload.githubDisplayOptions ?? undefined,
+      github_auto_sync: payload.githubAutoSync,
     })
     .eq("id", project.id)
     .eq("owner_id", user.id)
