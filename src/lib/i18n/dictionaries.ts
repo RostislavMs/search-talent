@@ -886,6 +886,12 @@ export const dictionaries = {
       hoursAgo: "{count}h ago",
       daysAgo: "{count}d ago",
       justNow: "Just now",
+      followersTitle: "Your followers",
+      followersDescription:
+        "People who follow your activity. They get notified when you publish new projects or articles.",
+      followersEmpty: "No one is following you yet.",
+      followsYou: "Follows you",
+      followedAt: "Started following {date}",
     },
     emails: {
       newFollower: {
@@ -921,6 +927,8 @@ export const dictionaries = {
     dashboard: {
       eyebrow: "Your workspace",
       title: "Manage Your IT Portfolio & Track Project Performance",
+      shortTitle: "Dashboard",
+      backToDashboard: "Back to dashboard",
       description:
         "Manage your profile, track project performance, and view platform-wide analytics in one place.",
       signedInAs: "Signed in as",
@@ -2384,6 +2392,12 @@ export const dictionaries = {
       hoursAgo: "{count} год тому",
       daysAgo: "{count} дн тому",
       justNow: "Щойно",
+      followersTitle: "Ваші підписники",
+      followersDescription:
+        "Люди, які стежать за вашою активністю. Вони отримують сповіщення, коли ви публікуєте нові проєкти чи статті.",
+      followersEmpty: "На вас поки що ніхто не підписаний.",
+      followsYou: "Підписаний(а) на вас",
+      followedAt: "Підписався(лась) {date}",
     },
     emails: {
       newFollower: {
@@ -2419,6 +2433,8 @@ export const dictionaries = {
     dashboard: {
       eyebrow: "Ваш простір",
       title: "Керуйте Вашим IT-Портфоліо та Відстежуйте Ефективність Проєктів",
+      shortTitle: "Дашборд",
+      backToDashboard: "Назад у дашборд",
       description:
         "Керуйте профілем, відстежуйте ефективність проєктів і переглядайте аналітику платформи з одного місця.",
       signedInAs: "Увійшли як",

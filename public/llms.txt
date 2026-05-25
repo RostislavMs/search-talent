@@ -30,7 +30,7 @@ The following sections are private or non-content and should not be cited:
 - `/dashboard/*`, `/profile/*`, `/feedback/*` — authenticated user areas
 - `/login`, `/signup`, `/verify`, `/forgot-password`, `/reset-password` — auth flows
 - `/*/projects/new`, `/*/projects/edit/*` — content creation forms
-- `/*/articles/new`, `/*/articles/edit/*`, `/*/articles/moderation` — content creation/moderation
+- `/*/articles/new`, `/*/articles/edit/*` — content creation (moderation lives in `/admin/content/articles`)
 - `/*?filter=*`, `/*?sort=*`, `/*?page=*`, `/*?query=*`, `/*?tag=*` — filter/pagination variants of indexable pages
 - `/search` — internal search results
 

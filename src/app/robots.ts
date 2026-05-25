@@ -37,7 +37,6 @@ export default function robots(): MetadataRoute.Robots {
           "/*/projects/edit/",
           "/*/articles/new",
           "/*/articles/edit/",
-          "/*/articles/moderation",
           "/*?*filter=",
           "/*?*sort=",
           "/*?*page=",

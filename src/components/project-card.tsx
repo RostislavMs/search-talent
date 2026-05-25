@@ -65,17 +65,17 @@ export default function ProjectCard({
       </div>
 
       <div className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] app-soft">
               {dictionary.common.project}
             </p>
-            <h3 className="mt-2 text-lg font-semibold text-[color:var(--foreground)]">
+            <h3 className="mt-2 break-words text-lg font-semibold text-[color:var(--foreground)]">
               {project.title}
             </h3>
           </div>
 
-          <span className="rounded-full app-panel px-3 py-1 text-xs font-medium app-muted">
+          <span className="shrink-0 whitespace-nowrap rounded-full app-panel px-3 py-1 text-xs font-medium app-muted">
             {scoreLabel}
           </span>
         </div>

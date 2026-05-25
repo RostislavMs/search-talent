@@ -698,7 +698,7 @@ export default function DashboardAnalytics({
           <PersonalStatCard
             value={String(userStats.followersCount)}
             label={dictionary.dashboard.followers}
-            href={`/${locale}/dashboard/following`}
+            href={`/${locale}/dashboard/followers`}
             accent="bg-sky-500"
           />
           <PersonalStatCard

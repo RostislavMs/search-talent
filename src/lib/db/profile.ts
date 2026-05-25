@@ -78,6 +78,37 @@ async function generateUniqueUsername(
   return `${baseUsername}-${suffix}`;
 }
 
+export async function ensureProfileForUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  user: { id: string; email?: string | null },
+) {
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("name, username, avatar_url")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    return existing;
+  }
+
+  const defaultUsername = await generateUniqueUsername(
+    supabase,
+    user.email?.split("@")[0],
+  );
+
+  const { data: created } = await supabase
+    .from("profiles")
+    .insert({
+      user_id: user.id,
+      username: defaultUsername,
+    })
+    .select("name, username, avatar_url")
+    .single();
+
+  return created;
+}
+
 export async function getMyProfile() {
   const supabase = await createClient();
 
@@ -93,7 +124,7 @@ export async function getMyProfile() {
     .from("profiles")
     .select("*")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile) {
     const defaultUsername = await generateUniqueUsername(
@@ -107,7 +138,7 @@ export async function getMyProfile() {
         user_id: user.id,
         username: defaultUsername,
       })
-      .select()
+      .select("*")
       .single();
 
     profile = data;

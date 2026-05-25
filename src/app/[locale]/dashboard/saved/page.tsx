@@ -160,7 +160,7 @@ export default async function SavedItemsPage({
             </p>
           </div>
           <ButtonLink href="/dashboard" variant="ghost">
-            {dictionary.dashboard.title}
+            {dictionary.dashboard.backToDashboard}
           </ButtonLink>
         </div>
       </section>

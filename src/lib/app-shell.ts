@@ -4,6 +4,7 @@ import {
   allowsCookieCategory,
   type CookieConsent,
 } from "@/lib/cookie-consent";
+import { ensureProfileForUser } from "@/lib/db/profile";
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { createClient } from "@/lib/supabase/server";
@@ -64,12 +65,8 @@ export async function getAppShellData(locale: Locale): Promise<{
   let viewer: AppViewer = null;
 
   if (user) {
-    const [{ data: profile }, { data: adminRecord }] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("name, username, avatar_url")
-        .eq("user_id", user.id)
-        .maybeSingle(),
+    const [profile, { data: adminRecord }] = await Promise.all([
+      ensureProfileForUser(supabase, user),
       supabase
         .from("platform_admins")
         .select("user_id")

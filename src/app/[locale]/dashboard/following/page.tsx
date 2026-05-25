@@ -143,7 +143,7 @@ export default async function FollowingPage({
               </p>
             </div>
             <ButtonLink href="/dashboard" variant="ghost">
-              {dictionary.dashboard.title}
+              {dictionary.dashboard.backToDashboard}
             </ButtonLink>
           </div>
         </section>
@@ -233,7 +233,7 @@ export default async function FollowingPage({
             </p>
           </div>
           <ButtonLink href="/dashboard" variant="ghost">
-            {dictionary.dashboard.title}
+            {dictionary.dashboard.backToDashboard}
           </ButtonLink>
         </div>
       </section>

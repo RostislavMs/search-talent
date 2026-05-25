@@ -79,7 +79,6 @@ export default async function NewArticlePage({
           description:
             "Простір для створення матеріалу. Ліворуч редактор, праворуч параметри публікації.",
           openFeed: "Відкрити статті",
-          openModeration: "Модерація статей",
           myArticles: "Мої статті",
         }
       : {
@@ -87,7 +86,6 @@ export default async function NewArticlePage({
           description:
             "A dedicated writing space. Use the editor canvas below and tune publishing settings on the side.",
           openFeed: "Open articles",
-          openModeration: "Article moderation",
           myArticles: "My articles",
         };
 
@@ -112,11 +110,6 @@ export default async function NewArticlePage({
             <ButtonLink href="/articles" variant="ghost">
               {ui.openFeed}
             </ButtonLink>
-            {viewer.isAdmin ? (
-              <ButtonLink href="/articles/moderation" variant="ghost">
-                {ui.openModeration}
-              </ButtonLink>
-            ) : null}
           </div>
         </div>
       </section>
