@@ -1,6 +1,17 @@
 packages:
   - "."
 
+# Postinstall scripts pnpm is allowed to execute.
+# Everything not listed here is silently skipped.
+onlyBuiltDependencies:
+  - "@google/genai"
+  - esbuild
+  - protobufjs
+
+# Explicitly skipped — keep noise out of approve-builds prompt:
+#   sharp/unrs-resolver — native, not needed locally (Vercel rebuilds them);
+#   supabase — broken postinstall on Windows (bin path missing).
 ignoredBuiltDependencies:
   - sharp
+  - supabase
   - unrs-resolver
