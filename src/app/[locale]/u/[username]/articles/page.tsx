@@ -140,7 +140,7 @@ export default async function UserArticlesPage({
   }
 
   if (isOwner) {
-    return renderOwnerView({ locale, username, dictionary });
+    return renderOwnerView({ locale, username });
   }
 
   return renderPublicView({
@@ -154,11 +154,9 @@ export default async function UserArticlesPage({
 async function renderOwnerView({
   locale,
   username,
-  dictionary,
 }: {
   locale: string;
   username: string;
-  dictionary: ReturnType<typeof getDictionary>;
 }) {
   const dashboard = await getDashboardArticles();
   const ui = getOwnerUi(locale);

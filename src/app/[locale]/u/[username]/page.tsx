@@ -63,7 +63,6 @@ export async function generateMetadata({
     role,
     country: data?.profile.countryName || null,
     projectCount,
-    topTechnologies: data?.technologies.map((technology) => technology.name) || [],
     bio: data?.profile.bio || null,
     fallbackParagraph,
     noindex: isThin,
