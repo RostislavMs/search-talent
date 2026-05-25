@@ -370,16 +370,6 @@ cp .env.example .env.local       # fill in keys (see below)
 pnpm dev                         # http://localhost:3000
 ```
 
-Run the Supabase schema once against a fresh project:
-
-```bash
-# Apply numbered base schema, then the dated migrations under database/
-psql "$DATABASE_URL" -f supabase/01_core_schema.sql
-# … through supabase/15_*.sql
-psql "$DATABASE_URL" -f database/2026-03-16-project-details.sql
-# … through the latest file in database/
-```
-
 ### Required environment variables
 
 | Name | Required | Notes |
@@ -390,7 +380,6 @@ psql "$DATABASE_URL" -f database/2026-03-16-project-details.sql
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Server-only; admin actions & notifications |
 | `GEMINI_API_KEY` | optional | Enables AI summaries and GitHub drafts |
 | `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` | optional | Enables GitHub project sync |
-| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | optional | Email notifications (silently skipped if unset) |
 
 ### Useful scripts
 
