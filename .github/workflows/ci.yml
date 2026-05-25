@@ -27,6 +27,10 @@ jobs:
           cache: pnpm
       - name: Install deps
         run: pnpm install --frozen-lockfile
+      - name: Generate Next.js types
+        # next-env.d.ts and .next/dev/types/routes.d.ts are gitignored but
+        # referenced by tsconfig — generate them before typecheck.
+        run: pnpm exec next typegen
       - name: Typecheck
         run: pnpm run typecheck
       - name: Lint

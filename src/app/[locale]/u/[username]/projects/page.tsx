@@ -108,7 +108,7 @@ export default async function UserProjectsPage({
     return renderOwnerView({ locale, username, page: requestedPage, dictionary });
   }
 
-  return renderPublicView({ locale, username, page: requestedPage, dictionary });
+  return renderPublicView({ username, page: requestedPage, dictionary });
 }
 
 async function renderOwnerView({
@@ -300,12 +300,10 @@ async function renderOwnerView({
 }
 
 async function renderPublicView({
-  locale,
   username,
   page,
   dictionary,
 }: {
-  locale: string;
   username: string;
   page: number;
   dictionary: ReturnType<typeof getDictionary>;

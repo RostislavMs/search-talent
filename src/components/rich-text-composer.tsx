@@ -294,20 +294,6 @@ export default function RichTextComposer({
     onChange(sanitized);
   }, [onChange]);
 
-  const focusEditor = useCallback(() => {
-    const el = editorRef.current;
-    if (!el) return;
-    el.focus();
-    if (!el.innerHTML.trim()) {
-      el.innerHTML = "<p><br></p>";
-      emitChange();
-    }
-    const range = savedRangeRef.current;
-    if (range && el.contains(range.startContainer)) {
-      restoreSelection(range);
-    }
-  }, [emitChange]);
-
   const exec = useCallback(
     (command: string, arg?: string) => {
       const el = editorRef.current;

@@ -221,7 +221,6 @@ export function buildProfilePageMetadata({
   role,
   country,
   projectCount,
-  topTechnologies,
   bio,
   fallbackParagraph,
   noindex = false,
@@ -232,7 +231,6 @@ export function buildProfilePageMetadata({
   role: string | null;
   country: string | null;
   projectCount: number;
-  topTechnologies: string[];
   bio: string | null;
   fallbackParagraph: string | null;
   noindex?: boolean;

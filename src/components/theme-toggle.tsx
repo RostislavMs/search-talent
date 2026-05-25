@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   allowsCookieCategory,
   cookieConsentUpdatedEvent,
@@ -20,6 +20,13 @@ function canPersistThemePreference() {
   return allowsCookieCategory(getCookieConsentFromDocument(), "preferences");
 }
 
+function subscribeToConsent(callback: () => void) {
+  window.addEventListener(cookieConsentUpdatedEvent, callback);
+  return () => {
+    window.removeEventListener(cookieConsentUpdatedEvent, callback);
+  };
+}
+
 export default function ThemeToggle({
   initialTheme,
   initialCanPersist,
@@ -35,34 +42,11 @@ export default function ThemeToggle({
 }) {
   const dictionary = useDictionary();
   const [theme, setTheme] = useState<ResolvedTheme>(initialTheme);
-  const [canPersist, setCanPersist] = useState(initialCanPersist);
-
-  useEffect(() => {
-    // Re-check after hydration in case the cookie changed between SSR and
-    // mount (rare, e.g. user accepted in another tab).
-    const actual = canPersistThemePreference();
-    if (actual !== initialCanPersist) {
-      setCanPersist(actual);
-    }
-  }, [initialCanPersist]);
-
-  useEffect(() => {
-    const handleConsentUpdate = () => {
-      setCanPersist(canPersistThemePreference());
-    };
-
-    window.addEventListener(
-      cookieConsentUpdatedEvent,
-      handleConsentUpdate as EventListener,
-    );
-
-    return () => {
-      window.removeEventListener(
-        cookieConsentUpdatedEvent,
-        handleConsentUpdate as EventListener,
-      );
-    };
-  }, []);
+  const canPersist = useSyncExternalStore(
+    subscribeToConsent,
+    canPersistThemePreference,
+    () => initialCanPersist,
+  );
 
   return (
     <div className="inline-flex items-center gap-2">

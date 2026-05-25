@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+
+const noop = () => {};
+const subscribeMount = () => noop;
+const getClientMounted = () => true;
+const getServerMounted = () => false;
 import { createPortal } from "react-dom";
 import BadgeIcon from "@/components/badge-icon";
 import type { BadgeRarity, BadgeWithProgress } from "@/lib/constants/badges";
@@ -153,12 +158,12 @@ export default function BadgeShelf({
     top: number;
     left: number;
   } | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    subscribeMount,
+    getClientMounted,
+    getServerMounted,
+  );
   const strings = getStrings(locale);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const positionTooltip = (
     button: HTMLButtonElement | null,
