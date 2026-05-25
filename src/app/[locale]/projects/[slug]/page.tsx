@@ -506,15 +506,15 @@ export default async function PublicProjectPage({
                   )}
                 </div>
 
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-[color:var(--foreground)]">
                     {owner.name || owner.username || dictionary.projectPage.creatorFallback}
                   </p>
                   {owner.headline && (
-                    <p className="truncate text-sm app-muted">{owner.headline}</p>
+                    <p className="mt-0.5 break-words text-sm app-muted">{owner.headline}</p>
                   )}
                   {(owner.city || owner.countryName) && (
-                    <p className="truncate text-sm app-muted">
+                    <p className="mt-0.5 break-words text-sm app-muted">
                       {[owner.city, owner.countryName].filter(Boolean).join(", ")}
                     </p>
                   )}

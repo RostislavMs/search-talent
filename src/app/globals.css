@@ -553,14 +553,3 @@ select {
   display: none;
 }
 
-.drag-scroller {
-  touch-action: pan-y;
-}
-
-.drag-scroller a,
-.drag-scroller img,
-.drag-scroller video,
-.drag-scroller iframe {
-  -webkit-user-drag: none;
-  user-select: none;
-}
