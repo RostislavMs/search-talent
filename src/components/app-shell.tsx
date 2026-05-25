@@ -13,8 +13,14 @@ export default async function AppShell({
   children: ReactNode;
   locale: Locale;
 }) {
-  const { dictionary, initialConsent, initialTheme, isSignedIn, viewer } =
-    await getAppShellData(locale);
+  const {
+    dictionary,
+    initialConsent,
+    initialTheme,
+    initialCanPersistTheme,
+    isSignedIn,
+    viewer,
+  } = await getAppShellData(locale);
 
   return (
     <ToastProvider>
@@ -22,6 +28,7 @@ export default async function AppShell({
         dictionary={dictionary}
         viewer={viewer}
         initialTheme={initialTheme}
+        initialCanPersistTheme={initialCanPersistTheme}
       />
       <div className="flex-1">{children}</div>
       <SiteFooter dictionary={dictionary} isSignedIn={isSignedIn} />

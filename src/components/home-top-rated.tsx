@@ -81,6 +81,24 @@ export default function HomeTopRated({
           {dictionary.home.topRatedDescription}
         </p>
 
+        <div className="mt-5 sm:mt-6">
+          <LocalizedLink
+            href="/rating-guide"
+            className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm.85 9.6h-1.7v-1.7h1.7v1.7Zm.7-4.3c-.2.3-.6.6-1 .9-.3.2-.4.4-.5.6-.05.15-.1.4-.1.7H6.45c0-.6.05-1 .2-1.3.15-.3.45-.55.85-.85.25-.2.45-.35.55-.5a.85.85 0 0 0 .2-.55.7.7 0 0 0-.25-.55c-.15-.15-.35-.25-.6-.25a.95.95 0 0 0-.7.27.95.95 0 0 0-.3.72H4.65c0-.65.25-1.2.75-1.65a2.8 2.8 0 0 1 1.85-.7c.7 0 1.3.2 1.75.6.45.4.7.95.7 1.6 0 .35-.1.7-.3 1.05Z" />
+            </svg>
+            <span>{dictionary.home.topRatedGuideCta}</span>
+          </LocalizedLink>
+        </div>
+
         <div className="mt-6 grid gap-3 sm:mt-8 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
           {Object.values(dictionary.home.ratingSignals).map((item) => (
             <div

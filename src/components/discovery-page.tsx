@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import CreatorCard from "@/components/creator-card";
 import ProjectCard from "@/components/project-card";
+import {
+  CreatorCardGridSkeleton,
+  ProjectCardGridSkeleton,
+} from "@/components/skeletons/card-skeletons";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
 import SearchSelect from "@/components/ui/search-select";
@@ -496,6 +500,7 @@ export default function DiscoveryPage({
   const [minScore, setMinScore] = useState<number | null>(null);
   const [maxScore, setMaxScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedSearches, setSavedSearches] = useState<
     Array<{ id: string; name: string; mode: string; params: Record<string, unknown>; created_at: string }>
@@ -704,6 +709,7 @@ export default function DiscoveryPage({
           setTotals({ projects: 0, users: 0 });
           setErrorMessage(result.error || commonUi.searchFailed);
           setLoading(false);
+          setInitialLoading(false);
           return;
         }
 
@@ -714,6 +720,7 @@ export default function DiscoveryPage({
           users: result.data.totals?.users || 0,
         });
         setLoading(false);
+        setInitialLoading(false);
     }, 250);
 
     return () => {
@@ -1384,8 +1391,13 @@ export default function DiscoveryPage({
             </div>
 
             {mode === "projects" ? (
-              projects.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              initialLoading || (loading && projects.length === 0) ? (
+                <ProjectCardGridSkeleton />
+              ) : projects.length > 0 ? (
+                <div
+                  className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3"
+                  aria-busy={loading}
+                >
                   {projects.map((project) => (
                     <ProjectCard
                       key={project.id}
@@ -1399,8 +1411,13 @@ export default function DiscoveryPage({
                   {pageUi.emptyMessage}
                 </p>
               )
+            ) : initialLoading || (loading && users.length === 0) ? (
+              <CreatorCardGridSkeleton />
             ) : users.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div
+                className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                aria-busy={loading}
+              >
                 {users.map((creator) => (
                   <CreatorCard
                     key={creator.id}

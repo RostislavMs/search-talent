@@ -15,53 +15,6 @@ async function getPublicReadClient() {
   return await createClient();
 }
 
-export type RoleDirectoryItem = {
-  id: number;
-  name: string;
-  slug: string;
-  count: number;
-};
-
-export async function getRoleDirectory(limit?: number) {
-  const supabase = await getPublicReadClient();
-  const [{ data: categories }, { data: profiles }] = await Promise.all([
-    supabase.from("profile_categories").select("id, name").order("name"),
-    supabase
-      .from("profiles")
-      .select("category_id")
-      .not("username", "is", null)
-      .eq("moderation_status", "approved"),
-  ]);
-
-  const counts = new Map<number, number>();
-
-  for (const row of (profiles || []) as Array<{ category_id: number | null }>) {
-    if (!row.category_id) {
-      continue;
-    }
-
-    counts.set(row.category_id, (counts.get(row.category_id) || 0) + 1);
-  }
-
-  const items = ((categories || []) as Array<{ id: number; name: string }>).map(
-    (category) => ({
-      id: category.id,
-      name: category.name,
-      slug: slugifySegment(category.name),
-      count: counts.get(category.id) || 0,
-    }),
-  );
-
-  items.sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
-
-  return typeof limit === "number" ? items.slice(0, limit) : items;
-}
-
-export async function getRoleBySlug(roleSlug: string) {
-  const roles = await getRoleDirectory();
-  return roles.find((role) => role.slug === roleSlug) || null;
-}
-
 export async function getPopularTechnologies(limit = 20) {
   const supabase = await getPublicReadClient();
   const [{ data: skills }, { data: projectSkills }, { data: profileSkills }] =
@@ -138,84 +91,6 @@ export type DirectoryCreator = {
   categoryName: string | null;
   score: number | null;
 };
-
-export async function getCreatorsByCategoryId(
-  categoryId: number,
-  limit = 24,
-): Promise<DirectoryCreator[]> {
-  const supabase = await getPublicReadClient();
-  const { data } = await supabase
-    .from("profiles")
-    .select(
-      "username, name, headline, avatar_url, city, country_id, category_id, moderation_status",
-    )
-    .eq("category_id", categoryId)
-    .not("username", "is", null)
-    .order("name", { ascending: true })
-    .limit(limit * 2);
-
-  const rows = ((data || []) as Array<{
-    username: string | null;
-    name: string | null;
-    headline: string | null;
-    avatar_url: string | null;
-    city: string | null;
-    country_id: number | null;
-    category_id: number | null;
-    moderation_status: string | null;
-  }>).filter(
-    (row) => row.username && isPublicModerationStatus(row.moderation_status),
-  );
-
-  const countryIds = Array.from(
-    new Set(
-      rows
-        .map((row) => row.country_id)
-        .filter((id): id is number => typeof id === "number"),
-    ),
-  );
-  const categoryIds = Array.from(
-    new Set(
-      rows
-        .map((row) => row.category_id)
-        .filter((id): id is number => typeof id === "number"),
-    ),
-  );
-
-  const [countriesResponse, categoriesResponse] = await Promise.all([
-    countryIds.length > 0
-      ? supabase.from("countries").select("id, name").in("id", countryIds)
-      : Promise.resolve({ data: [] }),
-    categoryIds.length > 0
-      ? supabase
-          .from("profile_categories")
-          .select("id, name")
-          .in("id", categoryIds)
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const countryMap = new Map(
-    ((countriesResponse.data || []) as Array<{ id: number; name: string }>).map(
-      (row) => [row.id, row.name],
-    ),
-  );
-  const categoryMap = new Map(
-    ((categoriesResponse.data || []) as Array<{ id: number; name: string }>).map(
-      (row) => [row.id, row.name],
-    ),
-  );
-
-  return rows.slice(0, limit).map((row) => ({
-    username: row.username!,
-    name: row.name,
-    headline: row.headline,
-    avatarUrl: row.avatar_url,
-    city: row.city,
-    countryName: row.country_id ? countryMap.get(row.country_id) || null : null,
-    categoryName: row.category_id ? categoryMap.get(row.category_id) || null : null,
-    score: null,
-  }));
-}
 
 export async function getCreatorsBySkillId(
   skillId: number,

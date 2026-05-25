@@ -216,6 +216,7 @@ export const profilePayloadSchema = z.object({
     .union([z.enum(salaryCurrencies), z.null(), z.undefined()])
     .transform((value) => (value && salaryCurrencies.includes(value) ? value : null)),
   additional_info: optionalText("Additional info", 5000),
+  cover_url: optionalUrl("cover URL"),
   profile_visibility: visibilitySchema,
   skill_ids: z
     .array(z.number().int().positive())

@@ -2,6 +2,15 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import {
+  awardBadgeByKey,
+  getBadgeCountsForUsers,
+} from "@/lib/db/badges";
+import {
+  COMPLETE_PROFILE_BADGE_THRESHOLD,
+  TOP_10_THRESHOLD,
+  TOP_100_THRESHOLD,
+} from "@/lib/constants/badges";
+import {
   calculateProjectRating,
   calculateUserRating,
   getProfileCompletenessScore,
@@ -9,7 +18,8 @@ import {
   isWithinTimeframe,
   type LeaderboardTimeframe,
 } from "@/lib/leaderboards";
-import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
+import { getBadgeBonusPoints } from "@/lib/db/badges";
+import { createAdminClient, createPublicReadOnlyClient } from "@/lib/supabase/admin";
 
 // ---- row types ------------------------------------------------------------
 
@@ -288,6 +298,19 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
   // index: profile by user_id
   const profileByUserId = new Map(profiles.map((p) => [p.user_id, p]));
 
+  // index: profile.id -> user_id (used when awarding badges from rank lists)
+  const userIdByProfileId = new Map(profiles.map((p) => [p.id, p.user_id]));
+
+  // badge counts per user — feeds the rating bonus capped at +5
+  const badgeCounts = await getBadgeCountsForUsers(
+    supabase,
+    profiles.map((p) => p.user_id),
+  );
+
+  // track completeness per profile so we can award `complete_profile` after
+  // ranking finishes (without recomputing inside the award loop).
+  const completenessByProfileId = new Map<string, number>();
+
   // index: votes grouped by project
   const votesByProject = new Map<string, VoteRow[]>();
   for (const v of votes) {
@@ -521,6 +544,8 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         workExperienceCount: weCount.get(profile.id) || 0,
       });
 
+      completenessByProfileId.set(profile.id, completeness);
+
       const rating = calculateUserRating({
         timeframe: tf,
         profileLikes: allPv.likes,
@@ -536,6 +561,7 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         bestProjectRating: bestRating,
         averageProjectRating: avgRating,
         newestProjectCreatedAt: newestProject,
+        badgeBonus: getBadgeBonusPoints(badgeCounts.get(profile.user_id) ?? 0),
       });
 
       const topProject = owned
@@ -567,6 +593,46 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         b.topProjectScore - a.topProjectScore ||
         b.projectCount - a.projectCount,
     );
+  }
+
+  // Award derived badges that depend on results computed above:
+  //   complete_profile  (profile-completeness threshold)
+  //   top_100_all_time  (rank within all-time top-100)
+  //   hall_of_fame      (rank within all-time top-10)
+  //   top_10_monthly    (rank within current month top-10)
+  // Writes need service-role privileges since RLS blocks anon writes.
+  const adminClient = createAdminClient();
+  if (adminClient) {
+    const awards: Array<Promise<unknown>> = [];
+
+    for (const [profileId, completeness] of completenessByProfileId) {
+      if (completeness < COMPLETE_PROFILE_BADGE_THRESHOLD) continue;
+      const userId = userIdByProfileId.get(profileId);
+      if (!userId) continue;
+      awards.push(awardBadgeByKey(adminClient, userId, "complete_profile"));
+    }
+
+    for (const entry of rankedCreators.all.slice(0, TOP_100_THRESHOLD)) {
+      const userId = userIdByProfileId.get(entry.id);
+      if (!userId) continue;
+      awards.push(awardBadgeByKey(adminClient, userId, "top_100_all_time"));
+    }
+
+    for (const entry of rankedCreators.all.slice(0, TOP_10_THRESHOLD)) {
+      const userId = userIdByProfileId.get(entry.id);
+      if (!userId) continue;
+      awards.push(awardBadgeByKey(adminClient, userId, "hall_of_fame"));
+    }
+
+    for (const entry of rankedCreators.month.slice(0, TOP_10_THRESHOLD)) {
+      const userId = userIdByProfileId.get(entry.id);
+      if (!userId) continue;
+      awards.push(awardBadgeByKey(adminClient, userId, "top_10_monthly"));
+    }
+
+    // Run all awards in parallel. Errors are already swallowed inside
+    // awardBadgeByKey — they must not block the leaderboard response.
+    await Promise.all(awards);
   }
 
   return {

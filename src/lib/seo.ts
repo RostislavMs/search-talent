@@ -361,35 +361,6 @@ export function buildTalentCategoryMetadata({
   });
 }
 
-export function buildHireRoleMetadata({
-  locale,
-  pathname,
-  role,
-  noindex = false,
-}: {
-  locale: Locale;
-  pathname: string;
-  role: string;
-  noindex?: boolean;
-}) {
-  const title =
-    locale === "uk"
-      ? `Найняти ${role} — портфоліо та проєкти`
-      : `Hire ${role} — Browse Portfolios & Projects`;
-  const description =
-    locale === "uk"
-      ? `Знаходьте ${role} через реальні портфоліо, публічні проєкти та стек технологій на SearchTalent.`
-      : `Browse ${role} profiles through real portfolios, project proof, and public technology stacks on SearchTalent.`;
-
-  return buildMetadata({
-    locale,
-    pathname,
-    title,
-    description,
-    noindex,
-  });
-}
-
 export function buildTechnologyTalentsMetadata({
   locale,
   pathname,
@@ -494,7 +465,7 @@ export function buildOrganizationSchema() {
     url: siteUrl,
     logo: `${siteUrl}/favicon.webp`,
     description:
-      "SearchTalent — the best platform to hire freelancers, explore creative portfolios, and discover IT projects.",
+      "SearchTalent — a community platform where developers, designers, and IT specialists publish portfolios, projects, and articles.",
     sameAs: [],
   };
 }
@@ -507,7 +478,7 @@ export function buildWebSiteSchema() {
     name: "SearchTalent",
     url: siteUrl,
     description:
-      "The best freelancing platform to search talent, explore portfolios, and hire developers and designers.",
+      "Community platform to discover IT talent, explore portfolios, and follow developers and designers.",
     potentialAction: {
       "@type": "SearchAction",
       target: {

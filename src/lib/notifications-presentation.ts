@@ -27,6 +27,14 @@ export function describeNotification(
       );
     case "new_follower":
       return dict.actions.newFollower;
+    case "new_badge": {
+      const isUkrainian = dict.actions.mention.includes("згад");
+      const localizedName = isUkrainian
+        ? item.metadata.badgeNameUk
+        : item.metadata.badgeNameEn;
+      const badge = `${item.metadata.badgeEmoji ?? "🏅"} ${localizedName ?? ""}`.trim();
+      return dict.actions.newBadge.replace("{badge}", badge);
+    }
     default:
       return "";
   }
@@ -69,6 +77,11 @@ export function buildNotificationHref(
         return `${base}/u/${item.metadata.actorUsername}`;
       }
       return `${base}/talents`;
+    case "badge":
+      if (item.metadata.profileUsername) {
+        return `${base}/u/${item.metadata.profileUsername}`;
+      }
+      return `${base}/notifications`;
     default:
       return `${base}/notifications`;
   }

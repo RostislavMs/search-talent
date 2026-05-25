@@ -76,6 +76,7 @@ export async function PUT(request: Request) {
       salary_expectations: payload.salary_expectations,
       salary_currency: payload.salary_expectations ? payload.salary_currency : null,
       additional_info: payload.additional_info,
+      cover_url: payload.cover_url,
       profile_visibility: payload.profile_visibility,
     })
     .eq("user_id", user.id);

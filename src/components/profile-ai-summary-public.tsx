@@ -61,11 +61,11 @@ export default function ProfileAiSummaryPublic({
 
   return (
     <div
-      className="mt-3 max-w-3xl rounded-2xl app-panel p-3 text-sm leading-7 text-[color:var(--foreground)] sm:mt-4 sm:p-4 sm:text-base"
+      className="mt-2 max-w-3xl rounded-xl app-panel p-2.5 text-sm leading-6 text-[color:var(--foreground)] sm:mt-3 sm:p-3"
       aria-label={dict.publicLabel}
     >
       <div className="flex items-start gap-2">
-        <span aria-hidden="true" className="text-base sm:text-lg">
+        <span aria-hidden="true" className="text-sm sm:text-base">
           ✨
         </span>
         <div className="min-w-0 flex-1">
@@ -75,14 +75,14 @@ export default function ProfileAiSummaryPublic({
             <p className="app-muted">{dict.publicEmpty}</p>
           )}
           {error ? (
-            <p role="alert" className="mt-2 text-xs text-rose-500">
+            <p role="alert" className="mt-1.5 text-xs text-rose-500">
               {error}
             </p>
           ) : null}
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-dashed app-border pt-2">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-dashed app-border pt-1.5">
         <span className="text-[11px] app-soft">{dict.publicHint}</span>
         <div className="flex flex-wrap items-center gap-2">
           {summary ? (

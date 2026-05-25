@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import SeoFaqSection from "@/components/seo-faq-section";
+import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
@@ -8,11 +9,7 @@ import { buildMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 
 const DiscoveryPage = dynamic(() => import("@/components/discovery-page"), {
-  loading: () => (
-    <div className="animate-pulse">
-      <div className="h-48 rounded-[2.25rem] bg-[color:var(--surface-muted)]" />
-    </div>
-  ),
+  loading: () => <DiscoveryPageSkeleton mode="projects" />,
 });
 
 async function getLocaleValue(params: Promise<{ locale: string }>) {

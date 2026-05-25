@@ -20,14 +20,31 @@ function canPersistThemePreference() {
   return allowsCookieCategory(getCookieConsentFromDocument(), "preferences");
 }
 
-export default function ThemeToggle({ initialTheme }: { initialTheme: Theme }) {
+export default function ThemeToggle({
+  initialTheme,
+  initialCanPersist,
+}: {
+  initialTheme: Theme;
+  /**
+   * Server-computed value: true when the user has already accepted the
+   * "preferences" cookie category. Used as the initial state so the
+   * "session-only" indicator doesn't flash on every reload before the
+   * client-side check runs.
+   */
+  initialCanPersist: boolean;
+}) {
   const dictionary = useDictionary();
   const [theme, setTheme] = useState<ResolvedTheme>(initialTheme);
-  const [canPersist, setCanPersist] = useState(false);
+  const [canPersist, setCanPersist] = useState(initialCanPersist);
 
   useEffect(() => {
-    setCanPersist(canPersistThemePreference());
-  }, []);
+    // Re-check after hydration in case the cookie changed between SSR and
+    // mount (rare, e.g. user accepted in another tab).
+    const actual = canPersistThemePreference();
+    if (actual !== initialCanPersist) {
+      setCanPersist(actual);
+    }
+  }, [initialCanPersist]);
 
   useEffect(() => {
     const handleConsentUpdate = () => {

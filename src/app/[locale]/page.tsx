@@ -146,6 +146,30 @@ export default async function LocalizedHomePage({
         </div>
       </section>
 
+      {/* Interest — навіщо це користувачу */}
+      <section
+        aria-labelledby="home-why-heading"
+        className="mt-6 rounded-[2rem] app-card p-5 sm:mt-8 sm:p-7"
+      >
+        <h2
+          id="home-why-heading"
+          className="text-2xl font-semibold text-[color:var(--foreground)]"
+        >
+          {marketing.home.whyTitle}
+        </h2>
+        <ul className="mt-5 grid gap-4 md:grid-cols-3">
+          {marketing.home.whyBullets.map((item) => (
+            <li
+              key={item}
+              className="rounded-[1.5rem] app-panel p-4 text-sm leading-7 app-muted"
+            >
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Desire — соціальний доказ через топ-рейтинги */}
       <div className="mt-6 sm:mt-10">
         <HomeTopRated
           dictionary={dictionary}
@@ -154,38 +178,15 @@ export default async function LocalizedHomePage({
         />
       </div>
 
-      <section className="mt-6 rounded-[2rem] app-card p-5 sm:mt-8 sm:p-7">
-        <div className="max-w-3xl">
-          <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
-            {marketing.home.latestArticlesTitle}
-          </h2>
-          <p className="mt-3 text-sm leading-7 app-muted sm:text-base">
-            {marketing.home.latestArticlesDescription}
-          </p>
-        </div>
-
-        <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {latestArticles.map((article) => (
-            <ArticleCard key={article.id} article={article} locale={locale} />
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-6 rounded-[2rem] app-card p-5 sm:mt-8 sm:p-7">
-        <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
-          {marketing.home.whyTitle}
-        </h2>
-        <ul className="mt-5 grid gap-4 md:grid-cols-3">
-          {marketing.home.whyBullets.map((item) => (
-            <li key={item} className="rounded-[1.5rem] app-panel p-4 text-sm leading-7 app-muted">
-              {item}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="mt-6 rounded-[2rem] app-card p-5 sm:mt-8 sm:p-7">
-        <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+      {/* Action — як це працює */}
+      <section
+        aria-labelledby="home-how-heading"
+        className="mt-6 rounded-[2rem] app-card p-5 sm:mt-8 sm:p-7"
+      >
+        <h2
+          id="home-how-heading"
+          className="text-2xl font-semibold text-[color:var(--foreground)]"
+        >
           {marketing.home.howItWorksTitle}
         </h2>
 
@@ -211,10 +212,10 @@ export default async function LocalizedHomePage({
 
           <article className="rounded-[1.75rem] app-panel p-5">
             <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
-              {marketing.home.hiringTrackTitle}
+              {marketing.home.explorerTrackTitle}
             </h3>
             <div className="mt-5 space-y-4">
-              {marketing.home.hiringSteps.map((step, index) => (
+              {marketing.home.explorerSteps.map((step, index) => (
                 <div key={step.title} className="rounded-[1.25rem] bg-[color:var(--surface)] p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
                     {index + 1}
@@ -230,6 +231,31 @@ export default async function LocalizedHomePage({
         </div>
       </section>
 
+      {/* Вторинний контент — статті */}
+      <section
+        aria-labelledby="home-articles-heading"
+        className="mt-6 rounded-[2rem] app-card p-5 sm:mt-8 sm:p-7"
+      >
+        <div className="max-w-3xl">
+          <h2
+            id="home-articles-heading"
+            className="text-2xl font-semibold text-[color:var(--foreground)]"
+          >
+            {marketing.home.latestArticlesTitle}
+          </h2>
+          <p className="mt-3 text-sm leading-7 app-muted sm:text-base">
+            {marketing.home.latestArticlesDescription}
+          </p>
+        </div>
+
+        <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {latestArticles.map((article) => (
+            <ArticleCard key={article.id} article={article} locale={locale} />
+          ))}
+        </div>
+      </section>
+
+      {/* Закриття об'єкцій — FAQ */}
       <div className="mt-6 sm:mt-8">
         <SeoFaqSection
           title={marketing.home.faqTitle}

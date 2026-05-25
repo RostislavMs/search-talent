@@ -20,8 +20,8 @@ export default function SiteFooter({
   const articlesLabel = isEnglish ? "Tech Articles" : "Статті";
 
   const projectsLabel = isEnglish
-    ? "Freelance Portfolios"
-    : "Портфоліо проєктів";
+    ? "Creator Portfolios"
+    : "Портфоліо авторів";
 
   const navLabel = isEnglish ? "Explore" : "Навігація";
 
@@ -30,6 +30,7 @@ export default function SiteFooter({
   const infoLabel = isEnglish ? "Info" : "Інформація";
 
   const aboutLabel = isEnglish ? "About" : "Про нас";
+  const ratingGuideLabel = isEnglish ? "Rating guide" : "Гайд по рейтингу";
   const faqLabel = isEnglish ? "FAQ" : "FAQ";
   const feedbackLabel = isEnglish ? "Feedback" : "Зворотний зв'язок";
 
@@ -127,6 +128,12 @@ export default function SiteFooter({
                 className="hover:text-[color:var(--foreground)]"
               >
                 {aboutLabel}
+              </LocalizedLink>
+              <LocalizedLink
+                href="/rating-guide"
+                className="hover:text-[color:var(--foreground)]"
+              >
+                {ratingGuideLabel}
               </LocalizedLink>
               <LocalizedLink
                 href="/faq"

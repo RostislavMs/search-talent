@@ -1,7 +1,4 @@
-import {
-  getRoleDirectory,
-  getTechnologyDirectory,
-} from "@/lib/db/marketing";
+import { getTechnologyDirectory } from "@/lib/db/marketing";
 import { createLocalePath, locales, type Locale } from "@/lib/i18n/config";
 import { getMetadataBase } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -12,7 +9,6 @@ export const SITEMAP_IDS = [
   "projects",
   "articles",
   "project-tags",
-  "hire-roles",
 ] as const;
 
 export type SitemapId = (typeof SITEMAP_IDS)[number];
@@ -32,6 +28,7 @@ const staticRoutes = [
   "/projects",
   "/articles",
   "/about",
+  "/rating-guide",
   "/faq",
   "/legal",
   "/terms",
@@ -66,13 +63,6 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     return items
       .filter((item) => item.count >= MIN_ITEMS_FOR_PROGRAMMATIC_PAGE)
       .map((item) => buildEntry(baseUrl, `/projects/tag/${item.slug}`, new Date()));
-  }
-
-  if (id === "hire-roles") {
-    const roles = await getRoleDirectory();
-    return roles
-      .filter((role) => role.count >= MIN_ITEMS_FOR_PROGRAMMATIC_PAGE)
-      .map((role) => buildEntry(baseUrl, `/hire/${role.slug}`, new Date()));
   }
 
   const supabase = await createClient();

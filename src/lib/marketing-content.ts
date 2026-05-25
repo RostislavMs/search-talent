@@ -5,19 +5,14 @@ export type MarketingFaqItem = {
   answer: string;
 };
 
-type MarketingStep = {
-  title: string;
-  description: string;
-};
-
 const marketingContent = {
   en: {
     home: {
       whyTitle: "Why portfolios beat resumes",
       whyBullets: [
         "Portfolios show how people solve real problems, not just which tools they list.",
-        "Hiring teams can review code samples, design decisions, and shipped outcomes in context.",
-        "Real project evidence makes shortlisting faster and reduces guesswork during screening.",
+        "Visitors can review code samples, design decisions, and shipped outcomes in context.",
+        "Real project evidence makes discovery faster and reduces guesswork before opening a profile.",
       ],
       browseByRoleTitle: "Browse by role",
       browseByRoleDescription:
@@ -27,15 +22,15 @@ const marketingContent = {
         "A curated set of standout profiles with real work, clear positioning, and public portfolios.",
       latestArticlesTitle: "Latest articles",
       latestArticlesDescription:
-        "Fresh technical writing, portfolio advice, and hiring insights from the SearchTalent community.",
+        "Fresh technical writing, portfolio advice, and community insights from the SearchTalent network.",
       howItWorksTitle: "How it works",
-      talentTrackTitle: "For talent",
-      hiringTrackTitle: "For hiring teams",
+      talentTrackTitle: "For creators",
+      explorerTrackTitle: "For explorers",
       talentSteps: [
         {
           title: "Build a public profile",
           description:
-            "Add your role, skills, work preferences, and the context recruiters actually need.",
+            "Add your role, skills, work preferences, and the context that makes your craft visible.",
         },
         {
           title: "Publish real projects",
@@ -48,21 +43,21 @@ const marketingContent = {
             "Appear in role, technology, and portfolio discovery flows built around real project evidence.",
         },
       ],
-      hiringSteps: [
+      explorerSteps: [
         {
-          title: "Open role-based talent pages",
+          title: "Browse by role and stack",
           description:
-            "Start from the role you are hiring for and narrow the list with public portfolio context.",
+            "Start from the topic you care about and narrow the list using real portfolio context.",
         },
         {
-          title: "Review projects and stacks",
+          title: "Review projects and articles",
           description:
-            "Compare delivered work, technology choices, and scope before spending time on outreach.",
+            "Compare delivered work, technology choices, and writing — everything in one public space.",
         },
         {
-          title: "Contact the right people",
+          title: "Follow and engage",
           description:
-            "Shortlist specialists whose portfolios already match the kind of work you need.",
+            "Follow creators whose work resonates, leave reactions, and start conversations around their projects.",
         },
       ],
       faqTitle: "FAQ",
@@ -78,9 +73,9 @@ const marketingContent = {
             "Developers, designers, QA engineers, product specialists, analysts, DevOps engineers, and other IT professionals can create a public profile and publish project portfolios.",
         },
         {
-          question: "Can hiring teams browse without creating an account?",
+          question: "Can visitors browse without creating an account?",
           answer:
-            "Yes. Public portfolios, project pages, and articles are browseable without logging in, so teams can evaluate work before taking the next step.",
+            "Yes. Public portfolios, project pages, and articles are browseable without logging in, so anyone can explore work before deciding to join.",
         },
         {
           question: "What should a strong portfolio include?",
@@ -93,21 +88,21 @@ const marketingContent = {
             "Yes. Visitors can explore talent by category, review projects by stack, and use discovery filters to narrow results to the most relevant specialists.",
         },
         {
-          question: "Can SearchTalent help with employer branding too?",
+          question: "Can SearchTalent help me grow personal brand?",
           answer:
-            "Indirectly, yes. Public project pages and technical articles help teams understand how specialists communicate, document decisions, and present their work.",
+            "Yes. Public project pages and technical articles let you document how you think, what you build, and how you communicate — that becomes the surface people remember you by.",
         },
       ] satisfies MarketingFaqItem[],
       footerCtaTitle: "Build a portfolio that proves what you can do",
       footerCtaDescription:
-        "Create a public SearchTalent profile, publish your real projects, and make it easier for teams to hire you by actual work.",
+        "Create a public SearchTalent profile, publish your real projects, and let your work speak for itself in front of a community that values craft.",
     },
     talents: {
-      title: "Find IT Talents with Real Project Portfolios",
+      title: "Discover IT Talents with Real Project Portfolios",
       intro: [
-        "SearchTalent helps companies, founders, recruiters, and technical leads find IT talents through real project portfolios instead of relying only on resumes. Public profiles show how specialists present their work, which technologies they use, and what kinds of products they have already helped build. That means fewer assumptions during hiring and a stronger first signal before outreach begins.",
-        "On this page you can browse developers, designers, QA engineers, DevOps specialists, analysts, product people, and other IT professionals who publish public project evidence. Each profile is connected to actual work samples, technology stacks, and portfolio context, so it is easier to understand whether someone has shipped similar products, solved similar problems, or worked inside a comparable environment.",
-        "For hiring teams, that makes discovery more practical. Instead of filtering candidates by buzzwords alone, you can compare role fit, project depth, tools, and visible outcomes in one place. For specialists, it creates a better surface for being discovered by what they have built. SearchTalent is designed to make talent search more transparent, more skill-based, and more useful before the first message is sent.",
+        "SearchTalent helps the community discover IT talents through real project portfolios instead of relying only on resumes. Public profiles show how specialists present their work, which technologies they use, and what kinds of products they have built. That means a stronger first signal before any outreach begins.",
+        "On this page you can browse developers, designers, QA engineers, DevOps specialists, analysts, product people, and other IT professionals who publish public project evidence. Each profile is connected to actual work samples, technology stacks, and portfolio context — so it is easier to understand a creator's craft, scope of work, and the environments they have shipped inside.",
+        "For visitors, that makes discovery more practical. Instead of filtering by buzzwords alone, you can compare role fit, project depth, tools, and visible outcomes in one place. For specialists, it creates a better surface for being recognised by what they have built. SearchTalent is designed to make talent discovery more transparent, more skill-based, and more useful for everyone in the community.",
       ],
       popularCategoriesTitle: "Popular categories",
       popularCategoriesDescription:
@@ -131,7 +126,7 @@ const marketingContent = {
             "Yes. Talent directories can be explored by role and filtered further by technologies, location, experience, and work format.",
         },
         {
-          question: "Why are public portfolios useful for hiring?",
+          question: "Why are public portfolios useful?",
           answer:
             "Portfolios reveal execution details that resumes rarely show, including project scope, stack choices, media, and practical examples of delivered work.",
         },
@@ -141,9 +136,9 @@ const marketingContent = {
             "Yes. Technology filters and public project metadata make it easier to compare specialists working with similar tools or delivery environments.",
         },
         {
-          question: "Are these profiles created for IT hiring only?",
+          question: "Who are these profiles for?",
           answer:
-            "SearchTalent is focused on IT and digital product work, including engineering, design, QA, analytics, DevOps, and product-related roles.",
+            "SearchTalent is focused on IT and digital product creators — engineering, design, QA, analytics, DevOps, and product-related roles — who want a public space to share their work.",
         },
       ] satisfies MarketingFaqItem[],
     },
@@ -151,8 +146,8 @@ const marketingContent = {
       title: "Real IT Project Portfolios",
       intro: [
         "SearchTalent collects real IT project portfolios in one public catalog so visitors can explore how specialists describe their work, present technical decisions, and document delivered outcomes. Instead of browsing generic case-study fragments, you can open project pages with screenshots, technology stacks, role context, and links that make the work easier to evaluate.",
-        "This project directory is useful for several audiences. Hiring teams can see whether a specialist has shipped work in a similar category or stack. Freelancers and product teams can research how others structure portfolio presentations. Writers and technical readers can also use project pages as entry points into public profiles and related articles published on the platform.",
-        "Because each project is connected to a real creator profile, the catalog becomes more than a gallery. It helps visitors move from a single project to the person behind it, compare related work, and understand the broader context around delivery. SearchTalent uses project portfolios as a practical discovery layer for IT hiring, portfolio inspiration, and skill-based evaluation.",
+        "This project directory is useful for several audiences. Visitors can see how a creator has shipped work in a category or stack they care about. Other creators can research how peers structure portfolio presentations. Writers and technical readers can use project pages as entry points into public profiles and related articles published on the platform.",
+        "Because each project is connected to a real creator profile, the catalog becomes more than a gallery. It helps visitors move from a single project to the person behind it, compare related work, and understand the broader context around delivery. SearchTalent uses project portfolios as a practical discovery layer for community connections, portfolio inspiration, and skill-based exploration.",
       ],
       faqTitle: "Project portfolio FAQ",
       faq: [
@@ -167,9 +162,9 @@ const marketingContent = {
             "Projects provide a faster signal of execution quality. They show what was built and how it was presented before you dive deeper into the full profile.",
         },
         {
-          question: "Can project portfolios help with hiring decisions?",
+          question: "Can project portfolios help me find peers?",
           answer:
-            "Yes. They make it easier to compare relevant work samples, understand stack familiarity, and identify specialists who have delivered similar outcomes before.",
+            "Yes. They make it easier to compare relevant work samples, understand stack familiarity, and find creators who have explored similar problems or technologies.",
         },
         {
           question: "Do project pages show the technology stack?",
@@ -188,9 +183,9 @@ const marketingContent = {
     home: {
       whyTitle: "Чому портфоліо сильніше за резюме",
       whyBullets: [
-        "Портфоліо показує, як фахівець вирішує реальні задачі, а не лише перелік інструментів.",
-        "Команди бачать код, дизайн-рішення, стек і результати в реальному контексті.",
-        "Реальні проєкти скорочують час на скринінг і дають сильніший сигнал ще до першого контакту.",
+        "Портфоліо показує, як автор вирішує реальні задачі, а не лише перелік інструментів.",
+        "Спільнота бачить код, дизайн-рішення, стек і результати в реальному контексті.",
+        "Реальні проєкти дають сильніший сигнал ще до того, як ти відкриєш профіль повністю.",
       ],
       browseByRoleTitle: "Перегляд за ролями",
       browseByRoleDescription:
@@ -200,15 +195,15 @@ const marketingContent = {
         "Добірка сильних профілів з реальними роботами, чітким позиціонуванням і публічними кейсами.",
       latestArticlesTitle: "Останні статті",
       latestArticlesDescription:
-        "Свіжі технічні матеріали, поради щодо портфоліо та інсайти про найм від спільноти SearchTalent.",
+        "Свіжі технічні матеріали, поради щодо портфоліо та інсайти спільноти SearchTalent.",
       howItWorksTitle: "Як це працює",
-      talentTrackTitle: "Для талантів",
-      hiringTrackTitle: "Для hiring-команд",
+      talentTrackTitle: "Для авторів",
+      explorerTrackTitle: "Для глядачів",
       talentSteps: [
         {
           title: "Створіть публічний профіль",
           description:
-            "Додайте роль, навички, формат роботи та контекст, який справді важливий роботодавцю.",
+            "Додайте роль, навички, формат роботи та контекст, який робить ваше ремесло видимим.",
         },
         {
           title: "Опублікуйте реальні проєкти",
@@ -221,21 +216,21 @@ const marketingContent = {
             "Потрапляйте у пошук за ролями, технологіями та портфоліо на основі реальних кейсів.",
         },
       ],
-      hiringSteps: [
+      explorerSteps: [
         {
-          title: "Відкрийте сторінки за ролями",
+          title: "Шукайте за ролями та стеком",
           description:
-            "Почніть з потрібної категорії та звузьте вибір за допомогою портфоліо й публічних профілів.",
+            "Починайте з теми, яка вас цікавить, і звужуйте список за реальним контекстом портфоліо.",
         },
         {
-          title: "Перевірте проєкти й стек",
+          title: "Переглядайте проєкти та статті",
           description:
-            "Порівнюйте виконані роботи, інструменти та масштаб до початку спілкування.",
+            "Порівнюйте виконані роботи, технологічні рішення та публікації — усе в одному просторі.",
         },
         {
-          title: "Звертайтеся до релевантних людей",
+          title: "Підписуйтесь і взаємодійте",
           description:
-            "Складайте shortlist із фахівців, чиє портфоліо вже відповідає вашому запиту.",
+            "Підписуйтесь на авторів, чия робота резонує, лишайте реакції та починайте розмови біля їхніх проєктів.",
         },
       ],
       faqTitle: "FAQ",
@@ -251,7 +246,7 @@ const marketingContent = {
             "Профілі можуть створювати розробники, дизайнери, QA-фахівці, DevOps-інженери, аналітики, product-спеціалісти та інші IT-фахівці.",
         },
         {
-          question: "Чи можуть hiring-команди переглядати портфоліо без акаунта?",
+          question: "Чи можна переглядати портфоліо без акаунта?",
           answer:
             "Так. Публічні профілі, сторінки проєктів і статті доступні для перегляду без входу, тому оцінити роботи можна ще до реєстрації.",
         },
@@ -266,21 +261,21 @@ const marketingContent = {
             "Так. На платформі можна переглядати таланти за категоріями, досліджувати проєкти за стеком і використовувати discovery-фільтри для точнішого пошуку.",
         },
         {
-          question: "Чи корисний SearchTalent для employer branding?",
+          question: "Чи допоможе SearchTalent з особистим брендом?",
           answer:
-            "Так, опосередковано. Публічні проєкти та технічні статті допомагають оцінити, як фахівці документують рішення, презентують роботу й комунікують технічний контекст.",
+            "Так. Публічні проєкти й технічні статті дозволяють зафіксувати, як ви мислите, що створюєте та як комунікуєте — це і стає поверхнею, за якою вас запам'ятовують.",
         },
       ] satisfies MarketingFaqItem[],
       footerCtaTitle: "Створіть портфоліо, яке доводить ваш рівень",
       footerCtaDescription:
-        "Створіть публічний профіль у SearchTalent, опублікуйте реальні проєкти й дайте командам можливість наймати вас за фактичними результатами.",
+        "Створіть публічний профіль у SearchTalent, опублікуйте реальні проєкти й дайте своїй роботі говорити за вас у спільноті, що цінує ремесло.",
     },
     talents: {
-      title: "Знайдіть IT-фахівців з реальними портфоліо",
+      title: "Відкривайте IT-фахівців з реальними портфоліо",
       intro: [
-        "SearchTalent допомагає компаніям, фаундерам, рекрутерам і технічним лідам знаходити IT-фахівців через реальні портфоліо проєктів, а не лише через резюме. Публічні профілі показують, як спеціаліст презентує свою роботу, якими технологіями користується та над якими продуктами вже працював. Це дає сильніший перший сигнал ще до початку спілкування.",
-        "На цій сторінці можна переглядати розробників, дизайнерів, QA-інженерів, DevOps-фахівців, аналітиків, product-спеціалістів та інших IT-професіоналів, які публікують свої кейси у відкритому доступі. Кожен профіль пов'язаний з реальними проєктами, стеком технологій і контекстом роботи, тому легше зрозуміти, чи мав фахівець подібний досвід і чи відповідає вашому запиту.",
-        "Для hiring-команд це означає практичніший пошук. Замість відбору лише за ключовими словами можна порівнювати релевантність ролі, глибину проєктів, інструменти та видимі результати в одному місці. Для самих спеціалістів це краща модель видимості, де їх знаходять за тим, що вони реально зробили. SearchTalent створений для більш прозорого, навичкоорієнтованого та корисного пошуку талантів.",
+        "SearchTalent допомагає спільноті знаходити IT-фахівців через реальні портфоліо проєктів, а не лише через резюме. Публічні профілі показують, як спеціаліст презентує свою роботу, якими технологіями користується та над якими продуктами вже працював. Це дає сильніший перший сигнал ще до того, як ти напишеш людині.",
+        "На цій сторінці можна переглядати розробників, дизайнерів, QA-інженерів, DevOps-фахівців, аналітиків, product-спеціалістів та інших IT-професіоналів, які публікують свої кейси у відкритому доступі. Кожен профіль пов'язаний з реальними проєктами, стеком технологій і контекстом роботи, тому легше зрозуміти ремесло автора та середовища, в яких він працював.",
+        "Для відвідувачів це означає практичніший пошук. Замість відбору лише за ключовими словами можна порівнювати релевантність ролі, глибину проєктів, інструменти та видимі результати в одному місці. Для самих авторів це краща модель видимості, де їх знаходять за тим, що вони реально зробили. SearchTalent створений для більш прозорого, навичкоорієнтованого пошуку талантів у спільноті.",
       ],
       popularCategoriesTitle: "Популярні категорії",
       popularCategoriesDescription:
@@ -304,7 +299,7 @@ const marketingContent = {
             "Так. Каталоги талантів можна відкривати за ролями, а далі звужувати результати за технологіями, локацією, досвідом і форматом роботи.",
         },
         {
-          question: "Чому публічні портфоліо корисні для найму?",
+          question: "Чому публічні портфоліо корисні?",
           answer:
             "Портфоліо показують деталі виконання, яких часто немає в резюме: масштаб задач, стек, медіа, контекст і приклади реально доставленої роботи.",
         },
@@ -314,18 +309,18 @@ const marketingContent = {
             "Так. Фільтри за технологіями та metadata у проєктах допомагають швидше порівнювати фахівців зі схожим досвідом та інструментами.",
         },
         {
-          question: "Чи SearchTalent підходить саме для IT-найму?",
+          question: "Для кого ці профілі?",
           answer:
-            "Так. Платформа сфокусована на IT і digital product ролях, включно з engineering, design, QA, analytics, DevOps та product-напрямами.",
+            "Платформа сфокусована на IT і digital product авторах — engineering, design, QA, analytics, DevOps та product-напрямах — які хочуть мати публічний простір для своїх робіт.",
         },
       ] satisfies MarketingFaqItem[],
     },
     projects: {
       title: "Реальні IT-проєкти",
       intro: [
-        "SearchTalent збирає реальні IT-проєкти в одному публічному каталозі, щоб відвідувачі могли переглядати, як фахівці описують свою роботу, презентують технічні рішення та документують результати. Замість фрагментарних кейсів ви отримуєте сторінки проєктів зі скриншотами, стеком технологій, роллю виконавця та посиланнями, які допомагають оцінити роботу глибше.",
-        "Цей каталог корисний для кількох аудиторій. Hiring-команди можуть швидко побачити, чи працював спеціаліст із подібним типом продукту або стеком. Фрилансери й продуктові команди можуть досліджувати, як інші оформлюють портфоліо. А технічні читачі можуть використовувати сторінки проєктів як точку входу до публічних профілів і пов'язаних статей авторів.",
-        "Оскільки кожен проєкт прив'язаний до реального профілю автора, каталог стає не просто галереєю. Він допомагає перейти від окремого кейсу до людини, яка його реалізувала, порівняти суміжні роботи й краще зрозуміти контекст виконання. SearchTalent використовує портфоліо проєктів як практичний шар discovery для IT-найму, натхнення та оцінки навичок за реальними роботами.",
+        "SearchTalent збирає реальні IT-проєкти в одному публічному каталозі, щоб відвідувачі могли переглядати, як автори описують свою роботу, презентують технічні рішення та документують результати. Замість фрагментарних кейсів ви отримуєте сторінки проєктів зі скриншотами, стеком технологій, роллю виконавця та посиланнями, які допомагають оцінити роботу глибше.",
+        "Цей каталог корисний для кількох аудиторій. Відвідувачі можуть швидко побачити, як автор працював із певним типом продукту або стеком. Інші автори можуть досліджувати, як колеги оформлюють портфоліо. А технічні читачі можуть використовувати сторінки проєктів як точку входу до публічних профілів і пов'язаних статей.",
+        "Оскільки кожен проєкт прив'язаний до реального профілю автора, каталог стає не просто галереєю. Він допомагає перейти від окремого кейсу до людини, яка його реалізувала, порівняти суміжні роботи й краще зрозуміти контекст виконання. SearchTalent використовує портфоліо проєктів як практичний шар discovery для спільнотних знайомств, натхнення та дослідження навичок за реальними роботами.",
       ],
       faqTitle: "FAQ про портфоліо проєктів",
       faq: [
@@ -340,9 +335,9 @@ const marketingContent = {
             "Проєкти дають швидший сигнал про якість виконання. Вони показують, що саме було створено і як ця робота подана, ще до переходу в повний профіль.",
         },
         {
-          question: "Чи допомагають портфоліо проєктів у наймі?",
+          question: "Чи допомагають портфоліо проєктів знаходити однодумців?",
           answer:
-            "Так. Вони полегшують порівняння релевантних кейсів, допомагають зрозуміти знайомство зі стеком і швидше знаходити фахівців зі схожим досвідом.",
+            "Так. Вони полегшують порівняння релевантних кейсів, допомагають зрозуміти знайомство зі стеком і швидше знаходити авторів зі схожим досвідом і колом задач.",
         },
         {
           question: "Чи видно на сторінках проєктів стек технологій?",
@@ -380,13 +375,13 @@ export function getTalentRoleIntro(locale: Locale, role: string) {
   if (locale === "uk") {
     return [
       `Переглядайте портфоліо фахівців у категорії ${role} на SearchTalent. Тут зібрані публічні профілі з реальними проєктами, стеком технологій і контекстом виконання, щоб оцінити не лише резюме, а й фактичну роботу.`,
-      `Сторінки за ролями дають кращу стартову точку для найму. Замість широкого пошуку можна одразу перейти до релевантної категорії, переглянути профілі, відкрити кейси та швидше зрозуміти, хто вже працював із подібними задачами, продуктами або технологіями.`,
+      `Сторінки за ролями дають кращу стартову точку для пошуку. Замість широкого discovery можна одразу перейти до релевантної категорії, переглянути профілі, відкрити кейси та швидше зрозуміти, хто вже працював із подібними задачами, продуктами або технологіями.`,
     ];
   }
 
   return [
     `Browse ${role} portfolios on SearchTalent and review public profiles connected to real projects, technology stacks, and visible delivery context. This role page helps you start with relevant specialists instead of a generic candidate list.`,
-    `By opening talent pages by role first, hiring teams can compare portfolios faster, inspect related work, and focus on specialists who already show the kind of execution the role requires.`,
+    `By opening talent pages by role first, visitors can compare portfolios faster, inspect related work, and focus on creators who already show the kind of execution the role demands.`,
   ];
 }
 
@@ -465,8 +460,8 @@ export function getTechnologyTalentsFaq(
         answer: `Переглядайте профілі у списку, відкривайте проєкти та перевіряйте, скільки досвіду має спеціаліст саме з ${technology}. Публічні портфоліо дають вам прямий сигнал про рівень.`,
       },
       {
-        question: `Чим ця сторінка корисна для найму?`,
-        answer: `Вона показує лише тих фахівців, чиї профілі публічно вказують ${technology} у стеку. Це скорочує список кандидатів і робить оцінку швидшою.`,
+        question: `Чим ця сторінка корисна?`,
+        answer: `Вона показує лише тих авторів, чиї профілі публічно вказують ${technology} у стеку. Це скорочує список і робить discovery швидшим.`,
       },
       {
         question: `Як оцінити рівень ${technology}-експертизи?`,
@@ -485,8 +480,8 @@ export function getTechnologyTalentsFaq(
       answer: `Browse the profiles on this page, open linked projects, and review how much ${technology} work each specialist has shipped. Public portfolios give you a direct signal of seniority.`,
     },
     {
-      question: `Why is this page useful for hiring?`,
-      answer: `It only lists specialists whose public profiles explicitly include ${technology} in their stack. That shortens the candidate list and speeds up evaluation.`,
+      question: `Why is this page useful?`,
+      answer: `It only lists creators whose public profiles explicitly include ${technology} in their stack. That shortens the discovery list and speeds up exploration.`,
     },
     {
       question: `How do I assess ${technology} expertise?`,
@@ -519,85 +514,14 @@ export function getProjectsByTechnologyIntro(
 export function getArticleCategoryIntro(locale: Locale, category: string) {
   if (locale === "uk") {
     return [
-      `Матеріали категорії ${category} на SearchTalent — технічні гайди, кейси, новини та поради для IT-спільноти. Публікації допомагають зрозуміти сучасний контекст розробки, найму та побудови портфоліо.`,
+      `Матеріали категорії ${category} на SearchTalent — технічні гайди, кейси, новини та поради для IT-спільноти. Публікації допомагають зрозуміти сучасний контекст розробки, ремесла та побудови портфоліо.`,
       `Читайте статті, підписуйтеся на авторів, які публікують регулярні матеріали, та переходьте до їхніх профілів і проєктів, щоб побачити, як технічний контент підкріплений реальною роботою.`,
     ];
   }
 
   return [
-    `${category} articles on SearchTalent — technical guides, case studies, news, and insights for the IT community. Articles give you the current context around development, hiring, and portfolio building.`,
+    `${category} articles on SearchTalent — technical guides, case studies, news, and insights for the IT community. Articles give you the current context around development, craft, and portfolio building.`,
     `Read the pieces, follow authors who publish consistently, and jump to their profiles and projects to see how the written content is backed by real shipped work.`,
   ];
 }
 
-export function getHireRoleIntro(locale: Locale, role: string) {
-  if (locale === "uk") {
-    return [
-      `Ви шукаєте ${role} для продукту, стартапу чи клієнтського проєкту. На цій сторінці — публічні профілі з реальним портфоліо, не просто резюме. Ви зможете оцінити роботу перед тим, як писати повідомлення.`,
-      `Відкривайте профіль, переходьте до проєктів, перевіряйте стек, роль у команді та доставлені результати. Такий підхід робить процес найму коротшим, прозорішим і точнішим.`,
-    ];
-  }
-
-  return [
-    `You are hiring a ${role} for your product, startup, or client project. This page lists public profiles with real portfolios — not just resumes — so you can evaluate the work before sending a message.`,
-    `Open a profile, dive into the projects, review the stack, role on the team, and outcomes delivered. The approach makes hiring shorter, more transparent, and more precise.`,
-  ];
-}
-
-export function getHireRoleFaq(locale: Locale, role: string): MarketingFaqItem[] {
-  if (locale === "uk") {
-    return [
-      {
-        question: `На що звертати увагу при наймі ${role}?`,
-        answer: `Подивіться на обсяг та різноманітність проєктів, використаний стек, описи ролі в команді та результати. Це дає об'єктивний сигнал, сильніший за перелік позицій у резюме.`,
-      },
-      {
-        question: `Як SearchTalent допомагає найняти ${role}?`,
-        answer: `Ми показуємо публічні профілі зі справжніми портфоліо: кожен профіль має проєкти, стек і контекст виконання. Ви порівнюєте за доказами, а не за ключовими словами.`,
-      },
-      {
-        question: `Як швидко можна закрити вакансію ${role}?`,
-        answer: `Із публічним портфоліо перевірка кандидата займає хвилини, а не дні. Ви бачите релевантність до першого контакту, тож процес shortlist → інтервʼю стає коротшим.`,
-      },
-      {
-        question: `Який формат співпраці підтримується?`,
-        answer: `Фахівці самі вказують формат — повна зайнятість, контракт, part-time, фриланс — у своєму профілі. Ви фільтруєте за потрібним форматом і локацією.`,
-      },
-      {
-        question: `Що очікувати у портфоліо ${role}?`,
-        answer: `Сильне портфоліо містить 3+ реальні проєкти, чіткий опис ролі фахівця, стек технологій, посилання на живий продукт або репозиторій, а також контекст результату.`,
-      },
-      {
-        question: `Чи можна знайти ${role} з нішевим стеком?`,
-        answer: `Так. Використовуйте сторінки за технологіями, щоб звузити пошук до фахівців із потрібним інструментом, а потім перевіряйте проєкти, зроблені саме на ньому.`,
-      },
-    ];
-  }
-
-  return [
-    {
-      question: `What to look for when hiring a ${role}?`,
-      answer: `Look at project volume and variety, the stack used, descriptions of the role on the team, and outcomes delivered. It's a stronger signal than a job-title list on a resume.`,
-    },
-    {
-      question: `How does SearchTalent help hire a ${role}?`,
-      answer: `We surface public profiles with real portfolios — each profile has projects, stack, and delivery context. You compare on proof of work, not keywords.`,
-    },
-    {
-      question: `How fast can I fill a ${role} role?`,
-      answer: `Public portfolios let you screen candidates in minutes instead of days. You see relevance before the first message, so shortlist → interview becomes shorter.`,
-    },
-    {
-      question: `What engagement formats are supported?`,
-      answer: `Specialists declare their preferred format — full-time, contract, part-time, freelance — on their profile. Use filters to narrow by format and location.`,
-    },
-    {
-      question: `What should a strong ${role} portfolio show?`,
-      answer: `Three or more real projects, a clear description of the specialist's role, the technology stack, links to live products or repositories, and the outcome context.`,
-    },
-    {
-      question: `Can I find a ${role} with a niche stack?`,
-      answer: `Yes. Use the technology pages to narrow the search to specialists working with the specific tool, then review projects shipped on that exact stack.`,
-    },
-  ];
-}

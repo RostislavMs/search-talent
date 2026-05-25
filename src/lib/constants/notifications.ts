@@ -4,6 +4,7 @@ export const NOTIFICATION_TYPES = [
   "comment_reply",
   "reaction",
   "new_follower",
+  "new_badge",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -14,6 +15,7 @@ export const NOTIFICATION_TARGET_TYPES = [
   "article",
   "project",
   "profile",
+  "badge",
 ] as const;
 
 export type NotificationTargetType =
@@ -27,6 +29,16 @@ export type NotificationMetadata = {
   actorName?: string;
   actorUsername?: string | null;
   actorAvatarUrl?: string | null;
+  badgeId?: number;
+  badgeKey?: string;
+  badgeNameEn?: string;
+  badgeNameUk?: string;
+  badgeEmoji?: string;
+  badgeCategory?: string;
+  badgeRarity?: string;
+  badgeTier?: number;
+  /** Recipient's public profile username — used to deep-link badge notifications to /u/<username>. */
+  profileUsername?: string | null;
 };
 
 export type NotificationItem = {

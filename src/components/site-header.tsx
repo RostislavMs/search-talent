@@ -27,12 +27,14 @@ type SiteHeaderProps = {
   dictionary: Dictionary;
   viewer: Viewer;
   initialTheme: Theme;
+  initialCanPersistTheme: boolean;
 };
 
 export default function SiteHeader({
   dictionary,
   viewer,
   initialTheme,
+  initialCanPersistTheme,
 }: SiteHeaderProps) {
   const pathname = stripLocaleFromPathname(usePathname() || "/");
   const profileMenuRef = useRef<HTMLDetailsElement>(null);
@@ -214,7 +216,7 @@ export default function SiteHeader({
 
         {viewer ? (
           <div className="hidden xl:flex">
-            <ThemeToggle initialTheme={initialTheme} />
+            <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
           </div>
         ) : null}
 
@@ -290,7 +292,7 @@ export default function SiteHeader({
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
                       {dictionary.theme.toggleLabel}
                     </p>
-                    <ThemeToggle initialTheme={initialTheme} />
+                    <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
                   </div>
 
                   <div className="mt-4">
@@ -301,7 +303,7 @@ export default function SiteHeader({
             </>
           ) : (
             <>
-              <ThemeToggle initialTheme={initialTheme} />
+              <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
 
               <LocalizedLink
                 href="/login"
@@ -415,7 +417,7 @@ export default function SiteHeader({
                   <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
                     {dictionary.theme.toggleLabel}
                   </p>
-                  <ThemeToggle initialTheme={initialTheme} />
+                  <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
                 </div>
 
                 <div className="mt-3">
@@ -428,7 +430,7 @@ export default function SiteHeader({
                   <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
                     {dictionary.theme.toggleLabel}
                   </p>
-                  <ThemeToggle initialTheme={initialTheme} />
+                  <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-2">

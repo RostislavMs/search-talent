@@ -139,10 +139,12 @@ export async function getMyProjectsPage({
 
   const initialResponse = await supabase
     .from("projects")
-    .select("id, title, slug, cover_url, created_at, moderation_status, status", {
-      count: "exact",
-    })
+    .select(
+      "id, title, slug, cover_url, is_pinned, created_at, moderation_status, status",
+      { count: "exact" },
+    )
     .eq("owner_id", user.id)
+    .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -156,10 +158,12 @@ export async function getMyProjectsPage({
 
     const adjustedResponse = await supabase
       .from("projects")
-      .select("id, title, slug, cover_url, created_at, moderation_status, status", {
-        count: "exact",
-      })
+      .select(
+        "id, title, slug, cover_url, is_pinned, created_at, moderation_status, status",
+        { count: "exact" },
+      )
       .eq("owner_id", user.id)
+      .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false })
       .range(adjustedFrom, adjustedTo);
 

@@ -311,6 +311,11 @@ export function calculateUserRating(input: {
   bestProjectRating: number; // 0-100
   averageProjectRating: number; // 0-100
   newestProjectCreatedAt: string | null;
+  /**
+   * Optional bonus from earned badges. Pre-capped by the caller via
+   * `getBadgeBonusPoints` so the formula stays a pure summation.
+   */
+  badgeBonus?: number;
 }) {
   const w = PROFILE_WEIGHTS[input.timeframe];
 
@@ -343,7 +348,7 @@ export function calculateUserRating(input: {
         production * w.production +
         diminishing(input.technologyCount, SATURATION.profileTechnologies) * w.techBreadth +
         freshness(input.newestProjectCreatedAt, HALF_LIFE_DAYS[input.timeframe]) * w.freshness,
-    ),
+    ) + (input.badgeBonus ?? 0),
     0,
     100,
   );

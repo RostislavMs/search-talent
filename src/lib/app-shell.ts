@@ -1,6 +1,9 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getCookieConsentFromCookies } from "@/lib/cookie-consent-server";
-import type { CookieConsent } from "@/lib/cookie-consent";
+import {
+  allowsCookieCategory,
+  type CookieConsent,
+} from "@/lib/cookie-consent";
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { createClient } from "@/lib/supabase/server";
@@ -43,6 +46,7 @@ export async function getAppShellData(locale: Locale): Promise<{
   dictionary: Dictionary;
   initialConsent: CookieConsent | null;
   initialTheme: Theme;
+  initialCanPersistTheme: boolean;
   isSignedIn: boolean;
   viewer: AppViewer;
 }> {
@@ -86,6 +90,7 @@ export async function getAppShellData(locale: Locale): Promise<{
     dictionary: getDictionary(locale),
     initialConsent,
     initialTheme,
+    initialCanPersistTheme: allowsCookieCategory(initialConsent, "preferences"),
     isSignedIn: Boolean(user),
     viewer,
   };

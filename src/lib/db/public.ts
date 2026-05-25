@@ -1,4 +1,10 @@
 import { isPublicModerationStatus } from "@/lib/moderation";
+import { listBadgesWithProgress } from "@/lib/db/badges";
+import type { BadgeWithProgress } from "@/lib/constants/badges";
+import {
+  getProfileCompletenessBreakdown,
+  type ProfileCompletenessBreakdown,
+} from "@/lib/profile-completeness";
 import { unstable_noStore as noStore } from "next/cache";
 import {
   normalizeProjectMediaItem,
@@ -78,6 +84,7 @@ type PublicProfileRow = {
   headline: string | null;
   bio: string | null;
   avatar_url: string | null;
+  cover_url: string | null;
   country_id: number | null;
   city: string | null;
   category_id: number | null;
@@ -169,6 +176,7 @@ export type PublicProfilePageData = {
     description: string | null;
     score: number | null;
     cover_url: string | null;
+    is_pinned: boolean | null;
   }>;
   articles: Array<{
     id: string;
@@ -179,6 +187,8 @@ export type PublicProfilePageData = {
     published_at: string | null;
     created_at: string | null;
   }>;
+  badges: BadgeWithProgress[];
+  completeness: ProfileCompletenessBreakdown;
   voteSummary: Awaited<ReturnType<typeof getProfileVoteSummary>>;
   isAuthenticated: boolean;
   isOwner: boolean;
@@ -344,7 +354,7 @@ export async function getPublicProfilePageData(
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, username, name, headline, bio, avatar_url, country_id, city, category_id, website, github, twitter, linkedin, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info, profile_visibility, moderation_status, email_verified",
+      "id, user_id, username, name, headline, bio, avatar_url, cover_url, country_id, city, category_id, website, github, twitter, linkedin, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info, profile_visibility, moderation_status, email_verified",
     )
     .eq("username", username)
     .maybeSingle();
@@ -385,6 +395,7 @@ export async function getPublicProfilePageData(
     categoryResponse,
     bookmarkResponse,
     followResponse,
+    badges,
   ] = await Promise.all([
     dataClient
       .from("profile_skills")
@@ -435,10 +446,11 @@ export async function getPublicProfilePageData(
     supabase
       .from("projects")
       .select(
-        "id, title, slug, description, score, cover_url, moderation_status, status",
+        "id, title, slug, description, score, cover_url, is_pinned, moderation_status, status",
       )
       .eq("owner_id", typedProfile.user_id)
       .eq("status", "published")
+      .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false }),
     supabase
       .from("articles")
@@ -480,9 +492,48 @@ export async function getPublicProfilePageData(
           .eq("following_user_id", typedProfile.user_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    listBadgesWithProgress(dataClient, typedProfile.user_id),
   ]);
 
   const profileSettings = normalizeProfileSettings(typedProfile.profile_visibility);
+
+  const skillsCount = (skillsResponse.data || []).length;
+  const languagesCount = (languagesResponse.data || []).length;
+  const educationCount = (educationResponse.data || []).length;
+  const certificatesCount = (certificatesResponse.data || []).length;
+  const qaCount = (qasResponse.data || []).length;
+  const workExperienceCount = (workExperienceResponse.data || []).length;
+
+  const completeness = getProfileCompletenessBreakdown({
+    username: typedProfile.username,
+    name: typedProfile.name,
+    avatarUrl: typedProfile.avatar_url,
+    headline: typedProfile.headline,
+    bio: typedProfile.bio,
+    countryId: typedProfile.country_id,
+    city: typedProfile.city,
+    website: typedProfile.website,
+    github: typedProfile.github,
+    twitter: typedProfile.twitter,
+    linkedin: typedProfile.linkedin,
+    contactEmail: typedProfile.contact_email,
+    telegramUsername: typedProfile.telegram_username,
+    phone: typedProfile.phone,
+    preferredContactMethod: typedProfile.preferred_contact_method,
+    experienceLevel: typedProfile.experience_level,
+    experienceYears: typedProfile.experience_years,
+    employmentTypesCount: typedProfile.employment_types?.length || 0,
+    workFormatsCount: typedProfile.work_formats?.length || 0,
+    salaryExpectations: typedProfile.salary_expectations,
+    salaryCurrency: typedProfile.salary_currency,
+    additionalInfo: typedProfile.additional_info,
+    skillsCount,
+    languagesCount,
+    educationCount,
+    certificateCount: certificatesCount,
+    qaCount,
+    workExperienceCount,
+  });
 
   return {
     profile: {
@@ -553,10 +604,13 @@ export async function getPublicProfilePageData(
       description: string | null;
       score: number | null;
       cover_url: string | null;
+      is_pinned: boolean | null;
       moderation_status: string | null;
     }>).filter((project) => isPublicModerationStatus(project.moderation_status)),
     articles:
       (articlesResponse.data || []) as PublicProfilePageData["articles"],
+    badges,
+    completeness,
     voteSummary,
     isAuthenticated: Boolean(user),
     isOwner,
@@ -577,6 +631,7 @@ export type UserProjectsPageResult = {
     description: string | null;
     score: number | null;
     cover_url: string | null;
+    is_pinned: boolean | null;
   }>;
   totalCount: number;
   currentPage: number;
@@ -824,10 +879,11 @@ export async function getUserProjectsPage(
 
   const { data: projects } = await supabase
     .from("projects")
-    .select("id, title, slug, description, score, cover_url")
+    .select("id, title, slug, description, score, cover_url, is_pinned")
     .eq("owner_id", profile.user_id)
     .eq("moderation_status", "approved")
     .eq("status", "published")
+    .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);
 

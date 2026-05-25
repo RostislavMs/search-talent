@@ -1,8 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import dynamic from "next/dynamic";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
+import BadgeShelf from "@/components/badge-shelf";
 import BookmarkButton from "@/components/bookmark-button";
 import ExpandableProfileBio from "@/components/expandable-profile-bio";
+import ProfileCompletenessButton from "@/components/profile-completeness-button";
 import FollowButton from "@/components/follow-button";
 import ProfileAiSummaryPublic from "@/components/profile-ai-summary-public";
 import ProfileVoteButtons from "@/components/profile-vote-buttons";
@@ -235,6 +237,8 @@ export default function PublicProfileShowcase({
     workExperience,
     projects,
     articles,
+    badges,
+    completeness,
     voteSummary,
     isAuthenticated,
     isOwner,
@@ -332,6 +336,25 @@ export default function PublicProfileShowcase({
           fontFamily: getProfileFontStack(presentation.fontPreset),
         }}
       >
+        {profile.cover_url && (
+          <div className="relative aspect-[16/5] w-full overflow-hidden border-b border-white/10">
+            <OptimizedImage
+              src={profile.cover_url}
+              alt={`${displayName} cover`}
+              fill
+              sizes="(max-width: 768px) 100vw, 1280px"
+              className="object-cover"
+              priority
+            />
+            <div
+              className="absolute inset-x-0 bottom-0 h-1/2"
+              style={{
+                background: `linear-gradient(180deg, transparent 0%, ${withAlpha(presentation.surfaceColor, 0.7)} 100%)`,
+              }}
+              aria-hidden="true"
+            />
+          </div>
+        )}
         <div className="relative p-4 sm:p-6 lg:p-8">
           <section className="relative overflow-hidden rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-6 lg:p-10">
             {presentation.backgroundUrl && presentation.backgroundMode === "image" && (
@@ -387,35 +410,47 @@ export default function PublicProfileShowcase({
                   <ProfilePdfExport data={data} />
                 </div>
 
-                <div className={`mt-5 flex gap-4 sm:mt-8 sm:gap-5 ${presentation.heroAlignment === "center" ? "flex-col items-center" : "flex-col items-start sm:flex-row"}`}>
-                  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl app-panel text-3xl font-semibold text-[color:var(--foreground)] sm:h-28 sm:w-28 sm:rounded-[2rem] sm:text-4xl">
-                    {profile.avatar_url ? <OptimizedImage src={profile.avatar_url} alt={displayName} fill sizes="(max-width: 640px) 80px, 112px" className="object-cover" /> : <span>{displayName.slice(0, 1).toUpperCase()}</span>}
+                <div className={`mt-4 flex gap-3 sm:mt-5 sm:gap-4 ${presentation.heroAlignment === "center" ? "flex-col items-center" : "flex-col items-start sm:flex-row"}`}>
+                  <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl app-panel text-2xl font-semibold text-[color:var(--foreground)] sm:h-20 sm:w-20 sm:rounded-3xl sm:text-3xl">
+                    {profile.avatar_url ? <OptimizedImage src={profile.avatar_url} alt={displayName} fill sizes="(max-width: 640px) 64px, 80px" className="object-cover" /> : <span>{displayName.slice(0, 1).toUpperCase()}</span>}
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] sm:text-sm" style={{ color: presentation.mutedColor }}>{profile.categoryName || dictionary.common.creator}</p>
-                    <h1 className="mt-2 font-semibold tracking-tight sm:mt-3" style={{ fontSize: `clamp(1.5rem, 5vw, ${3.2 * typeScale.heading}rem)`, lineHeight: 1.05 }}>{displayName}</h1>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 sm:mt-3">
-                      <p className="text-sm app-muted sm:text-base">@{profile.username}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] sm:text-xs" style={{ color: presentation.mutedColor }}>{profile.categoryName || dictionary.common.creator}</p>
+                    <h1 className="mt-1 font-semibold tracking-tight sm:mt-1.5" style={{ fontSize: `clamp(1.4rem, 3.6vw, ${2.2 * typeScale.heading}rem)`, lineHeight: 1.1 }}>{displayName}</h1>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 sm:mt-2">
+                      <p className="text-sm app-muted">@{profile.username}</p>
                       <VerifiedBadge verified={profile.email_verified} />
                     </div>
-                    {profile.headline && <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:mt-5 sm:text-base sm:leading-8" style={{ fontSize: undefined }}>{profile.headline}</p>}
+                    {profile.headline && <p className="mt-2 max-w-3xl text-sm leading-6 app-muted sm:mt-3 sm:leading-7">{profile.headline}</p>}
                     {profile.username ? (
                       <ProfileAiSummaryPublic
                         username={profile.username}
                         isAuthenticated={isAuthenticated}
                       />
                     ) : null}
-                    <div className={`mt-4 flex flex-wrap gap-2 sm:mt-6 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
-                      {(profile.city || profile.countryName) && <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">{[profile.city, profile.countryName].filter(Boolean).join(", ")}</span>}
-                      {profile.experience_level && <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getExperienceLabel(profile.experience_level, locale)}</span>}
-                      {isOwner && <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">{dictionary.creatorProfile.ownerView}</span>}
+                    <div className={`mt-3 flex flex-wrap items-center gap-1.5 sm:mt-4 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
+                      {(profile.city || profile.countryName) && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{[profile.city, profile.countryName].filter(Boolean).join(", ")}</span>}
+                      {profile.experience_level && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{getExperienceLabel(profile.experience_level, locale)}</span>}
+                      {isOwner && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{dictionary.creatorProfile.ownerView}</span>}
+                      {isOwner && (
+                        <ProfileCompletenessButton
+                          completeness={completeness}
+                          locale={locale}
+                          editHref={`/${locale}/profile/edit`}
+                        />
+                      )}
                     </div>
+                    {badges.length > 0 && (
+                      <div className={`mt-3 sm:mt-4 ${presentation.heroAlignment === "center" ? "flex justify-center" : ""}`}>
+                        <BadgeShelf badges={badges} locale={locale} />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4 xl:self-end">
+              <div className="space-y-4 xl:self-start">
                 <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} isAuthenticated={isAuthenticated} isOwner={isOwner} />
                 {!isOwner && (
                   <div className="flex flex-wrap gap-2">

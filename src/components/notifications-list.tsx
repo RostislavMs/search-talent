@@ -97,9 +97,15 @@ export default function NotificationsList({
           const href = buildNotificationHref(item, locale);
           const description = describeNotification(item, dict);
           const actorName =
-            item.metadata.actorName ||
-            item.metadata.actorUsername ||
-            dict.someone;
+            item.type === "new_badge"
+              ? dict.you
+              : item.metadata.actorName ||
+                item.metadata.actorUsername ||
+                dict.someone;
+          const fallbackEmoji =
+            item.type === "new_badge"
+              ? item.metadata.badgeEmoji ?? "🏅"
+              : null;
           return (
             <li
               key={item.id}
@@ -121,6 +127,10 @@ export default function NotificationsList({
                       sizes="36px"
                       className="object-cover"
                     />
+                  ) : fallbackEmoji ? (
+                    <span className="m-auto text-lg" aria-hidden="true">
+                      {fallbackEmoji}
+                    </span>
                   ) : (
                     <span className="m-auto text-xs font-semibold text-[color:var(--foreground)]">
                       {actorName.slice(0, 1).toUpperCase()}
