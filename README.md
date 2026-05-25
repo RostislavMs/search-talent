@@ -413,3 +413,26 @@ The app targets Vercel out of the box:
 5. First deploy → run the SQL files in order against the production Supabase project.
 
 Speed Insights is wired automatically when running on Vercel.
+
+---
+
+## CI / CD
+
+**CD** is handled by Vercel: every push to `main` triggers a production deploy, every PR gets its own preview URL. No deploy secrets live in GitHub.
+
+**CI** runs in GitHub Actions on every push to `main` and every PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)):
+
+| Job | What it checks |
+| --- | --- |
+| `checks` | `pnpm typecheck`, `pnpm lint`, `pnpm test:coverage` — coverage report uploaded as an artifact (retained 14 days). |
+| `build` | `pnpm build` with placeholder envs — catches type/module errors invisible to `tsc`. Runs after `checks` passes. |
+| `audit` | `pnpm audit --prod --audit-level high` — non-blocking, surfaces vulnerable transitive deps. |
+| `dependency-review` | PR-only. Fails the PR if a new dep introduces a high-severity advisory or incompatible licence. |
+
+**Security scanning** runs in a separate workflow ([.github/workflows/codeql.yml](.github/workflows/codeql.yml)) — CodeQL `security-and-quality` queries against `javascript-typescript`, executed on push/PR to `main` and weekly on Monday 06:00 UTC. Findings surface in the repo's *Security → Code scanning* tab.
+
+Recommended branch protection on `main`:
+
+- Require status checks: `checks`, `build`, `dependency-review`, `analyze (javascript-typescript)`.
+- Require PRs before merging, dismiss stale approvals on push.
+- Disallow force-push.
