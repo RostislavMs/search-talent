@@ -466,7 +466,7 @@ export default function PublicProfileShowcase({
             {visibleSections.map((section) => (
               <div
                 key={section.id}
-                className={getSectionSpan(presentation.sectionSizes[section.id])}
+                className={`min-w-0 ${getSectionSpan(presentation.sectionSizes[section.id])}`}
               >
                 <SectionCard title={section.title} accentColor={presentation.accentColor}>
                   {section.content}
