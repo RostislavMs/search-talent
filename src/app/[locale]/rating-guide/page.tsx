@@ -677,7 +677,7 @@ function FactorCard({ factor }: { factor: Factor }) {
   const classes = accentClasses(factor.accent);
   const Icon = factor.Icon;
   return (
-    <article className="flex flex-col gap-4 rounded-[1.5rem] app-card p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
+    <article className="flex flex-col gap-4 rounded-3xl app-card p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
       <div className="flex items-start justify-between gap-3">
         <span
           className={[
@@ -721,7 +721,7 @@ function MechanicCard({
   Icon: () => ReactElement;
 }) {
   return (
-    <article className="rounded-[1.5rem] app-panel p-5">
+    <article className="rounded-3xl app-panel p-5">
       <span
         className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--surface)] text-[color:var(--foreground)] ring-1 app-border"
         aria-hidden="true"
@@ -748,9 +748,9 @@ export default async function RatingGuidePage({
   return (
     <main className="mx-auto max-w-[88rem] px-4 py-10 sm:px-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-[2.25rem] border app-border bg-[linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(29,78,216,0.88)_55%,_rgba(245,158,11,0.78))] p-6 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:p-10">
+      <section className="bg-brand-hero relative overflow-hidden rounded-hero border app-border p-6 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:p-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70 sm:text-sm">
+          <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
             {copy.eyebrow}
           </p>
           <LocalizedLink
@@ -763,7 +763,7 @@ export default async function RatingGuidePage({
             {copy.backHome}
           </LocalizedLink>
         </div>
-        <h1 className="mt-4 max-w-4xl text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
+        <h1 className="font-display mt-4 max-w-4xl text-3xl font-medium tracking-tight sm:text-4xl md:text-5xl">
           {copy.title}
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-white/82 sm:text-base sm:leading-8">
@@ -783,12 +783,12 @@ export default async function RatingGuidePage({
 
       {/* Why not just likes */}
       <section
-        className="mt-6 rounded-[2rem] app-card p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-hero app-card p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-why"
       >
         <h2
           id="rating-guide-why"
-          className="text-2xl font-semibold text-[color:var(--foreground)] sm:text-3xl"
+          className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
         >
           {copy.whyNotLikes.title}
         </h2>
@@ -800,7 +800,7 @@ export default async function RatingGuidePage({
             <div
               key={item.heading}
               className={[
-                "rounded-[1.5rem] border p-5",
+                "rounded-3xl border p-5",
                 item.isUs
                   ? "border-emerald-400/40 bg-emerald-500/10"
                   : "app-border bg-[color:var(--surface-muted)] opacity-90",
@@ -834,12 +834,12 @@ export default async function RatingGuidePage({
 
       {/* Profile rating */}
       <section
-        className="mt-6 rounded-[2rem] app-card p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-hero app-card p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-profile"
       >
         <h2
           id="rating-guide-profile"
-          className="text-2xl font-semibold text-[color:var(--foreground)] sm:text-3xl"
+          className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
         >
           {copy.profile.title}
         </h2>
@@ -855,12 +855,12 @@ export default async function RatingGuidePage({
 
       {/* Project rating */}
       <section
-        className="mt-6 rounded-[2rem] app-card p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-hero app-card p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-project"
       >
         <h2
           id="rating-guide-project"
-          className="text-2xl font-semibold text-[color:var(--foreground)] sm:text-3xl"
+          className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
         >
           {copy.project.title}
         </h2>
@@ -876,12 +876,12 @@ export default async function RatingGuidePage({
 
       {/* Mechanics */}
       <section
-        className="mt-6 rounded-[2rem] app-card p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-hero app-card p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-mechanics"
       >
         <h2
           id="rating-guide-mechanics"
-          className="text-2xl font-semibold text-[color:var(--foreground)] sm:text-3xl"
+          className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
         >
           {copy.mechanics.title}
         </h2>
@@ -898,7 +898,7 @@ export default async function RatingGuidePage({
       {/* Badges + Boards */}
       <section className="mt-6 grid gap-4 sm:mt-8 lg:grid-cols-2">
         <article
-          className="rounded-[2rem] app-card p-6 sm:p-8"
+          className="rounded-hero app-card p-6 sm:p-8"
           aria-labelledby="rating-guide-badges"
         >
           <div className="flex items-center gap-3">
@@ -910,7 +910,7 @@ export default async function RatingGuidePage({
             </span>
             <h2
               id="rating-guide-badges"
-              className="text-xl font-semibold text-[color:var(--foreground)] sm:text-2xl"
+              className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-2xl"
             >
               {copy.badges.title}
             </h2>
@@ -927,12 +927,12 @@ export default async function RatingGuidePage({
         </article>
 
         <article
-          className="rounded-[2rem] app-card p-6 sm:p-8"
+          className="rounded-hero app-card p-6 sm:p-8"
           aria-labelledby="rating-guide-boards"
         >
           <h2
             id="rating-guide-boards"
-            className="text-xl font-semibold text-[color:var(--foreground)] sm:text-2xl"
+            className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-2xl"
           >
             {copy.boards.title}
           </h2>
@@ -941,7 +941,7 @@ export default async function RatingGuidePage({
             {copy.boards.items.map((item) => {
               const Icon = item.Icon;
               return (
-                <li key={item.name} className="rounded-[1.25rem] app-panel p-4">
+                <li key={item.name} className="rounded-2xl app-panel p-4">
                   <div className="flex items-center gap-2.5">
                     <span
                       className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[color:var(--surface)] text-[color:var(--foreground)] ring-1 app-border"
@@ -961,12 +961,12 @@ export default async function RatingGuidePage({
 
       {/* Anti-patterns */}
       <section
-        className="mt-6 rounded-[2rem] border border-rose-400/30 bg-rose-500/5 p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-hero border border-rose-400/30 bg-rose-500/5 p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-anti"
       >
         <h2
           id="rating-guide-anti"
-          className="text-2xl font-semibold text-[color:var(--foreground)] sm:text-3xl"
+          className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
         >
           {copy.antiPatterns.title}
         </h2>
@@ -977,7 +977,7 @@ export default async function RatingGuidePage({
           {copy.antiPatterns.bullets.map((bullet) => (
             <li
               key={bullet}
-              className="flex gap-3 rounded-[1.25rem] border border-rose-400/20 bg-[color:var(--surface)] p-4 text-sm leading-6 app-muted"
+              className="flex gap-3 rounded-2xl border border-rose-400/20 bg-[color:var(--surface)] p-4 text-sm leading-6 app-muted"
             >
               <span
                 className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-500"
@@ -993,12 +993,12 @@ export default async function RatingGuidePage({
 
       {/* Outro */}
       <section
-        className="mt-6 rounded-[2rem] app-card p-6 text-center sm:mt-8 sm:p-12"
+        className="mt-6 rounded-hero app-card p-6 text-center sm:mt-8 sm:p-12"
         aria-labelledby="rating-guide-outro"
       >
         <h2
           id="rating-guide-outro"
-          className="text-2xl font-semibold text-[color:var(--foreground)] sm:text-3xl"
+          className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
         >
           {copy.outro.title}
         </h2>

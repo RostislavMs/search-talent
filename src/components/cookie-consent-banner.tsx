@@ -127,16 +127,16 @@ export default function CookieConsentBanner({
             role="dialog"
             aria-modal="true"
             aria-labelledby="cookie-settings-title"
-            className="mx-auto w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[2rem] border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8"
+            className="mx-auto w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] app-soft">
+                <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
                   {dictionary.cookieConsent.badge}
                 </p>
                 <h2
                   id="cookie-settings-title"
-                  className="mt-3 text-2xl font-semibold text-[color:var(--foreground)]"
+                  className="font-display mt-3 text-2xl font-medium tracking-tight text-[color:var(--foreground)]"
                 >
                   {dictionary.cookieConsent.modalTitle}
                 </h2>
@@ -161,7 +161,7 @@ export default function CookieConsentBanner({
               {categories.map((category) => (
                 <label
                   key={category.key}
-                  className="flex items-start gap-4 rounded-[1.5rem] border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-4"
+                  className="flex items-start gap-4 rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-4"
                 >
                   <input
                     type="checkbox"
@@ -234,13 +234,13 @@ export default function CookieConsentBanner({
 
       {showBanner && (
         <div className="fixed inset-x-0 bottom-0 z-[60] px-4 pb-4 sm:px-6">
-          <section className="mx-auto max-w-[90rem] rounded-[2rem] border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8">
+          <section className="mx-auto max-w-[90rem] rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-3xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] app-soft">
+                <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
                   {dictionary.cookieConsent.badge}
                 </p>
-                <h2 className="mt-3 text-2xl font-semibold text-[color:var(--foreground)]">
+                <h2 className="font-display mt-3 text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
                   {dictionary.cookieConsent.title}
                 </h2>
                 <p className="mt-3 text-sm leading-7 app-muted sm:text-base">

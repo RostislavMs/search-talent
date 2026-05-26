@@ -220,7 +220,7 @@ export default function ProjectMediaUpload({
   };
 
   return (
-    <section className="rounded-[1.75rem] app-panel p-5">
+    <section className="rounded-panel app-panel p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
@@ -238,7 +238,7 @@ export default function ProjectMediaUpload({
         )}
       </div>
 
-      <div className="mt-5 rounded-[1.5rem] border border-dashed app-border bg-[color:var(--surface)] p-5">
+      <div className="mt-5 rounded-3xl border border-dashed app-border bg-[color:var(--surface)] p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-[color:var(--foreground)]">
@@ -274,7 +274,7 @@ export default function ProjectMediaUpload({
       {errorMessage && <p className="mt-4 text-sm text-rose-500">{errorMessage}</p>}
 
       {mediaItems.length === 0 ? (
-        <div className="mt-5 rounded-[1.5rem] app-panel-dashed p-6 text-sm app-muted">
+        <div className="mt-5 rounded-3xl app-panel-dashed p-6 text-sm app-muted">
           {dictionary.dashboardProjects.noFiles}
         </div>
       ) : (
@@ -286,7 +286,7 @@ export default function ProjectMediaUpload({
             return (
               <article
                 key={item.id}
-                className="overflow-hidden rounded-[1.5rem] border app-border bg-[color:var(--surface)]"
+                className="overflow-hidden rounded-3xl border app-border bg-[color:var(--surface)]"
               >
                 <div className="relative aspect-[16/10] bg-[color:var(--surface-muted)]">
                   {item.media_kind === "image" ? (
@@ -306,7 +306,7 @@ export default function ProjectMediaUpload({
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center p-6">
-                      <div className="flex h-24 w-24 items-center justify-center rounded-[1.5rem] border app-border bg-[color:var(--surface)] text-lg font-semibold text-[color:var(--foreground)] shadow-sm">
+                      <div className="flex h-24 w-24 items-center justify-center rounded-3xl border app-border bg-[color:var(--surface)] text-lg font-semibold text-[color:var(--foreground)] shadow-sm">
                         {getFileExtension(fileLabel)}
                       </div>
                     </div>

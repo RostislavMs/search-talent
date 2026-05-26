@@ -65,13 +65,13 @@ export default async function NewProjectPage({
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {dictionary.dashboardProjects.eyebrow}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.forms.createProject}
             </h1>
           </div>

@@ -82,8 +82,8 @@ function DetailCard({
   value: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] app-panel p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+    <div className="rounded-3xl app-panel p-4">
+      <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
         {label}
       </p>
       <p className="mt-2 text-sm leading-7 text-[color:var(--foreground)]">
@@ -224,7 +224,7 @@ export default async function PublicProjectPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
-      <section className="overflow-hidden rounded-2xl app-card sm:rounded-[2.25rem]">
+      <section className="overflow-hidden rounded-2xl app-card sm:rounded-hero">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
           <div className="p-5 sm:p-8 md:p-10">
             <div className="flex flex-wrap items-center gap-3">
@@ -259,7 +259,7 @@ export default async function PublicProjectPage({
               )}
             </div>
 
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-[color:var(--foreground)] sm:mt-6 sm:text-3xl md:text-4xl">
+            <h1 className="font-display mt-4 text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:mt-6 sm:text-3xl md:text-4xl">
               {project.title}
             </h1>
 
@@ -268,7 +268,7 @@ export default async function PublicProjectPage({
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
-              <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">
+              <span className="font-display rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-on-soft">
                 {voteSummary.score} {dictionary.common.scoreSuffix}
               </span>
               {statusLabel && (
@@ -318,8 +318,8 @@ export default async function PublicProjectPage({
 
       <section className="mt-5 grid gap-5 sm:mt-8 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-5 sm:space-y-8">
-          <section className="rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-6">
-            <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+          <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
+            <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.projectPage.details}
             </h2>
 
@@ -400,24 +400,24 @@ export default async function PublicProjectPage({
           {(project.problem || project.solution || project.results) && (
             <section className="grid gap-4 lg:grid-cols-3">
               {project.problem && (
-                <article className="rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-6">
-                  <h2 className="text-lg font-semibold text-[color:var(--foreground)] sm:text-xl">
+                <article className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
+                  <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)] sm:text-xl">
                     {dictionary.projectPage.problem}
                   </h2>
                   <p className="mt-3 text-sm leading-7 app-muted sm:mt-4">{project.problem}</p>
                 </article>
               )}
               {project.solution && (
-                <article className="rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-6">
-                  <h2 className="text-lg font-semibold text-[color:var(--foreground)] sm:text-xl">
+                <article className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
+                  <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)] sm:text-xl">
                     {dictionary.projectPage.solution}
                   </h2>
                   <p className="mt-3 text-sm leading-7 app-muted sm:mt-4">{project.solution}</p>
                 </article>
               )}
               {project.results && (
-                <article className="rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-6">
-                  <h2 className="text-lg font-semibold text-[color:var(--foreground)] sm:text-xl">
+                <article className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
+                  <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)] sm:text-xl">
                     {dictionary.projectPage.results}
                   </h2>
                   <p className="mt-3 text-sm leading-7 app-muted sm:mt-4">{project.results}</p>
@@ -426,8 +426,8 @@ export default async function PublicProjectPage({
             </section>
           )}
 
-          <section className="rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-6">
-            <h2 className="text-xl font-semibold text-[color:var(--foreground)] sm:text-2xl">
+          <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
+            <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-2xl">
               {dictionary.projectPage.gallery}
             </h2>
             <div className="mt-4 sm:mt-6">
@@ -483,8 +483,8 @@ export default async function PublicProjectPage({
           />
 
           {owner && (
-            <section className="rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-5">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] app-soft">
+            <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-5">
+              <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
                 {dictionary.projectPage.createdBy}
               </p>
               <div className="mt-4 flex items-center gap-3">

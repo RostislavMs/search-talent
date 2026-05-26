@@ -57,7 +57,7 @@ export default function SiteFooter({
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--soft-foreground)]">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow text-[color:var(--soft-foreground)]">
               {navLabel}
             </p>
             <nav className="mt-3 flex flex-col gap-2 text-sm text-[color:var(--muted-foreground)]">
@@ -89,7 +89,7 @@ export default function SiteFooter({
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--soft-foreground)]">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow text-[color:var(--soft-foreground)]">
               {accountLabel}
             </p>
             <nav className="mt-3 flex flex-col gap-2 text-sm text-[color:var(--muted-foreground)]">
@@ -119,7 +119,7 @@ export default function SiteFooter({
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--soft-foreground)]">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow text-[color:var(--soft-foreground)]">
               {infoLabel}
             </p>
             <nav className="mt-3 flex flex-col gap-2 text-sm text-[color:var(--muted-foreground)]">

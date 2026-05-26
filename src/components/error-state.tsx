@@ -54,11 +54,11 @@ export default function ErrorState({
 
   return (
     <main className="mx-auto flex w-full max-w-[90rem] flex-1 items-center px-4 py-10 sm:px-6 sm:py-14">
-      <section className="w-full rounded-[2.5rem] border border-[color:var(--border)] bg-[linear-gradient(145deg,_rgba(15,23,42,0.97),_rgba(190,18,60,0.85)_58%,_rgba(245,158,11,0.76))] px-6 py-10 text-white shadow-[0_30px_90px_rgba(15,23,42,0.12)] sm:px-10 sm:py-14">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/75">
+      <section className="bg-brand-hero w-full rounded-hero border border-[color:var(--border)] px-6 py-10 text-white shadow-[0_30px_90px_rgba(15,23,42,0.12)] sm:px-10 sm:py-14">
+        <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/75">
           {copy.eyebrow}
         </p>
-        <h1 className="mt-4 max-w-3xl text-3xl font-semibold tracking-[-0.03em] sm:text-5xl">
+        <h1 className="font-display mt-4 max-w-3xl text-3xl font-medium tracking-[-0.03em] sm:text-5xl">
           {copy.title}
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">

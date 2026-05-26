@@ -998,7 +998,7 @@ export default function CreateProjectForm({
       />
 
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold text-[color:var(--foreground)]">
+        <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
           {currentDescriptor.title}
         </h2>
         <p className="text-sm app-muted">{currentDescriptor.description}</p>
@@ -1196,7 +1196,7 @@ function StepHeader({
               }`}
               aria-current={isActive ? "step" : undefined}
             >
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+              <span className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                 {dictionary.forms.stepLabel} {descriptor.index} / {total}
               </span>
               <span className="text-sm font-semibold text-[color:var(--foreground)]">
@@ -1470,7 +1470,7 @@ function StepGithub({
       <div className="rounded-2xl border app-border bg-[color:var(--surface-muted)] p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {dict.linkedHeader}
             </p>
             <a
@@ -1666,7 +1666,7 @@ function StepGithub({
       </Field>
 
       <fieldset className="rounded-2xl border app-border p-4">
-        <legend className="px-1 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-eyebrow app-soft">
           {dict.displayPreferences}
         </legend>
         <p className="mt-1 mb-3 text-xs app-muted">
@@ -1695,7 +1695,7 @@ function StepGithub({
       </fieldset>
 
       <fieldset className="rounded-2xl border app-border p-4">
-        <legend className="px-1 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-eyebrow app-soft">
           {dict.syncPreferences}
         </legend>
         <label className="mt-2 flex cursor-pointer items-center gap-2">
@@ -1906,7 +1906,7 @@ function StepMedia({
       <div
         onDragOver={(event) => event.preventDefault()}
         onDrop={onDropFiles}
-        className="rounded-[1.5rem] border border-dashed app-border bg-[color:var(--surface)] p-6 text-center"
+        className="rounded-3xl border border-dashed app-border bg-[color:var(--surface)] p-6 text-center"
       >
         <p className="text-sm font-medium text-[color:var(--foreground)]">
           {dictionary.forms.mediaDropHint}
@@ -1928,7 +1928,7 @@ function StepMedia({
         </p>
       </div>
 
-      <div className="rounded-[1.5rem] border app-border bg-[color:var(--surface)] p-4">
+      <div className="rounded-3xl border app-border bg-[color:var(--surface)] p-4">
         <label
           htmlFor="project-youtube-url"
           className="block text-sm font-medium text-[color:var(--foreground)]"
@@ -1966,7 +1966,7 @@ function StepMedia({
       </div>
 
       {mediaItems.length === 0 ? (
-        <div className="rounded-[1.5rem] app-panel-dashed p-6 text-sm app-muted">
+        <div className="rounded-3xl app-panel-dashed p-6 text-sm app-muted">
           {dictionary.forms.mediaEmptyState}
         </div>
       ) : (
@@ -2012,7 +2012,7 @@ function StepMedia({
                     setDragIndex(null);
                     setOverIndex(null);
                   }}
-                  className={`group relative cursor-move overflow-hidden rounded-[1.5rem] border app-border bg-[color:var(--surface)] transition ${
+                  className={`group relative cursor-move overflow-hidden rounded-3xl border app-border bg-[color:var(--surface)] transition ${
                     isDragging ? "opacity-50" : ""
                   } ${
                     isOver
@@ -2057,7 +2057,7 @@ function StepMedia({
                   </div>
 
                   <div className="flex items-center justify-between gap-2 p-3">
-                    <span className="text-xs uppercase tracking-[0.16em] app-soft">
+                    <span className="text-xs uppercase tracking-eyebrow app-soft">
                       {dictionary.forms.stepLabel} {index + 1}
                     </span>
                     <div className="flex items-center gap-1">

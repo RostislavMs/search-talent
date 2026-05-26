@@ -286,7 +286,7 @@ export default function NotificationsBell({
         ) : null}
       </summary>
 
-      <div className="absolute right-0 z-40 mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-[1.75rem] border app-border bg-[color:var(--surface)] p-3 shadow-2xl">
+      <div className="absolute right-0 z-40 mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-panel border app-border bg-[color:var(--surface)] p-3 shadow-2xl">
         <div className="flex items-center justify-between px-1 pb-2">
           <h2 className="text-sm font-semibold text-[color:var(--foreground)]">
             {dict.title}

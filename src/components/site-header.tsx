@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import logoImage from "../../public/logo.webp";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import HeaderNav from "@/components/header-nav";
 import NavLink from "@/components/nav-link";
 import LogoutButton from "@/components/logout-button";
 import LanguageSwitcher from "@/components/language-switcher";
@@ -107,18 +108,12 @@ export default function SiteHeader({
     { href: "/articles", label: articlesLabel },
   ];
 
-  const wideExtraLinks = viewer
-    ? [
-        { href: "/dashboard", label: dictionary.nav.dashboard },
-        ...(viewer.isAdmin
-          ? [{ href: "/admin", label: dictionary.nav.adminConsole }]
-          : []),
-      ]
+  const headerExtraLinks = viewer
+    ? [{ href: "/dashboard", label: dictionary.nav.dashboard }]
     : [];
 
-  const dashboardLinks = viewer
+  const dropdownLinks = viewer
     ? [
-        { href: "/dashboard", label: dictionary.nav.dashboard },
         ...(viewer.username
           ? [
               {
@@ -136,6 +131,8 @@ export default function SiteHeader({
           : []),
       ]
     : [];
+
+  const mobileMenuLinks = [...headerExtraLinks, ...dropdownLinks];
   const profileLinks = viewer
     ? viewer.username
       ? [
@@ -147,13 +144,21 @@ export default function SiteHeader({
         ]
       : [{ href: "/profile/edit", label: dictionary.dashboard.editProfile }]
     : [];
-  const dashboardActive =
-    pathname === "/dashboard" || pathname.startsWith("/dashboard/");
   const profileActive =
-    dashboardActive ||
     pathname.startsWith("/u/") ||
     pathname === "/profile/edit" ||
     pathname.startsWith("/profile/edit/");
+  const profileMenuLinks = [...headerExtraLinks, ...dropdownLinks, ...profileLinks];
+  const activeProfileMenuHref = profileMenuLinks
+    .filter(
+      (link) =>
+        pathname === link.href || pathname.startsWith(`${link.href}/`),
+    )
+    .reduce<string | null>(
+      (best, link) =>
+        best === null || link.href.length > best.length ? link.href : best,
+      null,
+    );
   const viewerInitial = (
     viewer?.displayName ||
     viewer?.email ||
@@ -193,21 +198,8 @@ export default function SiteHeader({
           />
         </LocalizedLink>
 
-        <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex">
-          {primaryLinks.map((link) => (
-            <NavLink key={link.href} href={link.href} label={link.label} />
-          ))}
-          {wideExtraLinks.length > 0 ? (
-            <span
-              aria-hidden="true"
-              className="mx-1 hidden h-5 w-px bg-[color:var(--border)] xl:inline-block"
-            />
-          ) : null}
-          {wideExtraLinks.map((link) => (
-            <span key={link.href} className="hidden xl:inline-flex">
-              <NavLink href={link.href} label={link.label} />
-            </span>
-          ))}
+        <nav className="hidden flex-1 items-center justify-center lg:flex">
+          <HeaderNav links={[...primaryLinks, ...headerExtraLinks]} />
         </nav>
 
         <div className="ml-auto flex items-center lg:ml-0">
@@ -247,9 +239,9 @@ export default function SiteHeader({
                   <span>{dictionary.nav.profile}</span>
                 </summary>
 
-                <div className="absolute right-0 mt-3 w-80 rounded-[1.75rem] border border-[color:var(--border)] bg-[color:var(--surface)] p-3 shadow-2xl">
+                <div className="absolute right-0 mt-3 w-80 rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-3 shadow-2xl">
                   <div className="rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+                    <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                       {dictionary.nav.signedInAs}
                     </p>
                     <p className="mt-1 truncate text-sm font-medium text-[color:var(--foreground)]">
@@ -260,15 +252,12 @@ export default function SiteHeader({
                   </div>
 
                   <div className="mt-3 space-y-1">
-                    {dashboardLinks.map((link) => (
+                    {dropdownLinks.map((link) => (
                       <LocalizedLink
                         key={link.href}
                         href={link.href}
                         onClick={closeProfileMenu}
-                        className={menuLinkClasses(
-                          pathname === link.href ||
-                            pathname.startsWith(`${link.href}/`),
-                        )}
+                        className={menuLinkClasses(link.href === activeProfileMenuHref)}
                       >
                         {link.label}
                       </LocalizedLink>
@@ -278,10 +267,7 @@ export default function SiteHeader({
                         key={`${link.href}-${link.label}`}
                         href={link.href}
                         onClick={closeProfileMenu}
-                        className={menuLinkClasses(
-                          pathname === link.href ||
-                            pathname.startsWith(`${link.href}/`),
-                        )}
+                        className={menuLinkClasses(link.href === activeProfileMenuHref)}
                       >
                         {link.label}
                       </LocalizedLink>
@@ -289,7 +275,7 @@ export default function SiteHeader({
                   </div>
 
                   <div className="mt-4 rounded-2xl border border-[color:var(--border)] p-4 xl:hidden">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
                       {dictionary.theme.toggleLabel}
                     </p>
                     <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
@@ -336,7 +322,7 @@ export default function SiteHeader({
             {dictionary.nav.menu}
           </summary>
 
-          <div className="absolute right-0 mt-3 w-[min(22rem,calc(100vw-2rem))] max-h-[calc(100dvh-4.5rem)] overflow-y-auto overscroll-contain rounded-[1.75rem] border border-[color:var(--border)] bg-[color:var(--surface)] p-3 shadow-2xl">
+          <div className="absolute right-0 mt-3 w-[min(22rem,calc(100vw-2rem))] max-h-[calc(100dvh-4.5rem)] overflow-y-auto overscroll-contain rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-3 shadow-2xl">
             <div className="space-y-1">
               {primaryLinks.map((link) => (
                 <NavLink
@@ -367,7 +353,7 @@ export default function SiteHeader({
                       )}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+                      <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                         {dictionary.nav.signedInAs}
                       </p>
                       <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
@@ -380,19 +366,16 @@ export default function SiteHeader({
                 </div>
 
                 <div className="mt-3">
-                  <p className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+                  <p className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     {dictionary.nav.profile}
                   </p>
                   <div className="space-y-1">
-                    {dashboardLinks.map((link) => (
+                    {mobileMenuLinks.map((link) => (
                       <LocalizedLink
                         key={link.href}
                         href={link.href}
                         onClick={closeMobileMenu}
-                        className={menuLinkClasses(
-                          pathname === link.href ||
-                            pathname.startsWith(`${link.href}/`),
-                        )}
+                        className={menuLinkClasses(link.href === activeProfileMenuHref)}
                       >
                         {link.label}
                       </LocalizedLink>
@@ -402,10 +385,7 @@ export default function SiteHeader({
                         key={`${link.href}-${link.label}`}
                         href={link.href}
                         onClick={closeMobileMenu}
-                        className={menuLinkClasses(
-                          pathname === link.href ||
-                            pathname.startsWith(`${link.href}/`),
-                        )}
+                        className={menuLinkClasses(link.href === activeProfileMenuHref)}
                       >
                         {link.label}
                       </LocalizedLink>
@@ -414,7 +394,7 @@ export default function SiteHeader({
                 </div>
 
                 <div className="mt-3 rounded-2xl border border-[color:var(--border)] p-3">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     {dictionary.theme.toggleLabel}
                   </p>
                   <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
@@ -427,7 +407,7 @@ export default function SiteHeader({
             ) : (
               <>
                 <div className="mt-3 rounded-2xl border border-[color:var(--border)] p-3">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     {dictionary.theme.toggleLabel}
                   </p>
                   <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />

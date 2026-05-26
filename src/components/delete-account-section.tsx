@@ -122,8 +122,8 @@ export default function DeleteAccountSection({ email }: { email: string }) {
 
   return (
     <>
-      <section className="mt-8 rounded-[2rem] border border-rose-300/50 bg-rose-50/40 p-6 sm:p-8 dark:border-rose-500/30 dark:bg-rose-500/5">
-        <h2 className="text-lg font-semibold text-rose-700 dark:text-rose-300">
+      <section className="mt-8 rounded-hero border border-rose-300/50 bg-rose-50/40 p-6 sm:p-8 dark:border-rose-500/30 dark:bg-rose-500/5">
+        <h2 className="font-display text-lg font-semibold tracking-tight text-rose-700 dark:text-rose-300">
           {t.sectionTitle}
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-7 app-muted">
@@ -158,12 +158,12 @@ export default function DeleteAccountSection({ email }: { email: string }) {
             }
           }}
         >
-          <div className="w-full max-w-md rounded-[1.75rem] border app-border bg-[color:var(--surface)] p-6 shadow-[0_28px_90px_rgba(2,6,23,0.4)]">
+          <div className="w-full max-w-md rounded-panel border app-border bg-[color:var(--surface)] p-6 shadow-[0_28px_90px_rgba(2,6,23,0.4)]">
             {step === "confirm" ? (
               <>
                 <h2
                   id="delete-account-title"
-                  className="text-lg font-semibold text-[color:var(--foreground)]"
+                  className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
                 >
                   {t.step1Title}
                 </h2>
@@ -234,7 +234,7 @@ export default function DeleteAccountSection({ email }: { email: string }) {
               <>
                 <h2
                   id="delete-account-title"
-                  className="text-lg font-semibold text-[color:var(--foreground)]"
+                  className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
                 >
                   {t.step2Title}
                 </h2>
@@ -301,7 +301,7 @@ export default function DeleteAccountSection({ email }: { email: string }) {
               <>
                 <h2
                   id="delete-account-title"
-                  className="text-lg font-semibold text-[color:var(--foreground)]"
+                  className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
                 >
                   {t.successTitle}
                 </h2>

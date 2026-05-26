@@ -83,10 +83,10 @@ export default function ContentReportButton({
 
       {isOpen && (
         <div className="fixed inset-0 z-[70] flex items-end bg-black/45 px-4 py-4 sm:items-center sm:px-6">
-          <div className="mx-auto w-full max-w-2xl rounded-[2rem] border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8">
+          <div className="mx-auto w-full max-w-2xl rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div className="max-w-xl">
-                <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+                <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
                   {targetType === "project"
                     ? reportCopy.titleProject
                     : reportCopy.titleProfile}

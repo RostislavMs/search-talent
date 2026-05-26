@@ -296,7 +296,7 @@ export default function BadgeShelf({
                     </span>
                   )}
                   {!earned && (
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em] app-muted">
+                    <span className="text-[10px] font-semibold uppercase tracking-eyebrow app-muted">
                       · {strings.locked}
                     </span>
                   )}
@@ -331,7 +331,7 @@ export default function BadgeShelf({
           }}
         >
           <div
-            className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-[1.75rem] border app-border shadow-[0_28px_90px_rgba(2,6,23,0.6)]"
+            className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-panel border app-border shadow-[0_28px_90px_rgba(2,6,23,0.6)]"
             style={{
               background: "var(--surface)",
               color: "var(--foreground)",
@@ -341,7 +341,7 @@ export default function BadgeShelf({
               <div>
                 <h2
                   id="badge-modal-title"
-                  className="text-lg font-semibold text-[color:var(--foreground)]"
+                  className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
                 >
                   {strings.modalTitle}
                 </h2>
@@ -386,7 +386,7 @@ export default function BadgeShelf({
                   <li
                     key={badge.id}
                     className={[
-                      "flex items-start gap-3 rounded-[1.25rem] border p-4",
+                      "flex items-start gap-3 rounded-2xl border p-4",
                       earned
                         ? getRarityChipClasses(badge.rarity)
                         : LOCKED_CHIP_CLASSES,
@@ -401,7 +401,7 @@ export default function BadgeShelf({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                         <h3 className="font-semibold">{name}</h3>
-                        <span className="text-xs uppercase tracking-[0.18em] opacity-70">
+                        <span className="text-xs uppercase tracking-eyebrow opacity-70">
                           {getRarityLabel(badge.rarity, locale)}
                         </span>
                         {earned && tieredBadge && (
@@ -410,7 +410,7 @@ export default function BadgeShelf({
                           </span>
                         )}
                         {!earned && (
-                          <span className="rounded-full border border-current/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em]">
+                          <span className="rounded-full border border-current/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-eyebrow">
                             {strings.locked}
                           </span>
                         )}

@@ -122,10 +122,10 @@ export default function VoteButtons({
   };
 
   return (
-    <section className="rounded-[1.75rem] app-panel p-5">
+    <section className="rounded-panel app-panel p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-[color:var(--foreground)]">
+          <h2 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.projectPage.community}
           </h2>
           <p className="mt-1 text-sm app-muted">
@@ -134,7 +134,7 @@ export default function VoteButtons({
           </p>
         </div>
 
-        <span className="rounded-full border app-border px-3 py-1 text-xs font-medium app-muted">
+        <span className="font-display rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
           {voteState.likes - voteState.dislikes} {dictionary.common.scoreSuffix}
         </span>
       </div>

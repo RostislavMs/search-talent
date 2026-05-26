@@ -28,26 +28,28 @@ export default function CreatorCard({
       href={`/u/${creator.username}`}
       className="group block rounded-3xl app-card p-5 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl"
     >
-      <div className="flex items-center gap-3">
-        <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full app-panel text-sm font-semibold text-[color:var(--foreground)]">
+      <div className="flex items-start gap-4">
+        <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-2xl border app-border app-surface-muted shadow-sm">
           {creator.avatar_url ? (
             <OptimizedImage
               src={creator.avatar_url}
               alt={name}
               fill
-              sizes="48px"
+              sizes="72px"
               className="object-cover"
             />
           ) : (
-            <span>{name.slice(0, 1).toUpperCase()}</span>
+            <span className="font-display flex h-full w-full items-center justify-center text-2xl font-medium text-[color:var(--foreground)]">
+              {name.slice(0, 1).toUpperCase()}
+            </span>
           )}
         </div>
 
-        <div className="min-w-0">
-          <h3 className="truncate font-semibold text-[color:var(--foreground)]">
+        <div className="min-w-0 flex-1 pt-0.5">
+          <h3 className="font-display truncate text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {name}
           </h3>
-          <p className="truncate text-sm app-muted">
+          <p className="mt-0.5 truncate text-sm app-muted">
             @{creator.username || dictionary.common.creator.toLowerCase()}
           </p>
         </div>

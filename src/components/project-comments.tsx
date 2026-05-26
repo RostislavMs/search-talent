@@ -364,8 +364,8 @@ export default function ProjectComments({
   const { topLevel, childrenMap } = buildCommentTree(comments);
 
   return (
-    <section className="rounded-[2rem] app-card p-5 sm:p-6">
-      <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+    <section className="rounded-hero app-card p-5 sm:p-6">
+      <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
         {dictionary.projectComments.title}
         {comments.length > 0 && (
           <span className="ml-2 text-base font-normal app-muted">

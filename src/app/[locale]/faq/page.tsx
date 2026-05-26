@@ -55,13 +55,13 @@ export default async function FaqPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }}
       />
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {dictionary.faqPage.eyebrow}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.faqPage.title}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
@@ -79,7 +79,7 @@ export default async function FaqPage({
         {dictionary.faqPage.items.map((item) => (
           <details
             key={item.q}
-            className="group rounded-[1.75rem] app-card p-6 sm:p-8"
+            className="group rounded-panel app-card p-6 sm:p-8"
           >
             <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-lg font-semibold text-[color:var(--foreground)] [&::-webkit-details-marker]:hidden">
               <span>{item.q}</span>

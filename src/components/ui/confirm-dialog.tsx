@@ -62,10 +62,10 @@ export default function ConfirmDialog({
         }
       }}
     >
-      <div className="w-full max-w-md rounded-[1.75rem] border app-border bg-[color:var(--surface)] p-6 text-left shadow-[0_28px_90px_rgba(2,6,23,0.4)]">
+      <div className="w-full max-w-md rounded-panel border app-border bg-[color:var(--surface)] p-6 text-left shadow-[0_28px_90px_rgba(2,6,23,0.4)]">
         <h2
           id="confirm-dialog-title"
-          className="text-left text-lg font-semibold text-[color:var(--foreground)]"
+          className="font-display text-left text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
         >
           {title}
         </h2>

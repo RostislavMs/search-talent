@@ -58,13 +58,13 @@ export default function FeedbackPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {dictionary.feedbackPage.eyebrow}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.feedbackPage.title}
             </h1>
             <p className="mt-4 max-w-xl text-base leading-8 app-muted">
@@ -78,8 +78,8 @@ export default function FeedbackPage() {
         </div>
 
         {sent ? (
-          <div className="mt-8 rounded-[1.75rem] app-panel p-6 text-center">
-            <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+          <div className="mt-8 rounded-panel app-panel p-6 text-center">
+            <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.feedbackPage.successTitle}
             </h2>
             <p className="mt-3 app-muted">

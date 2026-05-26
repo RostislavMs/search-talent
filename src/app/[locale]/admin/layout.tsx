@@ -31,10 +31,10 @@ export default async function AdminLayout({
     <main className="mx-auto w-full max-w-[90rem] px-4 py-10 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] app-soft">
+          <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
             {copy.shell.subtitle}
           </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+          <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
             {copy.shell.title}
           </h1>
         </div>
@@ -48,7 +48,7 @@ export default async function AdminLayout({
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[240px_1fr]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-[1.5rem] app-panel p-3">
+          <div className="rounded-3xl app-panel p-3">
             <AdminSidebar
               locale={locale}
               labels={copy.nav}

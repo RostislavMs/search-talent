@@ -105,12 +105,12 @@ export default function GithubInsightsPanel({
   return (
     <section
       aria-labelledby="github-insights-title"
-      className="rounded-[1.75rem] app-card p-5 sm:p-6"
+      className="rounded-panel app-card p-5 sm:p-6"
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h2
           id="github-insights-title"
-          className="text-xl font-semibold text-[color:var(--foreground)]"
+          className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]"
         >
           {dict.insightsTitle}
         </h2>
@@ -155,7 +155,7 @@ export default function GithubInsightsPanel({
 
       {options.showLanguages && breakdown.length > 0 ? (
         <div className="mt-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
             {dict.languageBreakdown}
           </p>
           <div
@@ -196,7 +196,7 @@ export default function GithubInsightsPanel({
 
       {options.showTopics && topics.length > 0 ? (
         <div className="mt-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
             {dict.topics}
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -263,7 +263,7 @@ export default function GithubInsightsPanel({
 
       {techStack && techStack.length > 0 ? (
         <div className="mt-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
             {dict.techStack}
           </p>
           <div className="flex flex-wrap gap-1.5">

@@ -54,13 +54,13 @@ export default async function ArticlesPage({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="relative rounded-[2.25rem] app-card">
+      <section className="relative rounded-hero app-card">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
           <div className="p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-400">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
               {ui.eyebrow}
             </p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-5xl">
+            <h1 className="font-display mt-4 text-4xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-5xl">
               {ui.title}
             </h1>
             <p className="mt-5 max-w-3xl text-base leading-8 app-muted">
@@ -74,7 +74,7 @@ export default async function ArticlesPage({
             </div>
           </div>
 
-          <div className="rounded-[1.9rem] border app-border bg-[radial-gradient(circle_at_top_right,_rgba(249,115,22,0.24),_transparent_35%),linear-gradient(180deg,_rgba(15,23,42,0.96),_rgba(30,41,59,0.82))] p-6 text-white shadow-[0_22px_70px_rgba(15,23,42,0.18)] sm:p-8 lg:-my-px lg:-mr-px lg:rounded-l-[1.9rem] lg:rounded-r-[2.25rem]">
+          <div className="bg-brand-hero rounded-panel border app-border p-6 text-white shadow-[0_22px_70px_rgba(15,23,42,0.18)] sm:p-8 lg:-my-px lg:-mr-px lg:rounded-l-panel lg:rounded-r-hero">
             <form className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-white/78">
@@ -102,7 +102,7 @@ export default async function ArticlesPage({
                   name="author"
                   defaultValue={author || ""}
                   placeholder={ui.authorPlaceholder}
-                  className="w-full rounded-[1.25rem] border border-white/12 bg-white/96 p-3 text-slate-900 placeholder:text-slate-500"
+                  className="w-full rounded-2xl border border-white/12 bg-white/96 p-3 text-slate-900 placeholder:text-slate-500"
                 />
               </div>
 
@@ -156,7 +156,7 @@ export default async function ArticlesPage({
             ))}
           </div>
         ) : (
-          <p className="rounded-[1.75rem] app-panel-dashed p-6 text-sm app-muted">
+          <p className="rounded-panel app-panel-dashed p-6 text-sm app-muted">
             {ui.empty}
           </p>
         )}

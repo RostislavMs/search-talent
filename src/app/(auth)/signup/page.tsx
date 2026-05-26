@@ -83,7 +83,7 @@ export default function SignupPage() {
 
   return (
     <main className="mx-auto max-w-md px-4 py-16">
-      <section className="rounded-[2rem] app-card p-8">
+      <section className="rounded-hero app-card p-8">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] app-soft">
             {dictionary.auth.signup.eyebrow}
@@ -93,7 +93,7 @@ export default function SignupPage() {
           </ButtonLink>
         </div>
 
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+        <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
           {dictionary.auth.signup.title}
         </h1>
 

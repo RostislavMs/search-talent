@@ -65,7 +65,7 @@ export default function AdminModerationActions({
   const fallbackStatus = currentStatus || "approved";
 
   return (
-    <div className="space-y-4 rounded-[1.5rem] border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+    <div className="space-y-4 rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
       <FormTextarea
         value={note}
         onChange={(event) => setNote(event.target.value)}

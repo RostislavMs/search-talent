@@ -27,11 +27,11 @@ export default function LegalPage({
 }: LegalPageProps) {
   return (
     <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] app-soft">
+      <section className="rounded-hero app-card p-8 sm:p-10">
+        <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
           {eyebrow}
         </p>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-4xl">
+        <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
           {title}
         </h1>
         <p className="mt-4 max-w-3xl text-base leading-8 app-muted">{intro}</p>
@@ -51,8 +51,8 @@ export default function LegalPage({
 
       <section className="mt-8 space-y-5">
         {sections.map((section) => (
-          <article key={section.title} className="rounded-[2rem] app-card p-6 sm:p-7">
-            <h2 className="text-xl font-semibold text-[color:var(--foreground)]">
+          <article key={section.title} className="rounded-hero app-card p-6 sm:p-7">
+            <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
               {section.title}
             </h2>
 

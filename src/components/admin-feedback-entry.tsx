@@ -79,10 +79,10 @@ export default function AdminFeedbackEntry({
     copy.anonymous;
 
   return (
-    <article className="rounded-[2rem] app-card p-6">
+    <article className="rounded-hero app-card p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
             <span className="rounded-full border border-[color:var(--border)] px-3 py-1">
               {categoryLabel}
             </span>

@@ -68,7 +68,7 @@ export default async function DashboardPage({
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+        <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
           {greeting}
         </h1>
         <p className="mt-1 text-sm app-muted">

@@ -442,20 +442,21 @@ export const dictionaries = {
       openDashboard: "Open dashboard",
       createAccount: "Create account",
       cards: {
-        discovery: {
-          title: "Discover creators",
-          description:
-            "Browse trending portfolios, open public profiles, and search by skills or technologies.",
+        eyebrow: "Live now",
+        topTalent: {
+          label: "Top talent",
+          cta: "View profile",
+          fallback: "Be the first to climb the leaderboard.",
         },
-        creators: {
-          title: "Build your portfolio",
-          description:
-            "Create your public profile, publish projects, and manage everything from a personal dashboard.",
+        topProject: {
+          label: "Trending project",
+          cta: "View project",
+          fallback: "No projects published yet.",
         },
-        teams: {
-          title: "Discover collaborators",
-          description:
-            "Connect with peers who share your craft — explore portfolios, follow creators, and start conversations around real work.",
+        freshArticle: {
+          label: "Fresh article",
+          cta: "Read",
+          fallback: "No articles published yet.",
         },
       },
       trendingTitle: "Trending portfolio projects",
@@ -1976,20 +1977,21 @@ export const dictionaries = {
       openDashboard: "Відкрити дашборд",
       createAccount: "Створити акаунт",
       cards: {
-        discovery: {
-          title: "Відкривайте авторів",
-          description:
-            "Переглядайте популярні портфоліо, відкривайте профілі фахівців і шукайте за навичками чи технологіями.",
+        eyebrow: "Зараз у спільноті",
+        topTalent: {
+          label: "Топ-творець",
+          cta: "Дивитись профіль",
+          fallback: "Стань першим у рейтингу.",
         },
-        creators: {
-          title: "Створіть портфоліо",
-          description:
-            "Створюйте публічний профіль, публікуйте проєкти та керуйте всім із персонального дашборду.",
+        topProject: {
+          label: "Трендовий проєкт",
+          cta: "Дивитись проєкт",
+          fallback: "Поки немає опублікованих проєктів.",
         },
-        teams: {
-          title: "Знаходьте однодумців",
-          description:
-            "Знайомтесь із колегами по ремеслу — переглядайте портфоліо, підписуйтесь на авторів і починайте розмови навколо реальних робіт.",
+        freshArticle: {
+          label: "Свіжа стаття",
+          cta: "Читати",
+          fallback: "Поки немає опублікованих статей.",
         },
       },
       trendingTitle: "Популярні портфоліо-проєкти",

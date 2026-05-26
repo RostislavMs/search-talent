@@ -129,13 +129,13 @@ export default async function FollowingPage({
   if (followedUserIds.length === 0) {
     return (
       <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-        <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+        <section className="rounded-hero app-card p-8 sm:p-10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+              <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
                 {dictionary.follows.feedTitle}
               </p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+              <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
                 {dictionary.follows.feedTitle}
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
@@ -148,7 +148,7 @@ export default async function FollowingPage({
           </div>
         </section>
 
-        <section className="mt-8 rounded-[2rem] app-card p-6 sm:p-8">
+        <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
           <p className="text-sm app-muted">{dictionary.follows.emptyMessage}</p>
         </section>
       </main>
@@ -219,13 +219,13 @@ export default async function FollowingPage({
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {dictionary.follows.feedTitle}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.follows.feedTitle}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
@@ -238,7 +238,7 @@ export default async function FollowingPage({
         </div>
       </section>
 
-      <section className="mt-8 rounded-[2rem] app-card p-6 sm:p-8">
+      <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
         {pagedEntries.length === 0 ? (
           <p className="text-sm app-muted">{dictionary.follows.feedEmpty}</p>
         ) : (
@@ -430,9 +430,9 @@ export default async function FollowingPage({
       </section>
 
       {followedProfiles.length > 0 && (
-        <section className="mt-8 rounded-[2rem] app-card p-6 sm:p-8">
+        <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
           <div className="mb-5">
-            <h2 className="text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
               {dictionary.follows.manageFollowing}
             </h2>
             <p className="mt-2 text-sm app-muted">
