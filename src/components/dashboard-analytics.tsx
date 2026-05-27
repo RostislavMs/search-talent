@@ -276,7 +276,7 @@ function ActivityChart({
   return (
     <section className="rounded-2xl app-card p-6">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+        <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.dashboard.growthLastMonths}
         </h2>
         <div className="flex flex-wrap gap-4">
@@ -348,7 +348,7 @@ function ExpandableDistributionChart({
 
   return (
     <section className="rounded-2xl app-card p-6">
-      <h2 className="mb-5 text-lg font-semibold text-[color:var(--foreground)]">{title}</h2>
+      <h2 className="font-display mb-5 text-lg font-semibold tracking-tight text-[color:var(--foreground)]">{title}</h2>
 
       <div className="space-y-3">
         {visibleItems.length > 0 ? (
@@ -426,7 +426,7 @@ function CompletionBands({
 
   return (
     <section className="rounded-2xl app-card p-6">
-      <h2 className="mb-5 text-lg font-semibold text-[color:var(--foreground)]">
+      <h2 className="font-display mb-5 text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
         {ui.profileReadiness}
       </h2>
 
@@ -486,7 +486,7 @@ function SkillCloud({
   if (skills.length === 0) {
     return (
       <section className="rounded-2xl app-card p-6">
-        <h2 className="mb-2 text-lg font-semibold text-[color:var(--foreground)]">
+        <h2 className="font-display mb-2 text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {ui.skillsUniverse}
         </h2>
         <p className="text-sm app-muted">{dictionary.dashboard.noProjectsYet}</p>
@@ -502,7 +502,7 @@ function SkillCloud({
 
   return (
     <section className="rounded-2xl app-card p-6">
-      <h2 className="mb-2 text-lg font-semibold text-[color:var(--foreground)]">
+      <h2 className="font-display mb-2 text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
         {ui.skillsUniverse}
       </h2>
       <p className="mb-5 text-xs app-muted">{ui.skillsDescription}</p>
@@ -559,7 +559,7 @@ function SalaryByGroupChart({
 
   return (
     <section className="rounded-2xl app-card p-6">
-      <h2 className="mb-5 text-lg font-semibold text-[color:var(--foreground)]">
+      <h2 className="font-display mb-5 text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
         {title}
       </h2>
 

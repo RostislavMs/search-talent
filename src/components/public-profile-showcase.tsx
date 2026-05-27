@@ -171,24 +171,25 @@ function getSectionSpan(size: ProfileSectionSize) {
 function SectionCard({
   title,
   accentColor,
+  surfaceColor,
+  panelColor,
   children,
 }: {
   title: string;
   accentColor: string;
+  surfaceColor: string;
+  panelColor: string;
   children: ReactNode;
 }) {
   return (
     <section
-      className="relative overflow-hidden rounded-2xl app-card p-4 sm:rounded-[1.9rem] sm:p-6"
+      className="relative overflow-hidden rounded-2xl app-card p-4 sm:rounded-panel sm:p-6"
       style={{
-        backgroundImage: `radial-gradient(circle at top right, ${withAlpha(
-          accentColor,
-          0.18,
-        )} 0%, transparent 45%)`,
+        backgroundImage: `linear-gradient(135deg, ${surfaceColor} 0%, ${panelColor} 55%, ${withAlpha(accentColor, 0.35)} 100%)`,
       }}
     >
-      <div className="mb-5 h-1.5 w-14 rounded-full" style={{ backgroundColor: accentColor }} />
-      <h2 className="text-xl font-semibold text-[color:var(--foreground)]">{title}</h2>
+      <div className="mb-4 h-[3px] w-10 rounded-full" style={{ backgroundColor: accentColor }} />
+      <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -249,14 +250,14 @@ export default function PublicProfileShowcase({
   const typeScale = getProfileTextScale(presentation.textScale);
   const displayName = profile.name || profile.username || dictionary.common.creator;
   const sectionMap = new Map<ProfileSectionId, { title: string; content: ReactNode; visible: boolean }>([
-    ["about", { title: dictionary.creatorProfile.about, visible: profile.visibility.about && Boolean(profile.bio || profile.headline), content: <div className="space-y-4">{profile.headline && <div className="rounded-[1.25rem] app-panel p-4"><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.positionLabel}</p><p className="mt-2 leading-7 app-muted">{profile.headline}</p></div>}{profile.bio && <div style={{ fontSize: `${typeScale.body}rem` }}><ExpandableProfileBio content={profile.bio} locale={locale} accentColor={presentation.accentColor} /></div>}</div> }],
-    ["professionalDetails", { title: dictionary.creatorProfile.professionalDetails, visible: profile.visibility.professionalDetails && Boolean(profile.experience_level || profile.salary_expectations || (profile.employment_types?.length || 0) > 0 || (profile.work_formats?.length || 0) > 0 || profile.additional_info), content: <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2">{profile.experience_level && <div className="rounded-[1.25rem] app-panel p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">{dictionary.creatorProfile.totalExperienceYears}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{getExperienceLabel(profile.experience_level, locale)}</p></div>}{profile.salary_expectations && <div className="rounded-[1.25rem] app-panel p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">{dictionary.creatorProfile.salaryExpectations}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{profile.salary_expectations}{profile.salary_currency ? ` ${profile.salary_currency.toUpperCase()}` : ""}</p></div>}</div>{(profile.employment_types?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.employmentTypes}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.employment_types || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getEmploymentLabel(item, dictionary)}</span>)}</div></div>}{(profile.work_formats?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.workFormats}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.work_formats || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getWorkFormatLabel(item, dictionary)}</span>)}</div></div>}{profile.additional_info && <p className="text-sm leading-8 app-muted" style={{ fontSize: `${typeScale.body}rem` }}>{profile.additional_info}</p>}</div> }],
-    ["workExperience", { title: dictionary.creatorProfile.workExperience, visible: profile.visibility.workExperience && workExperience.length > 0, content: <div className="space-y-4">{workExperience.map((item) => <article key={item.id} className="rounded-[1.25rem] app-panel p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-[color:var(--foreground)]">{item.position || "—"}</h3><p className="mt-1 text-sm app-muted">{item.company_name || "—"}</p></div><span className="text-sm app-soft">{item.started_year || "—"} - {item.is_current ? dictionary.creatorProfile.present : item.ended_year || "—"}</span></div>{item.responsibilities && <p className="mt-3 text-sm leading-7 app-muted">{item.responsibilities}</p>}</article>)}</div> }],
+    ["about", { title: dictionary.creatorProfile.about, visible: profile.visibility.about && Boolean(profile.bio || profile.headline), content: <div className="space-y-4">{profile.headline && <div className="rounded-2xl app-panel p-4"><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.positionLabel}</p><p className="mt-2 leading-7 app-muted">{profile.headline}</p></div>}{profile.bio && <div style={{ fontSize: `${typeScale.body}rem` }}><ExpandableProfileBio content={profile.bio} locale={locale} accentColor={presentation.accentColor} /></div>}</div> }],
+    ["professionalDetails", { title: dictionary.creatorProfile.professionalDetails, visible: profile.visibility.professionalDetails && Boolean(profile.experience_level || profile.salary_expectations || (profile.employment_types?.length || 0) > 0 || (profile.work_formats?.length || 0) > 0 || profile.additional_info), content: <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2">{profile.experience_level && <div className="rounded-2xl app-panel p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.totalExperienceYears}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{getExperienceLabel(profile.experience_level, locale)}</p></div>}{profile.salary_expectations && <div className="rounded-2xl app-panel p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.salaryExpectations}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{profile.salary_expectations}{profile.salary_currency ? ` ${profile.salary_currency.toUpperCase()}` : ""}</p></div>}</div>{(profile.employment_types?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.employmentTypes}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.employment_types || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getEmploymentLabel(item, dictionary)}</span>)}</div></div>}{(profile.work_formats?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.workFormats}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.work_formats || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getWorkFormatLabel(item, dictionary)}</span>)}</div></div>}{profile.additional_info && <p className="text-sm leading-8 app-muted" style={{ fontSize: `${typeScale.body}rem` }}>{profile.additional_info}</p>}</div> }],
+    ["workExperience", { title: dictionary.creatorProfile.workExperience, visible: profile.visibility.workExperience && workExperience.length > 0, content: <div className="space-y-4">{workExperience.map((item) => <article key={item.id} className="rounded-2xl app-panel p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-[color:var(--foreground)]">{item.position || "—"}</h3><p className="mt-1 text-sm app-muted">{item.company_name || "—"}</p></div><span className="text-sm app-soft">{item.started_year || "—"} - {item.is_current ? dictionary.creatorProfile.present : item.ended_year || "—"}</span></div>{item.responsibilities && <p className="mt-3 text-sm leading-7 app-muted">{item.responsibilities}</p>}</article>)}</div> }],
     ["skills", { title: dictionary.creatorProfile.skills, visible: profile.visibility.skills && technologies.length > 0, content: <div className="flex flex-wrap gap-2">{technologies.map((technology) => <span key={technology.id} className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)]">{technology.name}</span>)}</div> }],
-    ["languages", { title: dictionary.creatorProfile.languages, visible: profile.visibility.languages && languages.length > 0, content: <div className="grid gap-3 md:grid-cols-2">{languages.map((item) => <div key={item.id} className="rounded-[1.25rem] app-panel p-4"><p className="font-medium text-[color:var(--foreground)]">{item.name}</p><p className="mt-1 text-sm app-muted">{getLanguageLevelLabel(item.level, dictionary)}</p></div>)}</div> }],
-    ["education", { title: dictionary.creatorProfile.education, visible: profile.visibility.education && education.length > 0, content: <div className="space-y-4">{education.map((item) => <article key={item.id} className="rounded-[1.25rem] app-panel p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.institution || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.degree, item.field_of_study].filter(Boolean).join(" • ")}</p>{(item.started_on || item.completed_on) && <p className="mt-1 text-sm app-soft">{[item.started_on, item.completed_on].filter(Boolean).join(" - ")}</p>}{item.description && <p className="mt-3 text-sm leading-7 app-muted">{item.description}</p>}</article>)}</div> }],
-    ["certificates", { title: dictionary.creatorProfile.certificates, visible: profile.visibility.certificates && certificates.length > 0, content: <div className="space-y-4">{certificates.map((item) => <article key={item.id} className="rounded-[1.25rem] app-panel p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.title || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.issuer, item.issued_on].filter(Boolean).join(" • ")}</p><div className="mt-3 flex flex-wrap gap-2">{item.credential_url && <a href={item.credential_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{dictionary.creatorProfile.openCertificateLink}</a>}{item.file_url && <a href={item.file_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{item.file_name || dictionary.creatorProfile.openCertificateFile}</a>}</div></article>)}</div> }],
-    ["qa", { title: dictionary.creatorProfile.qa, visible: profile.visibility.qa && qas.length > 0, content: <div className="space-y-4">{qas.map((item) => <article key={item.id} className="rounded-[1.25rem] app-panel p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.question || "—"}</h3><p className="mt-3 text-sm leading-7 app-muted">{item.answer || "—"}</p></article>)}</div> }],
+    ["languages", { title: dictionary.creatorProfile.languages, visible: profile.visibility.languages && languages.length > 0, content: <div className="grid gap-3 md:grid-cols-2">{languages.map((item) => <div key={item.id} className="rounded-2xl app-panel p-4"><p className="font-medium text-[color:var(--foreground)]">{item.name}</p><p className="mt-1 text-sm app-muted">{getLanguageLevelLabel(item.level, dictionary)}</p></div>)}</div> }],
+    ["education", { title: dictionary.creatorProfile.education, visible: profile.visibility.education && education.length > 0, content: <div className="space-y-4">{education.map((item) => <article key={item.id} className="rounded-2xl app-panel p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.institution || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.degree, item.field_of_study].filter(Boolean).join(" • ")}</p>{(item.started_on || item.completed_on) && <p className="mt-1 text-sm app-soft">{[item.started_on, item.completed_on].filter(Boolean).join(" - ")}</p>}{item.description && <p className="mt-3 text-sm leading-7 app-muted">{item.description}</p>}</article>)}</div> }],
+    ["certificates", { title: dictionary.creatorProfile.certificates, visible: profile.visibility.certificates && certificates.length > 0, content: <div className="space-y-4">{certificates.map((item) => <article key={item.id} className="rounded-2xl app-panel p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.title || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.issuer, item.issued_on].filter(Boolean).join(" • ")}</p><div className="mt-3 flex flex-wrap gap-2">{item.credential_url && <a href={item.credential_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{dictionary.creatorProfile.openCertificateLink}</a>}{item.file_url && <a href={item.file_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{item.file_name || dictionary.creatorProfile.openCertificateFile}</a>}</div></article>)}</div> }],
+    ["qa", { title: dictionary.creatorProfile.qa, visible: profile.visibility.qa && qas.length > 0, content: <div className="space-y-4">{qas.map((item) => <article key={item.id} className="rounded-2xl app-panel p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.question || "—"}</h3><p className="mt-3 text-sm leading-7 app-muted">{item.answer || "—"}</p></article>)}</div> }],
     ["contacts", { title: dictionary.creatorProfile.contacts, visible: profile.visibility.links && Boolean(profile.contact_email || profile.telegram_username || profile.phone || profile.website || profile.github || profile.twitter || profile.linkedin), content: <div className="space-y-6"><div className="space-y-3 text-sm">{profile.contact_email && <a href={`mailto:${profile.contact_email}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.contactEmail}: {profile.contact_email}</a>}{profile.telegram_username && <a href={`https://t.me/${profile.telegram_username.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.telegram}: @{profile.telegram_username.replace(/^@/, "")}</a>}{profile.phone && <a href={`tel:${profile.phone}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.phone}: {profile.phone}</a>}{profile.preferred_contact_method && <p className="app-muted">{dictionary.creatorProfile.preferredContactMethod}: {getPreferredContactMethodLabel(profile.preferred_contact_method, dictionary)}</p>}</div><div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.links}</p><div className="mt-3 flex flex-wrap gap-2">{profile.website && <a href={profile.website} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Website</a>}{profile.github && <a href={profile.github} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">GitHub</a>}{profile.twitter && <a href={profile.twitter} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">X / Twitter</a>}{profile.linkedin && <a href={profile.linkedin} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">LinkedIn</a>}</div></div></div> }],
     [
       "projects",
@@ -278,6 +279,7 @@ export default function PublicProfileShowcase({
               <ProjectCard
                 key={project.id}
                 dictionary={dictionary}
+                hideOwner
                 project={{
                   ...project,
                   slug: project.slug || "",
@@ -328,16 +330,16 @@ export default function PublicProfileShowcase({
   return (
     <main className="mx-auto max-w-[88rem] px-3 py-4 sm:px-6 sm:py-8">
       <div
-        className="relative overflow-hidden rounded-[2.5rem] border"
+        className="relative overflow-hidden rounded-hero border"
         style={{
           ...getThemeStyle(presentation),
-          background: `linear-gradient(135deg, ${presentation.surfaceColor} 0%, ${presentation.panelColor} 58%, ${presentation.accentColor} 100%)`,
+          backgroundColor: presentation.surfaceColor,
           color: presentation.textColor,
           fontFamily: getProfileFontStack(presentation.fontPreset),
         }}
       >
         {profile.cover_url && (
-          <div className="relative aspect-[16/5] w-full overflow-hidden border-b border-white/10">
+          <div className="relative aspect-[16/5] w-full overflow-hidden">
             <OptimizedImage
               src={profile.cover_url}
               alt={`${displayName} cover`}
@@ -356,7 +358,7 @@ export default function PublicProfileShowcase({
           </div>
         )}
         <div className="relative p-4 sm:p-6 lg:p-8">
-          <section className="relative overflow-hidden rounded-2xl app-card p-4 sm:rounded-[2rem] sm:p-6 lg:p-10">
+          <section className="relative overflow-hidden rounded-2xl app-card p-4 sm:p-6 lg:p-8">
             {presentation.backgroundUrl && presentation.backgroundMode === "image" && (
               <div className="absolute inset-0 -z-0">
                 <OptimizedImage
@@ -386,7 +388,7 @@ export default function PublicProfileShowcase({
               <div
                 className="absolute inset-0 -z-0"
                 style={{
-                  background: `linear-gradient(135deg, ${withAlpha(presentation.surfaceColor, Math.min(0.95, 0.45 + presentation.overlayStrength / 100))} 0%, ${withAlpha(presentation.panelColor, Math.min(0.92, 0.34 + presentation.overlayStrength / 120))} 55%, ${withAlpha(presentation.accentColor, 0.42)} 100%)`,
+                  background: `linear-gradient(135deg, ${withAlpha(presentation.surfaceColor, Math.min(0.95, 0.55 + presentation.overlayStrength / 130))} 0%, ${withAlpha(presentation.panelColor, Math.min(0.92, 0.44 + presentation.overlayStrength / 150))} 60%, ${withAlpha(presentation.accentColor, 0.22)} 100%)`,
                 }}
               />
             )}
@@ -416,8 +418,8 @@ export default function PublicProfileShowcase({
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] sm:text-xs" style={{ color: presentation.mutedColor }}>{profile.categoryName || dictionary.common.creator}</p>
-                    <h1 className="mt-1 font-semibold tracking-tight sm:mt-1.5" style={{ fontSize: `clamp(1.4rem, 3.6vw, ${2.2 * typeScale.heading}rem)`, lineHeight: 1.1 }}>{displayName}</h1>
+                    <p className="text-[11px] font-semibold uppercase tracking-eyebrow sm:text-xs" style={{ color: presentation.mutedColor }}>{profile.categoryName || dictionary.common.creator}</p>
+                    <h1 className="font-display mt-1 font-semibold tracking-tight sm:mt-1.5" style={{ fontSize: `clamp(1.4rem, 3.6vw, ${2.2 * typeScale.heading}rem)`, lineHeight: 1.1 }}>{displayName}</h1>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2 sm:mt-2">
                       <p className="text-sm app-muted">@{profile.username}</p>
                       <VerifiedBadge verified={profile.email_verified} />
@@ -468,7 +470,12 @@ export default function PublicProfileShowcase({
                 key={section.id}
                 className={`min-w-0 ${getSectionSpan(presentation.sectionSizes[section.id])}`}
               >
-                <SectionCard title={section.title} accentColor={presentation.accentColor}>
+                <SectionCard
+                  title={section.title}
+                  accentColor={presentation.accentColor}
+                  surfaceColor={presentation.surfaceColor}
+                  panelColor={presentation.panelColor}
+                >
                   {section.content}
                 </SectionCard>
               </div>
@@ -557,7 +564,7 @@ function ProfileArticleCard({
   return (
     <LocalizedLink
       href={`/articles/${article.slug}`}
-      className="group block h-full overflow-hidden rounded-[1.75rem] app-card transition hover:-translate-y-0.5 hover:shadow-xl"
+      className="group block h-full overflow-hidden rounded-panel app-card transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="relative aspect-[16/10] bg-[color:var(--surface-muted)]">
         {article.cover_image_url ? (
@@ -566,7 +573,7 @@ function ProfileArticleCard({
             alt={article.title}
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
-            className="object-cover transition duration-300 group-hover:scale-[1.02]"
+            className="object-cover"
           />
         ) : null}
       </div>

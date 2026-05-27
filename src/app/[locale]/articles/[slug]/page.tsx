@@ -185,7 +185,7 @@ export default async function ArticleDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
-      <div className="rounded-[2.25rem] app-card">
+      <div className="rounded-hero app-card">
         <div className="border-b app-border p-6 sm:p-8">
           <div className="flex flex-wrap gap-3">
             <ButtonLink href="/articles" variant="ghost">
@@ -245,7 +245,7 @@ export default async function ArticleDetailPage({
             )}
           </div>
 
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-5xl">
+          <h1 className="font-display mt-6 text-4xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-5xl">
             {article.title}
           </h1>
 
@@ -295,7 +295,7 @@ export default async function ArticleDetailPage({
 
           {(isOwner || isAdmin) && article.moderationNote ? (
             <div className="mt-5 rounded-[1.4rem] app-panel p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+              <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                 {ui.moderatorNote}
               </p>
               <p className="mt-2 text-sm leading-7 app-muted">{article.moderationNote}</p>

@@ -426,7 +426,7 @@ export default function ArticleInteractions({
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-xl font-semibold text-[color:var(--foreground)]">
+          <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
             {locale === "uk" ? "Обговорення" : "Discussion"}
           </h2>
           <p className="mt-2 text-sm app-muted">
@@ -436,7 +436,7 @@ export default function ArticleInteractions({
           </p>
         </div>
 
-        <div className="rounded-[1.75rem] app-card p-5">
+        <div className="rounded-panel app-card p-5">
           <MentionTextarea
             className="min-h-32 w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] p-4 text-sm text-[color:var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
             placeholder={
@@ -466,7 +466,7 @@ export default function ArticleInteractions({
             onCommentPosted={() => router.refresh()}
           />
         ) : (
-          <p className="rounded-[1.5rem] app-panel-dashed p-5 text-sm app-muted">
+          <p className="rounded-3xl app-panel-dashed p-5 text-sm app-muted">
             {locale === "uk"
               ? "Поки що коментарів немає. Можна почати обговорення першим."
               : "No comments yet. Start the discussion first."}

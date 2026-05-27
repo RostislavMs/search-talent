@@ -129,13 +129,13 @@ async function renderOwnerView({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {dictionary.dashboardProjects.eyebrow}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.dashboardProjects.title}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
@@ -154,10 +154,10 @@ async function renderOwnerView({
         </div>
       </section>
 
-      <section className="mt-8 rounded-[2rem] app-card p-6 sm:p-8">
+      <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+            <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.dashboardProjects.title}
             </h2>
             <p className="mt-2 text-sm app-muted">
@@ -174,8 +174,8 @@ async function renderOwnerView({
                 const publicHref = buildProjectPath(project.id, project.slug || undefined);
 
                 return (
-                  <article key={project.id} className="rounded-[1.75rem] app-panel p-5">
-                    <div className="relative aspect-[16/10] overflow-hidden rounded-[1.25rem] bg-[color:var(--surface-muted)]">
+                  <article key={project.id} className="rounded-panel app-panel p-5">
+                    <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-[color:var(--surface-muted)]">
                       {project.is_pinned && (
                         <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[color:var(--foreground)] px-3 py-1 text-xs font-semibold text-[color:var(--background)] shadow-md">
                           <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3" aria-hidden="true">
@@ -280,8 +280,8 @@ async function renderOwnerView({
             </div>
           </>
         ) : (
-          <div className="mt-6 rounded-[1.75rem] app-panel-dashed p-6">
-            <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+          <div className="mt-6 rounded-panel app-panel-dashed p-6">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
               {dictionary.dashboardProjects.emptyTitle}
             </h2>
             <p className="mt-2 text-sm leading-7 app-muted">
@@ -322,13 +322,13 @@ async function renderPublicView({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {dictionary.creatorProfile.projects}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {displayName}
             </h1>
             <p className="mt-2 text-sm app-muted">
@@ -351,6 +351,7 @@ async function renderPublicView({
                 <ProjectCard
                   key={project.id}
                   dictionary={dictionary}
+                  hideOwner
                   project={{
                     ...project,
                     slug: project.slug || "",
@@ -393,7 +394,7 @@ async function renderPublicView({
             )}
           </>
         ) : (
-          <div className="rounded-[1.75rem] app-card p-6">
+          <div className="rounded-panel app-card p-6">
             <p className="text-sm app-muted">
               {dictionary.creatorProfile.noProjects}
             </p>

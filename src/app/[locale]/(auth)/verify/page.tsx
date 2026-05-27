@@ -42,11 +42,11 @@ export default async function VerifyPage({
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-16">
-      <section className="rounded-[2rem] app-card p-8 sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+      <section className="rounded-hero app-card p-8 sm:p-10">
+        <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
           {dictionary.auth.verify.eyebrow}
         </p>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+        <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
           {dictionary.auth.verify.title}
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-8 app-muted">
@@ -63,7 +63,7 @@ export default async function VerifyPage({
           </ButtonLink>
         </div>
 
-        <div className="mt-8 rounded-[1.5rem] app-panel p-5 text-sm leading-7 app-muted">
+        <div className="mt-8 rounded-3xl app-panel p-5 text-sm leading-7 app-muted">
           SearchTalent checks your session when you open the dashboard, so after
           confirming the email you can simply return there and continue.
         </div>

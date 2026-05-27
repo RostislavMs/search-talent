@@ -59,11 +59,11 @@ export default async function AdminModerationPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] app-card p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] app-soft">
+      <section className="rounded-hero app-card p-8">
+        <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
           {copy.dashboard.eyebrow}
         </p>
-        <h2 className="mt-3 text-2xl font-semibold text-[color:var(--foreground)]">
+        <h2 className="font-display mt-3 text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.dashboard.title}
         </h2>
         <p className="mt-3 max-w-3xl app-muted">{copy.dashboard.description}</p>
@@ -75,7 +75,7 @@ export default async function AdminModerationPage({
             { label: copy.dashboard.profilesCount, value: queue.summary.profiles },
             { label: copy.dashboard.projectsCount, value: queue.summary.projects },
           ].map((item) => (
-            <article key={item.label} className="rounded-[1.25rem] app-panel p-5">
+            <article key={item.label} className="rounded-2xl app-panel p-5">
               <p className="text-sm app-soft">{item.label}</p>
               <p className="mt-3 text-3xl font-semibold text-[color:var(--foreground)]">
                 {item.value}
@@ -86,16 +86,16 @@ export default async function AdminModerationPage({
       </section>
 
       {queue.items.length === 0 ? (
-        <section className="rounded-[2rem] app-panel-dashed p-8 text-center">
+        <section className="rounded-hero app-panel-dashed p-8 text-center">
           <p className="text-sm app-muted">{copy.dashboard.empty}</p>
         </section>
       ) : (
         <section className="space-y-5">
           {queue.items.map((item) => (
-            <article key={item.id} className="rounded-[2rem] app-card p-6">
+            <article key={item.id} className="rounded-hero app-card p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-3xl">
-                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     <span>{copy.targetLabels[item.targetType]}</span>
                     <span className="rounded-full border border-[color:var(--border)] px-3 py-1">
                       {copy.priorityLabels[item.priority]}
@@ -125,8 +125,8 @@ export default async function AdminModerationPage({
                   </div>
 
                   {item.details && (
-                    <div className="mt-4 rounded-[1.5rem] app-panel p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+                    <div className="mt-4 rounded-3xl app-panel p-4">
+                      <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                         {copy.dashboard.reportDetails}
                       </p>
                       <p className="mt-3 text-sm leading-7 app-muted">{item.details}</p>
@@ -155,7 +155,7 @@ export default async function AdminModerationPage({
                 </div>
 
                 <div className="w-full lg:max-w-xl">
-                  <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] app-soft">
+                  <p className="mb-3 text-sm font-semibold uppercase tracking-eyebrow app-soft">
                     {copy.dashboard.reviewActions}
                   </p>
                   <AdminModerationActions

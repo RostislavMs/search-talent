@@ -279,7 +279,7 @@ export default function ArticleComposer({
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
       <section className="space-y-5">
         <div>
-          <h2 className="text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+          <h2 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
             {ui.pageTitle}
           </h2>
         </div>
@@ -315,10 +315,10 @@ export default function ArticleComposer({
         />
       </section>
 
-      <aside className="rounded-[1.9rem] border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)]">
+      <aside className="rounded-panel border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)]">
         <div className="space-y-5 p-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {ui.sidebarTitle}
             </p>
           </div>

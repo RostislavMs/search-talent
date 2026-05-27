@@ -183,7 +183,7 @@ export default function CoverUpload({
         </div>
       </div>
 
-      <div className="relative aspect-[16/5] w-full overflow-hidden rounded-[1.5rem] border app-border bg-[color:var(--surface-muted)]">
+      <div className="relative aspect-[16/5] w-full overflow-hidden rounded-3xl border app-border bg-[color:var(--surface-muted)]">
         {coverUrl ? (
           <OptimizedImage
             src={coverUrl}

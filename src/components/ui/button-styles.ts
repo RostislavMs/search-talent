@@ -9,7 +9,7 @@ type ButtonStylesOptions = {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-[color:var(--foreground)] text-[color:var(--background)] shadow-sm hover:opacity-90 focus-visible:ring-[color:var(--ring)]",
+    "bg-[color:var(--brand)] text-[color:var(--brand-foreground)] shadow-sm hover:bg-[color:var(--brand-strong)] focus-visible:ring-[color:var(--brand-ring)]",
   secondary:
     "border border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)] focus-visible:ring-[color:var(--ring)]",
   ghost:

@@ -15,13 +15,13 @@ export default function SeoFaqSection({
   const schema = buildFaqSchema(items);
 
   return (
-    <section className="rounded-[2rem] app-card p-5 sm:p-7">
+    <section className="rounded-hero app-card p-5 sm:p-7">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
       />
       <div className="max-w-3xl">
-        <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {title}
         </h2>
         {description ? (
@@ -33,7 +33,7 @@ export default function SeoFaqSection({
 
       <div className="mt-6 grid gap-4">
         {items.map((item) => (
-          <article key={item.question} className="rounded-[1.5rem] app-panel p-4 sm:p-5">
+          <article key={item.question} className="rounded-3xl app-panel p-4 sm:p-5">
             <h3 className="text-base font-semibold text-[color:var(--foreground)]">
               {item.question}
             </h3>

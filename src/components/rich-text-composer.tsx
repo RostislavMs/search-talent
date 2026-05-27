@@ -533,7 +533,7 @@ export default function RichTextComposer({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[1.75rem] border app-border bg-[color:var(--surface)] shadow-[0_22px_90px_rgba(2,6,23,0.18)]">
+      <div className="overflow-hidden rounded-panel border app-border bg-[color:var(--surface)] shadow-[0_22px_90px_rgba(2,6,23,0.18)]">
         {/* -------- Toolbar -------- */}
         <div className="relative border-b app-border bg-[color:var(--surface-muted)]/55 px-3 py-2">
           <div className="flex flex-wrap items-center gap-1">

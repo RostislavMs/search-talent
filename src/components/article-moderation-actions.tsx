@@ -77,7 +77,7 @@ export default function ArticleModerationActions({
   }
 
   return (
-    <div className="space-y-4 rounded-[1.5rem] border app-border bg-[color:var(--surface)] p-4">
+    <div className="space-y-4 rounded-3xl border app-border bg-[color:var(--surface)] p-4">
       <FormTextarea
         value={note}
         onChange={(event) => setNote(event.target.value)}

@@ -128,11 +128,11 @@ export default function ProfileVoteButtons({
   };
 
   return (
-    <section className="mt-8 rounded-[1.75rem] app-panel p-5">
+    <section className="mt-8 rounded-panel app-panel p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-base font-semibold text-[color:var(--foreground)]">
+            <h2 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
               {dictionary.creatorProfile.profileRating}
             </h2>
             <LocalizedLink
@@ -157,7 +157,7 @@ export default function ProfileVoteButtons({
           </p>
         </div>
 
-        <span className="rounded-full border app-border px-3 py-1 text-xs font-medium app-muted">
+        <span className="font-display rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
           {voteState.likes - voteState.dislikes} {dictionary.common.scoreSuffix}
         </span>
       </div>

@@ -91,13 +91,13 @@ export default function GithubIntegrationCard({
   return (
     <section
       aria-labelledby="github-integration-title"
-      className="rounded-[2rem] app-card p-6 sm:p-8"
+      className="rounded-hero app-card p-6 sm:p-8"
     >
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2
             id="github-integration-title"
-            className="text-xl font-semibold text-[color:var(--foreground)]"
+            className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]"
           >
             {dict.title}
           </h2>

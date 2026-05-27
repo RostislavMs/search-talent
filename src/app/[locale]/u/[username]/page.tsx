@@ -159,8 +159,8 @@ export default async function PublicProfilePage({
       />
       {generatedSummary ? (
         <section className="mx-auto mb-5 max-w-[90rem] px-4 sm:mb-6 sm:px-6">
-          <div className="rounded-[1.75rem] app-card p-4 sm:p-5">
-            <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+          <div className="rounded-panel app-card p-4 sm:p-5">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
               {locale === "uk" ? "Короткий огляд профілю" : "Profile overview"}
             </h2>
             <p className="mt-3 text-sm leading-7 app-muted">{generatedSummary}</p>

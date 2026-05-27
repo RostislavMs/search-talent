@@ -845,13 +845,13 @@ export default function DiscoveryPage({
 
   return (
     <section>
-      <section className="rounded-2xl border app-border bg-[linear-gradient(145deg,_rgba(15,23,42,0.97),_rgba(30,64,175,0.9)_58%,_rgba(245,158,11,0.72))] p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:rounded-[2.25rem] sm:p-8 md:p-10">
+      <section className="bg-brand-hero rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:rounded-hero sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70 sm:text-sm">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
               {pageUi.eyebrow}
             </p>
-            <h1 className="mt-2 max-w-3xl text-2xl font-semibold tracking-tight sm:mt-3 sm:text-3xl md:text-4xl">
+            <h1 className="font-display mt-2 max-w-3xl text-2xl font-medium tracking-tight sm:mt-3 sm:text-3xl md:text-4xl">
               {pageUi.title}
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/78 sm:mt-4 sm:text-base sm:leading-8">
@@ -870,7 +870,7 @@ export default function DiscoveryPage({
           </div>
         </div>
 
-        <div className="mt-5 rounded-2xl bg-white/10 p-3 backdrop-blur sm:mt-8 sm:rounded-[1.75rem] sm:p-4">
+        <div className="mt-5 rounded-2xl bg-white/10 p-3 backdrop-blur sm:mt-8 sm:rounded-panel sm:p-4">
           <div className="flex flex-wrap gap-2">
             <DiscoveryModeLink
               active={mode === "projects"}
@@ -898,7 +898,7 @@ export default function DiscoveryPage({
             {pageUi.heroCards.map((card) => (
               <div
                 key={card.title}
-                className="rounded-[1.5rem] border border-white/12 bg-white/10 p-5 backdrop-blur"
+                className="rounded-3xl border border-white/12 bg-white/10 p-5 backdrop-blur"
               >
                 <p className="font-semibold text-white">{card.title}</p>
                 <p className="mt-2 text-sm leading-6 text-white/72">
@@ -948,7 +948,7 @@ export default function DiscoveryPage({
         >
           {mobileFiltersOpen && (
             <div className="sticky top-0 z-10 -mx-4 mb-2 flex items-center justify-between border-b app-border bg-[color:var(--background)]/95 px-4 py-3 backdrop-blur xl:hidden">
-              <h2 className="text-base font-semibold text-[color:var(--foreground)]">
+              <h2 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
                 {commonUi.filters}
               </h2>
               <button
@@ -963,9 +963,9 @@ export default function DiscoveryPage({
               </button>
             </div>
           )}
-          <section className="rounded-[2rem] app-card p-5">
+          <section className="rounded-hero app-card p-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+              <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
                 {commonUi.filters}
               </h2>
               <button
@@ -1237,9 +1237,9 @@ export default function DiscoveryPage({
             </div>
           </section>
 
-          <section className="rounded-[2rem] app-card p-5">
+          <section className="rounded-hero app-card p-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] app-soft">
+              <h2 className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
                 {commonUi.savedSearches}
               </h2>
               {hasFilters && (
@@ -1308,8 +1308,8 @@ export default function DiscoveryPage({
             </div>
           </section>
 
-          <section className="rounded-[2rem] app-card p-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] app-soft">
+          <section className="rounded-hero app-card p-5">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {commonUi.resultsSummary}
             </p>
             <p className="mt-3 text-3xl font-semibold text-[color:var(--foreground)]">
@@ -1319,8 +1319,8 @@ export default function DiscoveryPage({
               {loading ? commonUi.loading : pageUi.summaryDescription}
             </p>
 
-            <div className="mt-5 rounded-[1.5rem] app-panel px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+            <div className="mt-5 rounded-3xl app-panel px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                 {resultLabel}
               </p>
               <p className="mt-2 text-2xl font-semibold text-[color:var(--foreground)]">
@@ -1332,10 +1332,10 @@ export default function DiscoveryPage({
 
         <div className="space-y-8">
           {activeFilterItems.length > 0 && (
-            <section className="rounded-[2rem] app-card p-5">
+            <section className="rounded-hero app-card p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-base font-semibold text-[color:var(--foreground)]">
+                  <h2 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
                     {commonUi.activeFilters}
                   </h2>
                   <p className="mt-1 text-sm app-muted">
@@ -1369,15 +1369,15 @@ export default function DiscoveryPage({
           )}
 
           {errorMessage && (
-            <section className="rounded-[2rem] border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
+            <section className="rounded-hero border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
               {errorMessage}
             </section>
           )}
 
-          <section className="rounded-[2rem] app-card p-6 sm:p-7">
+          <section className="rounded-hero app-card p-6 sm:p-7">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+                <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
                   {mode === "projects"
                     ? dictionary.common.projects
                     : talentsLabel}
@@ -1407,7 +1407,7 @@ export default function DiscoveryPage({
                   ))}
                 </div>
               ) : (
-                <p className="rounded-[1.75rem] app-panel-dashed p-6 text-sm app-muted">
+                <p className="rounded-panel app-panel-dashed p-6 text-sm app-muted">
                   {pageUi.emptyMessage}
                 </p>
               )
@@ -1436,7 +1436,7 @@ export default function DiscoveryPage({
                 ))}
               </div>
             ) : (
-              <p className="rounded-[1.75rem] app-panel-dashed p-6 text-sm app-muted">
+              <p className="rounded-panel app-panel-dashed p-6 text-sm app-muted">
                 {pageUi.emptyMessage}
               </p>
             )}

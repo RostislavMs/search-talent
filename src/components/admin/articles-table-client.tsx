@@ -67,7 +67,7 @@ export default function ArticlesTableClient({
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+              <tr className="text-left text-xs font-semibold uppercase tracking-eyebrow app-soft">
                 <th className="w-10 px-3 py-3">
                   <input
                     type="checkbox"

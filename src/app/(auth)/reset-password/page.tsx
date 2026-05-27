@@ -134,7 +134,7 @@ export default function ResetPasswordPage() {
 
   return (
     <main className="mx-auto max-w-md px-4 py-16">
-      <section className="rounded-[2rem] app-card p-8">
+      <section className="rounded-hero app-card p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.25em] app-soft">
           {dictionary.auth.resetPassword.eyebrow}
         </p>
@@ -147,7 +147,7 @@ export default function ResetPasswordPage() {
 
         {sessionState === "invalid" && (
           <>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.auth.resetPassword.title}
             </h1>
             <p className="mt-3 text-sm text-red-500">
@@ -166,7 +166,7 @@ export default function ResetPasswordPage() {
 
         {sessionState === "ready" && !done && (
           <>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.auth.resetPassword.title}
             </h1>
             <p className="mt-3 app-muted">
@@ -263,7 +263,7 @@ export default function ResetPasswordPage() {
 
         {done && (
           <>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.auth.resetPassword.doneTitle}
             </h1>
             <p className="mt-3 app-muted">

@@ -59,11 +59,11 @@ export default function GithubAuthorNarrative({
       {hasContributionBlock ? (
         <section
           aria-labelledby="github-contribution-title"
-          className="rounded-[1.75rem] app-card p-5 sm:p-6"
+          className="rounded-panel app-card p-5 sm:p-6"
         >
           <h2
             id="github-contribution-title"
-            className="text-xl font-semibold text-[color:var(--foreground)]"
+            className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]"
           >
             {dict.contributionSectionTitle}
           </h2>
@@ -85,7 +85,7 @@ export default function GithubAuthorNarrative({
 
           {productionUsage ? (
             <div className="mt-4 rounded-2xl app-panel px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+              <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                 {dict.productionUsageLabel}
               </p>
               <p className="mt-1 text-sm text-[color:var(--foreground)]">
@@ -99,11 +99,11 @@ export default function GithubAuthorNarrative({
       {hasNarrativeBlock ? (
         <section
           aria-labelledby="github-narrative-title"
-          className="rounded-[1.75rem] app-card p-5 sm:p-6"
+          className="rounded-panel app-card p-5 sm:p-6"
         >
           <h2
             id="github-narrative-title"
-            className="text-xl font-semibold text-[color:var(--foreground)]"
+            className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]"
           >
             {dict.narrativeSectionTitle}
           </h2>

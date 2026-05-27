@@ -89,7 +89,7 @@ export default async function AdminUserDetailPage({
         </Link>
       </div>
 
-      <section className="rounded-[2rem] app-card p-8">
+      <section className="rounded-hero app-card p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-5">
             {detail.avatarUrl ? (
@@ -109,10 +109,10 @@ export default async function AdminUserDetailPage({
               </div>
             )}
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] app-soft">
+              <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
                 {detailCopy.profileHeading}
               </p>
-              <h2 className="mt-2 text-3xl font-semibold text-[color:var(--foreground)]">
+              <h2 className="font-display mt-2 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
                 {displayName}
               </h2>
               {detail.username ? (
@@ -144,24 +144,24 @@ export default async function AdminUserDetailPage({
         </div>
 
         <dl className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-[1.25rem] app-panel p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+          <div className="rounded-2xl app-panel p-4">
+            <dt className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {detailCopy.fields.email}
             </dt>
             <dd className="mt-2 break-all text-sm text-[color:var(--foreground)]">
               {detail.email || "—"}
             </dd>
           </div>
-          <div className="rounded-[1.25rem] app-panel p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+          <div className="rounded-2xl app-panel p-4">
+            <dt className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {detailCopy.fields.role}
             </dt>
             <dd className="mt-2 text-sm text-[color:var(--foreground)]">
               {detail.isAdmin ? usersCopy.role.admin : usersCopy.role.user}
             </dd>
           </div>
-          <div className="rounded-[1.25rem] app-panel p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+          <div className="rounded-2xl app-panel p-4">
+            <dt className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {detailCopy.fields.status}
             </dt>
             <dd className="mt-2 text-sm text-[color:var(--foreground)]">
@@ -170,24 +170,24 @@ export default async function AdminUserDetailPage({
                 : moderationCopy.statusLabels.approved}
             </dd>
           </div>
-          <div className="rounded-[1.25rem] app-panel p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+          <div className="rounded-2xl app-panel p-4">
+            <dt className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {detailCopy.fields.joined}
             </dt>
             <dd className="mt-2 text-sm text-[color:var(--foreground)]">
               {formatDate(detail.createdAt, locale)}
             </dd>
           </div>
-          <div className="rounded-[1.25rem] app-panel p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+          <div className="rounded-2xl app-panel p-4">
+            <dt className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {detailCopy.fields.lastSeen}
             </dt>
             <dd className="mt-2 text-sm text-[color:var(--foreground)]">
               {formatDate(detail.lastSignInAt, locale)}
             </dd>
           </div>
-          <div className="rounded-[1.25rem] app-panel p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+          <div className="rounded-2xl app-panel p-4">
+            <dt className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {detailCopy.fields.country}
             </dt>
             <dd className="mt-2 text-sm text-[color:var(--foreground)]">
@@ -219,7 +219,7 @@ export default async function AdminUserDetailPage({
           ].map((card) => (
             <article
               key={card.label}
-              className="rounded-[1.25rem] app-panel p-5"
+              className="rounded-2xl app-panel p-5"
             >
               <p className="text-sm app-soft">{card.label}</p>
               <p className="mt-2 text-2xl font-semibold text-[color:var(--foreground)]">
@@ -230,14 +230,14 @@ export default async function AdminUserDetailPage({
         </div>
       </section>
 
-      <section className="rounded-[2rem] app-card p-6">
+      <section className="rounded-hero app-card p-6">
         <h3 className="text-xl font-semibold text-[color:var(--foreground)]">
           {detailCopy.contentHeading}
         </h3>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {detailCopy.contentTabs.projects}
             </p>
             {detail.projects.length === 0 ? (
@@ -270,7 +270,7 @@ export default async function AdminUserDetailPage({
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {detailCopy.contentTabs.articles}
             </p>
             {detail.articles.length === 0 ? (
@@ -301,7 +301,7 @@ export default async function AdminUserDetailPage({
         </div>
       </section>
 
-      <section className="rounded-[2rem] app-card p-6">
+      <section className="rounded-hero app-card p-6">
         <h3 className="text-xl font-semibold text-[color:var(--foreground)]">
           {detailCopy.activityHeading}
         </h3>

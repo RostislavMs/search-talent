@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -1771,10 +1771,10 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[1.75rem] app-panel p-5">
+      <section className="rounded-panel app-panel p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
               {editorMode === "content"
                 ? workspaceUi.content
                 : workspaceUi.builder}
@@ -1804,7 +1804,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       </section>
 
       <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
-        <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+        <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.basicProfileInfo}
         </h2>
 
@@ -1863,7 +1863,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       </section>
 
       <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
-        <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+        <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.professionalDetails}
         </h2>
 
@@ -1957,14 +1957,14 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       <section
         className={
           editorMode === "builder"
-            ? "space-y-5 rounded-[1.75rem] app-panel p-5"
+            ? "space-y-5 rounded-panel app-panel p-5"
             : "hidden"
         }
       >
         <div>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+              <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
                 {customizationUi.title}
               </h2>
               <p className="mt-2 text-sm leading-6 app-muted">
@@ -1987,7 +1987,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
 
         <div
-          className="relative overflow-hidden rounded-[1.75rem] border border-white/10 p-5"
+          className="relative overflow-hidden rounded-panel border border-white/10 p-5"
           style={{
             background:
               presentation.backgroundMode === "gradient" ||
@@ -2026,14 +2026,14 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
             }}
           />
           <div
-            className="relative rounded-[1.5rem] p-5"
+            className="relative rounded-3xl p-5"
             style={{
               ...previewPanelStyle,
               textAlign: presentation.heroAlignment,
             }}
           >
             <p
-              className="text-xs font-semibold uppercase tracking-[0.24em]"
+              className="text-xs font-semibold uppercase tracking-eyebrow"
               style={{ color: presentation.mutedColor }}
             >
               {customizationUi.preview}
@@ -2241,7 +2241,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                 </Button>
               ))}
             </div>
-            <div className="rounded-[1.25rem] border app-border bg-[color:var(--surface)] p-4">
+            <div className="rounded-2xl border app-border bg-[color:var(--surface)] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="text-sm app-muted">
                   {presentation.backgroundUrl
@@ -2338,7 +2338,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
                     setDraggingSectionId(null);
                   }}
-                  className={`${getBuilderSpanClass(presentation.sectionSizes[sectionId])} flex flex-col gap-4 rounded-[1.5rem] border app-border bg-[color:var(--surface)] p-5 ${
+                  className={`${getBuilderSpanClass(presentation.sectionSizes[sectionId])} flex flex-col gap-4 rounded-3xl border app-border bg-[color:var(--surface)] p-5 ${
                     draggingSectionId === sectionId ? "opacity-60" : ""
                   }`}
                 >
@@ -2364,7 +2364,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                     </span>
                   </div>
 
-                  <div className="space-y-3 rounded-[1.25rem] app-panel p-4">
+                  <div className="space-y-3 rounded-2xl app-panel p-4">
                     {card.lines.map((line, lineIndex) => (
                       <p
                         key={`${sectionId}-${lineIndex}`}
@@ -2380,7 +2380,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   </div>
 
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
                       {presentationExtrasUi.blockSize}
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -2409,7 +2409,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
       <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.workExperience}
           </h2>
           <Button
@@ -2428,7 +2428,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
         <div className="space-y-4">
           {workExperience.map((item) => (
-            <article key={item.id} className="rounded-[1.5rem] app-panel p-4">
+            <article key={item.id} className="rounded-3xl app-panel p-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <input
                   className="app-input"
@@ -2520,7 +2520,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       </section>
 
       <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
-        <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+        <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.locationContactsAndLinks}
         </h2>
         <div>
@@ -2605,7 +2605,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       </section>
 
       <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
-        <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+        <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.skills}
         </h2>
         <TagSelect
@@ -2618,7 +2618,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
       <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.languagesWithLevel}
           </h2>
           <Button
@@ -2633,7 +2633,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
         <div className="space-y-4">
           {languages.map((item) => (
-            <div key={item.id} className="rounded-[1.5rem] app-panel p-4">
+            <div key={item.id} className="rounded-3xl app-panel p-4">
               <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem_auto]">
                 <SearchSelect
                   options={meta.languages}
@@ -2673,7 +2673,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
       <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.education}
           </h2>
           <Button
@@ -2688,7 +2688,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
         <div className="space-y-4">
           {education.map((item) => (
-            <article key={item.id} className="rounded-[1.5rem] app-panel p-4">
+            <article key={item.id} className="rounded-3xl app-panel p-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <input
                   className="app-input"
@@ -2755,7 +2755,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
       <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.certificates}
           </h2>
           <Button
@@ -2773,7 +2773,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
         <div className="space-y-4">
           {certificates.map((item) => (
-            <article key={item.id} className="rounded-[1.5rem] app-panel p-4">
+            <article key={item.id} className="rounded-3xl app-panel p-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <input
                   className="app-input"
@@ -2872,7 +2872,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
       <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.profileQa}
           </h2>
           <Button
@@ -2885,7 +2885,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
         <div className="space-y-4">
           {qas.map((item) => (
-            <article key={item.id} className="rounded-[1.5rem] app-panel p-4">
+            <article key={item.id} className="rounded-3xl app-panel p-4">
               <div className="grid gap-4">
                 <input
                   className="app-input"
@@ -2919,12 +2919,12 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       <section
         className={
           editorMode === "builder"
-            ? "space-y-4 rounded-[1.5rem] app-panel p-5"
+            ? "space-y-4 rounded-3xl app-panel p-5"
             : "hidden"
         }
       >
         <div>
-          <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.blockVisibility}
           </h2>
           <p className="mt-2 text-sm app-muted">
@@ -2953,7 +2953,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       </section>
 
       {hasUnsavedChanges ? (
-        <div className="rounded-[1.25rem] border border-amber-500/40 bg-amber-500/10 p-4">
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
           <p className="text-sm font-medium text-[color:var(--foreground)]">
             {draftUi.unsavedChanges}
           </p>

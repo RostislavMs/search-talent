@@ -52,9 +52,9 @@ export default async function LocalizedTalentsPage({
     <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
       <DiscoveryPage mode="creators" />
 
-      <section className="mt-6 rounded-[2rem] app-card p-5 sm:mt-8 sm:p-7">
+      <section className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-7">
         <div className="max-w-3xl">
-          <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+          <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
             {marketing.talents.popularTechnologiesTitle}
           </h2>
           <p className="mt-3 text-sm leading-7 app-muted sm:text-base">

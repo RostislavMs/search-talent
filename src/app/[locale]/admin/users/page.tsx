@@ -123,8 +123,8 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] app-card p-8">
-        <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+      <section className="rounded-hero app-card p-8">
+        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.title}
         </h2>
         <p className="mt-2 max-w-3xl app-muted">{copy.description}</p>
@@ -133,7 +133,7 @@ export default async function AdminUsersPage({
           {summaryCards.map((card) => (
             <article
               key={card.label}
-              className="rounded-[1.25rem] app-panel p-5"
+              className="rounded-2xl app-panel p-5"
             >
               <p className="text-sm app-soft">{card.label}</p>
               <p className="mt-2 text-2xl font-semibold text-[color:var(--foreground)]">
@@ -161,16 +161,16 @@ export default async function AdminUsersPage({
         </div>
       </section>
 
-      <section className="rounded-[2rem] app-card p-4 sm:p-6">
+      <section className="rounded-hero app-card p-4 sm:p-6">
         {result.items.length === 0 ? (
-          <div className="rounded-[1.5rem] app-panel-dashed p-8 text-center">
+          <div className="rounded-3xl app-panel-dashed p-8 text-center">
             <p className="text-sm app-muted">{copy.empty}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+                <tr className="text-left text-xs font-semibold uppercase tracking-eyebrow app-soft">
                   <th className="px-3 py-3">{copy.columns.user}</th>
                   <th className="px-3 py-3">{copy.columns.email}</th>
                   <th className="px-3 py-3">{copy.columns.role}</th>

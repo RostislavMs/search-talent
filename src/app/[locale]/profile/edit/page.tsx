@@ -70,8 +70,8 @@ export default async function ProfileEditPage({
   if (!profile) {
     return (
       <main className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6">
-        <section className="rounded-[2rem] app-card p-8">
-          <h1 className="text-2xl font-semibold text-[color:var(--foreground)]">
+        <section className="rounded-hero app-card p-8">
+          <h1 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
             {dictionary.dashboardProfile.profileNotFound}
           </h1>
           <div className="mt-6">
@@ -93,13 +93,13 @@ export default async function ProfileEditPage({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {dictionary.dashboardProfile.eyebrow}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.dashboardProfile.title}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
@@ -138,7 +138,7 @@ export default async function ProfileEditPage({
         </div>
       </section>
 
-      <section className="mt-8 rounded-[2rem] app-card p-6 sm:p-8">
+      <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
         <ProfileForm profile={profile} />
       </section>
 

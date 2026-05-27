@@ -134,7 +134,7 @@ export default function ProjectGallery({ media }: { media: ProjectMediaItem[] })
 
   if (media.length === 0) {
     return (
-      <div className="rounded-[2rem] app-panel-dashed p-8 text-sm app-muted">
+      <div className="rounded-hero app-panel-dashed p-8 text-sm app-muted">
         {dictionary.projectPage.noMedia}
       </div>
     );
@@ -152,7 +152,7 @@ export default function ProjectGallery({ media }: { media: ProjectMediaItem[] })
           return (
             <article
               key={item.id}
-              className="overflow-hidden rounded-[1.75rem] border app-border bg-[color:var(--surface)]"
+              className="overflow-hidden rounded-panel border app-border bg-[color:var(--surface)]"
             >
               {isYouTube && youtubeId ? (
                 <YouTubeTile videoId={youtubeId} />

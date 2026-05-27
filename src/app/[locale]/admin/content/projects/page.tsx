@@ -147,8 +147,8 @@ export default async function AdminProjectsContentPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] app-card p-8">
-        <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+      <section className="rounded-hero app-card p-8">
+        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.projectsTitle}
         </h2>
         <p className="mt-2 max-w-3xl app-muted">{copy.projectsDescription}</p>
@@ -198,9 +198,9 @@ export default async function AdminProjectsContentPage({
         </div>
       </section>
 
-      <section className="rounded-[2rem] app-card p-4 sm:p-6">
+      <section className="rounded-hero app-card p-4 sm:p-6">
         <div className="mb-4 flex items-center justify-between px-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+          <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
             {result.total} · {copy.columns.title.toLowerCase()}
           </p>
           <p className="text-xs app-soft">
@@ -209,7 +209,7 @@ export default async function AdminProjectsContentPage({
           </p>
         </div>
         {result.items.length === 0 ? (
-          <div className="rounded-[1.5rem] app-panel-dashed p-8 text-center">
+          <div className="rounded-3xl app-panel-dashed p-8 text-center">
             <p className="text-sm app-muted">{copy.empty}</p>
           </div>
         ) : (

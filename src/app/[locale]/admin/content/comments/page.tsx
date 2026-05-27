@@ -108,8 +108,8 @@ export default async function AdminCommentsContentPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] app-card p-8">
-        <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+      <section className="rounded-hero app-card p-8">
+        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.commentsTitle}
         </h2>
         <p className="mt-2 max-w-3xl app-muted">{copy.commentsDescription}</p>
@@ -138,9 +138,9 @@ export default async function AdminCommentsContentPage({
         </div>
       </section>
 
-      <section className="rounded-[2rem] app-card p-4 sm:p-6">
+      <section className="rounded-hero app-card p-4 sm:p-6">
         {result.items.length === 0 ? (
-          <div className="rounded-[1.5rem] app-panel-dashed p-8 text-center">
+          <div className="rounded-3xl app-panel-dashed p-8 text-center">
             <p className="text-sm app-muted">{copy.empty}</p>
           </div>
         ) : (

@@ -66,7 +66,7 @@ export default async function NotificationsPage({
   return (
     <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <header className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+        <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
           {dictionary.notifications.pageTitle}
         </h1>
         <p className="mt-1 text-sm app-muted">

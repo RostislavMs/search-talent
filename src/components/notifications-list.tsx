@@ -75,7 +75,7 @@ export default function NotificationsList({
 
   if (items.length === 0) {
     return (
-      <p className="rounded-[1.5rem] app-panel-dashed p-6 text-center text-sm app-muted">
+      <p className="rounded-3xl app-panel-dashed p-6 text-center text-sm app-muted">
         {emptyLabel}
       </p>
     );

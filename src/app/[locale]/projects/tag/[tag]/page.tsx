@@ -89,11 +89,11 @@ export default async function ProjectsByTagPage({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <section className="rounded-[2rem] app-card p-5 sm:p-7">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+      <section className="rounded-hero app-card p-5 sm:p-7">
+        <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
           {locale === "uk" ? "Стек" : "Stack"}
         </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-4xl">
+        <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
           {locale === "uk"
             ? `IT-проєкти на ${technology.name}`
             : `IT projects built with ${technology.name}`}
@@ -131,8 +131,8 @@ export default async function ProjectsByTagPage({
       </section>
 
       {relatedTech.length > 0 && (
-        <section className="mt-6 rounded-[2rem] app-card p-5 sm:mt-8 sm:p-7">
-          <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+        <section className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-7">
+          <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
             {locale === "uk" ? "Інші технології" : "Other technologies"}
           </h2>
           <div className="mt-6 flex flex-wrap gap-2">

@@ -52,8 +52,8 @@ export default async function AdminOverviewPage({
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[2rem] app-card p-8">
-        <h2 className="text-2xl font-semibold text-[color:var(--foreground)]">
+      <section className="rounded-hero app-card p-8">
+        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.title}
         </h2>
         <p className="mt-2 max-w-2xl app-muted">{copy.description}</p>
@@ -63,7 +63,7 @@ export default async function AdminOverviewPage({
             <article
               key={card.label}
               className={[
-                "rounded-[1.25rem] p-5",
+                "rounded-2xl p-5",
                 card.tone === "alert"
                   ? "app-panel border border-[color:var(--border)]"
                   : "app-panel",

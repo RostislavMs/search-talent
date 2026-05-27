@@ -31,7 +31,7 @@ export default function ExpandableProfileBio({
         <p className="text-sm leading-8 app-muted">{previewText}</p>
         <button
           type="button"
-          className="inline-flex items-center rounded-full border app-border px-4 py-2 text-sm font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
+          className="inline-flex cursor-pointer items-center rounded-full border app-border px-4 py-2 text-sm font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
           onClick={() => setExpanded(true)}
         >
           {readMoreLabel}
@@ -47,7 +47,7 @@ export default function ExpandableProfileBio({
       {isCollapsible ? (
         <button
           type="button"
-          className="inline-flex items-center rounded-full border app-border px-4 py-2 text-sm font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
+          className="inline-flex cursor-pointer items-center rounded-full border app-border px-4 py-2 text-sm font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
           onClick={() => setExpanded(false)}
         >
           {showLessLabel}

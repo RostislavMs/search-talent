@@ -167,13 +167,13 @@ async function renderOwnerView({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {ui.eyebrow}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {ui.title}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
@@ -199,7 +199,7 @@ async function renderOwnerView({
             {dashboard.items.map((item) => (
               <article
                 key={item.id}
-                className="rounded-[1.75rem] app-card p-5"
+                className="rounded-panel app-card p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -233,8 +233,8 @@ async function renderOwnerView({
                 </div>
 
                 {item.moderationNote ? (
-                  <div className="mt-4 rounded-[1.25rem] app-panel p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] app-soft">
+                  <div className="mt-4 rounded-2xl app-panel p-4">
+                    <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                       {ui.note}
                     </p>
                     <p className="mt-2 text-sm leading-7 app-muted">
@@ -273,7 +273,7 @@ async function renderOwnerView({
             ))}
           </div>
         ) : (
-          <div className="rounded-[1.75rem] app-panel-dashed p-6">
+          <div className="rounded-panel app-panel-dashed p-6">
             <p className="text-sm app-muted">{ui.empty}</p>
             <div className="mt-4">
               <ButtonLink href="/articles/new" size="sm">
@@ -321,13 +321,13 @@ async function renderPublicView({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-[2.25rem] app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] app-soft">
+            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {heading}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {displayName}
             </h1>
             <p className="mt-2 text-sm app-muted">
@@ -407,7 +407,7 @@ async function renderPublicView({
             ) : null}
           </>
         ) : (
-          <div className="rounded-[1.75rem] app-card p-6">
+          <div className="rounded-panel app-card p-6">
             <p className="text-sm app-muted">{empty}</p>
           </div>
         )}

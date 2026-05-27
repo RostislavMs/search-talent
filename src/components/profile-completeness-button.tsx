@@ -114,7 +114,7 @@ export default function ProfileCompletenessButton({
           }}
         >
           <div
-            className="flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-[1.75rem] border app-border shadow-[0_28px_90px_rgba(2,6,23,0.6)]"
+            className="flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-panel border app-border shadow-[0_28px_90px_rgba(2,6,23,0.6)]"
             style={{
               background: "var(--surface)",
               color: "var(--foreground)",
@@ -124,7 +124,7 @@ export default function ProfileCompletenessButton({
               <div className="min-w-0 flex-1">
                 <h2
                   id="profile-completeness-title"
-                  className="text-lg font-semibold text-[color:var(--foreground)]"
+                  className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
                 >
                   {strings.modalTitle}
                 </h2>
@@ -169,7 +169,7 @@ export default function ProfileCompletenessButton({
             <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
               {missing.length > 0 ? (
                 <section>
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+                  <h3 className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     {strings.missingSection} · {missing.length}
                   </h3>
                   <ul className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -211,7 +211,7 @@ export default function ProfileCompletenessButton({
 
               {filled.length > 0 && (
                 <section>
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.18em] app-soft">
+                  <h3 className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     {strings.filledSection} · {filled.length}
                   </h3>
                   <ul className="mt-3 grid gap-2 sm:grid-cols-2">

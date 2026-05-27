@@ -90,7 +90,7 @@ export default function AdminSidebar({
       {groups.map((group) => (
         <div key={group.label || "root"} className="flex flex-col gap-1">
           {group.label ? (
-            <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.22em] app-soft">
+            <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-eyebrow app-soft">
               {group.label}
             </p>
           ) : null}
