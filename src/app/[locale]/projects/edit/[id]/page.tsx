@@ -100,7 +100,7 @@ export default async function ProjectEditPage({
     : "/projects";
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>

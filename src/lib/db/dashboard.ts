@@ -17,6 +17,12 @@ type ProfileRow = {
   github: string | null;
   twitter: string | null;
   linkedin: string | null;
+  behance: string | null;
+  dribbble: string | null;
+  artstation: string | null;
+  vimeo: string | null;
+  youtube: string | null;
+  instagram: string | null;
   contact_email: string | null;
   telegram_username: string | null;
   phone: string | null;
@@ -245,6 +251,12 @@ function getProfileCompletionScore(
       github: profile.github,
       twitter: profile.twitter,
       linkedin: profile.linkedin,
+      behance: profile.behance,
+      dribbble: profile.dribbble,
+      artstation: profile.artstation,
+      vimeo: profile.vimeo,
+      youtube: profile.youtube,
+      instagram: profile.instagram,
       contactEmail: profile.contact_email,
       telegramUsername: profile.telegram_username,
       phone: profile.phone,
@@ -284,7 +296,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     profileQasResponse,
     profileWorkExperienceResponse,
   ] = await Promise.all([
-    supabase.from("profiles").select("id, user_id, username, name, headline, bio, city, website, github, twitter, linkedin, contact_email, telegram_username, phone, preferred_contact_method, avatar_url, country_id, category_id, created_at, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info"),
+    supabase.from("profiles").select("id, user_id, username, name, headline, bio, city, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, contact_email, telegram_username, phone, preferred_contact_method, avatar_url, country_id, category_id, created_at, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info"),
     supabase.from("projects").select("id, owner_id, title, slug, project_status, created_at"),
     supabase.from("votes").select("project_id, value, created_at"),
     supabase.from("countries").select("id, name"),

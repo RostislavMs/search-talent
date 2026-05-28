@@ -29,6 +29,12 @@ export type Profile = {
   github: string | null;
   twitter: string | null;
   linkedin: string | null;
+  behance: string | null;
+  dribbble: string | null;
+  artstation: string | null;
+  vimeo: string | null;
+  youtube: string | null;
+  instagram: string | null;
   contact_email: string | null;
   telegram_username: string | null;
   phone: string | null;

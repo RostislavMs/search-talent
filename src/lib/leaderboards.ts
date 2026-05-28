@@ -163,6 +163,12 @@ export function getProfileCompletenessScore(input: {
   github: string | null;
   twitter: string | null;
   linkedin: string | null;
+  behance?: string | null;
+  dribbble?: string | null;
+  artstation?: string | null;
+  vimeo?: string | null;
+  youtube?: string | null;
+  instagram?: string | null;
   contactEmail: string | null;
   telegramUsername: string | null;
   phone: string | null;
@@ -194,6 +200,20 @@ export function getProfileCompletenessScore(input: {
     { filled: Boolean(input.twitter), weight: 0.5 },
     { filled: Boolean(input.linkedin), weight: 0.8 },
     {
+      // Discipline portfolio link — at least one of behance/dribbble/
+      // artstation/vimeo/youtube/instagram. Grouped because no single
+      // role uses all six; designers reach for Behance, video editors
+      // for Vimeo, photographers for Instagram.
+      filled:
+        Boolean(input.behance) ||
+        Boolean(input.dribbble) ||
+        Boolean(input.artstation) ||
+        Boolean(input.vimeo) ||
+        Boolean(input.youtube) ||
+        Boolean(input.instagram),
+      weight: 0.9,
+    },
+    {
       filled:
         Boolean(input.contactEmail) ||
         Boolean(input.telegramUsername) ||
@@ -221,6 +241,11 @@ export function getProfileCompletenessScore(input: {
   ]);
 }
 
+// Kinds where the problem/solution/results narrative is a natural part
+// of the work. Photo / audio / video / motion / 3d projects rarely need
+// it — scoring them on its absence punished media-first creators.
+const STORY_KINDS = new Set(["code", "qa", "writing", "design", "other"]);
+
 export function getProjectCompletenessScore(input: {
   description: string | null;
   role: string | null;
@@ -236,22 +261,41 @@ export function getProjectCompletenessScore(input: {
   coverUrl: string | null;
   mediaCount: number;
   technologyCount: number;
+  hasKindMetadata?: boolean;
+  kind?: string | null;
 }) {
+  // Repository URL only matters for code projects. Designers and
+  // photographers should not be penalised for not having a repo.
+  const repoWeight = input.kind === "code" ? 0.7 : 0;
+  // Story fields keep full weight for code/qa/writing, half weight for
+  // design (case-study format is common but not always present), and
+  // zero for media-heavy kinds (photo/audio/video/motion/3d).
+  const storyMultiplier = !input.kind || STORY_KINDS.has(input.kind)
+    ? input.kind === "design"
+      ? 0.5
+      : 1
+    : 0;
+
   return weightedCompletion([
     { filled: Boolean(input.description), weight: 1.2 },
     { filled: Boolean(input.role), weight: 0.8 },
     { filled: Boolean(input.status), weight: 0.5 },
     { filled: Boolean(input.teamSize), weight: 0.4 },
     { filled: Boolean(input.projectUrl), weight: 0.7 },
-    { filled: Boolean(input.repositoryUrl), weight: 0.7 },
+    { filled: Boolean(input.repositoryUrl), weight: repoWeight },
     { filled: Boolean(input.startedOn), weight: 0.5 },
     { filled: Boolean(input.completedOn), weight: 0.5 },
-    { filled: Boolean(input.problem), weight: 1 },
-    { filled: Boolean(input.solution), weight: 1.2 },
-    { filled: Boolean(input.results), weight: 1 },
+    { filled: Boolean(input.problem), weight: 1 * storyMultiplier },
+    { filled: Boolean(input.solution), weight: 1.2 * storyMultiplier },
+    { filled: Boolean(input.results), weight: 1 * storyMultiplier },
     { filled: Boolean(input.coverUrl), weight: 1 },
     { filled: input.mediaCount > 0, weight: 1 },
     { filled: input.technologyCount > 0, weight: 1 },
+    // Kind-specific details (Design / Code / Video / Photo / 3D / Audio
+    // / QA / Motion / Writing). Weight is high because filling these
+    // fields is the strongest signal of a polished, discipline-aware
+    // project page.
+    { filled: Boolean(input.hasKindMetadata), weight: 1.5 },
   ]);
 }
 

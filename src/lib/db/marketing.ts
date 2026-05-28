@@ -222,7 +222,7 @@ export async function getProjectsBySkillId(
   const { data: projects } = await supabase
     .from("projects")
     .select(
-      "id, owner_id, title, slug, description, cover_url, score, moderation_status",
+      "id, owner_id, title, slug, description, cover_url, score, moderation_status, kind",
     )
     .in("id", projectIds)
     .eq("moderation_status", "approved")
@@ -239,6 +239,7 @@ export async function getProjectsBySkillId(
     cover_url: string | null;
     score: number | null;
     moderation_status: string | null;
+    kind: string | null;
   }>);
 
   const ownerIds = Array.from(new Set(rows.map((row) => row.owner_id)));
@@ -264,6 +265,7 @@ export async function getProjectsBySkillId(
       description: row.description,
       coverUrl: row.cover_url,
       score: row.score,
+      kind: row.kind,
       ownerName: owner?.name || null,
       ownerUsername: owner?.username || null,
     };

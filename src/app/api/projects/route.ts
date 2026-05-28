@@ -7,6 +7,7 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { getIntegrationForUser } from "@/lib/db/github-integrations";
 import { fetchRepoFullDetail } from "@/lib/integrations/github";
 import { mapRepoToProjectColumns } from "@/lib/db/github-sync";
+import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -62,6 +63,11 @@ export async function POST(request: Request) {
         ? sanitizeRichTextHtml(payload.description)
         : payload.description,
       role: payload.role,
+      kind: payload.kind,
+      kind_metadata: normalizeProjectKindMetadata(
+        payload.kind,
+        payload.kindMetadata,
+      ),
       project_status: payload.projectStatus,
       team_size: payload.teamSize,
       project_url: payload.projectUrl,

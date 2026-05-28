@@ -56,15 +56,21 @@ export async function apiFetch<T = unknown>(
   }
 
   const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
+    | (T & { error?: string; details?: string })
     | null;
 
   if (!response.ok) {
+    const baseError =
+      (payload && typeof payload.error === "string" && payload.error) ||
+      `Request failed (${response.status})`;
+    // The API may include extra `details` in non-production builds.
+    // Surface them inline so the wizard surfaces enough info to debug
+    // AI/integration failures without opening the network tab.
+    const details =
+      payload && typeof payload.details === "string" ? payload.details : "";
     return {
       ok: false,
-      error:
-        (payload && typeof payload.error === "string" && payload.error) ||
-        `Request failed (${response.status})`,
+      error: details ? `${baseError} — ${details}` : baseError,
       status: response.status,
     };
   }

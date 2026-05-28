@@ -10,6 +10,7 @@ export type ProfileCompletenessItemKey =
   | "github"
   | "twitter"
   | "linkedin"
+  | "portfolioLinks"
   | "contact"
   | "preferredContact"
   | "experience"
@@ -54,6 +55,12 @@ export function getProfileCompletenessBreakdown(input: {
   github: string | null;
   twitter: string | null;
   linkedin: string | null;
+  behance: string | null;
+  dribbble: string | null;
+  artstation: string | null;
+  vimeo: string | null;
+  youtube: string | null;
+  instagram: string | null;
   contactEmail: string | null;
   telegramUsername: string | null;
   phone: string | null;
@@ -84,6 +91,17 @@ export function getProfileCompletenessBreakdown(input: {
     { key: "github", filled: Boolean(input.github), weight: 0.8 },
     { key: "twitter", filled: Boolean(input.twitter), weight: 0.5 },
     { key: "linkedin", filled: Boolean(input.linkedin), weight: 0.8 },
+    {
+      key: "portfolioLinks",
+      filled:
+        Boolean(input.behance) ||
+        Boolean(input.dribbble) ||
+        Boolean(input.artstation) ||
+        Boolean(input.vimeo) ||
+        Boolean(input.youtube) ||
+        Boolean(input.instagram),
+      weight: 0.9,
+    },
     {
       key: "contact",
       filled:
@@ -155,6 +173,7 @@ const LABELS_EN: Record<ProfileCompletenessItemKey, string> = {
   github: "GitHub",
   twitter: "Twitter / X",
   linkedin: "LinkedIn",
+  portfolioLinks: "Portfolio links (Behance / Dribbble / Vimeo / etc.)",
   contact: "Contact (email / Telegram / phone)",
   preferredContact: "Preferred contact method",
   experience: "Experience",
@@ -182,6 +201,7 @@ const LABELS_UK: Record<ProfileCompletenessItemKey, string> = {
   github: "GitHub",
   twitter: "Twitter / X",
   linkedin: "LinkedIn",
+  portfolioLinks: "Портфоліо-посилання (Behance / Dribbble / Vimeo / тощо)",
   contact: "Контакти (email / Telegram / телефон)",
   preferredContact: "Спосіб звʼязку",
   experience: "Досвід",

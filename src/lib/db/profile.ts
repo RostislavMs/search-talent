@@ -298,6 +298,14 @@ export async function getMyProfile() {
     salary_expectations:
       typeof profile.salary_expectations === "string" ? profile.salary_expectations : null,
     salary_currency: getSalaryCurrency(profile.salary_currency),
+    behance: typeof profile.behance === "string" ? profile.behance : null,
+    dribbble: typeof profile.dribbble === "string" ? profile.dribbble : null,
+    artstation:
+      typeof profile.artstation === "string" ? profile.artstation : null,
+    vimeo: typeof profile.vimeo === "string" ? profile.vimeo : null,
+    youtube: typeof profile.youtube === "string" ? profile.youtube : null,
+    instagram:
+      typeof profile.instagram === "string" ? profile.instagram : null,
     contact_email:
       typeof profile.contact_email === "string" ? profile.contact_email : null,
     telegram_username:

@@ -92,6 +92,12 @@ type PublicProfileRow = {
   github: string | null;
   twitter: string | null;
   linkedin: string | null;
+  behance: string | null;
+  dribbble: string | null;
+  artstation: string | null;
+  vimeo: string | null;
+  youtube: string | null;
+  instagram: string | null;
   contact_email: string | null;
   telegram_username: string | null;
   phone: string | null;
@@ -209,7 +215,7 @@ export async function getPublicProjectPageData(
   let projectQuery = supabase
     .from("projects")
     .select(
-      "id, owner_id, title, slug, description, role, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status, status, github_full_name, github_synced_at, github_stats, tech_stack, github_readme, github_role, github_contribution, github_motivation, github_tech_decisions, github_learnings, github_showcase_notes, github_production_usage, github_display_options, github_auto_sync",
+      "id, owner_id, title, slug, description, role, kind, kind_metadata, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status, status, github_full_name, github_synced_at, github_stats, tech_stack, github_readme, github_role, github_contribution, github_motivation, github_tech_decisions, github_learnings, github_showcase_notes, github_production_usage, github_display_options, github_auto_sync",
     )
     .limit(1);
 
@@ -354,7 +360,7 @@ export async function getPublicProfilePageData(
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, username, name, headline, bio, avatar_url, cover_url, country_id, city, category_id, website, github, twitter, linkedin, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info, profile_visibility, moderation_status, email_verified",
+      "id, user_id, username, name, headline, bio, avatar_url, cover_url, country_id, city, category_id, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info, profile_visibility, moderation_status, email_verified",
     )
     .eq("username", username)
     .maybeSingle();
@@ -446,7 +452,7 @@ export async function getPublicProfilePageData(
     supabase
       .from("projects")
       .select(
-        "id, title, slug, description, score, cover_url, is_pinned, moderation_status, status",
+        "id, title, slug, description, score, cover_url, is_pinned, moderation_status, status, kind",
       )
       .eq("owner_id", typedProfile.user_id)
       .eq("status", "published")
@@ -516,6 +522,12 @@ export async function getPublicProfilePageData(
     github: typedProfile.github,
     twitter: typedProfile.twitter,
     linkedin: typedProfile.linkedin,
+    behance: typedProfile.behance,
+    dribbble: typedProfile.dribbble,
+    artstation: typedProfile.artstation,
+    vimeo: typedProfile.vimeo,
+    youtube: typedProfile.youtube,
+    instagram: typedProfile.instagram,
     contactEmail: typedProfile.contact_email,
     telegramUsername: typedProfile.telegram_username,
     phone: typedProfile.phone,
@@ -879,7 +891,7 @@ export async function getUserProjectsPage(
 
   const { data: projects } = await supabase
     .from("projects")
-    .select("id, title, slug, description, score, cover_url, is_pinned")
+    .select("id, title, slug, description, score, cover_url, is_pinned, kind")
     .eq("owner_id", profile.user_id)
     .eq("moderation_status", "approved")
     .eq("status", "published")

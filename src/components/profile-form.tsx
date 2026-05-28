@@ -87,6 +87,12 @@ type ProfileRecord = {
   github: string | null;
   twitter: string | null;
   linkedin: string | null;
+  behance: string | null;
+  dribbble: string | null;
+  artstation: string | null;
+  vimeo: string | null;
+  youtube: string | null;
+  instagram: string | null;
   contact_email: string | null;
   telegram_username: string | null;
   phone: string | null;
@@ -178,6 +184,12 @@ type FormState = {
   github: string;
   twitter: string;
   linkedin: string;
+  behance: string;
+  dribbble: string;
+  artstation: string;
+  vimeo: string;
+  youtube: string;
+  instagram: string;
   contact_email: string;
   telegram_username: string;
   phone: string;
@@ -513,6 +525,12 @@ function serializeProfileDraft({
       github: form.github.trim(),
       twitter: form.twitter.trim(),
       linkedin: form.linkedin.trim(),
+      behance: form.behance.trim(),
+      dribbble: form.dribbble.trim(),
+      artstation: form.artstation.trim(),
+      vimeo: form.vimeo.trim(),
+      youtube: form.youtube.trim(),
+      instagram: form.instagram.trim(),
       contact_email: form.contact_email.trim(),
       telegram_username: form.telegram_username.trim(),
       phone: form.phone.trim(),
@@ -849,6 +867,12 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
     github: profile.github || "",
     twitter: profile.twitter || "",
     linkedin: profile.linkedin || "",
+    behance: profile.behance || "",
+    dribbble: profile.dribbble || "",
+    artstation: profile.artstation || "",
+    vimeo: profile.vimeo || "",
+    youtube: profile.youtube || "",
+    instagram: profile.instagram || "",
     contact_email: profile.contact_email || "",
     telegram_username: profile.telegram_username || "",
     phone: profile.phone || "",
@@ -1392,6 +1416,12 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       github: form.github.trim() || null,
       twitter: form.twitter.trim() || null,
       linkedin: form.linkedin.trim() || null,
+      behance: form.behance.trim() || null,
+      dribbble: form.dribbble.trim() || null,
+      artstation: form.artstation.trim() || null,
+      vimeo: form.vimeo.trim() || null,
+      youtube: form.youtube.trim() || null,
+      instagram: form.instagram.trim() || null,
       contact_email: form.contact_email.trim() || null,
       telegram_username: form.telegram_username.trim() || null,
       phone: form.phone.trim() || null,
@@ -2601,6 +2631,42 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           placeholder={dictionary.forms.linkedin}
           value={form.linkedin}
           onChange={(e) => update("linkedin", e.target.value)}
+        />
+        <input
+          className="app-input w-full"
+          placeholder={dictionary.forms.behance}
+          value={form.behance}
+          onChange={(e) => update("behance", e.target.value)}
+        />
+        <input
+          className="app-input w-full"
+          placeholder={dictionary.forms.dribbble}
+          value={form.dribbble}
+          onChange={(e) => update("dribbble", e.target.value)}
+        />
+        <input
+          className="app-input w-full"
+          placeholder={dictionary.forms.artstation}
+          value={form.artstation}
+          onChange={(e) => update("artstation", e.target.value)}
+        />
+        <input
+          className="app-input w-full"
+          placeholder={dictionary.forms.vimeo}
+          value={form.vimeo}
+          onChange={(e) => update("vimeo", e.target.value)}
+        />
+        <input
+          className="app-input w-full"
+          placeholder={dictionary.forms.youtube}
+          value={form.youtube}
+          onChange={(e) => update("youtube", e.target.value)}
+        />
+        <input
+          className="app-input w-full"
+          placeholder={dictionary.forms.instagram}
+          value={form.instagram}
+          onChange={(e) => update("instagram", e.target.value)}
         />
       </section>
 
