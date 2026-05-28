@@ -37,6 +37,12 @@ type PublicProfileRow = {
   github: string | null;
   twitter: string | null;
   linkedin: string | null;
+  behance: string | null;
+  dribbble: string | null;
+  artstation: string | null;
+  vimeo: string | null;
+  youtube: string | null;
+  instagram: string | null;
   contact_email: string | null;
   telegram_username: string | null;
   phone: string | null;
@@ -240,7 +246,7 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         supabase
           .from("profiles")
           .select(
-            "id, user_id, username, name, avatar_url, headline, bio, country_id, city, website, github, twitter, linkedin, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info",
+            "id, user_id, username, name, avatar_url, headline, bio, country_id, city, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info",
           )
           .not("username", "is", null) as unknown as PagedQuery<PublicProfileRow>,
     ),
@@ -249,7 +255,7 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         supabase
           .from("projects")
           .select(
-            "id, owner_id, title, slug, description, role, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, cover_url, created_at",
+            "id, owner_id, title, slug, description, role, kind, kind_metadata, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, cover_url, created_at",
           )
           .eq("status", "published") as unknown as PagedQuery<PublicProjectRow>,
     ),
@@ -398,6 +404,17 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
       ).length;
       const techCount = (projectSkillSet.get(project.id) || new Set()).size;
 
+      const projectKindMetadata = (
+        project as { kind_metadata?: Record<string, unknown> | null }
+      ).kind_metadata;
+      const projectKind = (project as { kind?: string | null }).kind;
+      const hasKindMetadata =
+        projectKind != null &&
+        projectKindMetadata != null &&
+        typeof projectKindMetadata === "object" &&
+        !Array.isArray(projectKindMetadata) &&
+        Object.prototype.hasOwnProperty.call(projectKindMetadata, projectKind);
+
       const completeness = getProjectCompletenessScore({
         description: project.description,
         role: project.role,
@@ -413,6 +430,8 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         coverUrl: project.cover_url,
         mediaCount,
         technologyCount: techCount,
+        hasKindMetadata,
+        kind: projectKind ?? null,
       });
 
       const rating = calculateProjectRating({
@@ -525,6 +544,12 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         github: profile.github,
         twitter: profile.twitter,
         linkedin: profile.linkedin,
+        behance: profile.behance,
+        dribbble: profile.dribbble,
+        artstation: profile.artstation,
+        vimeo: profile.vimeo,
+        youtube: profile.youtube,
+        instagram: profile.instagram,
         contactEmail: profile.contact_email,
         telegramUsername: profile.telegram_username,
         phone: profile.phone,

@@ -64,7 +64,7 @@ export default async function NewProjectPage({
   const dictionary = getDictionary(locale);
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <section className="rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>

@@ -24,6 +24,36 @@ import {
   getMetadataBase,
   safeJsonLd,
 } from "@/lib/seo";
+import { getProjectKindLabel, normalizeProjectKind } from "@/lib/projects";
+import {
+  isAudioKindMetadataEmpty,
+  isCodeKindMetadataEmpty,
+  isDesignKindMetadataEmpty,
+  isMotionKindMetadataEmpty,
+  isPhotoKindMetadataEmpty,
+  isQaKindMetadataEmpty,
+  isThreeDKindMetadataEmpty,
+  isVideoKindMetadataEmpty,
+  isWritingKindMetadataEmpty,
+  normalizeAudioKindMetadata,
+  normalizeCodeKindMetadata,
+  normalizeDesignKindMetadata,
+  normalizeMotionKindMetadata,
+  normalizePhotoKindMetadata,
+  normalizeQaKindMetadata,
+  normalizeThreeDKindMetadata,
+  normalizeVideoKindMetadata,
+  normalizeWritingKindMetadata,
+} from "@/lib/project-kind-metadata";
+import ProjectDesignDetails from "@/components/project-design-details";
+import ProjectCodeDetails from "@/components/project-code-details";
+import ProjectVideoDetails from "@/components/project-video-details";
+import ProjectPhotoDetails from "@/components/project-photo-details";
+import ProjectThreeDDetails from "@/components/project-three-d-details";
+import ProjectAudioDetails from "@/components/project-audio-details";
+import ProjectQaDetails from "@/components/project-qa-details";
+import ProjectMotionDetails from "@/components/project-motion-details";
+import ProjectWritingDetails from "@/components/project-writing-details";
 
 async function getRouteParams(
   params: Promise<{ locale: string; slug: string }>,
@@ -154,6 +184,93 @@ export default async function PublicProjectPage({
   } = data;
   const isAdmin = viewer.isAdmin;
   const statusLabel = getStatusLabel(project.project_status, dictionary);
+  const projectKind = normalizeProjectKind(
+    (project as { kind?: string | null }).kind,
+  );
+  const kindLabel = projectKind
+    ? getProjectKindLabel(projectKind, dictionary)
+    : null;
+  const designMeta =
+    projectKind === "design"
+      ? normalizeDesignKindMetadata(
+          (project as { kind_metadata?: { design?: unknown } | null })
+            .kind_metadata?.design ?? null,
+        )
+      : null;
+  const showDesignDetails =
+    designMeta !== null && !isDesignKindMetadataEmpty(designMeta);
+  const codeMeta =
+    projectKind === "code"
+      ? normalizeCodeKindMetadata(
+          (project as { kind_metadata?: { code?: unknown } | null })
+            .kind_metadata?.code ?? null,
+        )
+      : null;
+  const showCodeDetails =
+    codeMeta !== null && !isCodeKindMetadataEmpty(codeMeta);
+  const videoMeta =
+    projectKind === "video"
+      ? normalizeVideoKindMetadata(
+          (project as { kind_metadata?: { video?: unknown } | null })
+            .kind_metadata?.video ?? null,
+        )
+      : null;
+  const showVideoDetails =
+    videoMeta !== null && !isVideoKindMetadataEmpty(videoMeta);
+  const photoMeta =
+    projectKind === "photo"
+      ? normalizePhotoKindMetadata(
+          (project as { kind_metadata?: { photo?: unknown } | null })
+            .kind_metadata?.photo ?? null,
+        )
+      : null;
+  const showPhotoDetails =
+    photoMeta !== null && !isPhotoKindMetadataEmpty(photoMeta);
+  const threeDMeta =
+    projectKind === "3d"
+      ? normalizeThreeDKindMetadata(
+          (project as { kind_metadata?: { threeD?: unknown } | null })
+            .kind_metadata?.threeD ?? null,
+        )
+      : null;
+  const showThreeDDetails =
+    threeDMeta !== null && !isThreeDKindMetadataEmpty(threeDMeta);
+  const audioMeta =
+    projectKind === "audio"
+      ? normalizeAudioKindMetadata(
+          (project as { kind_metadata?: { audio?: unknown } | null })
+            .kind_metadata?.audio ?? null,
+        )
+      : null;
+  const showAudioDetails =
+    audioMeta !== null && !isAudioKindMetadataEmpty(audioMeta);
+  const qaMeta =
+    projectKind === "qa"
+      ? normalizeQaKindMetadata(
+          (project as { kind_metadata?: { qa?: unknown } | null })
+            .kind_metadata?.qa ?? null,
+        )
+      : null;
+  const showQaDetails =
+    qaMeta !== null && !isQaKindMetadataEmpty(qaMeta);
+  const motionMeta =
+    projectKind === "motion"
+      ? normalizeMotionKindMetadata(
+          (project as { kind_metadata?: { motion?: unknown } | null })
+            .kind_metadata?.motion ?? null,
+        )
+      : null;
+  const showMotionDetails =
+    motionMeta !== null && !isMotionKindMetadataEmpty(motionMeta);
+  const writingMeta =
+    projectKind === "writing"
+      ? normalizeWritingKindMetadata(
+          (project as { kind_metadata?: { writing?: unknown } | null })
+            .kind_metadata?.writing ?? null,
+        )
+      : null;
+  const showWritingDetails =
+    writingMeta !== null && !isWritingKindMetadataEmpty(writingMeta);
 
   // Auto-sync GitHub data when the owner opens a linked project and
   // the last sync is older than the configured interval. This runs in a
@@ -327,6 +444,9 @@ export default async function PublicProjectPage({
               {statusLabel && (
                 <DetailCard label={dictionary.projectPage.status} value={statusLabel} />
               )}
+              {kindLabel && (
+                <DetailCard label={dictionary.forms.projectKind} value={kindLabel} />
+              )}
               {project.role && (
                 <DetailCard label={dictionary.projectPage.role} value={project.role} />
               )}
@@ -370,6 +490,51 @@ export default async function PublicProjectPage({
                 </div>
               </div>
             )}
+
+            {showDesignDetails && designMeta ? (
+              <ProjectDesignDetails
+                dictionary={dictionary}
+                meta={designMeta}
+              />
+            ) : null}
+
+            {showCodeDetails && codeMeta ? (
+              <ProjectCodeDetails dictionary={dictionary} meta={codeMeta} />
+            ) : null}
+
+            {showVideoDetails && videoMeta ? (
+              <ProjectVideoDetails dictionary={dictionary} meta={videoMeta} />
+            ) : null}
+
+            {showPhotoDetails && photoMeta ? (
+              <ProjectPhotoDetails dictionary={dictionary} meta={photoMeta} />
+            ) : null}
+
+            {showThreeDDetails && threeDMeta ? (
+              <ProjectThreeDDetails
+                dictionary={dictionary}
+                meta={threeDMeta}
+              />
+            ) : null}
+
+            {showAudioDetails && audioMeta ? (
+              <ProjectAudioDetails dictionary={dictionary} meta={audioMeta} />
+            ) : null}
+
+            {showQaDetails && qaMeta ? (
+              <ProjectQaDetails dictionary={dictionary} meta={qaMeta} />
+            ) : null}
+
+            {showMotionDetails && motionMeta ? (
+              <ProjectMotionDetails dictionary={dictionary} meta={motionMeta} />
+            ) : null}
+
+            {showWritingDetails && writingMeta ? (
+              <ProjectWritingDetails
+                dictionary={dictionary}
+                meta={writingMeta}
+              />
+            ) : null}
 
             {(project.project_url || project.repository_url) && (
               <div className="mt-6 flex flex-wrap gap-3">

@@ -11,6 +11,73 @@ export const projectVisibilityStatuses = ["draft", "published"] as const;
 
 export type ProjectVisibilityStatus = (typeof projectVisibilityStatuses)[number];
 
+export const projectKinds = [
+  "code",
+  "design",
+  "video",
+  "photo",
+  "3d",
+  "motion",
+  "audio",
+  "qa",
+  "writing",
+  "other",
+] as const;
+
+export type ProjectKind = (typeof projectKinds)[number];
+
+export function normalizeProjectKind(value: unknown): ProjectKind | null {
+  return typeof value === "string" &&
+    projectKinds.includes(value as ProjectKind)
+    ? (value as ProjectKind)
+    : null;
+}
+
+type ProjectKindLabelDictionary = {
+  forms: {
+    projectKindCode: string;
+    projectKindDesign: string;
+    projectKindVideo: string;
+    projectKindPhoto: string;
+    projectKind3d: string;
+    projectKindMotion: string;
+    projectKindAudio: string;
+    projectKindQa: string;
+    projectKindWriting: string;
+    projectKindOther: string;
+  };
+};
+
+export function getProjectKindLabel(
+  kind: ProjectKind,
+  dictionary: ProjectKindLabelDictionary,
+) {
+  switch (kind) {
+    case "code":
+      return dictionary.forms.projectKindCode;
+    case "design":
+      return dictionary.forms.projectKindDesign;
+    case "video":
+      return dictionary.forms.projectKindVideo;
+    case "photo":
+      return dictionary.forms.projectKindPhoto;
+    case "3d":
+      return dictionary.forms.projectKind3d;
+    case "motion":
+      return dictionary.forms.projectKindMotion;
+    case "audio":
+      return dictionary.forms.projectKindAudio;
+    case "qa":
+      return dictionary.forms.projectKindQa;
+    case "writing":
+      return dictionary.forms.projectKindWriting;
+    case "other":
+      return dictionary.forms.projectKindOther;
+    default:
+      return kind;
+  }
+}
+
 export function normalizeProjectVisibilityStatus(
   value: unknown,
 ): ProjectVisibilityStatus {

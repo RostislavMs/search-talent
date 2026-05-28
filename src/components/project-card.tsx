@@ -2,7 +2,11 @@ import type { Dictionary } from "@/lib/i18n/dictionaries";
 import LocalizedLink from "@/components/ui/localized-link";
 import { buttonStyles } from "@/components/ui/button-styles";
 import OptimizedImage from "@/components/ui/optimized-image";
-import { buildProjectPath } from "@/lib/projects";
+import {
+  buildProjectPath,
+  getProjectKindLabel,
+  normalizeProjectKind,
+} from "@/lib/projects";
 
 type ProjectCardData = {
   id: string;
@@ -14,6 +18,7 @@ type ProjectCardData = {
   score?: number | null;
   cover_url?: string | null;
   is_pinned?: boolean | null;
+  kind?: string | null;
 };
 
 export default function ProjectCard({
@@ -31,6 +36,8 @@ export default function ProjectCard({
     typeof project.score === "number"
       ? `${project.score} ${dictionary.common.scoreSuffix}`
       : dictionary.common.fresh;
+  const kind = normalizeProjectKind(project.kind);
+  const kindLabel = kind ? getProjectKindLabel(kind, dictionary) : null;
 
   return (
     <LocalizedLink
@@ -71,7 +78,7 @@ export default function ProjectCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.common.project}
+              {kindLabel || dictionary.common.project}
             </p>
             <h3 className="font-display mt-2 break-words text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
               {project.title}

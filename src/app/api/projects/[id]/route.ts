@@ -4,6 +4,7 @@ import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { createClient } from "@/lib/supabase/server";
 import { projectPayloadSchema, routeProjectIdSchema } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
+import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
 
 export async function PATCH(
   request: Request,
@@ -58,6 +59,11 @@ export async function PATCH(
         ? sanitizeRichTextHtml(payload.description)
         : payload.description,
       role: payload.role,
+      kind: payload.kind,
+      kind_metadata: normalizeProjectKindMetadata(
+        payload.kind,
+        payload.kindMetadata,
+      ),
       project_status: payload.projectStatus,
       team_size: payload.teamSize,
       project_url: payload.projectUrl,

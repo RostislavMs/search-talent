@@ -14,6 +14,23 @@ function supabaseOrigin(): string | null {
   }
 }
 
+// Third-party players we embed in project pages. Each entry is the
+// exact origin browsers see in the iframe `src`, so CSP `frame-src`
+// allows it without opening the door to arbitrary hosts.
+const embedFrameHosts = [
+  // Video
+  "https://www.youtube.com",
+  "https://www.youtube-nocookie.com",
+  "https://player.vimeo.com",
+  // Audio
+  "https://w.soundcloud.com",
+  "https://open.spotify.com",
+  // 3D
+  "https://sketchfab.com",
+  "https://my.spline.design",
+  "https://app.spline.design",
+];
+
 function buildContentSecurityPolicy(): string {
   const supabase = supabaseOrigin();
   const supabaseHosts = supabase ? [supabase] : [];
@@ -54,7 +71,7 @@ function buildContentSecurityPolicy(): string {
     "media-src": ["'self'", "blob:", "https:", ...supabaseHosts],
     "worker-src": ["'self'", "blob:"],
     "frame-ancestors": ["'none'"],
-    "frame-src": ["'self'"],
+    "frame-src": ["'self'", ...embedFrameHosts],
     "form-action": ["'self'"],
     "base-uri": ["'self'"],
     "object-src": ["'none'"],
