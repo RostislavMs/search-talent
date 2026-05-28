@@ -164,6 +164,12 @@ function fullProfileInput() {
     github: "https://github.com/ros",
     twitter: "@ros",
     linkedin: "https://linkedin.com/in/ros",
+    behance: "https://behance.net/ros",
+    dribbble: "https://dribbble.com/ros",
+    artstation: "https://artstation.com/ros",
+    vimeo: "https://vimeo.com/ros",
+    youtube: "https://youtube.com/@ros",
+    instagram: "https://instagram.com/ros",
     contactEmail: "ros@example.com",
     telegramUsername: "@ros",
     phone: "+380...",
@@ -248,6 +254,11 @@ function fullProjectInput() {
     coverUrl: "https://example.com/cover.png",
     mediaCount: 5,
     technologyCount: 6,
+    // A "fully filled" code project: repository_url weight is active
+    // (repo only counts for kind=code) and the discipline-specific
+    // CodeDetails block is filled (hasKindMetadata = true).
+    hasKindMetadata: true,
+    kind: "code",
   };
 }
 
