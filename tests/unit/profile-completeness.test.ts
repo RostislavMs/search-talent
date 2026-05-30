@@ -5,7 +5,11 @@ import {
   type ProfileCompletenessItemKey,
 } from "@/lib/profile-completeness";
 
-function makeEmptyInput() {
+type ProfileCompletenessInput = Parameters<
+  typeof getProfileCompletenessBreakdown
+>[0];
+
+function makeEmptyInput(): ProfileCompletenessInput {
   return {
     username: null,
     name: null,
@@ -44,7 +48,7 @@ function makeEmptyInput() {
   };
 }
 
-function makeFullInput() {
+function makeFullInput(): ProfileCompletenessInput {
   return {
     username: "johndoe",
     name: "John Doe",

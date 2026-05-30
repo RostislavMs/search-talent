@@ -398,7 +398,7 @@ describe("buildArticleSchema", () => {
     expect(schema["@type"]).toBe("Article");
     expect(schema.headline).toBe("My Article");
     expect(schema.description).toBe("Summary");
-    expect(schema.author.name).toBe("Alice");
+    expect(schema.author?.name).toBe("Alice");
     expect(schema.publisher["@type"]).toBe("Organization");
     expect(schema.articleSection).toBe("Technology");
     expect(schema.keywords).toBe("react, nextjs");
