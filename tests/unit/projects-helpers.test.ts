@@ -259,7 +259,7 @@ describe("generateUniqueProjectSlug", () => {
     return {
       from: () => ({
         select: () => ({
-          ilike: (..._args: unknown[]) => {
+          ilike: () => {
             const result = {
               data: existingSlugs.map((slug) => ({ slug })),
               neq: () => Promise.resolve({
@@ -309,4 +309,3 @@ describe("generateUniqueProjectSlug", () => {
     expect(result).toBe("test");
   });
 });
-
