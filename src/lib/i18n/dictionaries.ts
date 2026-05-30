@@ -1806,7 +1806,8 @@ export const dictionaries = {
       mediaImageLimit: "Images up to 10 MB.",
       mediaVideoLimit: "Videos up to 100 MB.",
       mediaUnsupportedKind: "Only images and videos are allowed.",
-      mediaImageTooLarge: "Image is larger than the 10 MB limit.",
+      mediaImageTooLarge:
+        "Image is too large. Limit: 10 MB for most projects, 25 MB for photography.",
       mediaVideoTooLarge: "Video is larger than the 100 MB limit.",
       mediaRemove: "Remove",
       mediaUploadProgress: "Uploading media",
@@ -1822,6 +1823,8 @@ export const dictionaries = {
       errorUpdatingProject: "Error updating project",
       invalidProjectDateRange:
         "The completion date cannot be earlier than the start date.",
+      invalidUrl:
+        "Enter a valid link starting with https:// or http://",
       username: "Username",
       fullName: "Full name",
       headline: "Headline",
@@ -3794,7 +3797,8 @@ export const dictionaries = {
       mediaImageLimit: "Зображення — до 10 МБ.",
       mediaVideoLimit: "Відео — до 100 МБ.",
       mediaUnsupportedKind: "Дозволені лише зображення та відео.",
-      mediaImageTooLarge: "Зображення перевищує ліміт у 10 МБ.",
+      mediaImageTooLarge:
+        "Зображення завелике. Ліміт: 10 МБ для звичайних проєктів, 25 МБ для фотографії.",
       mediaVideoTooLarge: "Відео перевищує ліміт у 100 МБ.",
       mediaRemove: "Видалити",
       mediaUploadProgress: "Завантаження медіа",
@@ -3810,6 +3814,8 @@ export const dictionaries = {
       errorUpdatingProject: "Помилка під час оновлення проєкту",
       invalidProjectDateRange:
         "Дата завершення не може бути раніше за дату старту.",
+      invalidUrl:
+        "Введіть коректне посилання, що починається з https:// або http://",
       username: "Username",
       fullName: "Повне ім'я",
       headline: "Короткий опис",

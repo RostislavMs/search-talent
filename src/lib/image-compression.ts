@@ -1,14 +1,21 @@
 import imageCompression from "browser-image-compression";
 
-export type CompressionPreset = "avatar" | "cover" | "inline";
+export type CompressionPreset = "avatar" | "cover" | "inline" | "photo";
 
-const PRESETS: Record<
-  CompressionPreset,
-  { maxSizeMB: number; maxWidthOrHeight: number }
-> = {
-  avatar: { maxSizeMB: 0.2, maxWidthOrHeight: 512 },
-  cover: { maxSizeMB: 0.6, maxWidthOrHeight: 2048 },
-  inline: { maxSizeMB: 0.6, maxWidthOrHeight: 2048 },
+type PresetConfig = {
+  maxSizeMB: number;
+  maxWidthOrHeight: number;
+  initialQuality: number;
+};
+
+const PRESETS: Record<CompressionPreset, PresetConfig> = {
+  avatar: { maxSizeMB: 0.2, maxWidthOrHeight: 512, initialQuality: 0.8 },
+  cover: { maxSizeMB: 0.6, maxWidthOrHeight: 2048, initialQuality: 0.8 },
+  inline: { maxSizeMB: 0.6, maxWidthOrHeight: 2048, initialQuality: 0.8 },
+  // "photo" preserves the original file. Photography projects need the
+  // full-resolution, original-format asset — running it through any
+  // resize/recompress step would defeat the purpose of uploading a photo.
+  photo: { maxSizeMB: Infinity, maxWidthOrHeight: Infinity, initialQuality: 1 },
 };
 
 const SKIP_MIME_TYPES = new Set(["image/gif", "image/svg+xml"]);
@@ -21,7 +28,11 @@ export async function compressImageFile(
     return file;
   }
 
-  const { maxSizeMB, maxWidthOrHeight } = PRESETS[preset];
+  if (preset === "photo") {
+    return file;
+  }
+
+  const { maxSizeMB, maxWidthOrHeight, initialQuality } = PRESETS[preset];
 
   try {
     const compressed = await imageCompression(file, {
@@ -29,7 +40,7 @@ export async function compressImageFile(
       maxWidthOrHeight,
       useWebWorker: true,
       fileType: "image/webp",
-      initialQuality: 0.8,
+      initialQuality,
     });
 
     if (compressed.size >= file.size) {

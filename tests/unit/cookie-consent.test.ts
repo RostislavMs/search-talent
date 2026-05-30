@@ -104,3 +104,22 @@ describe("allowsCookieCategory", () => {
     expect(allowsCookieCategory(consent, "marketing")).toBe(false);
   });
 });
+
+describe("serializeCookieConsent", () => {
+  it("returns a valid JSON string", () => {
+    const consent = buildAllowAllConsent();
+    const result = serializeCookieConsent(consent);
+
+    expect(typeof result).toBe("string");
+    expect(() => JSON.parse(result)).not.toThrow();
+  });
+
+  it("round-trips through serialize and parse", () => {
+    const consent = buildCookieConsent({ analytics: true, marketing: true });
+    const serialized = serializeCookieConsent(consent);
+    const encoded = encodeURIComponent(serialized);
+
+    expect(parseCookieConsentValue(encoded)).toEqual(consent);
+  });
+});
+

@@ -9,6 +9,7 @@ import {
   workFormats,
 } from "@/lib/profile-sections";
 import { normalizeProfileSettings } from "@/lib/profile-presentation";
+import { isValidPublicUrl } from "@/lib/url-validation";
 
 function normalizeOptionalString(value: unknown) {
   if (typeof value !== "string") {
@@ -33,15 +34,6 @@ function normalizeOptionalHttpUrl(value: unknown) {
   return `https://${normalized}`;
 }
 
-function isValidUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 const optionalText = (label: string, maxLength: number) =>
   z
     .any()
@@ -54,7 +46,7 @@ const optionalUrl = (label: string) =>
   z
     .any()
     .transform(normalizeOptionalHttpUrl)
-    .refine((value) => value === null || (value.length <= 2048 && isValidUrl(value)), {
+    .refine((value) => value === null || isValidPublicUrl(value), {
       message: `Invalid ${label}`,
     });
 

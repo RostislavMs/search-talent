@@ -152,8 +152,10 @@ import {
   type ProjectMediaKind,
 } from "@/lib/project-media";
 import { projectPayloadSchema } from "@/lib/validation/project";
+import { isValidPublicUrl } from "@/lib/url-validation";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_PHOTO_IMAGE_BYTES = 25 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const BASE_TOTAL_STEPS = 5;
 const DEFAULT_ASPECT_RATIO = 16 / 10;
@@ -1268,6 +1270,12 @@ export default function CreateProjectForm({
 
       const newItems: WizardMediaItem[] = [];
 
+      const isPhotoProject = form.kind === "photo";
+      const imagePreset = isPhotoProject ? "photo" : "inline";
+      const imageSizeLimit = isPhotoProject
+        ? MAX_PHOTO_IMAGE_BYTES
+        : MAX_IMAGE_BYTES;
+
       try {
         for (const rawFile of files) {
           const initialKind = inferProjectMediaKind(rawFile.type, rawFile.name);
@@ -1279,11 +1287,11 @@ export default function CreateProjectForm({
 
           const file =
             initialKind === "image"
-              ? await compressImageFile(rawFile, "inline")
+              ? await compressImageFile(rawFile, imagePreset)
               : rawFile;
           const mediaKind = inferProjectMediaKind(file.type, file.name);
 
-          if (mediaKind === "image" && file.size > MAX_IMAGE_BYTES) {
+          if (mediaKind === "image" && file.size > imageSizeLimit) {
             setErrorMessage(dictionary.forms.mediaImageTooLarge);
             continue;
           }
@@ -1318,6 +1326,7 @@ export default function CreateProjectForm({
       dictionary.forms.mediaUnsupportedKind,
       dictionary.forms.mediaImageTooLarge,
       dictionary.forms.mediaVideoTooLarge,
+      form.kind,
       measureLocalAspectRatio,
       mediaWorking,
     ],
@@ -2348,19 +2357,14 @@ function StepSpecifics({
     return (
       <div className="space-y-6">
         {onGithubImport ? <GithubRepoImporter onImport={onGithubImport} /> : null}
-        <Field
+        <UrlField
+          id="project-repository-url"
           label={dictionary.forms.repositoryUrl}
-          htmlFor="project-repository-url"
-        >
-          <input
-            id="project-repository-url"
-            type="url"
-            placeholder={dictionary.forms.repositoryUrlPlaceholder}
-            className="app-input"
-            value={form.repositoryUrl}
-            onChange={(e) => update("repositoryUrl", e.target.value)}
-          />
-        </Field>
+          placeholder={dictionary.forms.repositoryUrlPlaceholder}
+          value={form.repositoryUrl}
+          onChange={(next) => update("repositoryUrl", next)}
+          invalidMessage={dictionary.forms.invalidUrl}
+        />
         <CodeDetailsFields
           dictionary={dictionary}
           value={form.codeMeta}
@@ -2589,53 +2593,32 @@ function DesignDetailsFields({
       </Field>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Field
+        <UrlField
+          id="design-figma-url"
           label={dictionary.forms.designFigmaUrlLabel}
-          htmlFor="design-figma-url"
-        >
-          <input
-            id="design-figma-url"
-            type="url"
-            placeholder={dictionary.forms.designFigmaUrlPlaceholder}
-            className="app-input"
-            value={value.figmaUrl ?? ""}
-            onChange={(event) =>
-              update("figmaUrl", event.target.value || null)
-            }
-          />
-        </Field>
+          placeholder={dictionary.forms.designFigmaUrlPlaceholder}
+          value={value.figmaUrl ?? ""}
+          onChange={(next) => update("figmaUrl", next || null)}
+          invalidMessage={dictionary.forms.invalidUrl}
+        />
 
-        <Field
+        <UrlField
+          id="design-behance-url"
           label={dictionary.forms.designBehanceUrlLabel}
-          htmlFor="design-behance-url"
-        >
-          <input
-            id="design-behance-url"
-            type="url"
-            placeholder={dictionary.forms.designBehanceUrlPlaceholder}
-            className="app-input"
-            value={value.behanceUrl ?? ""}
-            onChange={(event) =>
-              update("behanceUrl", event.target.value || null)
-            }
-          />
-        </Field>
+          placeholder={dictionary.forms.designBehanceUrlPlaceholder}
+          value={value.behanceUrl ?? ""}
+          onChange={(next) => update("behanceUrl", next || null)}
+          invalidMessage={dictionary.forms.invalidUrl}
+        />
 
-        <Field
+        <UrlField
+          id="design-dribbble-url"
           label={dictionary.forms.designDribbbleUrlLabel}
-          htmlFor="design-dribbble-url"
-        >
-          <input
-            id="design-dribbble-url"
-            type="url"
-            placeholder={dictionary.forms.designDribbbleUrlPlaceholder}
-            className="app-input"
-            value={value.dribbbleUrl ?? ""}
-            onChange={(event) =>
-              update("dribbbleUrl", event.target.value || null)
-            }
-          />
-        </Field>
+          placeholder={dictionary.forms.designDribbbleUrlPlaceholder}
+          value={value.dribbbleUrl ?? ""}
+          onChange={(next) => update("dribbbleUrl", next || null)}
+          invalidMessage={dictionary.forms.invalidUrl}
+        />
       </div>
     </section>
   );
@@ -2748,53 +2731,32 @@ function CodeDetailsFields({
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Field
+        <UrlField
+          id="code-docs-url"
           label={dictionary.forms.codeDocsUrlLabel}
-          htmlFor="code-docs-url"
-        >
-          <input
-            id="code-docs-url"
-            type="url"
-            placeholder={dictionary.forms.codeUrlPlaceholder}
-            className="app-input"
-            value={value.docsUrl ?? ""}
-            onChange={(event) =>
-              update("docsUrl", event.target.value || null)
-            }
-          />
-        </Field>
+          placeholder={dictionary.forms.codeUrlPlaceholder}
+          value={value.docsUrl ?? ""}
+          onChange={(next) => update("docsUrl", next || null)}
+          invalidMessage={dictionary.forms.invalidUrl}
+        />
 
-        <Field
+        <UrlField
+          id="code-storybook-url"
           label={dictionary.forms.codeStorybookUrlLabel}
-          htmlFor="code-storybook-url"
-        >
-          <input
-            id="code-storybook-url"
-            type="url"
-            placeholder={dictionary.forms.codeUrlPlaceholder}
-            className="app-input"
-            value={value.storybookUrl ?? ""}
-            onChange={(event) =>
-              update("storybookUrl", event.target.value || null)
-            }
-          />
-        </Field>
+          placeholder={dictionary.forms.codeUrlPlaceholder}
+          value={value.storybookUrl ?? ""}
+          onChange={(next) => update("storybookUrl", next || null)}
+          invalidMessage={dictionary.forms.invalidUrl}
+        />
 
-        <Field
+        <UrlField
+          id="code-api-playground-url"
           label={dictionary.forms.codeApiPlaygroundUrlLabel}
-          htmlFor="code-api-playground-url"
-        >
-          <input
-            id="code-api-playground-url"
-            type="url"
-            placeholder={dictionary.forms.codeUrlPlaceholder}
-            className="app-input"
-            value={value.apiPlaygroundUrl ?? ""}
-            onChange={(event) =>
-              update("apiPlaygroundUrl", event.target.value || null)
-            }
-          />
-        </Field>
+          placeholder={dictionary.forms.codeUrlPlaceholder}
+          value={value.apiPlaygroundUrl ?? ""}
+          onChange={(next) => update("apiPlaygroundUrl", next || null)}
+          invalidMessage={dictionary.forms.invalidUrl}
+        />
       </div>
     </section>
   );
@@ -2831,22 +2793,15 @@ function VideoDetailsFields({
         </p>
       </header>
 
-      <Field
+      <UrlField
+        id="video-showreel-url"
         label={dictionary.forms.videoShowreelUrlLabel}
-        htmlFor="video-showreel-url"
         description={dictionary.forms.videoShowreelUrlHint}
-      >
-        <input
-          id="video-showreel-url"
-          type="url"
-          placeholder={dictionary.forms.videoShowreelUrlPlaceholder}
-          className="app-input"
-          value={value.showreelUrl ?? ""}
-          onChange={(event) =>
-            update("showreelUrl", event.target.value || null)
-          }
-        />
-      </Field>
+        placeholder={dictionary.forms.videoShowreelUrlPlaceholder}
+        value={value.showreelUrl ?? ""}
+        onChange={(next) => update("showreelUrl", next || null)}
+        invalidMessage={dictionary.forms.invalidUrl}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Field label={dictionary.forms.videoRoleLabel} htmlFor="video-role">
@@ -3136,22 +3091,15 @@ function ThreeDDetailsFields({
         </p>
       </header>
 
-      <Field
+      <UrlField
+        id="threed-model-url"
         label={dictionary.forms.threeDModelUrlLabel}
-        htmlFor="threed-model-url"
         description={dictionary.forms.threeDModelUrlHint}
-      >
-        <input
-          id="threed-model-url"
-          type="url"
-          placeholder={dictionary.forms.threeDModelUrlPlaceholder}
-          className="app-input"
-          value={value.modelUrl ?? ""}
-          onChange={(event) =>
-            update("modelUrl", event.target.value || null)
-          }
-        />
-      </Field>
+        placeholder={dictionary.forms.threeDModelUrlPlaceholder}
+        value={value.modelUrl ?? ""}
+        onChange={(next) => update("modelUrl", next || null)}
+        invalidMessage={dictionary.forms.invalidUrl}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Field label={dictionary.forms.threeDRoleLabel} htmlFor="threed-role">
@@ -3286,22 +3234,15 @@ function AudioDetailsFields({
         </p>
       </header>
 
-      <Field
+      <UrlField
+        id="audio-track-url"
         label={dictionary.forms.audioTrackUrlLabel}
-        htmlFor="audio-track-url"
         description={dictionary.forms.audioTrackUrlHint}
-      >
-        <input
-          id="audio-track-url"
-          type="url"
-          placeholder={dictionary.forms.audioTrackUrlPlaceholder}
-          className="app-input"
-          value={value.trackUrl ?? ""}
-          onChange={(event) =>
-            update("trackUrl", event.target.value || null)
-          }
-        />
-      </Field>
+        placeholder={dictionary.forms.audioTrackUrlPlaceholder}
+        value={value.trackUrl ?? ""}
+        onChange={(next) => update("trackUrl", next || null)}
+        invalidMessage={dictionary.forms.invalidUrl}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Field label={dictionary.forms.audioRoleLabel} htmlFor="audio-role">
@@ -3597,22 +3538,15 @@ function QaDetailsFields({
         </Field>
       </div>
 
-      <Field
+      <UrlField
+        id="qa-report-url"
         label={dictionary.forms.qaReportUrlLabel}
-        htmlFor="qa-report-url"
         description={dictionary.forms.qaReportUrlHint}
-      >
-        <input
-          id="qa-report-url"
-          type="url"
-          placeholder={dictionary.forms.qaReportUrlPlaceholder}
-          className="app-input"
-          value={value.reportUrl ?? ""}
-          onChange={(event) =>
-            update("reportUrl", event.target.value || null)
-          }
-        />
-      </Field>
+        placeholder={dictionary.forms.qaReportUrlPlaceholder}
+        value={value.reportUrl ?? ""}
+        onChange={(next) => update("reportUrl", next || null)}
+        invalidMessage={dictionary.forms.invalidUrl}
+      />
     </section>
   );
 }
@@ -3648,22 +3582,15 @@ function MotionDetailsFields({
         </p>
       </header>
 
-      <Field
+      <UrlField
+        id="motion-preview-url"
         label={dictionary.forms.motionPreviewUrlLabel}
-        htmlFor="motion-preview-url"
         description={dictionary.forms.motionPreviewUrlHint}
-      >
-        <input
-          id="motion-preview-url"
-          type="url"
-          placeholder={dictionary.forms.motionPreviewUrlPlaceholder}
-          className="app-input"
-          value={value.previewUrl ?? ""}
-          onChange={(event) =>
-            update("previewUrl", event.target.value || null)
-          }
-        />
-      </Field>
+        placeholder={dictionary.forms.motionPreviewUrlPlaceholder}
+        value={value.previewUrl ?? ""}
+        onChange={(next) => update("previewUrl", next || null)}
+        invalidMessage={dictionary.forms.invalidUrl}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Field label={dictionary.forms.motionRoleLabel} htmlFor="motion-role">
@@ -3770,22 +3697,15 @@ function WritingDetailsFields({
         </p>
       </header>
 
-      <Field
+      <UrlField
+        id="writing-article-url"
         label={dictionary.forms.writingArticleUrlLabel}
-        htmlFor="writing-article-url"
         description={dictionary.forms.writingArticleUrlHint}
-      >
-        <input
-          id="writing-article-url"
-          type="url"
-          placeholder={dictionary.forms.writingArticleUrlPlaceholder}
-          className="app-input"
-          value={value.articleUrl ?? ""}
-          onChange={(event) =>
-            update("articleUrl", event.target.value || null)
-          }
-        />
-      </Field>
+        placeholder={dictionary.forms.writingArticleUrlPlaceholder}
+        value={value.articleUrl ?? ""}
+        onChange={(next) => update("articleUrl", next || null)}
+        invalidMessage={dictionary.forms.invalidUrl}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Field label={dictionary.forms.writingRoleLabel} htmlFor="writing-role">
@@ -4440,16 +4360,14 @@ function StepDetails({
         </label>
       </Field>
 
-      <Field label={dictionary.forms.projectUrl} htmlFor="project-url">
-        <input
-          id="project-url"
-          type="url"
-          placeholder={dictionary.forms.projectUrlPlaceholder}
-          className="app-input"
-          value={form.projectUrl}
-          onChange={(e) => update("projectUrl", e.target.value)}
-        />
-      </Field>
+      <UrlField
+        id="project-url"
+        label={dictionary.forms.projectUrl}
+        placeholder={dictionary.forms.projectUrlPlaceholder}
+        value={form.projectUrl}
+        onChange={(next) => update("projectUrl", next)}
+        invalidMessage={dictionary.forms.invalidUrl}
+      />
     </div>
   );
 }
@@ -4810,5 +4728,57 @@ function Field({
       ) : null}
       {children}
     </div>
+  );
+}
+
+function UrlField({
+  id,
+  label,
+  description,
+  placeholder,
+  value,
+  onChange,
+  invalidMessage,
+  className,
+}: {
+  id: string;
+  label: string;
+  description?: string;
+  placeholder?: string;
+  value: string;
+  onChange: (next: string) => void;
+  invalidMessage: string;
+  className?: string;
+}) {
+  const [touched, setTouched] = useState(false);
+  const trimmed = value.trim();
+  const invalid = touched && trimmed.length > 0 && !isValidPublicUrl(trimmed);
+  const errorId = `${id}-error`;
+
+  return (
+    <Field
+      label={label}
+      htmlFor={id}
+      description={description}
+      className={className}
+    >
+      <input
+        id={id}
+        type="url"
+        inputMode="url"
+        placeholder={placeholder}
+        className={`app-input${invalid ? " border-rose-500 focus:border-rose-500" : ""}`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onBlur={() => setTouched(true)}
+        aria-invalid={invalid || undefined}
+        aria-describedby={invalid ? errorId : undefined}
+      />
+      {invalid ? (
+        <p id={errorId} className="mt-1.5 text-xs text-rose-500">
+          {invalidMessage}
+        </p>
+      ) : null}
+    </Field>
   );
 }

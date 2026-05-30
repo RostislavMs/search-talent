@@ -3,7 +3,9 @@ import {
   AUTH_LIMITS,
   buildAuthRedirectUrl,
   forgotPasswordSchema,
+  getAuthErrorMessage,
   getAuthFieldErrors,
+  getPublicAuthErrorMessage,
   loginSchema,
   resetPasswordSchema,
   signupSchema,
@@ -182,3 +184,71 @@ describe("buildAuthRedirectUrl", () => {
     ).toBe("https://example.com/uk/auth/callback");
   });
 });
+
+describe("getAuthErrorMessage", () => {
+  const mockDictionary = {
+    auth: {
+      errors: {
+        emailRequired: "Email is required",
+        emailInvalid: "Email is invalid",
+        passwordRequired: "Password is required",
+        passwordTooShort: "Password is too short",
+        passwordTooLong: "Password is too long",
+        passwordTooWeak: "Password is too weak",
+        passwordEdgeSpaces: "Password has spaces",
+        confirmPasswordRequired: "Confirm is required",
+        passwordsDoNotMatch: "Passwords do not match",
+        generic: "Something went wrong",
+        invalidCredentials: "Invalid credentials",
+        signupFailed: "Signup failed",
+        oauthFailed: "OAuth failed",
+      },
+    },
+  } as never;
+
+  it("returns the correct message for each error code", () => {
+    expect(getAuthErrorMessage("email_required", mockDictionary)).toBe("Email is required");
+    expect(getAuthErrorMessage("email_invalid", mockDictionary)).toBe("Email is invalid");
+    expect(getAuthErrorMessage("password_required", mockDictionary)).toBe("Password is required");
+    expect(getAuthErrorMessage("password_too_short", mockDictionary)).toBe("Password is too short");
+    expect(getAuthErrorMessage("password_too_long", mockDictionary)).toBe("Password is too long");
+    expect(getAuthErrorMessage("password_too_weak", mockDictionary)).toBe("Password is too weak");
+    expect(getAuthErrorMessage("password_edge_spaces", mockDictionary)).toBe("Password has spaces");
+    expect(getAuthErrorMessage("confirm_password_required", mockDictionary)).toBe("Confirm is required");
+    expect(getAuthErrorMessage("passwords_do_not_match", mockDictionary)).toBe("Passwords do not match");
+  });
+
+  it("returns generic message for unknown error codes", () => {
+    expect(getAuthErrorMessage("unknown_code", mockDictionary)).toBe("Something went wrong");
+  });
+});
+
+describe("getPublicAuthErrorMessage", () => {
+  const mockDictionary = {
+    auth: {
+      errors: {
+        invalidCredentials: "Invalid credentials",
+        signupFailed: "Signup failed",
+        oauthFailed: "OAuth failed",
+        generic: "Something went wrong",
+      },
+    },
+  } as never;
+
+  it("returns correct message for login mode", () => {
+    expect(getPublicAuthErrorMessage("login", mockDictionary)).toBe("Invalid credentials");
+  });
+
+  it("returns correct message for signup mode", () => {
+    expect(getPublicAuthErrorMessage("signup", mockDictionary)).toBe("Signup failed");
+  });
+
+  it("returns correct message for oauth mode", () => {
+    expect(getPublicAuthErrorMessage("oauth", mockDictionary)).toBe("OAuth failed");
+  });
+
+  it("returns generic message for unknown mode", () => {
+    expect(getPublicAuthErrorMessage("unknown" as never, mockDictionary)).toBe("Something went wrong");
+  });
+});
+
