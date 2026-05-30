@@ -73,6 +73,52 @@ describe("sanitizeRichTextHtml (server path)", () => {
     expect(result).toMatch(/<iframe\b/i);
     expect(result).toMatch(/youtube\.com\/embed/i);
   });
+
+  it("strips <style> tags and their content", () => {
+    const result = sanitizeRichTextHtml(
+      "<p>hello</p><style>body { color: red; }</style><p>world</p>",
+    );
+
+    expect(result).not.toMatch(/style/i);
+    expect(result).toContain("hello");
+    expect(result).toContain("world");
+  });
+
+  it("strips single-quoted event handlers", () => {
+    const result = sanitizeRichTextHtml(
+      `<p onclick='alert(1)'>hi</p>`,
+    );
+
+    expect(result).not.toMatch(/onclick/i);
+    expect(result).toContain("hi");
+  });
+
+  it("strips unquoted event handlers", () => {
+    const result = sanitizeRichTextHtml(
+      `<img src="x" onerror=alert(1)>`,
+    );
+
+    expect(result).not.toMatch(/onerror/i);
+  });
+
+  it("keeps allowed tags like <strong>, <em>, <blockquote>", () => {
+    const result = sanitizeRichTextHtml(
+      "<p><strong>bold</strong> <em>italic</em></p><blockquote>quote</blockquote>",
+    );
+
+    expect(result).toMatch(/<strong>/i);
+    expect(result).toMatch(/<em>/i);
+    expect(result).toMatch(/<blockquote>/i);
+  });
+
+  it("keeps youtube-nocookie iframes", () => {
+    const result = sanitizeRichTextHtml(
+      `<iframe src="https://www.youtube-nocookie.com/embed/abc123XYZ"></iframe>`,
+    );
+
+    expect(result).toMatch(/<iframe\b/i);
+    expect(result).toMatch(/youtube-nocookie/i);
+  });
 });
 
 describe("extractPlainTextFromRichText", () => {
@@ -88,6 +134,21 @@ describe("extractPlainTextFromRichText", () => {
   it("strips inline tags without producing spurious whitespace", () => {
     expect(extractPlainTextFromRichText("<p>hello <strong>world</strong></p>"))
       .toBe("hello world");
+  });
+
+  it("handles nested tags", () => {
+    const result = extractPlainTextFromRichText(
+      "<p>Hello <strong><em>World</em></strong></p>",
+    );
+
+    expect(result).toBe("Hello World");
+  });
+
+  it("handles text with entities", () => {
+    const result = extractPlainTextFromRichText("<p>A &amp; B</p>");
+
+    expect(result).toContain("A");
+    expect(result).toContain("B");
   });
 });
 
@@ -115,3 +176,4 @@ describe("extractYouTubeVideoId", () => {
     expect(extractYouTubeVideoId("not a url at all")).toBeNull();
   });
 });
+

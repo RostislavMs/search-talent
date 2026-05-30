@@ -54,6 +54,7 @@ import {
   GITHUB_FIELD_LIMITS,
   GITHUB_PROJECT_ROLES,
 } from "@/lib/constants/github";
+import { isValidPublicUrl } from "@/lib/url-validation";
 
 function normalizeOptionalString(value: unknown) {
   if (typeof value !== "string") {
@@ -62,15 +63,6 @@ function normalizeOptionalString(value: unknown) {
 
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
-}
-
-function isValidUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 const optionalText = (label: string, maxLength: number) =>
@@ -85,7 +77,7 @@ const optionalUrl = (label: string) =>
   z
     .any()
     .transform(normalizeOptionalString)
-    .refine((value) => value === null || (value.length <= 2048 && isValidUrl(value)), {
+    .refine((value) => value === null || isValidPublicUrl(value), {
       message: `Invalid ${label}`,
     });
 

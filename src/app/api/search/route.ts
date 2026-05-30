@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { isPublicModerationStatus } from "@/lib/moderation";
+import {
+  calculateProjectRating,
+  getProjectCompletenessScore,
+  isWithinTimeframe,
+} from "@/lib/leaderboards";
 import { createClient } from "@/lib/supabase/server";
 
 type ProjectRow = {
@@ -13,6 +18,23 @@ type ProjectRow = {
   owner_id: string;
   created_at: string | null;
   moderation_status: string | null;
+  kind: string | null;
+  kind_metadata: Record<string, unknown> | null;
+  role: string | null;
+  team_size: number | null;
+  project_url: string | null;
+  repository_url: string | null;
+  started_on: string | null;
+  completed_on: string | null;
+  problem: string | null;
+  solution: string | null;
+  results: string | null;
+};
+
+type VoteRow = {
+  project_id: string;
+  value: number;
+  created_at: string | null;
 };
 
 type ProfileRow = {
@@ -207,10 +229,10 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
 
-  let projectQuery = supabase
+  const projectQuery = supabase
     .from("projects")
     .select(
-      "id, title, slug, description, score, cover_url, project_status, owner_id, created_at, moderation_status",
+      "id, title, slug, description, score, cover_url, project_status, owner_id, created_at, moderation_status, kind, kind_metadata, role, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results",
     )
     .eq("status", "published");
 
@@ -219,13 +241,14 @@ export async function GET(request: Request) {
     .select("id, user_id, username, name, headline, avatar_url, country_id, city, category_id, experience_level, employment_types, work_formats, moderation_status, score, created_at")
     .not("username", "is", null);
 
+  // Profile rating still uses the persisted Wilson `score` column. Project
+  // rating is recomputed below to match the homepage leaderboard, so its
+  // min/max filter has to run in-memory after the composite rating exists.
   if (typeof minScore === "number") {
-    projectQuery = projectQuery.gte("score", minScore);
     profileQuery = profileQuery.gte("score", minScore);
   }
 
   if (typeof maxScore === "number") {
-    projectQuery = projectQuery.lte("score", maxScore);
     profileQuery = profileQuery.lte("score", maxScore);
   }
 
@@ -251,6 +274,7 @@ export async function GET(request: Request) {
     profileSkillsResponse,
     profileLanguagesResponse,
     mediaResponse,
+    votesResponse,
     countriesResponse,
     categoriesResponse,
   ] = await Promise.all([
@@ -297,7 +321,13 @@ export async function GET(request: Request) {
     projectIds.length > 0
       ? supabase
           .from("project_media")
-          .select("project_id")
+          .select("project_id, created_at")
+          .in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length > 0
+      ? supabase
+          .from("votes")
+          .select("project_id, value, created_at")
           .in("project_id", projectIds)
       : Promise.resolve({ data: [] }),
     countryIds.length > 0
@@ -364,11 +394,46 @@ export async function GET(request: Request) {
   }
 
   const mediaCountByProject = new Map<string, number>();
-  for (const row of (mediaResponse.data || []) as Array<{ project_id: string }>) {
+  const recentMediaCountByProject = new Map<string, number>();
+  for (const row of (mediaResponse.data || []) as Array<{
+    project_id: string;
+    created_at: string | null;
+  }>) {
     mediaCountByProject.set(
       row.project_id,
       (mediaCountByProject.get(row.project_id) || 0) + 1,
     );
+
+    if (isWithinTimeframe(row.created_at, "month")) {
+      recentMediaCountByProject.set(
+        row.project_id,
+        (recentMediaCountByProject.get(row.project_id) || 0) + 1,
+      );
+    }
+  }
+
+  const voteTotalsByProject = new Map<
+    string,
+    { likes: number; dislikes: number; recentLikes: number; recentDislikes: number }
+  >();
+  for (const row of (votesResponse.data || []) as VoteRow[]) {
+    const totals =
+      voteTotalsByProject.get(row.project_id) ||
+      { likes: 0, dislikes: 0, recentLikes: 0, recentDislikes: 0 };
+
+    if (row.value === 1) {
+      totals.likes += 1;
+      if (isWithinTimeframe(row.created_at, "month")) {
+        totals.recentLikes += 1;
+      }
+    } else if (row.value === -1) {
+      totals.dislikes += 1;
+      if (isWithinTimeframe(row.created_at, "month")) {
+        totals.recentDislikes += 1;
+      }
+    }
+
+    voteTotalsByProject.set(row.project_id, totals);
   }
 
   const countryMap = new Map<number, string>();
@@ -387,9 +452,61 @@ export async function GET(request: Request) {
       const owner = ownerMap.get(project.owner_id);
       const technologies = projectSkillsMap.get(project.id) || [];
       const mediaCount = mediaCountByProject.get(project.id) || 0;
+      const recentMediaCount = recentMediaCountByProject.get(project.id) || 0;
+      const votes =
+        voteTotalsByProject.get(project.id) ||
+        { likes: 0, dislikes: 0, recentLikes: 0, recentDislikes: 0 };
+
+      // Match the homepage leaderboard: composite rating built from
+      // community trust + completeness + media + tech + freshness.
+      // The persisted `score` column is Wilson-only and updates only on
+      // a vote, so it would diverge from /home/top-rated otherwise.
+      const hasKindMetadata =
+        project.kind != null &&
+        project.kind_metadata != null &&
+        typeof project.kind_metadata === "object" &&
+        !Array.isArray(project.kind_metadata) &&
+        Object.prototype.hasOwnProperty.call(
+          project.kind_metadata,
+          project.kind,
+        );
+
+      const completenessScore = getProjectCompletenessScore({
+        description: project.description,
+        role: project.role,
+        status: project.project_status,
+        teamSize: project.team_size,
+        projectUrl: project.project_url,
+        repositoryUrl: project.repository_url,
+        startedOn: project.started_on,
+        completedOn: project.completed_on,
+        problem: project.problem,
+        solution: project.solution,
+        results: project.results,
+        coverUrl: project.cover_url,
+        mediaCount,
+        technologyCount: technologies.length,
+        hasKindMetadata,
+        kind: project.kind,
+      });
+
+      const rating = calculateProjectRating({
+        timeframe: "all",
+        likes: votes.likes,
+        dislikes: votes.dislikes,
+        recentLikes: votes.recentLikes,
+        recentDislikes: votes.recentDislikes,
+        mediaCount,
+        recentMediaCount,
+        technologyCount: technologies.length,
+        completenessScore,
+        createdAt: project.created_at,
+      });
+
       return {
         ...project,
         slug: project.slug || "",
+        score: rating,
         ownerName: owner?.name ?? null,
         ownerUsername: owner?.username ?? null,
         technologies,
@@ -431,6 +548,14 @@ export async function GET(request: Request) {
       }
 
       if (hasMedia && project.mediaCount === 0) {
+        return false;
+      }
+
+      if (typeof minScore === "number" && (project.score ?? 0) < minScore) {
+        return false;
+      }
+
+      if (typeof maxScore === "number" && (project.score ?? 0) > maxScore) {
         return false;
       }
 
