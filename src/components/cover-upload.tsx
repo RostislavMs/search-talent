@@ -3,29 +3,34 @@
 import { useState } from "react";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { useToast } from "@/components/ui/toast";
+import { apiFetch } from "@/lib/api-client";
 import { compressImageFile } from "@/lib/image-compression";
 import { useDictionary } from "@/lib/i18n/client";
 import { createClient } from "@/lib/supabase/client";
+import { uploadWithProgress } from "@/lib/storage/upload-with-progress";
 
 const COVER_BUCKET = "profile-covers";
 
-function extractCoverStoragePath(url: string | null) {
+// Resolve the storage key for deletion from a cover URL, handling both new
+// R2 objects (`covers/<uid>/cover`) and legacy Supabase ones
+// (`<uid>/cover.ext` under the profile-covers bucket).
+function deriveCoverStoragePath(url: string | null) {
   if (!url) {
     return null;
   }
 
   try {
     const parsedUrl = new URL(url);
-    const marker = `/storage/v1/object/public/${COVER_BUCKET}/`;
-    const markerIndex = parsedUrl.pathname.indexOf(marker);
+    const supabaseMarker = `/storage/v1/object/public/${COVER_BUCKET}/`;
+    const markerIndex = parsedUrl.pathname.indexOf(supabaseMarker);
 
-    if (markerIndex === -1) {
-      return null;
+    if (markerIndex !== -1) {
+      return decodeURIComponent(
+        parsedUrl.pathname.slice(markerIndex + supabaseMarker.length),
+      );
     }
 
-    return decodeURIComponent(
-      parsedUrl.pathname.slice(markerIndex + marker.length),
-    );
+    return decodeURIComponent(parsedUrl.pathname.replace(/^\/+/, ""));
   } catch {
     return null;
   }
@@ -58,25 +63,34 @@ export default function CoverUpload({
       setUploading(true);
 
       const file = await compressImageFile(rawFile, "cover");
-      const fileExt = file.name.split(".").pop()?.toLowerCase() || "webp";
-      const filePath = `${userId}/cover.${fileExt}`;
-      const previousPath = extractCoverStoragePath(coverUrl);
+      const contentType = file.type || "image/webp";
 
-      const { error: uploadError } = await supabase.storage
-        .from(COVER_BUCKET)
-        .upload(filePath, file, {
-          upsert: true,
-          contentType: file.type,
-        });
+      const presign = await apiFetch<{
+        uploadUrl: string;
+        publicUrl: string;
+        storagePath: string;
+      }>("/api/storage/presign", {
+        method: "POST",
+        body: {
+          scope: "profile-cover",
+          fileName: file.name,
+          contentType,
+          fileSize: file.size,
+        },
+      });
 
-      if (uploadError) {
-        throw uploadError;
+      if (!presign.ok) {
+        throw new Error(presign.error || ui.uploadFailedMessage);
       }
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from(COVER_BUCKET).getPublicUrl(filePath);
-      const versionedUrl = `${publicUrl}?v=${Date.now()}`;
+      // Stable key per user → upload overwrites the previous cover, so no
+      // cleanup is needed. The `?v=` query busts the CDN cache.
+      await uploadWithProgress({
+        url: presign.data.uploadUrl,
+        file,
+        contentType,
+      });
+      const versionedUrl = `${presign.data.publicUrl}?v=${Date.now()}`;
 
       const { error: profileError } = await supabase
         .from("profiles")
@@ -85,10 +99,6 @@ export default function CoverUpload({
 
       if (profileError) {
         throw profileError;
-      }
-
-      if (previousPath && previousPath !== filePath) {
-        await supabase.storage.from(COVER_BUCKET).remove([previousPath]);
       }
 
       setCoverUrl(versionedUrl);
@@ -111,7 +121,7 @@ export default function CoverUpload({
     try {
       setRemoving(true);
 
-      const previousPath = extractCoverStoragePath(coverUrl);
+      const previousUrl = coverUrl;
 
       const { error: profileError } = await supabase
         .from("profiles")
@@ -122,8 +132,14 @@ export default function CoverUpload({
         throw profileError;
       }
 
-      if (previousPath) {
-        await supabase.storage.from(COVER_BUCKET).remove([previousPath]);
+      // Provider-aware cleanup of the underlying object (R2 or legacy
+      // Supabase). Best-effort — the profile field is already cleared.
+      const storagePath = deriveCoverStoragePath(previousUrl);
+      if (storagePath) {
+        void apiFetch("/api/storage/object", {
+          method: "DELETE",
+          body: { bucket: COVER_BUCKET, storagePath, url: previousUrl },
+        });
       }
 
       setCoverUrl(null);

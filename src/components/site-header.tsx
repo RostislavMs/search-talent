@@ -103,8 +103,8 @@ export default function SiteHeader({
     dictionary.nav.search === "Search" ? "Talents" : "Таланти";
   const primaryLinks = [
     { href: "/", label: dictionary.nav.home },
-    { href: "/projects", label: dictionary.nav.projects },
     { href: "/talents", label: talentsLabel },
+    { href: "/projects", label: dictionary.nav.projects },
     { href: "/articles", label: articlesLabel },
   ];
 

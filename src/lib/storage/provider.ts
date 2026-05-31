@@ -38,6 +38,14 @@ export async function deleteStorageObject({
       await deleteFromR2(storagePath);
       return { error: null };
     } catch (error) {
+      // Surface the real cause: callers (project/article delete) downgrade
+      // this to a non-fatal `cleanupWarning`, so without logging an R2
+      // failure is invisible and leaves orphaned objects behind.
+      console.error("[storage] R2 delete failed", {
+        storagePath,
+        url,
+        error,
+      });
       return {
         error: {
           message:
@@ -48,5 +56,14 @@ export async function deleteStorageObject({
   }
 
   const { error } = await supabase.storage.from(bucket).remove([storagePath]);
+
+  if (error) {
+    console.error("[storage] Supabase delete failed", {
+      bucket,
+      storagePath,
+      error: error.message,
+    });
+  }
+
   return { error: error ? { message: error.message } : null };
 }

@@ -546,9 +546,14 @@ export async function GET(request: Request) {
         return false;
       }
 
+      // AND semantics: the project must list every selected skill. On the
+      // skill landing pages this keeps the locked skill mandatory while extra
+      // skills narrow the results further.
       if (
         skillIds.length > 0 &&
-        !project.technologies.some((item) => skillIds.includes(item.id))
+        !skillIds.every((id) =>
+          project.technologies.some((item) => item.id === id),
+        )
       ) {
         return false;
       }
@@ -616,9 +621,13 @@ export async function GET(request: Request) {
         return false;
       }
 
+      // AND semantics: the profile must list every selected skill (locked
+      // skill stays mandatory, extra skills narrow the results).
       if (
         skillIds.length > 0 &&
-        !profile.technologies.some((item) => skillIds.includes(item.id))
+        !skillIds.every((id) =>
+          profile.technologies.some((item) => item.id === id),
+        )
       ) {
         return false;
       }

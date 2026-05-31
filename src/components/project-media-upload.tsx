@@ -5,15 +5,14 @@ import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { apiFetch } from "@/lib/api-client";
-import { createClient } from "@/lib/supabase/client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { compressImageFile } from "@/lib/image-compression";
 import {
   formatFileSize,
   inferProjectMediaKind,
-  sanitizeStorageFileName,
   type ProjectMediaItem,
 } from "@/lib/project-media";
+import { uploadWithProgress } from "@/lib/storage/upload-with-progress";
 
 const maxImageSize = 10 * 1024 * 1024;
 const maxVideoSize = 150 * 1024 * 1024;
@@ -48,7 +47,6 @@ export default function ProjectMediaUpload({
   initialMedia?: ProjectMediaItem[];
   initialCoverUrl?: string | null;
 }) {
-  const supabase = createClient();
   const router = useLocalizedRouter();
   const dictionary = useDictionary();
   const [mediaItems, setMediaItems] = useState<ProjectMediaItem[]>(initialMedia);
@@ -92,19 +90,32 @@ export default function ProjectMediaUpload({
           throw new Error(dictionary.dashboardProjects.fileTooLarge);
         }
 
-        const filePath = `${projectId}/${Date.now()}-${crypto.randomUUID()}-${sanitizeStorageFileName(file.name)}`;
+        const contentType = file.type || "application/octet-stream";
 
-        const { error: uploadError } = await supabase.storage
-          .from("project-media")
-          .upload(filePath, file, { contentType: file.type });
+        const presign = await apiFetch<{
+          uploadUrl: string;
+          publicUrl: string;
+          storagePath: string;
+        }>("/api/storage/presign", {
+          method: "POST",
+          body: {
+            scope: "project-media",
+            projectId,
+            fileName: file.name,
+            contentType,
+            fileSize: file.size,
+          },
+        });
 
-        if (uploadError) {
-          throw uploadError;
+        if (!presign.ok) {
+          throw new Error(
+            presign.error || dictionary.dashboardProjects.uploadFailed,
+          );
         }
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("project-media").getPublicUrl(filePath);
+        const { uploadUrl, publicUrl, storagePath } = presign.data;
+
+        await uploadWithProgress({ url: uploadUrl, file, contentType });
 
         const uploadResult = await apiFetch<{
           coverUrl?: string | null;
@@ -114,7 +125,7 @@ export default function ProjectMediaUpload({
           body: {
             projectId,
             url: publicUrl,
-            storagePath: filePath,
+            storagePath,
             fileName: file.name,
             mimeType: file.type || null,
             fileSize: file.size,
@@ -123,7 +134,17 @@ export default function ProjectMediaUpload({
         });
 
         if (!uploadResult.ok || !uploadResult.data.media) {
-          await supabase.storage.from("project-media").remove([filePath]);
+          // Best-effort cleanup so a failed DB insert doesn't leave the
+          // just-uploaded object orphaned in storage.
+          void apiFetch("/api/storage/object", {
+            method: "DELETE",
+            body: {
+              bucket: "project-media",
+              storagePath,
+              url: publicUrl,
+              projectId,
+            },
+          });
           throw new Error(
             uploadResult.ok
               ? dictionary.dashboardProjects.uploadFailed
