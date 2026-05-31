@@ -12,6 +12,7 @@ import LocalizedLink from "@/components/ui/localized-link";
 import SearchSelect from "@/components/ui/search-select";
 import TagSelect from "@/components/ui/tag-select";
 import FormSelect from "@/components/ui/form-select";
+import Pagination from "@/components/ui/pagination";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
@@ -538,6 +539,8 @@ export default function DiscoveryPage({
   });
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("relevance");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [countryId, setCountryId] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(
     initialCategoryId,
@@ -704,7 +707,32 @@ export default function DiscoveryPage({
     setHasAvatar(Boolean(params.hasAvatar));
     setMinScore((params.minScore as number) ?? null);
     setMaxScore((params.maxScore as number) ?? null);
+    setPage(1);
   };
+
+  // Any filter/sort change returns to the first page so the user never lands
+  // on a now-out-of-range page. Deferred to a microtask to satisfy the
+  // set-state-in-effect lint rule (same pattern as the notifications poll).
+  useEffect(() => {
+    queueMicrotask(() => setPage(1));
+  }, [
+    categoryId,
+    countryId,
+    employmentTypeFilters,
+    experienceLevel,
+    hasAvatar,
+    hasMedia,
+    languageIds,
+    maxScore,
+    minScore,
+    mode,
+    projectKindFilter,
+    projectStatus,
+    query,
+    skillIds,
+    sort,
+    workFormatFilters,
+  ]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(async () => {
@@ -719,6 +747,8 @@ export default function DiscoveryPage({
 
       params.set("scope", scope);
       params.set("sort", sort);
+      params.set("page", String(page));
+      params.set("perPage", String(perPage));
 
       if (countryId && mode === "creators") {
         params.set("countryId", String(countryId));
@@ -819,6 +849,8 @@ export default function DiscoveryPage({
     maxScore,
     minScore,
     mode,
+    page,
+    perPage,
     projectKindFilter,
     projectStatus,
     query,
@@ -964,6 +996,8 @@ export default function DiscoveryPage({
   }>;
   const talentsLabel = locale === "uk" ? "Таланти" : "Talents";
   const resultCount = mode === "projects" ? totals.projects : totals.users;
+  const totalPages = Math.max(1, Math.ceil(resultCount / perPage));
+  const perPageLabel = locale === "uk" ? "На сторінці:" : "Per page:";
 
   const resetFilters = () => {
     setQuery("");
@@ -1667,6 +1701,32 @@ export default function DiscoveryPage({
               <p className="rounded-panel app-panel-dashed p-6 text-sm app-muted">
                 {pageUi.emptyMessage}
               </p>
+            )}
+
+            {resultCount > 10 && (
+              <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t app-border pt-6 sm:flex-row">
+                <label className="flex items-center gap-3 text-sm app-muted">
+                  <span>{perPageLabel}</span>
+                  <FormSelect
+                    triggerClassName="min-w-[4.5rem]"
+                    value={String(perPage)}
+                    onChange={(value) => {
+                      setPerPage(Number(value));
+                      setPage(1);
+                    }}
+                    options={[
+                      { value: "10", label: "10" },
+                      { value: "20", label: "20" },
+                      { value: "50", label: "50" },
+                    ]}
+                  />
+                </label>
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
+              </div>
             )}
           </section>
         </div>
