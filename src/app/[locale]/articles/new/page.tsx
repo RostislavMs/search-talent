@@ -51,13 +51,14 @@ export default async function NewArticlePage({
 }) {
   const { locale } = await params;
   const safeLocale = isLocale(locale) ? locale : "en";
-  const viewer = await getCurrentViewerRole();
+  const [viewer, dashboard] = await Promise.all([
+    getCurrentViewerRole(),
+    getDashboardArticles(),
+  ]);
 
   if (!viewer.user) {
     redirect(createLocalePath(safeLocale, "/login"));
   }
-
-  const dashboard = await getDashboardArticles();
 
   if (!dashboard) {
     redirect(createLocalePath(safeLocale, "/dashboard"));

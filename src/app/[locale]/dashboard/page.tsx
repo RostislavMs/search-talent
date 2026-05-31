@@ -5,6 +5,18 @@ import { getDashboardStats, getUserDashboardStats } from "@/lib/db/dashboard";
 
 const DashboardAnalytics = dynamic(
   () => import("@/components/dashboard-analytics"),
+  {
+    loading: () => (
+      <div className="grid animate-pulse gap-8 lg:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-64 rounded-2xl bg-[color:var(--surface-muted)]"
+          />
+        ))}
+      </div>
+    ),
+  },
 );
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
