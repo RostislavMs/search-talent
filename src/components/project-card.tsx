@@ -25,10 +25,19 @@ export default function ProjectCard({
   dictionary,
   project,
   hideOwner = false,
+  variant = "grid",
 }: {
   dictionary: Dictionary;
   project: ProjectCardData;
   hideOwner?: boolean;
+  /**
+   * `grid` (default): consistent 16:10 cover, image `object-cover`. Use in
+   *   uniform grids (lists, related, dashboards) where visual rhythm matters.
+   * `masonry`: image keeps its natural aspect, `object-contain`, no crop.
+   *   Pair with a CSS `columns` container so cards of different heights
+   *   stack into the shortest column with no gaps.
+   */
+  variant?: "grid" | "masonry";
 }) {
   const ownerLabel = project.ownerName || project.ownerUsername;
   const showOwner = !hideOwner && Boolean(ownerLabel);
@@ -39,12 +48,17 @@ export default function ProjectCard({
   const kind = normalizeProjectKind(project.kind);
   const kindLabel = kind ? getProjectKindLabel(kind, dictionary) : null;
 
+  const isMasonry = variant === "masonry";
+  const coverWrapperClass = isMasonry
+    ? "relative w-full bg-[color:var(--surface-muted)]"
+    : "relative aspect-[16/10] bg-[color:var(--surface-muted)]";
+
   return (
     <LocalizedLink
       href={buildProjectPath(project.id, project.slug)}
       className="group block overflow-hidden rounded-3xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl"
     >
-      <div className="relative aspect-[16/10] bg-[color:var(--surface-muted)]">
+      <div className={coverWrapperClass}>
         {project.is_pinned && (
           <span
             aria-label={dictionary.common.pinned}
@@ -58,15 +72,34 @@ export default function ProjectCard({
           </span>
         )}
         {project.cover_url ? (
-          <OptimizedImage
-            src={project.cover_url}
-            alt={project.title}
-            fill
-            sizePreset="card"
-            className="object-cover transition duration-300 group-hover:scale-[1.02]"
-          />
+          isMasonry ? (
+            // Masonry needs the natural aspect ratio of each cover so cards
+            // slot into the shortest column with no empty space. A plain
+            // <img> auto-sizes from its content; R2 URLs already bypass the
+            // Next.js Image optimizer (see OptimizedImage), so we lose
+            // nothing by going native here.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={project.cover_url}
+              alt={project.title}
+              loading="lazy"
+              className="block h-auto w-full object-contain transition duration-300 group-hover:scale-[1.02]"
+            />
+          ) : (
+            <OptimizedImage
+              src={project.cover_url}
+              alt={project.title}
+              fill
+              sizePreset="card"
+              className="object-cover transition duration-300 group-hover:scale-[1.02]"
+            />
+          )
         ) : (
-          <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.14),_transparent_45%),linear-gradient(135deg,_rgba(148,163,184,0.28),_rgba(255,255,255,0.8))] p-5">
+          <div
+            className={`flex items-end bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.14),_transparent_45%),linear-gradient(135deg,_rgba(148,163,184,0.28),_rgba(255,255,255,0.8))] p-5 ${
+              isMasonry ? "aspect-[16/10] w-full" : "h-full"
+            }`}
+          >
             <span className="rounded-full bg-white/85 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm">
               {dictionary.common.project}
             </span>

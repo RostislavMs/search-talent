@@ -730,6 +730,9 @@ export const projectPayloadSchema = z
     githubAutoSync: z
       .union([z.boolean(), z.null(), z.undefined()])
       .transform((value) => (typeof value === "boolean" ? value : true)),
+    allowDownloads: z
+      .union([z.boolean(), z.null(), z.undefined()])
+      .transform((value) => (typeof value === "boolean" ? value : true)),
     status: z
       .union([z.enum(projectVisibilityStatuses), z.null(), z.undefined()])
       .transform((value): ProjectVisibilityStatus =>

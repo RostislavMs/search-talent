@@ -20,7 +20,6 @@ import TagSelect from "@/components/ui/tag-select";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
 import { apiFetch } from "@/lib/api-client";
-import { createClient } from "@/lib/supabase/client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -147,16 +146,38 @@ import {
   buildYouTubeEmbedUrl,
   getYouTubeVideoId,
   inferProjectMediaKind,
-  sanitizeStorageFileName,
   type ProjectMediaItem,
   type ProjectMediaKind,
 } from "@/lib/project-media";
 import { projectPayloadSchema } from "@/lib/validation/project";
 import { isValidPublicUrl } from "@/lib/url-validation";
+import { uploadWithProgress } from "@/lib/storage/upload-with-progress";
 
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+// Photography projects keep originals at full resolution, so they get the
+// largest budget. Other kinds compress images on upload (browser-image-
+// compression to ~0.6 MB), so the raw cap is intentionally tight — anyone
+// uploading >5 MB outside of photo is almost always misclicking.
+const MAX_NON_PHOTO_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_PHOTO_IMAGE_BYTES = 25 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+// Video projects upload showreels and extras as primary content. Other
+// kinds (design, code, motion, etc.) might attach a short clip but rarely
+// need anything over 100 MB.
+const MAX_NON_VIDEO_VIDEO_BYTES = 100 * 1024 * 1024;
+const MAX_VIDEO_KIND_VIDEO_BYTES = 400 * 1024 * 1024;
+
+function getImageSizeLimitBytes(kind: ProjectKind | ""): number {
+  return kind === "photo" ? MAX_PHOTO_IMAGE_BYTES : MAX_NON_PHOTO_IMAGE_BYTES;
+}
+
+function getVideoSizeLimitBytes(kind: ProjectKind | ""): number {
+  return kind === "video"
+    ? MAX_VIDEO_KIND_VIDEO_BYTES
+    : MAX_NON_VIDEO_VIDEO_BYTES;
+}
+
+function bytesToMb(bytes: number): number {
+  return Math.round(bytes / (1024 * 1024));
+}
 const BASE_TOTAL_STEPS = 5;
 const DEFAULT_ASPECT_RATIO = 16 / 10;
 
@@ -195,6 +216,7 @@ export type EditableProject = {
   github_production_usage?: string | null;
   github_display_options?: Partial<GithubDisplayOptions> | null;
   github_auto_sync?: boolean | null;
+  allow_downloads?: boolean | null;
 };
 
 type ProjectFormState = {
@@ -232,6 +254,7 @@ type ProjectFormState = {
   githubProductionUsage: string;
   githubDisplayOptions: GithubDisplayOptions;
   githubAutoSync: boolean;
+  allowDownloads: boolean;
 };
 
 type SaveMode = "draft" | "publish";
@@ -1094,6 +1117,10 @@ function getInitialFormState(
       typeof project?.github_auto_sync === "boolean"
         ? project.github_auto_sync
         : true,
+    allowDownloads:
+      typeof project?.allow_downloads === "boolean"
+        ? project.allow_downloads
+        : true,
   };
 }
 
@@ -1123,7 +1150,6 @@ export default function CreateProjectForm({
 }) {
   const router = useLocalizedRouter();
   const dictionary = useDictionary();
-  const supabase = useMemo(() => createClient(), []);
   const isEditMode = Boolean(project);
 
   const [metaSkills, setMetaSkills] = useState<MetaOption[]>([]);
@@ -1134,6 +1160,12 @@ export default function CreateProjectForm({
   const [pendingSaveMode, setPendingSaveMode] = useState<SaveMode | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{
+    currentIndex: number;
+    totalFiles: number;
+    fileName: string;
+    percent: number;
+  } | null>(null);
   const [form, setForm] = useState<ProjectFormState>(() =>
     getInitialFormState(project),
   );
@@ -1272,9 +1304,10 @@ export default function CreateProjectForm({
 
       const isPhotoProject = form.kind === "photo";
       const imagePreset = isPhotoProject ? "photo" : "inline";
-      const imageSizeLimit = isPhotoProject
-        ? MAX_PHOTO_IMAGE_BYTES
-        : MAX_IMAGE_BYTES;
+      const imageSizeLimit = getImageSizeLimitBytes(form.kind);
+      const videoSizeLimit = getVideoSizeLimitBytes(form.kind);
+      const imageLimitMb = bytesToMb(imageSizeLimit);
+      const videoLimitMb = bytesToMb(videoSizeLimit);
 
       try {
         for (const rawFile of files) {
@@ -1285,6 +1318,23 @@ export default function CreateProjectForm({
             continue;
           }
 
+          // Reject huge raw uploads before compression — keeps the worker
+          // from spending 30 s on a 200 MB image just to fit it under the
+          // limit. Photo kind skips compression entirely so this is moot.
+          if (
+            !isPhotoProject &&
+            initialKind === "image" &&
+            rawFile.size > MAX_PHOTO_IMAGE_BYTES
+          ) {
+            setErrorMessage(
+              dictionary.forms.mediaImageTooLarge.replace(
+                "{limit}",
+                String(imageLimitMb),
+              ),
+            );
+            continue;
+          }
+
           const file =
             initialKind === "image"
               ? await compressImageFile(rawFile, imagePreset)
@@ -1292,12 +1342,22 @@ export default function CreateProjectForm({
           const mediaKind = inferProjectMediaKind(file.type, file.name);
 
           if (mediaKind === "image" && file.size > imageSizeLimit) {
-            setErrorMessage(dictionary.forms.mediaImageTooLarge);
+            setErrorMessage(
+              dictionary.forms.mediaImageTooLarge.replace(
+                "{limit}",
+                String(imageLimitMb),
+              ),
+            );
             continue;
           }
 
-          if (mediaKind === "video" && file.size > MAX_VIDEO_BYTES) {
-            setErrorMessage(dictionary.forms.mediaVideoTooLarge);
+          if (mediaKind === "video" && file.size > videoSizeLimit) {
+            setErrorMessage(
+              dictionary.forms.mediaVideoTooLarge.replace(
+                "{limit}",
+                String(videoLimitMb),
+              ),
+            );
             continue;
           }
 
@@ -1454,22 +1514,51 @@ export default function CreateProjectForm({
   );
 
   const uploadLocalFile = useCallback(
-    async (projectId: string, item: LocalMediaItem, sortIndex: number) => {
-      const filePath = `${projectId}/${Date.now()}-${crypto.randomUUID()}-${sanitizeStorageFileName(
-        item.file.name,
-      )}`;
+    async (
+      projectId: string,
+      item: LocalMediaItem,
+      sortIndex: number,
+      onProgress?: (percent: number) => void,
+    ) => {
+      const contentType = item.file.type || "application/octet-stream";
 
-      const { error: uploadError } = await supabase.storage
-        .from("project-media")
-        .upload(filePath, item.file, { contentType: item.file.type });
+      const presign = await apiFetch<{
+        uploadUrl: string;
+        publicUrl: string;
+        storagePath: string;
+      }>("/api/storage/presign", {
+        method: "POST",
+        body: {
+          scope: "project-media",
+          projectId,
+          fileName: item.file.name,
+          contentType,
+          fileSize: item.file.size,
+        },
+      });
 
-      if (uploadError) {
-        throw uploadError;
+      if (!presign.ok) {
+        throw new Error(
+          presign.error || dictionary.dashboardProjects.uploadFailed,
+        );
       }
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("project-media").getPublicUrl(filePath);
+      const { uploadUrl, publicUrl, storagePath } = presign.data;
+
+      try {
+        await uploadWithProgress({
+          url: uploadUrl,
+          file: item.file,
+          contentType,
+          onProgress: (progress) => onProgress?.(progress.percent),
+        });
+      } catch (error) {
+        throw new Error(
+          error instanceof Error
+            ? error.message
+            : dictionary.dashboardProjects.uploadFailed,
+        );
+      }
 
       const result = await apiFetch<{
         media?: ProjectMediaItem;
@@ -1478,7 +1567,7 @@ export default function CreateProjectForm({
         body: {
           projectId,
           url: publicUrl,
-          storagePath: filePath,
+          storagePath,
           fileName: item.file.name,
           mimeType: item.file.type || null,
           fileSize: item.file.size,
@@ -1488,7 +1577,6 @@ export default function CreateProjectForm({
       });
 
       if (!result.ok || !result.data.media) {
-        await supabase.storage.from("project-media").remove([filePath]);
         throw new Error(
           result.ok
             ? dictionary.dashboardProjects.uploadFailed
@@ -1498,7 +1586,7 @@ export default function CreateProjectForm({
 
       return result.data.media;
     },
-    [dictionary.dashboardProjects.uploadFailed, supabase],
+    [dictionary.dashboardProjects.uploadFailed],
   );
 
   const uploadYouTubeItem = useCallback(
@@ -1704,6 +1792,7 @@ export default function CreateProjectForm({
         githubProductionUsage: form.githubProductionUsage,
         githubDisplayOptions: form.githubDisplayOptions,
         githubAutoSync: form.githubAutoSync,
+        allowDownloads: form.allowDownloads,
         status,
       };
     },
@@ -1871,15 +1960,41 @@ export default function CreateProjectForm({
         }
 
         const orderedRemoteIds: string[] = [];
+        const localItemsCount = mediaItems.filter(
+          (item) => item.kind === "local",
+        ).length;
+        let localItemsProcessed = 0;
 
         for (let index = 0; index < mediaItems.length; index += 1) {
           const item = mediaItems[index];
 
           if (item.kind === "local") {
+            localItemsProcessed += 1;
+            const fileIndex = localItemsProcessed;
+            setUploadProgress({
+              currentIndex: fileIndex,
+              totalFiles: localItemsCount,
+              fileName: item.file.name,
+              percent: 0,
+            });
+
             try {
-              const uploaded = await uploadLocalFile(projectId, item, index);
+              const uploaded = await uploadLocalFile(
+                projectId,
+                item,
+                index,
+                (percent) => {
+                  setUploadProgress({
+                    currentIndex: fileIndex,
+                    totalFiles: localItemsCount,
+                    fileName: item.file.name,
+                    percent,
+                  });
+                },
+              );
               orderedRemoteIds.push(uploaded.id);
             } catch (error) {
+              setUploadProgress(null);
               setErrorMessage(
                 error instanceof Error
                   ? error.message
@@ -1892,6 +2007,7 @@ export default function CreateProjectForm({
               const uploaded = await uploadYouTubeItem(projectId, item, index);
               orderedRemoteIds.push(uploaded.id);
             } catch (error) {
+              setUploadProgress(null);
               setErrorMessage(
                 error instanceof Error
                   ? error.message
@@ -1903,6 +2019,8 @@ export default function CreateProjectForm({
             orderedRemoteIds.push(item.remoteId);
           }
         }
+
+        setUploadProgress(null);
 
         if (isEditMode && orderedRemoteIds.length > 0) {
           await persistMediaOrder(projectId, orderedRemoteIds);
@@ -1929,6 +2047,7 @@ export default function CreateProjectForm({
         }
       } finally {
         setPendingSaveMode(null);
+        setUploadProgress(null);
       }
     },
     [
@@ -2084,7 +2203,51 @@ export default function CreateProjectForm({
             youTubeInput={youTubeInput}
             onYouTubeInputChange={setYouTubeInput}
             onAddYouTube={addYouTubeItem}
+            allowDownloads={form.allowDownloads}
+            onToggleAllowDownloads={(value) =>
+              update("allowDownloads", value)
+            }
           />
+        )}
+
+        {uploadProgress && (
+          <div
+            className="rounded-2xl border app-border bg-[color:var(--surface)] p-4"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="truncate text-[color:var(--foreground)]">
+                {dictionary.forms.uploadProgressLabel
+                  .replace("{current}", String(uploadProgress.currentIndex))
+                  .replace("{total}", String(uploadProgress.totalFiles))}
+                <span className="ml-1 app-muted">
+                  · {uploadProgress.fileName}
+                </span>
+              </span>
+              <span
+                className="font-display tabular-nums text-[color:var(--foreground)]"
+                aria-label={`${uploadProgress.percent}%`}
+              >
+                {uploadProgress.percent}%
+              </span>
+            </div>
+            <div
+              className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[color:var(--surface-muted)]"
+              role="progressbar"
+              aria-label={dictionary.forms.uploadProgressLabel
+                .replace("{current}", String(uploadProgress.currentIndex))
+                .replace("{total}", String(uploadProgress.totalFiles))}
+              aria-valuenow={uploadProgress.percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full rounded-full bg-[color:var(--foreground)] transition-[width] duration-150"
+                style={{ width: `${uploadProgress.percent}%` }}
+              />
+            </div>
+          </div>
         )}
 
         {errorMessage && (
@@ -4461,6 +4624,8 @@ function StepMedia({
   youTubeInput,
   onYouTubeInputChange,
   onAddYouTube,
+  allowDownloads,
+  onToggleAllowDownloads,
 }: {
   dictionary: Dictionary;
   kind: ProjectKind | "";
@@ -4473,6 +4638,8 @@ function StepMedia({
   youTubeInput: string;
   onYouTubeInputChange: (value: string) => void;
   onAddYouTube: () => void;
+  allowDownloads: boolean;
+  onToggleAllowDownloads: (value: boolean) => void;
 }) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
@@ -4483,6 +4650,27 @@ function StepMedia({
       {kindHint ? (
         <p className="text-sm app-muted">{kindHint}</p>
       ) : null}
+
+      <fieldset className="rounded-2xl border app-border p-4">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-eyebrow app-soft">
+          {dictionary.forms.allowDownloadsLegend}
+        </legend>
+        <label className="mt-2 flex cursor-pointer items-start gap-2">
+          <input
+            type="checkbox"
+            checked={allowDownloads}
+            onChange={(event) => onToggleAllowDownloads(event.target.checked)}
+            className="mt-0.5 h-4 w-4 cursor-pointer accent-[color:var(--accent)]"
+          />
+          <span className="text-sm text-[color:var(--foreground)]">
+            {dictionary.forms.allowDownloadsLabel}
+          </span>
+        </label>
+        <p className="mt-1 ml-6 text-xs app-muted">
+          {dictionary.forms.allowDownloadsHint}
+        </p>
+      </fieldset>
+
       <div
         onDragOver={(event) => event.preventDefault()}
         onDrop={onDropFiles}
@@ -4504,7 +4692,14 @@ function StepMedia({
           </Button>
         </div>
         <p className="mt-3 text-xs app-soft">
-          {dictionary.forms.mediaImageLimit} {dictionary.forms.mediaVideoLimit}
+          {dictionary.forms.mediaImageLimit.replace(
+            "{limit}",
+            String(bytesToMb(getImageSizeLimitBytes(kind))),
+          )}{" "}
+          {dictionary.forms.mediaVideoLimit.replace(
+            "{limit}",
+            String(bytesToMb(getVideoSizeLimitBytes(kind))),
+          )}
         </p>
       </div>
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -758,23 +758,23 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
   const presentationExtrasUi =
     locale === "uk"
       ? {
-          uploadBackground: "Завантажити фон",
-          replaceBackground: "Замінити фон",
-          removeBackground: "Прибрати фон",
-          backgroundReady: "Фон готовий",
-          backgroundUploading: "Завантаження фону...",
-          backgroundUploadFailed: "Не вдалося завантажити фон.",
-          dragHint: "Перетягуйте блоки мишкою, щоб змінювати порядок.",
-          dragHandle: "тягнути",
-          blockSize: "Ширина блоку",
+          uploadBackground: "Р—Р°РІР°РЅС‚Р°Р¶РёС‚Рё С„РѕРЅ",
+          replaceBackground: "Р—Р°РјС–РЅРёС‚Рё С„РѕРЅ",
+          removeBackground: "РџСЂРёР±СЂР°С‚Рё С„РѕРЅ",
+          backgroundReady: "Р¤РѕРЅ РіРѕС‚РѕРІРёР№",
+          backgroundUploading: "Р—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С„РѕРЅСѓ...",
+          backgroundUploadFailed: "РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё С„РѕРЅ.",
+          dragHint: "РџРµСЂРµС‚СЏРіСѓР№С‚Рµ Р±Р»РѕРєРё РјРёС€РєРѕСЋ, С‰РѕР± Р·РјС–РЅСЋРІР°С‚Рё РїРѕСЂСЏРґРѕРє.",
+          dragHandle: "С‚СЏРіРЅСѓС‚Рё",
+          blockSize: "РЁРёСЂРёРЅР° Р±Р»РѕРєСѓ",
           sizes: {
-            compact: "Компактний",
-            regular: "Звичайний",
-            wide: "Широкий",
-            full: "На всю ширину",
+            compact: "РљРѕРјРїР°РєС‚РЅРёР№",
+            regular: "Р—РІРёС‡Р°Р№РЅРёР№",
+            wide: "РЁРёСЂРѕРєРёР№",
+            full: "РќР° РІСЃСЋ С€РёСЂРёРЅСѓ",
           },
           bioHint:
-            "Розкажіть коротко, чим ви сильні, у якому стилі працюєте і що важливо для співпраці.",
+            "Р РѕР·РєР°Р¶С–С‚СЊ РєРѕСЂРѕС‚РєРѕ, С‡РёРј РІРё СЃРёР»СЊРЅС–, Сѓ СЏРєРѕРјСѓ СЃС‚РёР»С– РїСЂР°С†СЋС”С‚Рµ С– С‰Рѕ РІР°Р¶Р»РёРІРѕ РґР»СЏ СЃРїС–РІРїСЂР°С†С–.",
         }
       : {
           uploadBackground: "Upload background",
@@ -798,15 +798,15 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
   const workspaceUi =
     locale === "uk"
       ? {
-          content: "Редагування профілю",
-          builder: "Конструктор профілю",
+          content: "Р РµРґР°РіСѓРІР°РЅРЅСЏ РїСЂРѕС„С–Р»СЋ",
+          builder: "РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РїСЂРѕС„С–Р»СЋ",
           contentDescription:
-            "Тут змінюються самі дані: тексти, досвід, контакти, сертифікати, навички та інше наповнення.",
+            "РўСѓС‚ Р·РјС–РЅСЋСЋС‚СЊСЃСЏ СЃР°РјС– РґР°РЅС–: С‚РµРєСЃС‚Рё, РґРѕСЃРІС–Рґ, РєРѕРЅС‚Р°РєС‚Рё, СЃРµСЂС‚РёС„С–РєР°С‚Рё, РЅР°РІРёС‡РєРё С‚Р° С–РЅС€Рµ РЅР°РїРѕРІРЅРµРЅРЅСЏ.",
           builderDescription:
-            "Тут збирається зовнішній вигляд профілю: фон, стиль і реальні блоки, які можна перетягувати та змінювати по ширині.",
-          canvasTitle: "Полотно конструктора",
+            "РўСѓС‚ Р·Р±РёСЂР°С”С‚СЊСЃСЏ Р·РѕРІРЅС–С€РЅС–Р№ РІРёРіР»СЏРґ РїСЂРѕС„С–Р»СЋ: С„РѕРЅ, СЃС‚РёР»СЊ С– СЂРµР°Р»СЊРЅС– Р±Р»РѕРєРё, СЏРєС– РјРѕР¶РЅР° РїРµСЂРµС‚СЏРіСѓРІР°С‚Рё С‚Р° Р·РјС–РЅСЋРІР°С‚Рё РїРѕ С€РёСЂРёРЅС–.",
+          canvasTitle: "РџРѕР»РѕС‚РЅРѕ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂР°",
           canvasDescription:
-            "Перетягніть картку на нове місце, а ширину змінюйте прямо на самій картці.",
+            "РџРµСЂРµС‚СЏРіРЅС–С‚СЊ РєР°СЂС‚РєСѓ РЅР° РЅРѕРІРµ РјС–СЃС†Рµ, Р° С€РёСЂРёРЅСѓ Р·РјС–РЅСЋР№С‚Рµ РїСЂСЏРјРѕ РЅР° СЃР°РјС–Р№ РєР°СЂС‚С†С–.",
         }
       : {
           content: "Profile content",
@@ -822,17 +822,17 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
   const draftUi =
     locale === "uk"
       ? {
-          resetCustomization: "Скинути кастомізацію",
+          resetCustomization: "РЎРєРёРЅСѓС‚Рё РєР°СЃС‚РѕРјС–Р·Р°С†С–СЋ",
           resetCustomizationHint:
-            "Повертає кольори, фон, стиль карток, порядок і ширину блоків до стандартного вигляду.",
-          unsavedChanges: "Є незбережені зміни.",
+            "РџРѕРІРµСЂС‚Р°С” РєРѕР»СЊРѕСЂРё, С„РѕРЅ, СЃС‚РёР»СЊ РєР°СЂС‚РѕРє, РїРѕСЂСЏРґРѕРє С– С€РёСЂРёРЅСѓ Р±Р»РѕРєС–РІ РґРѕ СЃС‚Р°РЅРґР°СЂС‚РЅРѕРіРѕ РІРёРіР»СЏРґСѓ.",
+          unsavedChanges: "Р„ РЅРµР·Р±РµСЂРµР¶РµРЅС– Р·РјС–РЅРё.",
           unsavedChangesHint:
-            "Якщо підете зі сторінки зараз, ці правки можуть загубитися.",
+            "РЇРєС‰Рѕ РїС–РґРµС‚Рµ Р·С– СЃС‚РѕСЂС–РЅРєРё Р·Р°СЂР°Р·, С†С– РїСЂР°РІРєРё РјРѕР¶СѓС‚СЊ Р·Р°РіСѓР±РёС‚РёСЃСЏ.",
           confirmLeave:
-            "У вас є незбережені зміни профілю. Справді перейти зі сторінки?",
-          confirmLeaveTitle: "Залишити сторінку?",
-          confirmLeaveContinue: "Так, піти",
-          confirmLeaveStay: "Залишитись",
+            "РЈ РІР°СЃ С” РЅРµР·Р±РµСЂРµР¶РµРЅС– Р·РјС–РЅРё РїСЂРѕС„С–Р»СЋ. РЎРїСЂР°РІРґС– РїРµСЂРµР№С‚Рё Р·С– СЃС‚РѕСЂС–РЅРєРё?",
+          confirmLeaveTitle: "Р—Р°Р»РёС€РёС‚Рё СЃС‚РѕСЂС–РЅРєСѓ?",
+          confirmLeaveContinue: "РўР°Рє, РїС–С‚Рё",
+          confirmLeaveStay: "Р—Р°Р»РёС€РёС‚РёСЃСЊ",
         }
       : {
           resetCustomization: "Reset customization",
@@ -931,6 +931,9 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const initialBackgroundStoragePathRef = useRef(
     profileSettings.presentation.backgroundStoragePath,
+  );
+  const initialBackgroundUrlRef = useRef(
+    profileSettings.presentation.backgroundUrl,
   );
 
   const initialCertificateMap = useMemo(
@@ -1209,28 +1212,42 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
     setErrorMessage(null);
 
     try {
-      const filePath = `${profile.user_id}/${entryId}-${Date.now()}-${sanitizeStorageFileName(file.name)}`;
-      const { error: uploadError } = await supabase.storage
-        .from("profile-certificates")
-        .upload(filePath, file, { upsert: true });
+      const presign = await apiFetch<{
+        uploadUrl: string;
+        publicUrl: string;
+        storagePath: string;
+      }>("/api/storage/presign", {
+        method: "POST",
+        body: {
+          scope: "certificate",
+          fileName: file.name,
+          contentType: file.type || "application/octet-stream",
+          fileSize: file.size,
+        },
+      });
 
-      if (uploadError) {
-        throw uploadError;
+      if (!presign.ok) {
+        throw new Error(
+          presign.error || dictionary.forms.errorUploadingCertificate,
+        );
       }
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("profile-certificates").getPublicUrl(filePath);
+      const { uploadUrl, publicUrl, storagePath } = presign.data;
 
-      if (
-        currentCertificate.storage_path &&
-        currentCertificate.storage_path !== filePath &&
-        !initialCertificateMap.get(currentCertificate.id)
-      ) {
-        await supabase.storage
-          .from("profile-certificates")
-          .remove([currentCertificate.storage_path]);
+      const putResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      });
+
+      if (!putResponse.ok) {
+        throw new Error(dictionary.forms.errorUploadingCertificate);
       }
+
+      const previousPath = currentCertificate.storage_path;
+      const previousUrl = currentCertificate.file_url;
 
       setCertificates((prev) =>
         prev.map((item) =>
@@ -1239,11 +1256,27 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                 ...item,
                 file_url: publicUrl,
                 file_name: file.name,
-                storage_path: filePath,
+                storage_path: storagePath,
               }
             : item,
         ),
       );
+
+      if (
+        previousPath &&
+        previousUrl &&
+        previousPath !== storagePath &&
+        !initialCertificateMap.get(currentCertificate.id)
+      ) {
+        void apiFetch("/api/storage/object", {
+          method: "DELETE",
+          body: {
+            bucket: "profile-certificates",
+            storagePath: previousPath,
+            url: previousUrl,
+          },
+        });
+      }
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -1272,38 +1305,69 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       if (file.size > getBackgroundMaxSize(nextMode)) {
         throw new Error(
           locale === "uk"
-            ? "Файл фону завеликий для цього типу."
+            ? "Р¤Р°Р№Р» С„РѕРЅСѓ Р·Р°РІРµР»РёРєРёР№ РґР»СЏ С†СЊРѕРіРѕ С‚РёРїСѓ."
             : "Background file is too large for this type.",
         );
       }
-      const filePath = `profile-backgrounds/${profile.user_id}/${Date.now()}-${crypto.randomUUID()}-${sanitizeStorageFileName(file.name)}`;
+
       const previousPath = presentation.backgroundStoragePath;
+      const previousUrl = presentation.backgroundUrl;
 
-      const { error: uploadError } = await supabase.storage
-        .from("project-media")
-        .upload(filePath, file, { upsert: true });
+      const presign = await apiFetch<{
+        uploadUrl: string;
+        publicUrl: string;
+        storagePath: string;
+      }>("/api/storage/presign", {
+        method: "POST",
+        body: {
+          scope: "profile-background",
+          fileName: file.name,
+          contentType: file.type || "application/octet-stream",
+          fileSize: file.size,
+        },
+      });
 
-      if (uploadError) {
-        throw uploadError;
+      if (!presign.ok) {
+        throw new Error(
+          presign.error || presentationExtrasUi.backgroundUploadFailed,
+        );
       }
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("project-media").getPublicUrl(filePath);
+      const { uploadUrl, publicUrl, storagePath } = presign.data;
+
+      const putResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      });
+
+      if (!putResponse.ok) {
+        throw new Error(presentationExtrasUi.backgroundUploadFailed);
+      }
 
       setPresentation((prev) => ({
         ...prev,
         backgroundMode: nextMode,
         backgroundUrl: publicUrl,
-        backgroundStoragePath: filePath,
+        backgroundStoragePath: storagePath,
       }));
 
       if (
         previousPath &&
-        previousPath !== filePath &&
+        previousUrl &&
+        previousPath !== storagePath &&
         previousPath !== initialBackgroundStoragePathRef.current
       ) {
-        await supabase.storage.from("project-media").remove([previousPath]);
+        void apiFetch("/api/storage/object", {
+          method: "DELETE",
+          body: {
+            bucket: "project-media",
+            storagePath: previousPath,
+            url: previousUrl,
+          },
+        });
       }
     } catch (error) {
       setErrorMessage(
@@ -1319,6 +1383,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
   const clearBackgroundAsset = async () => {
     const previousPath = presentation.backgroundStoragePath;
+    const previousUrl = presentation.backgroundUrl;
 
     setPresentation((prev) => ({
       ...prev,
@@ -1327,23 +1392,41 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       backgroundMode: "gradient",
     }));
 
-    if (previousPath) {
-      if (previousPath !== initialBackgroundStoragePathRef.current) {
-        await supabase.storage.from("project-media").remove([previousPath]);
-      }
+    if (
+      previousPath &&
+      previousUrl &&
+      previousPath !== initialBackgroundStoragePathRef.current
+    ) {
+      void apiFetch("/api/storage/object", {
+        method: "DELETE",
+        body: {
+          bucket: "project-media",
+          storagePath: previousPath,
+          url: previousUrl,
+        },
+      });
     }
   };
 
   const resetCustomization = async () => {
     const previousPath = presentation.backgroundStoragePath;
+    const previousUrl = presentation.backgroundUrl;
 
     setPresentation(createDefaultProfilePresentation());
 
     if (
       previousPath &&
+      previousUrl &&
       previousPath !== initialBackgroundStoragePathRef.current
     ) {
-      await supabase.storage.from("project-media").remove([previousPath]);
+      void apiFetch("/api/storage/object", {
+        method: "DELETE",
+        body: {
+          bucket: "project-media",
+          storagePath: previousPath,
+          url: previousUrl,
+        },
+      });
     }
   };
 
@@ -1364,11 +1447,17 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
     if (
       currentCertificate.storage_path &&
+      currentCertificate.file_url &&
       !initialCertificateMap.has(currentCertificate.id)
     ) {
-      await supabase.storage
-        .from("profile-certificates")
-        .remove([currentCertificate.storage_path]);
+      void apiFetch("/api/storage/object", {
+        method: "DELETE",
+        body: {
+          bucket: "profile-certificates",
+          storagePath: currentCertificate.storage_path,
+          url: currentCertificate.file_url,
+        },
+      });
     }
 
     setCertificates((prev) => prev.filter((item) => item.id !== entryId));
@@ -1558,17 +1647,22 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
     const currentCertificateIds = new Set(
       sanitizedCertificates.map((item) => item.id),
     );
-    const removedStoragePaths = profile.certificates
-      .filter(
-        (item) => item.storage_path && !currentCertificateIds.has(item.id),
-      )
-      .map((item) => item.storage_path)
-      .filter(Boolean);
+    const removedCertificates = profile.certificates.filter(
+      (item) =>
+        item.storage_path &&
+        item.file_url &&
+        !currentCertificateIds.has(item.id),
+    );
 
-    if (removedStoragePaths.length > 0) {
-      await supabase.storage
-        .from("profile-certificates")
-        .remove(removedStoragePaths);
+    for (const cert of removedCertificates) {
+      void apiFetch("/api/storage/object", {
+        method: "DELETE",
+        body: {
+          bucket: "profile-certificates",
+          storagePath: cert.storage_path,
+          url: cert.file_url,
+        },
+      });
     }
 
     const savedBackgroundStoragePath =
@@ -1576,14 +1670,22 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
     if (
       initialBackgroundStoragePathRef.current &&
-      initialBackgroundStoragePathRef.current !== savedBackgroundStoragePath
+      initialBackgroundStoragePathRef.current !== savedBackgroundStoragePath &&
+      initialBackgroundUrlRef.current
     ) {
-      await supabase.storage
-        .from("project-media")
-        .remove([initialBackgroundStoragePathRef.current]);
+      void apiFetch("/api/storage/object", {
+        method: "DELETE",
+        body: {
+          bucket: "project-media",
+          storagePath: initialBackgroundStoragePathRef.current,
+          url: initialBackgroundUrlRef.current,
+        },
+      });
     }
 
     initialBackgroundStoragePathRef.current = savedBackgroundStoragePath;
+    initialBackgroundUrlRef.current =
+      parsedPayload.data.profile_visibility.presentation.backgroundUrl;
     savedDraftSnapshotRef.current = currentDraftSnapshot;
 
     setSaving(false);
@@ -1631,10 +1733,10 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           title,
           lines: [
             form.headline ||
-              (locale === "uk" ? "Додайте headline" : "Add a headline"),
+              (locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ headline" : "Add a headline"),
             form.bio ||
               (locale === "uk"
-                ? "Заповніть біо, щоб блок виглядав живо."
+                ? "Р—Р°РїРѕРІРЅС–С‚СЊ Р±С–Рѕ, С‰РѕР± Р±Р»РѕРє РІРёРіР»СЏРґР°РІ Р¶РёРІРѕ."
                 : "Fill the bio so this card feels alive."),
           ],
         };
@@ -1646,19 +1748,19 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
             form.experience_level
               ? getExperienceLevelLabel(form.experience_level, locale)
               : locale === "uk"
-                ? "Оберіть досвід"
+                ? "РћР±РµСЂС–С‚СЊ РґРѕСЃРІС–Рґ"
                 : "Choose experience",
             form.salary_expectations
               ? `${form.salary_expectations}${form.salary_currency ? ` ${form.salary_currency.toUpperCase()}` : ""}`
               : locale === "uk"
-                ? "Додайте очікування по оплаті"
+                ? "Р”РѕРґР°Р№С‚Рµ РѕС‡С–РєСѓРІР°РЅРЅСЏ РїРѕ РѕРїР»Р°С‚С–"
                 : "Add salary expectations",
             selectedEmploymentTypes.length > 0
               ? selectedEmploymentTypes
                   .map((item) => getEmploymentTypeLabel(item, dictionary))
                   .join(", ")
               : locale === "uk"
-                ? "Варіанти зайнятості"
+                ? "Р’Р°СЂС–Р°РЅС‚Рё Р·Р°Р№РЅСЏС‚РѕСЃС‚С–"
                 : "Employment types",
           ],
         };
@@ -1673,14 +1775,14 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   .map((item) =>
                     [
                       item.position ||
-                        (locale === "uk" ? "Посада" : "Position"),
+                        (locale === "uk" ? "РџРѕСЃР°РґР°" : "Position"),
                       item.company_name ||
-                        (locale === "uk" ? "Компанія" : "Company"),
+                        (locale === "uk" ? "РљРѕРјРїР°РЅС–СЏ" : "Company"),
                     ]
                       .filter(Boolean)
-                      .join(" • "),
+                      .join(" вЂў "),
                   )
-              : [locale === "uk" ? "Додайте місце роботи" : "Add a work entry"],
+              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ РјС–СЃС†Рµ СЂРѕР±РѕС‚Рё" : "Add a work entry"],
         };
       case "skills":
         return {
@@ -1692,7 +1794,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   .filter((item) => skills.includes(item.id))
                   .slice(0, 6)
                   .map((item) => item.name)
-              : [locale === "uk" ? "Оберіть навички" : "Choose skills"],
+              : [locale === "uk" ? "РћР±РµСЂС–С‚СЊ РЅР°РІРёС‡РєРё" : "Choose skills"],
         };
       case "languages":
         return {
@@ -1704,10 +1806,10 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   const languageName =
                     meta.languages.find(
                       (option) => option.id === item.language_id,
-                    )?.name || (locale === "uk" ? "Мова" : "Language");
-                  return `${languageName} • ${getLanguageLevelLabel(item.proficiency_level, dictionary)}`;
+                    )?.name || (locale === "uk" ? "РњРѕРІР°" : "Language");
+                  return `${languageName} вЂў ${getLanguageLevelLabel(item.proficiency_level, dictionary)}`;
                 })
-              : [locale === "uk" ? "Додайте мови" : "Add languages"],
+              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ РјРѕРІРё" : "Add languages"],
         };
       case "education":
         return {
@@ -1720,13 +1822,13 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   .map((item) =>
                     [
                       item.institution ||
-                        (locale === "uk" ? "Навчальний заклад" : "Institution"),
+                        (locale === "uk" ? "РќР°РІС‡Р°Р»СЊРЅРёР№ Р·Р°РєР»Р°Рґ" : "Institution"),
                       item.degree || item.field_of_study || "",
                     ]
                       .filter(Boolean)
-                      .join(" • "),
+                      .join(" вЂў "),
                   )
-              : [locale === "uk" ? "Додайте освіту" : "Add education"],
+              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ РѕСЃРІС–С‚Сѓ" : "Add education"],
         };
       case "certificates":
         return {
@@ -1737,7 +1839,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
               ? certificates
                   .slice(0, 3)
                   .map((item) => item.title || item.issuer || "Certificate")
-              : [locale === "uk" ? "Додайте сертифікати" : "Add certificates"],
+              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ СЃРµСЂС‚РёС„С–РєР°С‚Рё" : "Add certificates"],
         };
       case "qa":
         return {
@@ -1750,9 +1852,9 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   .map(
                     (item) =>
                       item.question ||
-                      (locale === "uk" ? "Питання" : "Question"),
+                      (locale === "uk" ? "РџРёС‚Р°РЅРЅСЏ" : "Question"),
                   )
-              : [locale === "uk" ? "Додайте Q&A" : "Add Q&A"],
+              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ Q&A" : "Add Q&A"],
         };
       case "contacts":
         return {
@@ -1760,12 +1862,12 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           title,
           lines: [
             form.contact_email ||
-              (locale === "uk" ? "Email не додано" : "No email yet"),
+              (locale === "uk" ? "Email РЅРµ РґРѕРґР°РЅРѕ" : "No email yet"),
             form.telegram_username ||
               form.phone ||
               form.linkedin ||
               (locale === "uk"
-                ? "Додайте способи зв'язку"
+                ? "Р”РѕРґР°Р№С‚Рµ СЃРїРѕСЃРѕР±Рё Р·РІ'СЏР·РєСѓ"
                 : "Add contact methods"),
           ],
         };
@@ -1775,10 +1877,10 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           title,
           lines: [
             locale === "uk"
-              ? "Блок показує опубліковані статті з публічної сторінки."
+              ? "Р‘Р»РѕРє РїРѕРєР°Р·СѓС” РѕРїСѓР±Р»С–РєРѕРІР°РЅС– СЃС‚Р°С‚С‚С– Р· РїСѓР±Р»С–С‡РЅРѕС— СЃС‚РѕСЂС–РЅРєРё."
               : "This block shows published articles on the public page.",
             locale === "uk"
-              ? "У конструкторі ви керуєте розташуванням і шириною."
+              ? "РЈ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС– РІРё РєРµСЂСѓС”С‚Рµ СЂРѕР·С‚Р°С€СѓРІР°РЅРЅСЏРј С– С€РёСЂРёРЅРѕСЋ."
               : "Use the builder to control its position and width.",
           ],
         };
@@ -1789,10 +1891,10 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           title,
           lines: [
             locale === "uk"
-              ? "Блок показує опубліковані проєкти з публічної сторінки."
+              ? "Р‘Р»РѕРє РїРѕРєР°Р·СѓС” РѕРїСѓР±Р»С–РєРѕРІР°РЅС– РїСЂРѕС”РєС‚Рё Р· РїСѓР±Р»С–С‡РЅРѕС— СЃС‚РѕСЂС–РЅРєРё."
               : "This block shows published projects on the public page.",
             locale === "uk"
-              ? "У конструкторі ви керуєте розташуванням і шириною."
+              ? "РЈ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС– РІРё РєРµСЂСѓС”С‚Рµ СЂРѕР·С‚Р°С€СѓРІР°РЅРЅСЏРј С– С€РёСЂРёРЅРѕСЋ."
               : "Use the builder to control its position and width.",
           ],
         };

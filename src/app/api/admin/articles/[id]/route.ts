@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
+import { deleteStorageObject } from "@/lib/storage/provider";
 import {
   articleModerationPayloadSchema,
   routeArticleIdSchema,
@@ -89,7 +90,7 @@ export async function DELETE(
   const { id } = routeParams.data;
   const { data: article, error: articleError } = await context.supabase
     .from("articles")
-    .select("id, cover_image_storage_path, hero_video_storage_path")
+    .select("id, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path")
     .eq("id", id)
     .maybeSingle();
 
@@ -113,22 +114,39 @@ export async function DELETE(
     );
   }
 
-  const storagePaths = [
-    article.cover_image_storage_path?.trim(),
-    article.hero_video_storage_path?.trim(),
-  ].filter((item): item is string => Boolean(item));
+  const assets: Array<{ url: string; storagePath: string }> = [];
+  if (article.cover_image_storage_path?.trim() && article.cover_image_url) {
+    assets.push({
+      url: article.cover_image_url,
+      storagePath: article.cover_image_storage_path.trim(),
+    });
+  }
+  if (article.hero_video_storage_path?.trim() && article.hero_video_url) {
+    assets.push({
+      url: article.hero_video_url,
+      storagePath: article.hero_video_storage_path.trim(),
+    });
+  }
 
-  if (storagePaths.length > 0) {
-    const { error: storageError } = await context.supabase.storage
-      .from("project-media")
-      .remove(storagePaths);
+  const cleanupWarnings: string[] = [];
+  for (const asset of assets) {
+    const { error: storageError } = await deleteStorageObject({
+      supabase: context.supabase,
+      bucket: "project-media",
+      url: asset.url,
+      storagePath: asset.storagePath,
+    });
 
     if (storageError) {
-      return NextResponse.json({
-        success: true,
-        cleanupWarning: storageError.message,
-      });
+      cleanupWarnings.push(storageError.message);
     }
+  }
+
+  if (cleanupWarnings.length > 0) {
+    return NextResponse.json({
+      success: true,
+      cleanupWarning: cleanupWarnings[0],
+    });
   }
 
   return NextResponse.json({ success: true });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
+import { deleteStorageObject } from "@/lib/storage/provider";
 import { routeProjectIdSchema } from "@/lib/validation/project";
 
 export async function DELETE(
@@ -42,7 +43,7 @@ export async function DELETE(
 
   const { data: mediaItems, error: mediaError } = await context.supabase
     .from("project_media")
-    .select("storage_path")
+    .select("url, storage_path")
     .eq("project_id", project.id);
 
   if (mediaError) {
@@ -61,25 +62,35 @@ export async function DELETE(
     );
   }
 
-  const storagePaths = [
-    ...new Set(
-      (mediaItems || [])
-        .map((item) => (item as { storage_path: string | null }).storage_path?.trim())
-        .filter((path): path is string => Boolean(path)),
-    ),
-  ];
+  const itemsToClean = (mediaItems || [])
+    .map(
+      (item) =>
+        item as { url: string | null; storage_path: string | null },
+    )
+    .filter(
+      (item): item is { url: string; storage_path: string } =>
+        Boolean(item.storage_path && item.url),
+    );
 
-  if (storagePaths.length > 0) {
-    const { error: storageError } = await context.supabase.storage
-      .from("project-media")
-      .remove(storagePaths);
+  const cleanupWarnings: string[] = [];
+  for (const item of itemsToClean) {
+    const { error: storageError } = await deleteStorageObject({
+      supabase: context.supabase,
+      bucket: "project-media",
+      url: item.url,
+      storagePath: item.storage_path,
+    });
 
     if (storageError) {
-      return NextResponse.json({
-        success: true,
-        cleanupWarning: storageError.message,
-      });
+      cleanupWarnings.push(storageError.message);
     }
+  }
+
+  if (cleanupWarnings.length > 0) {
+    return NextResponse.json({
+      success: true,
+      cleanupWarning: cleanupWarnings[0],
+    });
   }
 
   return NextResponse.json({ success: true });

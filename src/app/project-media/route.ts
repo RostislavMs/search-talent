@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { normalizeProjectMediaItem } from "@/lib/project-media";
+import { deleteStorageObject } from "@/lib/storage/provider";
 import { createClient } from "@/lib/supabase/server";
 import {
   createProjectMediaSchema,
@@ -335,9 +336,12 @@ export async function DELETE(request: Request) {
   }
 
   if (media.storage_path) {
-    const { error: storageError } = await ownership.supabase.storage
-      .from("project-media")
-      .remove([media.storage_path]);
+    const { error: storageError } = await deleteStorageObject({
+      supabase: ownership.supabase,
+      bucket: "project-media",
+      url: media.url,
+      storagePath: media.storage_path,
+    });
 
     if (storageError) {
       return NextResponse.json({ error: storageError.message }, { status: 400 });
