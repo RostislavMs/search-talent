@@ -278,17 +278,25 @@ export function buildProjectPageMetadata({
 }) {
   const safeTitle = projectTitle || (locale === "uk" ? "Проєкт" : "Project");
   const safeAuthor = authorName || (locale === "uk" ? "автором" : "the author");
+  const hasTech = topTechnologies.length > 0;
   const topTech = topTechnologies[0] || (locale === "uk" ? "сучасним стеком" : "modern tools");
-  const stack = joinList(topTechnologies.slice(0, 3)) || topTech;
+  const stack = joinList(topTechnologies.slice(0, 3));
   const categoryLabel = category || (locale === "uk" ? "IT-проєкт" : "IT project");
   const title =
     locale === "uk"
       ? `${safeTitle} — створено з ${topTech} автором ${safeAuthor}`
       : `${safeTitle} — Built with ${topTech} by ${safeAuthor}`;
+  // Only mention the stack when the project actually lists technologies —
+  // otherwise the genitive "на стеку <stack>" template collides with the
+  // "сучасним стеком" fallback and reads as "на стеку сучасним стеком".
   const fallback =
     locale === "uk"
-      ? `${categoryLabel} на стеку ${stack}. Портфоліо на SearchTalent.`
-      : `${categoryLabel} built with ${stack}. Portfolio on SearchTalent.`;
+      ? hasTech
+        ? `${categoryLabel} на стеку ${stack}. Портфоліо на SearchTalent.`
+        : `${categoryLabel}. Портфоліо на SearchTalent.`
+      : hasTech
+        ? `${categoryLabel} built with ${stack}. Portfolio on SearchTalent.`
+        : `${categoryLabel}. Portfolio on SearchTalent.`;
   const description = truncateText(descriptionText || fallback, 155);
 
   return buildMetadata({

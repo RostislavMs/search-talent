@@ -1006,6 +1006,7 @@ export const dictionaries = {
       title: "Create & Manage Your IT Project Portfolio",
       description:
         "Create a new project, upload media, and open the public page to see how visitors experience it.",
+      yourProjects: "Your projects",
       backToDashboard: "Back to dashboard",
       publicCatalog: "Public catalog",
       editProject: "Edit project",
@@ -2999,6 +3000,7 @@ export const dictionaries = {
       title: "Створюйте та Керуйте Вашим IT-Портфоліо Проєктів",
       description:
         "Створюйте нові проєкти, завантажуйте медіа та відкривайте публічну сторінку, щоб побачити її очима відвідувачів.",
+      yourProjects: "Ваші проєкти",
       backToDashboard: "Назад у дашборд",
       publicCatalog: "Публічний каталог",
       editProject: "Редагувати проєкт",

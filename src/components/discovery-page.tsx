@@ -962,7 +962,7 @@ export default function DiscoveryPage({
         </span>
       </div>
 
-      <section className="mt-5 grid gap-8 sm:mt-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
+      <section className="mt-5 grid grid-cols-1 gap-8 sm:mt-8 xl:grid-cols-[18rem_minmax(0,1fr)]">
         <aside
           id="discovery-filters-drawer"
           className={[
@@ -1424,7 +1424,7 @@ export default function DiscoveryPage({
             </section>
           )}
 
-          <section className="rounded-hero app-card p-6 sm:p-7">
+          <section className="rounded-hero app-card p-4 sm:p-6">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">

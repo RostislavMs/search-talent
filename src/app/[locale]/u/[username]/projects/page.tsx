@@ -37,10 +37,21 @@ export async function generateMetadata({
   const { locale, username } = await getRouteParams(params);
   const dictionary = getDictionary(locale);
 
+  // Prefer the creator's real name in the title; fall back to @username only
+  // when the profile has no name set (mirrors the H1 in the public view).
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name")
+    .eq("username", username)
+    .maybeSingle();
+
+  const displayName = profile?.name?.trim() || `@${username}`;
+
   return buildMetadata({
     locale,
     pathname: `/u/${username}/projects`,
-    title: `${dictionary.creatorProfile.projects} — @${username}`,
+    title: `${dictionary.creatorProfile.projects} — ${displayName}`,
     description: dictionary.metadata.creatorProfile.description,
   });
 }
@@ -128,8 +139,8 @@ async function renderOwnerView({
   });
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
+    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -154,11 +165,11 @@ async function renderOwnerView({
         </div>
       </section>
 
-      <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
+      <section className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
-              {dictionary.dashboardProjects.title}
+              {dictionary.dashboardProjects.yourProjects}
             </h2>
             <p className="mt-2 text-sm app-muted">
               {dictionary.dashboardProjects.showingResults} {result.projects.length} /{" "}
@@ -174,7 +185,7 @@ async function renderOwnerView({
                 const publicHref = buildProjectPath(project.id, project.slug || undefined);
 
                 return (
-                  <article key={project.id} className="rounded-panel app-panel p-5">
+                  <article key={project.id} className="rounded-panel app-panel p-4 sm:p-5">
                     <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-[color:var(--surface-muted)]">
                       {project.is_pinned && (
                         <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[color:var(--foreground)] px-3 py-1 text-xs font-semibold text-[color:var(--background)] shadow-md">
@@ -321,8 +332,8 @@ async function renderPublicView({
     result.profile.name || `@${result.profile.username}` || username;
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
+    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -343,7 +354,7 @@ async function renderPublicView({
         </div>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-6 sm:mt-8">
         {result.projects.length > 0 ? (
           <>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

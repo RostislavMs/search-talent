@@ -163,7 +163,7 @@ export default async function LocalizedHomePage({
       />
 
       <section className="bg-brand-hero overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:rounded-hero sm:p-8 md:p-10">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)] lg:gap-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)] lg:gap-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
               {dictionary.home.eyebrow}
@@ -325,7 +325,7 @@ export default async function LocalizedHomePage({
         </h2>
 
         <div className="mt-6 grid gap-5 lg:grid-cols-2">
-          <article className="rounded-panel app-panel p-5">
+          <article className="rounded-panel app-panel p-4 sm:p-5">
             <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
               {marketing.home.talentTrackTitle}
             </h3>
@@ -344,7 +344,7 @@ export default async function LocalizedHomePage({
             </div>
           </article>
 
-          <article className="rounded-panel app-panel p-5">
+          <article className="rounded-panel app-panel p-4 sm:p-5">
             <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
               {marketing.home.explorerTrackTitle}
             </h3>
