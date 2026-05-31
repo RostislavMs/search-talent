@@ -1,32 +1,20 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
-import {
-  getProfileCategoryBySlug,
-  getProfileCategoryDirectory,
-} from "@/lib/db/marketing";
-import { locales, isLocale, type Locale } from "@/lib/i18n/config";
+import { getProfileCategoryBySlug } from "@/lib/db/marketing";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 import { buildTalentCategoryMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 
-const DiscoveryPage = dynamic(() => import("@/components/discovery-page"), {
+const DiscoveryPage = nextDynamic(() => import("@/components/discovery-page"), {
   loading: () => <DiscoveryPageSkeleton mode="creators" />,
 });
 
-export const revalidate = 21600;
+// Rendered per request — see the note in /projects/tag/[tag]; the on-demand
+// ISR path 500s in production for these facet pages.
+export const dynamic = "force-dynamic";
 
 const MIN_TALENTS_FOR_ROLE_PAGE = 3;
-
-export async function generateStaticParams() {
-  const items = await getProfileCategoryDirectory();
-  const eligible = items.filter(
-    (item) => item.count >= MIN_TALENTS_FOR_ROLE_PAGE,
-  );
-
-  return locales.flatMap((locale) =>
-    eligible.map((item) => ({ locale, role: item.slug })),
-  );
-}
 
 async function getRouteParams(
   params: Promise<{ locale: string; role: string }>,

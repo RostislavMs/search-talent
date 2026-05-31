@@ -1,32 +1,22 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
-import {
-  getTechnologyBySlug,
-  getTechnologyDirectory,
-} from "@/lib/db/marketing";
-import { locales, isLocale, type Locale } from "@/lib/i18n/config";
+import { getTechnologyBySlug } from "@/lib/db/marketing";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 import { buildProjectsTagMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 
-const DiscoveryPage = dynamic(() => import("@/components/discovery-page"), {
+const DiscoveryPage = nextDynamic(() => import("@/components/discovery-page"), {
   loading: () => <DiscoveryPageSkeleton mode="projects" />,
 });
 
-export const revalidate = 21600;
+// Rendered per request. These facet pages have no pre-built params (the long
+// tail rarely meets the prebuild threshold), so they would otherwise fall on
+// the on-demand ISR path, which 500s in production. force-dynamic puts them on
+// the same proven per-request SSR path as the other dynamic content pages.
+export const dynamic = "force-dynamic";
 
 const MIN_PROJECTS_FOR_TAG_PAGE = 5;
-
-export async function generateStaticParams() {
-  const items = await getTechnologyDirectory(200);
-  const eligible = items.filter(
-    (item) => item.count >= MIN_PROJECTS_FOR_TAG_PAGE,
-  );
-
-  return locales.flatMap((locale) =>
-    eligible.map((item) => ({ locale, tag: item.slug })),
-  );
-}
 
 async function getRouteParams(
   params: Promise<{ locale: string; tag: string }>,

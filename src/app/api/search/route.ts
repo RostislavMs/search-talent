@@ -228,6 +228,12 @@ export async function GET(request: Request) {
   const hasAvatar = searchParams.get("hasAvatar") === "1";
   const minScore = parseNumber(searchParams.get("minScore"));
   const maxScore = parseNumber(searchParams.get("maxScore"));
+  const perPageRaw = parseNumber(searchParams.get("perPage"));
+  const perPage = [10, 20, 50].includes(perPageRaw ?? 0)
+    ? (perPageRaw as number)
+    : 10;
+  const pageRaw = parseNumber(searchParams.get("page"));
+  const page = pageRaw && pageRaw > 0 ? pageRaw : 1;
 
   const supabase = await createClient();
 
@@ -691,8 +697,15 @@ export async function GET(request: Request) {
     users: users.length,
   };
 
-  projects = projects.sort(projectSorters[activeSort]).slice(0, 24);
-  users = users.sort(profileSorters[activeSort]).slice(0, 24);
+  // `totals` above holds the full filtered counts; here we return just the
+  // requested page so the client can render numbered pagination.
+  const offset = (page - 1) * perPage;
+  projects = projects
+    .sort(projectSorters[activeSort])
+    .slice(offset, offset + perPage);
+  users = users
+    .sort(profileSorters[activeSort])
+    .slice(offset, offset + perPage);
 
   return NextResponse.json({
     projects: scope === "creators" ? [] : projects,
