@@ -112,14 +112,39 @@ export async function deleteFromR2(key: string) {
   );
 }
 
+// Cache the public base hostname once so per-call parsing stays cheap.
+const publicBaseHostname = (() => {
+  if (!publicBaseUrl) return null;
+  try {
+    return new URL(publicBaseUrl).hostname;
+  } catch {
+    return null;
+  }
+})();
+
 export function isR2Url(url: string | null | undefined) {
-  if (!url || !publicBaseUrl) {
+  if (!url) {
     return false;
   }
 
+  // Parse the URL so we match on hostname, not raw substring. A plain
+  // `string.includes(".r2.dev")` would also match malicious URLs like
+  // `https://evil.com/path?x=.r2.dev`, which is what CodeQL flagged.
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return false;
+  }
+
+  if (publicBaseHostname && host === publicBaseHostname) {
+    return true;
+  }
+
   return (
-    url.startsWith(publicBaseUrl) ||
-    url.includes(".r2.cloudflarestorage.com") ||
-    url.includes(".r2.dev")
+    host === "r2.cloudflarestorage.com" ||
+    host.endsWith(".r2.cloudflarestorage.com") ||
+    host === "r2.dev" ||
+    host.endsWith(".r2.dev")
   );
 }

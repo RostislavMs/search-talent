@@ -13,12 +13,28 @@ type OptimizedImageProps = Omit<ImageProps, "sizes"> & {
 // modern formats, so running them through Next.js Image Optimizer is
 // pure overhead — and on networks where Node.js → r2.dev is slow it
 // causes 500 timeouts. Detect and skip the optimizer for those hosts.
+//
+// Match on the URL's hostname rather than a raw substring check.
+// `string.includes(".r2.dev")` would also accept malicious URLs like
+// `https://evil.com/anything?x=.r2.dev` (flagged by CodeQL).
 function isCdnHostedUrl(src: ImageProps["src"]): boolean {
   if (typeof src !== "string") {
     return false;
   }
 
-  return src.includes(".r2.dev") || src.includes(".r2.cloudflarestorage.com");
+  let host: string;
+  try {
+    host = new URL(src).hostname;
+  } catch {
+    return false;
+  }
+
+  return (
+    host === "r2.cloudflarestorage.com" ||
+    host.endsWith(".r2.cloudflarestorage.com") ||
+    host === "r2.dev" ||
+    host.endsWith(".r2.dev")
+  );
 }
 
 /**

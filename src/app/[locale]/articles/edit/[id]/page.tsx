@@ -82,7 +82,6 @@ export default async function EditArticlePage({
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
       <ArticleComposer
         locale={safeLocale}
-        userId={viewer.user.id}
         categories={categories}
         isAdmin={viewer.isAdmin}
         editArticle={{

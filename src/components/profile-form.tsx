@@ -16,7 +16,6 @@ import {
   preferredContactMethods,
   profileVisibilityKeys,
   salaryCurrencies,
-  sanitizeStorageFileName,
   workFormats,
   type EmploymentType,
   type ExperienceLevel,
@@ -58,7 +57,6 @@ import {
 import { apiFetch } from "@/lib/api-client";
 import { profilePayloadSchema } from "@/lib/validation/profile";
 import type { ProfileCategory } from "@/lib/profile-categories";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -625,7 +623,6 @@ function serializeProfileDraft({
 }
 
 export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
-  const supabase = createClient();
   const router = useRouter();
   const dictionary = useDictionary();
   const locale = useCurrentLocale();

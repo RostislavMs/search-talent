@@ -37,13 +37,11 @@ type EditableArticle = {
 
 export default function ArticleComposer({
   locale,
-  userId,
   categories,
   isAdmin,
   editArticle,
 }: {
   locale: string;
-  userId: string;
   categories: ArticleCategory[];
   isAdmin: boolean;
   editArticle?: EditableArticle | null;
