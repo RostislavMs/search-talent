@@ -412,24 +412,50 @@ export default async function PublicProjectPage({
             </div>
           </div>
 
-          <div className="relative min-h-[12rem] bg-[color:var(--surface-muted)] sm:min-h-[18rem]">
-            {project.cover_url ? (
-              <OptimizedImage
+          {project.kind === "photo" && project.cover_url ? (
+            // Photo projects: hero shows the cover at its natural aspect
+            // ratio so the photographer's framing is never cropped. Capped
+            // by max-h-[70vh] to keep the rest of the page within reach.
+            <div
+              className="flex w-full items-center justify-center bg-[color:var(--surface-muted)]"
+              onContextMenu={
+                project.allow_downloads === false && !isOwner
+                  ? (event) => event.preventDefault()
+                  : undefined
+              }
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={project.cover_url}
                 alt={project.title}
-                fill
-                sizePreset="cover"
-                className="object-cover"
-                priority
+                draggable={!(project.allow_downloads === false && !isOwner)}
+                className={`block h-auto max-h-[70vh] w-full object-contain ${
+                  project.allow_downloads === false && !isOwner
+                    ? "pointer-events-none select-none"
+                    : ""
+                }`}
               />
-            ) : (
-              <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.14),_transparent_45%),linear-gradient(135deg,_rgba(148,163,184,0.28),_rgba(255,255,255,0.8))] p-6">
-                <span className="rounded-full bg-white/85 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm">
-                  {dictionary.common.project}
-                </span>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="relative min-h-[12rem] bg-[color:var(--surface-muted)] sm:min-h-[18rem]">
+              {project.cover_url ? (
+                <OptimizedImage
+                  src={project.cover_url}
+                  alt={project.title}
+                  fill
+                  sizePreset="cover"
+                  className="object-cover"
+                  priority
+                />
+              ) : (
+                <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.14),_transparent_45%),linear-gradient(135deg,_rgba(148,163,184,0.28),_rgba(255,255,255,0.8))] p-6">
+                  <span className="rounded-full bg-white/85 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm">
+                    {dictionary.common.project}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -596,7 +622,10 @@ export default async function PublicProjectPage({
               {dictionary.projectPage.gallery}
             </h2>
             <div className="mt-4 sm:mt-6">
-              <ProjectGallery media={media} />
+              <ProjectGallery
+                media={media}
+                allowDownloads={project.allow_downloads !== false || isOwner}
+              />
             </div>
           </section>
 

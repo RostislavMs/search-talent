@@ -5,6 +5,7 @@ import {
   getProjectCompletenessScore,
   isWithinTimeframe,
 } from "@/lib/leaderboards";
+import { normalizeProjectKind } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 
 type ProjectRow = {
@@ -222,6 +223,7 @@ export async function GET(request: Request) {
   const employmentTypes = parseStringArray(searchParams.get("employmentTypes"));
   const workFormats = parseStringArray(searchParams.get("workFormats"));
   const projectStatus = (searchParams.get("projectStatus") || "").trim() || null;
+  const projectKind = normalizeProjectKind(searchParams.get("kind"));
   const hasMedia = searchParams.get("hasMedia") === "1";
   const hasAvatar = searchParams.get("hasAvatar") === "1";
   const minScore = parseNumber(searchParams.get("minScore"));
@@ -229,12 +231,16 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
 
-  const projectQuery = supabase
+  let projectQuery = supabase
     .from("projects")
     .select(
       "id, title, slug, description, score, cover_url, project_status, owner_id, created_at, moderation_status, kind, kind_metadata, role, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results",
     )
     .eq("status", "published");
+
+  if (projectKind) {
+    projectQuery = projectQuery.eq("kind", projectKind);
+  }
 
   let profileQuery = supabase
     .from("profiles")

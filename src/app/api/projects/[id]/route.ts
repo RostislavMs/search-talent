@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateUniqueProjectSlug } from "@/lib/projects";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
+import { deleteStorageObject } from "@/lib/storage/provider";
 import { createClient } from "@/lib/supabase/server";
 import { projectPayloadSchema, routeProjectIdSchema } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
@@ -83,6 +84,7 @@ export async function PATCH(
       github_production_usage: payload.githubProductionUsage,
       github_display_options: payload.githubDisplayOptions ?? undefined,
       github_auto_sync: payload.githubAutoSync,
+      allow_downloads: payload.allowDownloads,
     })
     .eq("id", project.id)
     .eq("owner_id", user.id)
@@ -169,7 +171,7 @@ export async function DELETE(
 
   const { data: mediaItems, error: mediaError } = await supabase
     .from("project_media")
-    .select("storage_path")
+    .select("url, storage_path")
     .eq("project_id", project.id);
 
   if (mediaError) {
@@ -189,23 +191,31 @@ export async function DELETE(
     );
   }
 
-  const storagePaths = [...new Set(
-    (mediaItems || [])
-      .map((item) => item.storage_path?.trim())
-      .filter((path): path is string => Boolean(path)),
-  )];
+  const itemsToClean = (mediaItems || []).filter(
+    (item): item is { url: string; storage_path: string } =>
+      Boolean(item.storage_path && item.url),
+  );
 
-  if (storagePaths.length > 0) {
-    const { error: storageError } = await supabase.storage
-      .from("project-media")
-      .remove(storagePaths);
+  const cleanupWarnings: string[] = [];
+
+  for (const item of itemsToClean) {
+    const { error: storageError } = await deleteStorageObject({
+      supabase,
+      bucket: "project-media",
+      url: item.url,
+      storagePath: item.storage_path,
+    });
 
     if (storageError) {
-      return NextResponse.json({
-        success: true,
-        cleanupWarning: storageError.message,
-      });
+      cleanupWarnings.push(storageError.message);
     }
+  }
+
+  if (cleanupWarnings.length > 0) {
+    return NextResponse.json({
+      success: true,
+      cleanupWarning: cleanupWarnings[0],
+    });
   }
 
   return NextResponse.json({ success: true });

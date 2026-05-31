@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "cross-env NODE_OPTIONS=\"--dns-result-order=ipv4first\" next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "cross-env NODE_OPTIONS=\"--dns-result-order=ipv4first\" next start",
     "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
@@ -13,6 +13,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1057.0",
+    "@aws-sdk/s3-request-presigner": "^3.1057.0",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@google/genai": "^2.6.0",
@@ -35,6 +37,7 @@
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
     "@vitest/coverage-v8": "^2.1.9",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "eslint-config-prettier": "^10.1.8",

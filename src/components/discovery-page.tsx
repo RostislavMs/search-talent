@@ -25,7 +25,14 @@ import {
   type ExperienceLevel,
   type WorkFormat,
 } from "@/lib/profile-sections";
-import { projectStatuses, type ProjectStatus } from "@/lib/projects";
+import {
+  getProjectKindLabel,
+  normalizeProjectKind,
+  projectKinds,
+  projectStatuses,
+  type ProjectKind,
+  type ProjectStatus,
+} from "@/lib/projects";
 
 export type DiscoveryMode = "projects" | "creators";
 
@@ -42,6 +49,7 @@ type SearchProject = {
   score: number | null;
   cover_url: string | null;
   project_status: string | null;
+  kind: string | null;
   ownerName: string | null;
   ownerUsername: string | null;
   technologies: Array<{ id: number; name: string }>;
@@ -92,6 +100,8 @@ type DiscoveryCopy = {
     anyCategory: string;
     filterProjectStatus: string;
     anyStatus: string;
+    filterProjectKind: string;
+    anyProjectKind: string;
     onlyWithMedia: string;
     filterRating: string;
     ratingFrom: string;
@@ -269,6 +279,8 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
         anyCategory: "Будь-який напрямок",
         filterProjectStatus: "Статус проєкту",
         anyStatus: "Будь-який статус",
+        filterProjectKind: "Тип проєкту",
+        anyProjectKind: "Будь-який тип",
         onlyWithMedia: "Лише з медіа",
         filterRating: "Рейтинг",
         ratingFrom: "Від",
@@ -372,6 +384,8 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       anyCategory: "Any direction",
       filterProjectStatus: "Project status",
       anyStatus: "Any status",
+      filterProjectKind: "Project type",
+      anyProjectKind: "Any type",
       onlyWithMedia: "Only with media",
       filterRating: "Rating",
       ratingFrom: "From",
@@ -495,6 +509,7 @@ export default function DiscoveryPage({
   >([]);
   const [workFormatFilters, setWorkFormatFilters] = useState<WorkFormat[]>([]);
   const [projectStatus, setProjectStatus] = useState<ProjectStatus | "">("");
+  const [projectKindFilter, setProjectKindFilter] = useState<ProjectKind | "">("");
   const [hasMedia, setHasMedia] = useState(false);
   const [hasAvatar, setHasAvatar] = useState(false);
   const [minScore, setMinScore] = useState<number | null>(null);
@@ -590,6 +605,7 @@ export default function DiscoveryPage({
     if (employmentTypeFilters.length > 0) params.employmentTypes = employmentTypeFilters;
     if (workFormatFilters.length > 0) params.workFormats = workFormatFilters;
     if (projectStatus) params.projectStatus = projectStatus;
+    if (projectKindFilter) params.projectKind = projectKindFilter;
     if (hasMedia) params.hasMedia = true;
     if (hasAvatar) params.hasAvatar = true;
     if (minScore !== null) params.minScore = minScore;
@@ -631,6 +647,9 @@ export default function DiscoveryPage({
     setEmploymentTypeFilters((params.employmentTypes as EmploymentType[]) || []);
     setWorkFormatFilters((params.workFormats as WorkFormat[]) || []);
     setProjectStatus((params.projectStatus as ProjectStatus | "") || "");
+    setProjectKindFilter(
+      normalizeProjectKind(params.projectKind) ?? "",
+    );
     setHasMedia(Boolean(params.hasMedia));
     setHasAvatar(Boolean(params.hasAvatar));
     setMinScore((params.minScore as number) ?? null);
@@ -681,6 +700,10 @@ export default function DiscoveryPage({
 
         if (projectStatus && mode === "projects") {
           params.set("projectStatus", projectStatus);
+        }
+
+        if (projectKindFilter && mode === "projects") {
+          params.set("kind", projectKindFilter);
         }
 
         if (hasMedia && mode === "projects") {
@@ -738,6 +761,7 @@ export default function DiscoveryPage({
     maxScore,
     minScore,
     mode,
+    projectKindFilter,
     projectStatus,
     query,
     scope,
@@ -752,6 +776,7 @@ export default function DiscoveryPage({
     Boolean(categoryId) ||
     Boolean(experienceLevel) ||
     Boolean(projectStatus) ||
+    Boolean(projectKindFilter) ||
     hasAvatar ||
     hasMedia ||
     languageIds.length > 0 ||
@@ -786,6 +811,9 @@ export default function DiscoveryPage({
       : null,
     mode === "projects" && projectStatus
       ? { key: "status", label: `${commonUi.filterProjectStatus}: ${getStatusLabel(projectStatus, dictionary, commonUi.anyStatus)}`, remove: () => setProjectStatus("") }
+      : null,
+    mode === "projects" && projectKindFilter
+      ? { key: "kind", label: `${commonUi.filterProjectKind}: ${getProjectKindLabel(projectKindFilter, dictionary)}`, remove: () => setProjectKindFilter("") }
       : null,
     mode === "creators" && hasAvatar
       ? { key: "avatar", label: avatarFilterLabel, remove: () => setHasAvatar(false) }
@@ -837,6 +865,7 @@ export default function DiscoveryPage({
     setEmploymentTypeFilters([]);
     setWorkFormatFilters([]);
     setProjectStatus("");
+    setProjectKindFilter("");
     setHasAvatar(false);
     setHasMedia(false);
     setMinScore(null);
@@ -1200,6 +1229,27 @@ export default function DiscoveryPage({
                 <>
                   <div>
                     <p className="mb-2 text-sm font-medium text-[color:var(--foreground)]">
+                      {commonUi.filterProjectKind}
+                    </p>
+                    <FormSelect
+                      className="w-full"
+                      triggerClassName="w-full"
+                      value={projectKindFilter}
+                      placeholder={commonUi.anyProjectKind}
+                      onChange={(value) =>
+                        setProjectKindFilter(
+                          normalizeProjectKind(value) ?? "",
+                        )
+                      }
+                      options={projectKinds.map((kind) => ({
+                        value: kind,
+                        label: getProjectKindLabel(kind, dictionary),
+                      }))}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-sm font-medium text-[color:var(--foreground)]">
                       {commonUi.filterProjectStatus}
                     </p>
                     <FormSelect
@@ -1394,18 +1444,42 @@ export default function DiscoveryPage({
               initialLoading || (loading && projects.length === 0) ? (
                 <ProjectCardGridSkeleton />
               ) : projects.length > 0 ? (
-                <div
-                  className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3"
-                  aria-busy={loading}
-                >
-                  {projects.map((project) => (
-                    <ProjectCard
-                      key={project.id}
-                      dictionary={dictionary}
-                      project={project}
-                    />
-                  ))}
-                </div>
+                projectKindFilter === "photo" ? (
+                  // Photo-filtered view shows each cover at its natural
+                  // aspect ratio (no cropping) by slotting cards into a CSS
+                  // columns masonry. Cards use the `masonry` variant so the
+                  // image inside switches to native sizing.
+                  <div
+                    className="gap-6 [column-fill:balance] columns-1 md:columns-2 xl:columns-3"
+                    aria-busy={loading}
+                  >
+                    {projects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="mb-6 break-inside-avoid"
+                      >
+                        <ProjectCard
+                          dictionary={dictionary}
+                          project={project}
+                          variant="masonry"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3"
+                    aria-busy={loading}
+                  >
+                    {projects.map((project) => (
+                      <ProjectCard
+                        key={project.id}
+                        dictionary={dictionary}
+                        project={project}
+                      />
+                    ))}
+                  </div>
+                )
               ) : (
                 <p className="rounded-panel app-panel-dashed p-6 text-sm app-muted">
                   {pageUi.emptyMessage}

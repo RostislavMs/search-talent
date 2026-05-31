@@ -66,9 +66,11 @@ function useVideoAspect(src: string) {
 function ImageTile({
   src,
   onOpen,
+  allowDownloads,
 }: {
   src: string;
   onOpen: () => void;
+  allowDownloads: boolean;
 }) {
   const aspectRatio = useImageAspect(src);
 
@@ -82,30 +84,47 @@ function ImageTile({
       <div
         className="relative w-full bg-[color:var(--surface-muted)]"
         style={{ aspectRatio }}
+        onContextMenu={
+          allowDownloads ? undefined : (event) => event.preventDefault()
+        }
       >
         <OptimizedImage
           src={src}
           alt=""
           fill
           sizes="(max-width: 1024px) 100vw, 33vw"
-          className="object-contain transition duration-300"
+          className={`object-contain transition duration-300 ${
+            allowDownloads ? "" : "pointer-events-none select-none"
+          }`}
+          draggable={allowDownloads}
         />
       </div>
     </button>
   );
 }
 
-function VideoTile({ src }: { src: string }) {
+function VideoTile({
+  src,
+  allowDownloads,
+}: {
+  src: string;
+  allowDownloads: boolean;
+}) {
   const aspectRatio = useVideoAspect(src);
 
   return (
     <div
       className="relative w-full bg-[color:var(--surface-muted)]"
       style={{ aspectRatio }}
+      onContextMenu={
+        allowDownloads ? undefined : (event) => event.preventDefault()
+      }
     >
       <video
         src={src}
         controls
+        controlsList={allowDownloads ? undefined : "nodownload noremoteplayback"}
+        disablePictureInPicture={!allowDownloads}
         preload="metadata"
         className="h-full w-full object-contain"
       />
@@ -128,7 +147,19 @@ function YouTubeTile({ videoId }: { videoId: string }) {
   );
 }
 
-export default function ProjectGallery({ media }: { media: ProjectMediaItem[] }) {
+export default function ProjectGallery({
+  media,
+  allowDownloads = true,
+}: {
+  media: ProjectMediaItem[];
+  /**
+   * When `false`, image right-click, drag, and the native video download
+   * control are disabled. This is a deterrent only — anyone willing to
+   * open DevTools can still grab the file. The page wrapper should pass
+   * `true` for the owner so they can always download their own work.
+   */
+  allowDownloads?: boolean;
+}) {
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const dictionary = useDictionary();
 
@@ -142,7 +173,15 @@ export default function ProjectGallery({ media }: { media: ProjectMediaItem[] })
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/*
+        Masonry-style layout via CSS columns. Each tile keeps its natural
+        aspect ratio (no cropping), and items slot into the shortest column
+        below the previous one — so landscape photos never sit beside a
+        tall portrait with empty space below them. `break-inside-avoid`
+        keeps each card from being split across columns, `gap-y` controls
+        vertical spacing inside a column.
+      */}
+      <div className="gap-4 [column-fill:balance] columns-1 sm:columns-2 lg:columns-3">
         {media.map((item) => {
           const youtubeId = getYouTubeVideoId(item.url);
           const isYouTube = youtubeId !== null;
@@ -152,7 +191,7 @@ export default function ProjectGallery({ media }: { media: ProjectMediaItem[] })
           return (
             <article
               key={item.id}
-              className="overflow-hidden rounded-panel border app-border bg-[color:var(--surface)]"
+              className="mb-4 break-inside-avoid overflow-hidden rounded-panel border app-border bg-[color:var(--surface)]"
             >
               {isYouTube && youtubeId ? (
                 <YouTubeTile videoId={youtubeId} />
@@ -160,9 +199,10 @@ export default function ProjectGallery({ media }: { media: ProjectMediaItem[] })
                 <ImageTile
                   src={item.url}
                   onOpen={() => setActiveImage(item.url)}
+                  allowDownloads={allowDownloads}
                 />
               ) : isVideo ? (
-                <VideoTile src={item.url} />
+                <VideoTile src={item.url} allowDownloads={allowDownloads} />
               ) : null}
             </article>
           );
@@ -174,6 +214,9 @@ export default function ProjectGallery({ media }: { media: ProjectMediaItem[] })
           type="button"
           className="fixed inset-0 z-50 flex cursor-zoom-out items-center justify-center bg-black/80 p-6"
           onClick={() => setActiveImage(null)}
+          onContextMenu={
+            allowDownloads ? undefined : (event) => event.preventDefault()
+          }
           aria-label="Close preview"
         >
           <OptimizedImage
@@ -181,7 +224,10 @@ export default function ProjectGallery({ media }: { media: ProjectMediaItem[] })
             alt=""
             width={1600}
             height={1200}
-            className="max-h-[90vh] max-w-[90vw] rounded-3xl object-contain"
+            className={`max-h-[90vh] max-w-[90vw] rounded-3xl object-contain ${
+              allowDownloads ? "" : "pointer-events-none select-none"
+            }`}
+            draggable={allowDownloads}
           />
         </button>
       )}

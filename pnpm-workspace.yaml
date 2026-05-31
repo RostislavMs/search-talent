@@ -1,16 +1,25 @@
 packages:
   - "."
 
-# Postinstall scripts pnpm is allowed to execute.
-# Everything not listed here is silently skipped.
+# Postinstall scripts pnpm is allowed to execute. Everything else with a
+# build script must be in ignoredBuiltDependencies below — pnpm 10+ exits
+# with code 1 if a build is neither approved nor explicitly ignored.
+#
+# Do NOT add an `allowBuilds:` block alongside these. Some pnpm versions
+# auto-generate it with literal "set this to true or false" placeholders,
+# which is invalid YAML for those fields and silently corrupts the entire
+# config (every build then shows up as "ignored").
 onlyBuiltDependencies:
   - "@google/genai"
   - esbuild
   - protobufjs
 
-# Explicitly skipped — keep noise out of approve-builds prompt:
-#   sharp/unrs-resolver — native, not needed locally (Vercel rebuilds them);
-#   supabase — broken postinstall on Windows (bin path missing).
+# Builds we explicitly skip:
+#   sharp, unrs-resolver — native modules. Not needed for local dev
+#     (Next.js falls back without sharp). Vercel rebuilds them on deploy.
+#   supabase — CLI postinstall downloads bin/supabase.EXE which pnpm then
+#     can't symlink on Windows. Install supabase CLI globally via Scoop
+#     or download the binary manually if you need it locally.
 ignoredBuiltDependencies:
   - sharp
   - supabase

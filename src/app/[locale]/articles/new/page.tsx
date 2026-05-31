@@ -117,7 +117,6 @@ export default async function NewArticlePage({
       <section className="mt-8">
         <ArticleComposer
           locale={safeLocale}
-          userId={dashboard.userId}
           categories={dashboard.categories}
           isAdmin={viewer.isAdmin}
         />

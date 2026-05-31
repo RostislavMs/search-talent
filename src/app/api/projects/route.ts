@@ -87,6 +87,7 @@ export async function POST(request: Request) {
       github_production_usage: payload.githubProductionUsage,
       github_display_options: payload.githubDisplayOptions ?? undefined,
       github_auto_sync: payload.githubAutoSync,
+      allow_downloads: payload.allowDownloads,
       ...githubColumns,
     })
     .select("id, slug, status")

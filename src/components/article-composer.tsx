@@ -13,11 +13,9 @@ import {
   sortArticleCategories,
   type ArticleCategory,
 } from "@/lib/articles";
-import { createClient } from "@/lib/supabase/client";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { compressImageFile } from "@/lib/image-compression";
-import { sanitizeStorageFileName } from "@/lib/profile-sections";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 
 function inferAssetKind(file: File) {
@@ -39,18 +37,15 @@ type EditableArticle = {
 
 export default function ArticleComposer({
   locale,
-  userId,
   categories,
   isAdmin,
   editArticle,
 }: {
   locale: string;
-  userId: string;
   categories: ArticleCategory[];
   isAdmin: boolean;
   editArticle?: EditableArticle | null;
 }) {
-  const supabase = createClient();
   const router = useRouter();
   const isUkrainian = locale === "uk";
   const availableCategories = useMemo(
@@ -193,28 +188,48 @@ export default function ArticleComposer({
         kind === "image"
           ? await compressImageFile(rawFile, mode === "cover" ? "cover" : "inline")
           : rawFile;
-      const filePath = `article-media/${userId}/${Date.now()}-${crypto.randomUUID()}-${sanitizeStorageFileName(file.name)}`;
-      const { error } = await supabase.storage
-        .from("project-media")
-        .upload(filePath, file, { upsert: true, contentType: file.type });
 
-      if (error) {
-        throw error;
+      const presign = await apiFetch<{
+        uploadUrl: string;
+        publicUrl: string;
+        storagePath: string;
+      }>("/api/storage/presign", {
+        method: "POST",
+        body: {
+          scope: "article-image",
+          fileName: file.name,
+          contentType: file.type || "application/octet-stream",
+          fileSize: file.size,
+        },
+      });
+
+      if (!presign.ok) {
+        throw new Error(presign.error || ui.error);
       }
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("project-media").getPublicUrl(filePath);
+      const { uploadUrl, publicUrl, storagePath } = presign.data;
+
+      const putResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      });
+
+      if (!putResponse.ok) {
+        throw new Error(ui.error);
+      }
 
       if (mode === "cover") {
         setCoverImageUrl(publicUrl);
-        setCoverImageStoragePath(filePath);
+        setCoverImageStoragePath(storagePath);
         return null;
       }
 
       if (mode === "hero") {
         setHeroVideoUrl(publicUrl);
-        setHeroVideoStoragePath(filePath);
+        setHeroVideoStoragePath(storagePath);
         return null;
       }
 
