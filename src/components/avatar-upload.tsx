@@ -3,28 +3,10 @@
 import { useState } from "react";
 import { useDictionary } from "@/lib/i18n/client";
 import OptimizedImage from "@/components/ui/optimized-image";
+import { apiFetch } from "@/lib/api-client";
 import { compressImageFile } from "@/lib/image-compression";
 import { createClient } from "@/lib/supabase/client";
-
-function extractAvatarStoragePath(url: string | null) {
-  if (!url) {
-    return null;
-  }
-
-  try {
-    const parsedUrl = new URL(url);
-    const marker = "/storage/v1/object/public/avatars/";
-    const markerIndex = parsedUrl.pathname.indexOf(marker);
-
-    if (markerIndex === -1) {
-      return null;
-    }
-
-    return decodeURIComponent(parsedUrl.pathname.slice(markerIndex + marker.length));
-  } catch {
-    return null;
-  }
-}
+import { uploadWithProgress } from "@/lib/storage/upload-with-progress";
 
 export default function AvatarUpload({
   userId,
@@ -53,23 +35,36 @@ export default function AvatarUpload({
       }
 
       const file = await compressImageFile(rawFile, "avatar");
-      const fileExt = file.name.split(".").pop()?.toLowerCase() || "webp";
-      const filePath = `${userId}/avatar.${fileExt}`;
-      const previousPath = extractAvatarStoragePath(avatarUrl);
+      const contentType = file.type || "image/webp";
 
-      const { error } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, {
-          upsert: true,
-          contentType: file.type,
-        });
+      const presign = await apiFetch<{
+        uploadUrl: string;
+        publicUrl: string;
+        storagePath: string;
+      }>("/api/storage/presign", {
+        method: "POST",
+        body: {
+          scope: "avatar",
+          fileName: file.name,
+          contentType,
+          fileSize: file.size,
+        },
+      });
 
-      if (error) throw error;
+      if (!presign.ok) {
+        throw new Error(
+          presign.error || dictionary.dashboardProfile.avatarUploadFailed,
+        );
+      }
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      const versionedUrl = `${publicUrl}?v=${Date.now()}`;
+      // Stable key per user → the upload overwrites the previous avatar, so
+      // there is nothing to clean up. The `?v=` query busts the CDN cache.
+      await uploadWithProgress({
+        url: presign.data.uploadUrl,
+        file,
+        contentType,
+      });
+      const versionedUrl = `${presign.data.publicUrl}?v=${Date.now()}`;
 
       const { error: profileError } = await supabase
         .from("profiles")
@@ -78,10 +73,6 @@ export default function AvatarUpload({
 
       if (profileError) {
         throw profileError;
-      }
-
-      if (previousPath && previousPath !== filePath) {
-        await supabase.storage.from("avatars").remove([previousPath]);
       }
 
       setAvatarUrl(versionedUrl);

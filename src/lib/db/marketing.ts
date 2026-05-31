@@ -66,19 +66,94 @@ export type TechnologyDirectoryItem = {
   count: number;
 };
 
-export async function getTechnologyDirectory(limit?: number) {
-  const items = await getPopularTechnologies(limit ?? 200);
-  return items.map((item) => ({
-    id: item.id,
-    name: item.name,
-    slug: slugifySegment(item.name),
-    count: item.count,
-  }));
+/**
+ * Technology directory scoped to projects only, with each count being the
+ * number of public (approved + published) projects that list the skill.
+ * Powers the /projects/tag landing pages and the "browse by technology"
+ * section. `getPopularTechnologies` counts projects + profiles combined,
+ * which would surface profile-only skills that have zero matching projects.
+ */
+export async function getTechnologyDirectory(
+  limit?: number,
+): Promise<TechnologyDirectoryItem[]> {
+  const supabase = await getPublicReadClient();
+  const [{ data: skills }, { data: publishedProjects }, { data: projectSkills }] =
+    await Promise.all([
+      supabase.from("skills").select("id, name"),
+      supabase
+        .from("projects")
+        .select("id")
+        .eq("moderation_status", "approved")
+        .eq("status", "published"),
+      supabase.from("project_skills").select("skill_id, project_id"),
+    ]);
+
+  const publishedIds = new Set(
+    ((publishedProjects || []) as Array<{ id: string }>).map((row) => row.id),
+  );
+
+  const counts = new Map<number, number>();
+
+  for (const row of (projectSkills || []) as Array<{
+    skill_id: number;
+    project_id: string;
+  }>) {
+    if (!publishedIds.has(row.project_id)) {
+      continue;
+    }
+
+    counts.set(row.skill_id, (counts.get(row.skill_id) || 0) + 1);
+  }
+
+  const items = ((skills || []) as Array<{ id: number; name: string }>)
+    .map((skill) => ({
+      id: skill.id,
+      name: skill.name,
+      slug: slugifySegment(skill.name),
+      count: counts.get(skill.id) || 0,
+    }))
+    .sort(
+      (left, right) =>
+        right.count - left.count || left.name.localeCompare(right.name),
+    );
+
+  return typeof limit === "number" ? items.slice(0, limit) : items;
 }
 
 export async function getTechnologyBySlug(techSlug: string) {
   const items = await getTechnologyDirectory();
   return items.find((item) => item.slug === techSlug) || null;
+}
+
+/**
+ * Count of public (approved + published) projects per `kind`. Powers the
+ * /projects/type landing pages and the "browse by type" section. The kind
+ * value is already URL-safe, so it doubles as the slug.
+ */
+export async function getProjectKindDirectory(): Promise<
+  Array<{ kind: string; count: number }>
+> {
+  const supabase = await getPublicReadClient();
+  const { data } = await supabase
+    .from("projects")
+    .select("kind")
+    .eq("moderation_status", "approved")
+    .eq("status", "published");
+
+  const counts = new Map<string, number>();
+
+  for (const row of (data || []) as Array<{ kind: string | null }>) {
+    if (!row.kind) {
+      continue;
+    }
+
+    counts.set(row.kind, (counts.get(row.kind) || 0) + 1);
+  }
+
+  return Array.from(counts.entries()).map(([kind, count]) => ({
+    kind,
+    count,
+  }));
 }
 
 export type DirectoryCreator = {
@@ -270,6 +345,121 @@ export async function getProjectsBySkillId(
       ownerUsername: owner?.username || null,
     };
   });
+}
+
+/**
+ * Skill directory scoped to talents only, with each count being the number of
+ * public profiles that list the skill. Used by the /talents/skill landing
+ * pages and the "browse by skill" section. Only public (listed username +
+ * public moderation status) profiles are counted, so a skill that exists only
+ * on hidden profiles never surfaces an empty page.
+ */
+export async function getTalentSkillDirectory(): Promise<
+  TechnologyDirectoryItem[]
+> {
+  const supabase = await getPublicReadClient();
+  const [{ data: skills }, { data: profiles }, { data: profileSkills }] =
+    await Promise.all([
+      supabase.from("skills").select("id, name"),
+      supabase
+        .from("profiles")
+        .select("id, moderation_status")
+        .not("username", "is", null),
+      supabase.from("profile_skills").select("skill_id, profile_id"),
+    ]);
+
+  const publicIds = new Set(
+    ((profiles || []) as Array<{ id: string; moderation_status: string | null }>)
+      .filter((row) => isPublicModerationStatus(row.moderation_status))
+      .map((row) => row.id),
+  );
+
+  const counts = new Map<number, number>();
+
+  for (const row of (profileSkills || []) as Array<{
+    skill_id: number;
+    profile_id: string;
+  }>) {
+    if (!publicIds.has(row.profile_id)) {
+      continue;
+    }
+
+    counts.set(row.skill_id, (counts.get(row.skill_id) || 0) + 1);
+  }
+
+  return ((skills || []) as Array<{ id: number; name: string }>)
+    .map((skill) => ({
+      id: skill.id,
+      name: skill.name,
+      slug: slugifySegment(skill.name),
+      count: counts.get(skill.id) || 0,
+    }))
+    .sort(
+      (left, right) =>
+        right.count - left.count || left.name.localeCompare(right.name),
+    );
+}
+
+export async function getTalentSkillBySlug(skillSlug: string) {
+  const items = await getTalentSkillDirectory();
+  return items.find((item) => item.slug === skillSlug) || null;
+}
+
+export type ProfileCategoryDirectoryItem = {
+  id: number;
+  name: string;
+  slug: string;
+  count: number;
+};
+
+/**
+ * Profile categories (a.k.a. roles/directions) with a slugified name and a
+ * count of public talents in each. Powers the /talents/role/[role] pages.
+ * Categories carry no slug column in the DB, so we derive one from the name
+ * the same way technologies do.
+ */
+export async function getProfileCategoryDirectory(): Promise<
+  ProfileCategoryDirectoryItem[]
+> {
+  const supabase = await getPublicReadClient();
+  const [{ data: categories }, { data: profiles }] = await Promise.all([
+    supabase.from("profile_categories").select("id, name").order("name"),
+    supabase
+      .from("profiles")
+      .select("category_id, username, moderation_status"),
+  ]);
+
+  const counts = new Map<number, number>();
+
+  for (const row of (profiles || []) as Array<{
+    category_id: number | null;
+    username: string | null;
+    moderation_status: string | null;
+  }>) {
+    if (!row.category_id || !row.username) {
+      continue;
+    }
+
+    if (!isPublicModerationStatus(row.moderation_status)) {
+      continue;
+    }
+
+    counts.set(row.category_id, (counts.get(row.category_id) || 0) + 1);
+  }
+
+  return ((categories || []) as Array<{ id: number; name: string }>).map(
+    (category) => ({
+      id: category.id,
+      name: category.name,
+      slug: slugifySegment(category.name),
+      count: counts.get(category.id) || 0,
+    }),
+  );
+}
+
+export async function getProfileCategoryBySlug(categorySlug: string) {
+  const items = await getProfileCategoryDirectory();
+  return items.find((item) => item.slug === categorySlug) || null;
 }
 
 export type ArticleCategoryDirectoryItem = {

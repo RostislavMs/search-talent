@@ -1,4 +1,10 @@
-import { getTechnologyDirectory } from "@/lib/db/marketing";
+import {
+  getProfileCategoryDirectory,
+  getProjectKindDirectory,
+  getTalentSkillDirectory,
+  getTechnologyDirectory,
+} from "@/lib/db/marketing";
+import { normalizeProjectKind } from "@/lib/projects";
 import { createLocalePath, locales, type Locale } from "@/lib/i18n/config";
 import { getMetadataBase } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +15,9 @@ export const SITEMAP_IDS = [
   "projects",
   "articles",
   "project-tags",
+  "project-types",
+  "talent-skills",
+  "talent-roles",
 ] as const;
 
 export type SitemapId = (typeof SITEMAP_IDS)[number];
@@ -21,6 +30,8 @@ export type SitemapEntry = {
 
 const SITEMAP_PAGE_SIZE = 5000;
 const MIN_ITEMS_FOR_PROGRAMMATIC_PAGE = 5;
+const MIN_TALENT_ITEMS_FOR_PAGE = 3;
+const MIN_PROJECT_TYPE_ITEMS_FOR_PAGE = 3;
 
 const staticRoutes = [
   "/",
@@ -63,6 +74,37 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     return items
       .filter((item) => item.count >= MIN_ITEMS_FOR_PROGRAMMATIC_PAGE)
       .map((item) => buildEntry(baseUrl, `/projects/tag/${item.slug}`, new Date()));
+  }
+
+  if (id === "project-types") {
+    const items = await getProjectKindDirectory();
+    return items
+      .filter(
+        (item) =>
+          normalizeProjectKind(item.kind) !== null &&
+          item.count >= MIN_PROJECT_TYPE_ITEMS_FOR_PAGE,
+      )
+      .map((item) =>
+        buildEntry(baseUrl, `/projects/type/${item.kind}`, new Date()),
+      );
+  }
+
+  if (id === "talent-skills") {
+    const items = await getTalentSkillDirectory();
+    return items
+      .filter((item) => item.count >= MIN_TALENT_ITEMS_FOR_PAGE)
+      .map((item) =>
+        buildEntry(baseUrl, `/talents/skill/${item.slug}`, new Date()),
+      );
+  }
+
+  if (id === "talent-roles") {
+    const items = await getProfileCategoryDirectory();
+    return items
+      .filter((item) => item.count >= MIN_TALENT_ITEMS_FOR_PAGE)
+      .map((item) =>
+        buildEntry(baseUrl, `/talents/role/${item.slug}`, new Date()),
+      );
   }
 
   const supabase = await createClient();

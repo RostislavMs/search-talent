@@ -79,9 +79,42 @@ type SearchResponse = {
 
 type Sort = "relevance" | "rating" | "newest";
 
+type DiscoveryHero = {
+  eyebrow?: string;
+  /** Rendered as the page <h1>. */
+  title: string;
+  subtitle?: string;
+};
+
+type DiscoveryLockedFilter = {
+  /** Display label for the locked pill, e.g. "HTML" or "Frontend Development". */
+  label: string;
+  /** Locked skill id — always applied to the search, not user-removable. */
+  skillId?: number;
+  /** Locked profile-category id (talents only) — always applied. */
+  categoryId?: number;
+  /** Locked project kind (projects only) — always applied. */
+  kind?: ProjectKind;
+};
+
 type DiscoveryPageProps = {
   mode: DiscoveryMode;
   initialCategoryId?: number | null;
+  initialSkillIds?: number[];
+  /**
+   * Pins a facet as the page scope (used by /projects/tag, /talents/skill,
+   * /talents/role). The locked facet is always sent with every search, shown
+   * as a non-removable pill in the hero, and its sidebar control is hidden —
+   * so the page's H1/URL and the results can never drift apart.
+   */
+  lockedFilter?: DiscoveryLockedFilter;
+  /**
+   * When provided, the marketing gradient hero is swapped for a minimal
+   * header (eyebrow + h1 + subtitle + search). Used by the skill/role
+   * landing pages so they reuse the discovery layout but lead with a
+   * compact, SEO-focused heading instead of the full hero.
+   */
+  hero?: DiscoveryHero;
 };
 
 type DiscoveryCopy = {
@@ -334,7 +367,8 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
         },
         creators: {
           eyebrow: "Профілі талантів",
-          title: "Пошук Талантів — Профілі Розробників, Дизайнерів та IT-Фахівців",
+          title:
+            "Пошук Талантів — Профілі Розробників, Дизайнерів та IT-Фахівців",
           description:
             "Переглядайте публічні профілі та портфоліо IT-спеціалістів. Відбирайте авторів за навичками, локацією, досвідом і напрямком роботи — без зайвих проєктних результатів.",
           placeholder: "Шукайте таланти, ролі або навички...",
@@ -400,7 +434,8 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       mediaCount: "Media",
       loading: "Refreshing results...",
       searchFailed: "Could not load search results right now.",
-      saveSearchFailed: "Could not save this search right now. Please try again.",
+      saveSearchFailed:
+        "Could not save this search right now. Please try again.",
       projectsMatched: "Projects found",
       creatorsMatched: "Talents found",
     },
@@ -476,6 +511,9 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
 export default function DiscoveryPage({
   mode,
   initialCategoryId = null,
+  initialSkillIds = [],
+  hero,
+  lockedFilter,
 }: DiscoveryPageProps) {
   const dictionary = useDictionary();
   const toast = useToast();
@@ -484,6 +522,9 @@ export default function DiscoveryPage({
   const pageUi = copy.modes[mode];
   const commonUi = copy.common;
   const scope = mode;
+  const lockedSkillId = lockedFilter?.skillId ?? null;
+  const lockedCategoryId = lockedFilter?.categoryId ?? null;
+  const lockedKind = lockedFilter?.kind ?? null;
   const [meta, setMeta] = useState<{
     countries: MetaOption[];
     languages: MetaOption[];
@@ -498,9 +539,11 @@ export default function DiscoveryPage({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("relevance");
   const [countryId, setCountryId] = useState<number | null>(null);
-  const [categoryId, setCategoryId] = useState<number | null>(initialCategoryId);
+  const [categoryId, setCategoryId] = useState<number | null>(
+    initialCategoryId,
+  );
   const [languageIds, setLanguageIds] = useState<number[]>([]);
-  const [skillIds, setSkillIds] = useState<number[]>([]);
+  const [skillIds, setSkillIds] = useState<number[]>(initialSkillIds);
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel | "">(
     "",
   );
@@ -509,7 +552,9 @@ export default function DiscoveryPage({
   >([]);
   const [workFormatFilters, setWorkFormatFilters] = useState<WorkFormat[]>([]);
   const [projectStatus, setProjectStatus] = useState<ProjectStatus | "">("");
-  const [projectKindFilter, setProjectKindFilter] = useState<ProjectKind | "">("");
+  const [projectKindFilter, setProjectKindFilter] = useState<ProjectKind | "">(
+    "",
+  );
   const [hasMedia, setHasMedia] = useState(false);
   const [hasAvatar, setHasAvatar] = useState(false);
   const [minScore, setMinScore] = useState<number | null>(null);
@@ -518,7 +563,13 @@ export default function DiscoveryPage({
   const [initialLoading, setInitialLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedSearches, setSavedSearches] = useState<
-    Array<{ id: string; name: string; mode: string; params: Record<string, unknown>; created_at: string }>
+    Array<{
+      id: string;
+      name: string;
+      mode: string;
+      params: Record<string, unknown>;
+      created_at: string;
+    }>
   >([]);
   const [saveSearchName, setSaveSearchName] = useState("");
   const [showSaveForm, setShowSaveForm] = useState(false);
@@ -581,9 +632,7 @@ export default function DiscoveryPage({
 
       // ignore failure — user might not be authenticated
       if (result.ok) {
-        setSavedSearches(
-          (result.data.searches as typeof savedSearches) || [],
-        );
+        setSavedSearches((result.data.searches as typeof savedSearches) || []);
       }
     }
 
@@ -602,7 +651,8 @@ export default function DiscoveryPage({
     if (skillIds.length > 0) params.skillIds = skillIds;
     if (languageIds.length > 0) params.languageIds = languageIds;
     if (experienceLevel) params.experienceLevel = experienceLevel;
-    if (employmentTypeFilters.length > 0) params.employmentTypes = employmentTypeFilters;
+    if (employmentTypeFilters.length > 0)
+      params.employmentTypes = employmentTypeFilters;
     if (workFormatFilters.length > 0) params.workFormats = workFormatFilters;
     if (projectStatus) params.projectStatus = projectStatus;
     if (projectKindFilter) params.projectKind = projectKindFilter;
@@ -644,12 +694,12 @@ export default function DiscoveryPage({
     setSkillIds((params.skillIds as number[]) || []);
     setLanguageIds((params.languageIds as number[]) || []);
     setExperienceLevel((params.experienceLevel as ExperienceLevel | "") || "");
-    setEmploymentTypeFilters((params.employmentTypes as EmploymentType[]) || []);
+    setEmploymentTypeFilters(
+      (params.employmentTypes as EmploymentType[]) || [],
+    );
     setWorkFormatFilters((params.workFormats as WorkFormat[]) || []);
     setProjectStatus((params.projectStatus as ProjectStatus | "") || "");
-    setProjectKindFilter(
-      normalizeProjectKind(params.projectKind) ?? "",
-    );
+    setProjectKindFilter(normalizeProjectKind(params.projectKind) ?? "");
     setHasMedia(Boolean(params.hasMedia));
     setHasAvatar(Boolean(params.hasAvatar));
     setMinScore((params.minScore as number) ?? null);
@@ -661,89 +711,94 @@ export default function DiscoveryPage({
       setLoading(true);
       setErrorMessage(null);
 
-        const params = new URLSearchParams();
+      const params = new URLSearchParams();
 
-        if (query.trim()) {
-          params.set("q", query.trim());
-        }
+      if (query.trim()) {
+        params.set("q", query.trim());
+      }
 
-        params.set("scope", scope);
-        params.set("sort", sort);
+      params.set("scope", scope);
+      params.set("sort", sort);
 
-        if (countryId && mode === "creators") {
-          params.set("countryId", String(countryId));
-        }
+      if (countryId && mode === "creators") {
+        params.set("countryId", String(countryId));
+      }
 
-        if (categoryId && mode === "creators") {
-          params.set("categoryId", String(categoryId));
-        }
+      const effectiveCategoryId = lockedCategoryId ?? categoryId;
+      if (effectiveCategoryId && mode === "creators") {
+        params.set("categoryId", String(effectiveCategoryId));
+      }
 
-        if (skillIds.length > 0) {
-          params.set("skillIds", skillIds.join(","));
-        }
+      const effectiveSkillIds = lockedSkillId
+        ? Array.from(new Set([lockedSkillId, ...skillIds]))
+        : skillIds;
+      if (effectiveSkillIds.length > 0) {
+        params.set("skillIds", effectiveSkillIds.join(","));
+      }
 
-        if (languageIds.length > 0 && mode === "creators") {
-          params.set("languageIds", languageIds.join(","));
-        }
+      if (languageIds.length > 0 && mode === "creators") {
+        params.set("languageIds", languageIds.join(","));
+      }
 
-        if (experienceLevel && mode === "creators") {
-          params.set("experienceLevel", experienceLevel);
-        }
+      if (experienceLevel && mode === "creators") {
+        params.set("experienceLevel", experienceLevel);
+      }
 
-        if (employmentTypeFilters.length > 0 && mode === "creators") {
-          params.set("employmentTypes", employmentTypeFilters.join(","));
-        }
+      if (employmentTypeFilters.length > 0 && mode === "creators") {
+        params.set("employmentTypes", employmentTypeFilters.join(","));
+      }
 
-        if (workFormatFilters.length > 0 && mode === "creators") {
-          params.set("workFormats", workFormatFilters.join(","));
-        }
+      if (workFormatFilters.length > 0 && mode === "creators") {
+        params.set("workFormats", workFormatFilters.join(","));
+      }
 
-        if (projectStatus && mode === "projects") {
-          params.set("projectStatus", projectStatus);
-        }
+      if (projectStatus && mode === "projects") {
+        params.set("projectStatus", projectStatus);
+      }
 
-        if (projectKindFilter && mode === "projects") {
-          params.set("kind", projectKindFilter);
-        }
+      const effectiveKind = lockedKind ?? projectKindFilter;
+      if (effectiveKind && mode === "projects") {
+        params.set("kind", effectiveKind);
+      }
 
-        if (hasMedia && mode === "projects") {
-          params.set("hasMedia", "1");
-        }
+      if (hasMedia && mode === "projects") {
+        params.set("hasMedia", "1");
+      }
 
-        if (hasAvatar && mode === "creators") {
-          params.set("hasAvatar", "1");
-        }
+      if (hasAvatar && mode === "creators") {
+        params.set("hasAvatar", "1");
+      }
 
-        if (minScore !== null) {
-          params.set("minScore", String(minScore));
-        }
+      if (minScore !== null) {
+        params.set("minScore", String(minScore));
+      }
 
-        if (maxScore !== null) {
-          params.set("maxScore", String(maxScore));
-        }
+      if (maxScore !== null) {
+        params.set("maxScore", String(maxScore));
+      }
 
-        const result = await apiFetch<SearchResponse>(
-          `/api/search?${params.toString()}`,
-        );
+      const result = await apiFetch<SearchResponse>(
+        `/api/search?${params.toString()}`,
+      );
 
-        if (!result.ok) {
-          setProjects([]);
-          setUsers([]);
-          setTotals({ projects: 0, users: 0 });
-          setErrorMessage(result.error || commonUi.searchFailed);
-          setLoading(false);
-          setInitialLoading(false);
-          return;
-        }
-
-        setProjects(result.data.projects || []);
-        setUsers(result.data.users || []);
-        setTotals({
-          projects: result.data.totals?.projects || 0,
-          users: result.data.totals?.users || 0,
-        });
+      if (!result.ok) {
+        setProjects([]);
+        setUsers([]);
+        setTotals({ projects: 0, users: 0 });
+        setErrorMessage(result.error || commonUi.searchFailed);
         setLoading(false);
         setInitialLoading(false);
+        return;
+      }
+
+      setProjects(result.data.projects || []);
+      setUsers(result.data.users || []);
+      setTotals({
+        projects: result.data.totals?.projects || 0,
+        users: result.data.totals?.users || 0,
+      });
+      setLoading(false);
+      setInitialLoading(false);
     }, 250);
 
     return () => {
@@ -758,6 +813,9 @@ export default function DiscoveryPage({
     hasAvatar,
     hasMedia,
     languageIds,
+    lockedCategoryId,
+    lockedKind,
+    lockedSkillId,
     maxScore,
     minScore,
     mode,
@@ -793,74 +851,130 @@ export default function DiscoveryPage({
   const avatarFilterLabel = locale === "uk" ? "Лише з фото" : "Only with photo";
   const anyExperienceLabel =
     locale === "uk" ? "Будь-який досвід" : "Any experience";
-  const activeFilterItems: Array<{ key: string; label: string; remove: () => void }> = [
+  const activeFilterItems: Array<{
+    key: string;
+    label: string;
+    remove: () => void;
+  }> = [
     query.trim()
-      ? { key: "query", label: `${commonUi.queryLabel}: ${query.trim()}`, remove: () => setQuery("") }
+      ? {
+          key: "query",
+          label: `${commonUi.queryLabel}: ${query.trim()}`,
+          remove: () => setQuery(""),
+        }
       : null,
     sort !== "relevance"
-      ? { key: "sort", label: sort === "rating" ? commonUi.sortRating : commonUi.sortNewest, remove: () => setSort("relevance") }
+      ? {
+          key: "sort",
+          label: sort === "rating" ? commonUi.sortRating : commonUi.sortNewest,
+          remove: () => setSort("relevance"),
+        }
       : null,
     mode === "creators" && selectedCountryName
-      ? { key: "country", label: `${commonUi.filterCountry}: ${selectedCountryName}`, remove: () => setCountryId(null) }
+      ? {
+          key: "country",
+          label: `${commonUi.filterCountry}: ${selectedCountryName}`,
+          remove: () => setCountryId(null),
+        }
       : null,
     mode === "creators" && selectedCategoryLabel
-      ? { key: "category", label: `${commonUi.filterCategory}: ${selectedCategoryLabel}`, remove: () => setCategoryId(null) }
+      ? {
+          key: "category",
+          label: `${commonUi.filterCategory}: ${selectedCategoryLabel}`,
+          remove: () => setCategoryId(null),
+        }
       : null,
     mode === "creators" && experienceLevel
-      ? { key: "experience", label: `${dictionary.forms.totalExperienceYears}: ${getExperienceLevelLabel(experienceLevel, locale)}`, remove: () => setExperienceLevel("") }
+      ? {
+          key: "experience",
+          label: `${dictionary.forms.totalExperienceYears}: ${getExperienceLevelLabel(experienceLevel, locale)}`,
+          remove: () => setExperienceLevel(""),
+        }
       : null,
     mode === "projects" && projectStatus
-      ? { key: "status", label: `${commonUi.filterProjectStatus}: ${getStatusLabel(projectStatus, dictionary, commonUi.anyStatus)}`, remove: () => setProjectStatus("") }
+      ? {
+          key: "status",
+          label: `${commonUi.filterProjectStatus}: ${getStatusLabel(projectStatus, dictionary, commonUi.anyStatus)}`,
+          remove: () => setProjectStatus(""),
+        }
       : null,
     mode === "projects" && projectKindFilter
-      ? { key: "kind", label: `${commonUi.filterProjectKind}: ${getProjectKindLabel(projectKindFilter, dictionary)}`, remove: () => setProjectKindFilter("") }
+      ? {
+          key: "kind",
+          label: `${commonUi.filterProjectKind}: ${getProjectKindLabel(projectKindFilter, dictionary)}`,
+          remove: () => setProjectKindFilter(""),
+        }
       : null,
     mode === "creators" && hasAvatar
-      ? { key: "avatar", label: avatarFilterLabel, remove: () => setHasAvatar(false) }
+      ? {
+          key: "avatar",
+          label: avatarFilterLabel,
+          remove: () => setHasAvatar(false),
+        }
       : null,
     mode === "projects" && hasMedia
-      ? { key: "media", label: commonUi.onlyWithMedia, remove: () => setHasMedia(false) }
+      ? {
+          key: "media",
+          label: commonUi.onlyWithMedia,
+          remove: () => setHasMedia(false),
+        }
       : null,
     minScore !== null || maxScore !== null
-      ? { key: "score", label: `${commonUi.filterRating}: ${minScore ?? 0}–${maxScore ?? 100}`, remove: () => { setMinScore(null); setMaxScore(null); } }
+      ? {
+          key: "score",
+          label: `${commonUi.filterRating}: ${minScore ?? 0}–${maxScore ?? 100}`,
+          remove: () => {
+            setMinScore(null);
+            setMaxScore(null);
+          },
+        }
       : null,
     ...meta.languages
       .filter((language) => languageIds.includes(language.id))
       .map((language) => ({
         key: `lang-${language.id}`,
         label: `${dictionary.forms.languages}: ${language.name}`,
-        remove: () => setLanguageIds((prev) => prev.filter((id) => id !== language.id)),
+        remove: () =>
+          setLanguageIds((prev) => prev.filter((id) => id !== language.id)),
       })),
     ...meta.skills
       .filter((skill) => skillIds.includes(skill.id))
       .map((skill) => ({
         key: `skill-${skill.id}`,
         label: `${commonUi.filterSkills}: ${skill.name}`,
-        remove: () => setSkillIds((prev) => prev.filter((id) => id !== skill.id)),
+        remove: () =>
+          setSkillIds((prev) => prev.filter((id) => id !== skill.id)),
       })),
     ...employmentTypeFilters.map((item) => ({
       key: `emp-${item}`,
       label: `${dictionary.forms.employmentTypes}: ${getEmploymentTypeLabel(item, dictionary)}`,
-      remove: () => setEmploymentTypeFilters((prev) => prev.filter((et) => et !== item)),
+      remove: () =>
+        setEmploymentTypeFilters((prev) => prev.filter((et) => et !== item)),
     })),
     ...workFormatFilters.map((item) => ({
       key: `wf-${item}`,
       label: `${dictionary.forms.workFormats}: ${getWorkFormatLabel(item, dictionary)}`,
-      remove: () => setWorkFormatFilters((prev) => prev.filter((wf) => wf !== item)),
+      remove: () =>
+        setWorkFormatFilters((prev) => prev.filter((wf) => wf !== item)),
     })),
-  ].filter(Boolean) as Array<{ key: string; label: string; remove: () => void }>;
+  ].filter(Boolean) as Array<{
+    key: string;
+    label: string;
+    remove: () => void;
+  }>;
   const talentsLabel = locale === "uk" ? "Таланти" : "Talents";
   const resultCount = mode === "projects" ? totals.projects : totals.users;
-  const resultLabel =
-    mode === "projects" ? commonUi.projectsMatched : commonUi.creatorsMatched;
 
   const resetFilters = () => {
     setQuery("");
     setSort("relevance");
     setCountryId(null);
-    setCategoryId(null);
+    // Restore the landing-page seed (no-op on the main /talents & /projects
+    // pages, where both seeds are empty) so "Reset" keeps the page's defining
+    // skill/role filter instead of clearing it.
+    setCategoryId(initialCategoryId);
     setLanguageIds([]);
-    setSkillIds([]);
+    setSkillIds(initialSkillIds);
     setExperienceLevel("");
     setEmploymentTypeFilters([]);
     setWorkFormatFilters([]);
@@ -874,7 +988,44 @@ export default function DiscoveryPage({
 
   return (
     <section>
-      <section className="bg-brand-hero rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:rounded-hero sm:p-8 md:p-10">
+      {hero ? (
+        <section className="rounded-hero app-card p-5 sm:p-7">
+          {hero.eyebrow ? (
+            <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft sm:text-sm">
+              {hero.eyebrow}
+            </p>
+          ) : null}
+          <h1 className="font-display mt-2 text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
+            {hero.title}
+          </h1>
+          {hero.subtitle ? (
+            <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
+              {hero.subtitle}
+            </p>
+          ) : null}
+          {lockedFilter ? (
+            <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border app-border bg-[color:var(--surface-muted)] px-3 py-1 text-sm font-medium text-[color:var(--foreground)]">
+              <svg
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                className="h-3.5 w-3.5 app-soft"
+                aria-hidden="true"
+              >
+                <path d="M8 1a3 3 0 0 0-3 3v2H4.5A1.5 1.5 0 0 0 3 7.5v6A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 11.5 6H11V4a3 3 0 0 0-3-3Zm2 5H6V4a2 2 0 1 1 4 0v2Z" />
+              </svg>
+              {lockedFilter.label}
+            </span>
+          ) : null}
+          <input
+            type="text"
+            placeholder={pageUi.placeholder}
+            className="mt-5 w-full rounded-2xl border app-border bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--foreground)] outline-none transition placeholder:app-muted focus:border-[color:var(--foreground)] sm:text-base"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </section>
+      ) : (
+        <section className="bg-brand-hero rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:rounded-hero sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
@@ -902,14 +1053,14 @@ export default function DiscoveryPage({
         <div className="mt-5 rounded-2xl bg-white/10 p-3 backdrop-blur sm:mt-8 sm:rounded-panel sm:p-4">
           <div className="flex flex-wrap gap-2">
             <DiscoveryModeLink
-              active={mode === "projects"}
-              href="/projects"
-              label={dictionary.common.projects}
-            />
-            <DiscoveryModeLink
               active={mode === "creators"}
               href="/talents"
               label={talentsLabel}
+            />
+            <DiscoveryModeLink
+              active={mode === "projects"}
+              href="/projects"
+              label={dictionary.common.projects}
             />
           </div>
 
@@ -937,7 +1088,8 @@ export default function DiscoveryPage({
             ))}
           </div>
         )}
-      </section>
+        </section>
+      )}
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 xl:hidden">
         <button
@@ -947,8 +1099,19 @@ export default function DiscoveryPage({
           aria-expanded={mobileFiltersOpen}
           aria-controls="discovery-filters-drawer"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M4 6h16M7 12h10M10 18h4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
           </svg>
           <span>{commonUi.filters}</span>
           {activeFilterItems.length > 0 ? (
@@ -983,11 +1146,24 @@ export default function DiscoveryPage({
               <button
                 type="button"
                 onClick={() => setMobileFiltersOpen(false)}
-                aria-label={locale === "uk" ? "Закрити фільтри" : "Close filters"}
+                aria-label={
+                  locale === "uk" ? "Закрити фільтри" : "Close filters"
+                }
                 className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border app-border bg-[color:var(--surface)] text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6 6l12 12M18 6L6 18"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
             </div>
@@ -1099,7 +1275,7 @@ export default function DiscoveryPage({
                 </div>
               )}
 
-              {mode === "creators" && (
+              {mode === "creators" && !lockedCategoryId && (
                 <div>
                   <p className="mb-2 text-sm font-medium text-[color:var(--foreground)]">
                     {commonUi.filterCategory}
@@ -1227,26 +1403,26 @@ export default function DiscoveryPage({
 
               {mode === "projects" && (
                 <>
-                  <div>
-                    <p className="mb-2 text-sm font-medium text-[color:var(--foreground)]">
-                      {commonUi.filterProjectKind}
-                    </p>
-                    <FormSelect
-                      className="w-full"
-                      triggerClassName="w-full"
-                      value={projectKindFilter}
-                      placeholder={commonUi.anyProjectKind}
-                      onChange={(value) =>
-                        setProjectKindFilter(
-                          normalizeProjectKind(value) ?? "",
-                        )
-                      }
-                      options={projectKinds.map((kind) => ({
-                        value: kind,
-                        label: getProjectKindLabel(kind, dictionary),
-                      }))}
-                    />
-                  </div>
+                  {!lockedKind && (
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-[color:var(--foreground)]">
+                        {commonUi.filterProjectKind}
+                      </p>
+                      <FormSelect
+                        className="w-full"
+                        triggerClassName="w-full"
+                        value={projectKindFilter}
+                        placeholder={commonUi.anyProjectKind}
+                        onChange={(value) =>
+                          setProjectKindFilter(normalizeProjectKind(value) ?? "")
+                        }
+                        options={projectKinds.map((kind) => ({
+                          value: kind,
+                          label: getProjectKindLabel(kind, dictionary),
+                        }))}
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <p className="mb-2 text-sm font-medium text-[color:var(--foreground)]">
@@ -1357,27 +1533,6 @@ export default function DiscoveryPage({
               )}
             </div>
           </section>
-
-          <section className="rounded-hero app-card p-5">
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {commonUi.resultsSummary}
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-[color:var(--foreground)]">
-              {resultCount}
-            </p>
-            <p className="mt-2 text-sm leading-6 app-muted">
-              {loading ? commonUi.loading : pageUi.summaryDescription}
-            </p>
-
-            <div className="mt-5 rounded-3xl app-panel px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-                {resultLabel}
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-[color:var(--foreground)]">
-                {resultCount}
-              </p>
-            </div>
-          </section>
         </aside>
 
         <div className="space-y-8">
@@ -1411,7 +1566,9 @@ export default function DiscoveryPage({
                     className="group flex cursor-pointer items-center gap-1.5 rounded-full app-panel px-3 py-1 text-sm app-muted transition hover:bg-[color:var(--surface-muted)]"
                   >
                     {item.label}
-                    <span className="text-xs opacity-50 transition group-hover:opacity-100">&times;</span>
+                    <span className="text-xs opacity-50 transition group-hover:opacity-100">
+                      &times;
+                    </span>
                   </button>
                 ))}
               </div>
@@ -1444,7 +1601,7 @@ export default function DiscoveryPage({
               initialLoading || (loading && projects.length === 0) ? (
                 <ProjectCardGridSkeleton />
               ) : projects.length > 0 ? (
-                projectKindFilter === "photo" ? (
+                (lockedKind ?? projectKindFilter) === "photo" ? (
                   // Photo-filtered view shows each cover at its natural
                   // aspect ratio (no cropping) by slotting cards into a CSS
                   // columns masonry. Cards use the `masonry` variant so the
@@ -1454,10 +1611,7 @@ export default function DiscoveryPage({
                     aria-busy={loading}
                   >
                     {projects.map((project) => (
-                      <div
-                        key={project.id}
-                        className="mb-6 break-inside-avoid"
-                      >
+                      <div key={project.id} className="mb-6 break-inside-avoid">
                         <ProjectCard
                           dictionary={dictionary}
                           project={project}

@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import ProjectCard from "@/components/project-card";
-import { ButtonLink } from "@/components/ui/Button";
+import dynamic from "next/dynamic";
+import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import {
-  getProjectsBySkillId,
   getTechnologyBySlug,
   getTechnologyDirectory,
 } from "@/lib/db/marketing";
 import { locales, isLocale, type Locale } from "@/lib/i18n/config";
-import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getProjectsByTechnologyIntro } from "@/lib/marketing-content";
 import { buildProjectsTagMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
+
+const DiscoveryPage = dynamic(() => import("@/components/discovery-page"), {
+  loading: () => <DiscoveryPageSkeleton mode="projects" />,
+});
 
 export const revalidate = 21600;
 
@@ -75,83 +76,25 @@ export default async function ProjectsByTagPage({
     notFound();
   }
 
-  const dictionary = getDictionary(locale);
-  const intro = getProjectsByTechnologyIntro(locale, technology.name);
-
-  const [projects, allTech] = await Promise.all([
-    getProjectsBySkillId(technology.id, 24),
-    getTechnologyDirectory(50),
-  ]);
-
-  const relatedTech = allTech
-    .filter((item) => item.slug !== technology.slug && item.count > 0)
-    .slice(0, 8);
+  const hero = {
+    eyebrow: locale === "uk" ? "Стек" : "Stack",
+    title:
+      locale === "uk"
+        ? `IT-проєкти на ${technology.name}`
+        : `${technology.name} IT projects`,
+    subtitle:
+      locale === "uk"
+        ? `Публічні проєкти зі стеком ${technology.name}. Фільтруйте за статусом, типом і рейтингом.`
+        : `Public projects built with ${technology.name}. Filter by status, type, and rating.`,
+  };
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <section className="rounded-hero app-card p-5 sm:p-7">
-        <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-          {locale === "uk" ? "Стек" : "Stack"}
-        </p>
-        <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
-          {locale === "uk"
-            ? `IT-проєкти на ${technology.name}`
-            : `IT projects built with ${technology.name}`}
-        </h1>
-        <p className="mt-3 text-sm app-muted">
-          {projects.length}
-          {locale === "uk" ? " публічних проєктів" : " public projects"}
-        </p>
-        <div className="mt-5 space-y-4 text-sm leading-7 app-muted sm:text-base sm:leading-8">
-          {intro.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-6 sm:mt-8">
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              dictionary={dictionary}
-              project={{
-                id: project.id,
-                title: project.title,
-                slug: project.slug || "",
-                description: project.description,
-                ownerName: project.ownerName,
-                ownerUsername: project.ownerUsername,
-                score: project.score,
-                cover_url: project.coverUrl,
-              }}
-            />
-          ))}
-        </div>
-      </section>
-
-      {relatedTech.length > 0 && (
-        <section className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-7">
-          <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
-            {locale === "uk" ? "Інші технології" : "Other technologies"}
-          </h2>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {relatedTech.map((item) => (
-              <ButtonLink
-                key={item.id}
-                href={`/projects/tag/${item.slug}`}
-                variant="secondary"
-                className="rounded-full"
-              >
-                <span>{item.name}</span>
-                <span className="ml-2 rounded-full bg-black/8 px-2 py-0.5 text-xs">
-                  {item.count}
-                </span>
-              </ButtonLink>
-            ))}
-          </div>
-        </section>
-      )}
+      <DiscoveryPage
+        mode="projects"
+        lockedFilter={{ label: technology.name, skillId: technology.id }}
+        hero={hero}
+      />
     </main>
   );
 }

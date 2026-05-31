@@ -16,6 +16,8 @@ const SCOPES = [
   "article-image",
   "certificate",
   "profile-background",
+  "avatar",
+  "profile-cover",
 ] as const;
 
 type Scope = (typeof SCOPES)[number];
@@ -36,6 +38,8 @@ const MAX_BYTES: Record<Scope, number> = {
   "article-image": 10 * 1024 * 1024,
   certificate: 25 * 1024 * 1024,
   "profile-background": 25 * 1024 * 1024,
+  avatar: 10 * 1024 * 1024,
+  "profile-cover": 15 * 1024 * 1024,
 };
 
 const ALLOWED_MIME_PREFIX: Record<Scope, string[]> = {
@@ -43,6 +47,8 @@ const ALLOWED_MIME_PREFIX: Record<Scope, string[]> = {
   "article-image": ["image/"],
   certificate: ["image/", "application/pdf"],
   "profile-background": ["image/", "video/"],
+  avatar: ["image/"],
+  "profile-cover": ["image/"],
 };
 
 const requestSchema = z.object({
@@ -78,6 +84,13 @@ function buildKey(scope: Scope, ownerId: string, fileName: string, projectId?: s
       return `certificates/${ownerId}/${stamp}-${safeName}`;
     case "profile-background":
       return `profile-backgrounds/${ownerId}/${stamp}-${safeName}`;
+    // Avatar / cover use a STABLE key per user (no stamp): re-uploading
+    // overwrites the same object, so there is never a stale copy to clean up.
+    // The client appends a `?v=` query to bust the CDN cache.
+    case "avatar":
+      return `avatars/${ownerId}/avatar`;
+    case "profile-cover":
+      return `covers/${ownerId}/cover`;
   }
 }
 

@@ -9,6 +9,8 @@ import { parseJsonRequest } from "@/lib/validation/request";
 const ALLOWED_BUCKETS = new Set([
   "project-media",
   "profile-certificates",
+  "profile-covers",
+  "avatars",
 ]);
 
 const requestSchema = z.object({
@@ -62,6 +64,8 @@ export async function DELETE(request: Request) {
     `articles/${user.id}/`,
     `certificates/${user.id}/`,
     `profile-backgrounds/${user.id}/`,
+    `avatars/${user.id}/`,
+    `covers/${user.id}/`,
   ];
 
   let authorised = userPrefixes.some((prefix) => storagePath.startsWith(prefix));
