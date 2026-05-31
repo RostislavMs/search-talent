@@ -52,7 +52,7 @@ export default async function AdminOverviewPage({
 
   return (
     <div className="space-y-8">
-      <section className="rounded-hero app-card p-8">
+      <section className="rounded-hero app-card p-5 sm:p-8">
         <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.title}
         </h2>
@@ -63,7 +63,7 @@ export default async function AdminOverviewPage({
             <article
               key={card.label}
               className={[
-                "rounded-2xl p-5",
+                "rounded-2xl p-4 sm:p-5",
                 card.tone === "alert"
                   ? "app-panel border border-[color:var(--border)]"
                   : "app-panel",

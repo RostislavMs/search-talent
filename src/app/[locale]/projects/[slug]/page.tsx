@@ -342,7 +342,7 @@ export default async function PublicProjectPage({
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
       <section className="overflow-hidden rounded-2xl app-card sm:rounded-hero">
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+        <div className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
           <div className="p-5 sm:p-8 md:p-10">
             <div className="flex flex-wrap items-center gap-3">
               <ButtonLink href="/projects" variant="ghost" size="sm">
@@ -459,7 +459,7 @@ export default async function PublicProjectPage({
         </div>
       </section>
 
-      <section className="mt-5 grid gap-5 sm:mt-8 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <section className="mt-5 grid grid-cols-1 gap-5 sm:mt-8 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-5 sm:space-y-8">
           <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">

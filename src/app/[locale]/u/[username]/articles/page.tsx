@@ -166,8 +166,8 @@ async function renderOwnerView({
   }
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
+    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -193,7 +193,7 @@ async function renderOwnerView({
         </div>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-6 sm:mt-8">
         {dashboard.items.length > 0 ? (
           <div className="grid gap-4 xl:grid-cols-2">
             {dashboard.items.map((item) => (
@@ -320,8 +320,8 @@ async function renderPublicView({
   const pageLabel = dictionary.dashboardProjects.pageLabel;
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
+    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -342,7 +342,7 @@ async function renderPublicView({
         </div>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-6 sm:mt-8">
         {result.articles.length > 0 ? (
           <>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

@@ -103,7 +103,7 @@ export default function HomeTopRated({
           {Object.values(dictionary.home.ratingSignals).map((item) => (
             <div
               key={item.title}
-              className="rounded-3xl border border-white/10 bg-black/25 p-5 backdrop-blur"
+              className="rounded-3xl border border-white/10 bg-black/25 p-4 backdrop-blur sm:p-5"
             >
               <p className="text-sm font-semibold text-white">{item.title}</p>
               <p className="mt-2 text-sm leading-6 text-white/72">{item.description}</p>
@@ -214,7 +214,7 @@ export default function HomeTopRated({
             ))}
           </div>
         ) : (
-          <div className="mt-8 rounded-panel app-panel-dashed p-8 text-sm app-muted">
+          <div className="mt-5 rounded-panel app-panel-dashed p-6 text-sm app-muted sm:mt-8 sm:p-8">
             {dictionary.home.leaderboardEmpty}
           </div>
         )}
@@ -349,7 +349,7 @@ export default function HomeTopRated({
             ))}
           </div>
         ) : (
-          <div className="mt-8 rounded-panel app-panel-dashed p-8 text-sm app-muted">
+          <div className="mt-5 rounded-panel app-panel-dashed p-6 text-sm app-muted sm:mt-8 sm:p-8">
             {dictionary.home.leaderboardEmpty}
           </div>
         )}
