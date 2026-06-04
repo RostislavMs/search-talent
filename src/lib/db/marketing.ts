@@ -3,7 +3,6 @@ import { getLeaderboards } from "@/lib/db/leaderboards";
 import { slugifySegment } from "@/lib/marketing-content";
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { isPublicModerationStatus } from "@/lib/moderation";
 
 async function getPublicReadClient() {
   const publicClient = createPublicReadOnlyClient();
@@ -17,30 +16,17 @@ async function getPublicReadClient() {
 
 export async function getPopularTechnologies(limit = 20) {
   const supabase = await getPublicReadClient();
-  const [{ data: skills }, { data: projectSkills }, { data: profileSkills }] =
-    await Promise.all([
-      supabase.from("skills").select("id, name"),
-      supabase.from("project_skills").select("skill_id"),
-      supabase.from("profile_skills").select("skill_id"),
-    ]);
+  // Combined project + profile skill popularity, aggregated in SQL.
+  const { data } = await supabase
+    .from("skill_directory_stats")
+    .select("id, name, combined_count")
+    .order("combined_count", { ascending: false })
+    .order("name", { ascending: true })
+    .limit(limit);
 
-  const counts = new Map<number, number>();
-
-  for (const row of [
-    ...((projectSkills || []) as Array<{ skill_id: number }>),
-    ...((profileSkills || []) as Array<{ skill_id: number }>),
-  ]) {
-    counts.set(row.skill_id, (counts.get(row.skill_id) || 0) + 1);
-  }
-
-  return ((skills || []) as Array<{ id: number; name: string }>)
-    .map((skill) => ({
-      id: skill.id,
-      name: skill.name,
-      count: counts.get(skill.id) || 0,
-    }))
-    .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name))
-    .slice(0, limit);
+  return ((data || []) as Array<{ id: number; name: string; combined_count: number }>).map(
+    (skill) => ({ id: skill.id, name: skill.name, count: skill.combined_count }),
+  );
 }
 
 export async function getFeaturedTalents(limit = 8) {
@@ -77,47 +63,27 @@ export async function getTechnologyDirectory(
   limit?: number,
 ): Promise<TechnologyDirectoryItem[]> {
   const supabase = await getPublicReadClient();
-  const [{ data: skills }, { data: publishedProjects }, { data: projectSkills }] =
-    await Promise.all([
-      supabase.from("skills").select("id, name"),
-      supabase
-        .from("projects")
-        .select("id")
-        .eq("moderation_status", "approved")
-        .eq("status", "published"),
-      supabase.from("project_skills").select("skill_id, project_id"),
-    ]);
+  // Per-skill count of approved + published projects, aggregated in SQL.
+  let query = supabase
+    .from("skill_directory_stats")
+    .select("id, name, project_count")
+    .order("project_count", { ascending: false })
+    .order("name", { ascending: true });
 
-  const publishedIds = new Set(
-    ((publishedProjects || []) as Array<{ id: string }>).map((row) => row.id),
-  );
-
-  const counts = new Map<number, number>();
-
-  for (const row of (projectSkills || []) as Array<{
-    skill_id: number;
-    project_id: string;
-  }>) {
-    if (!publishedIds.has(row.project_id)) {
-      continue;
-    }
-
-    counts.set(row.skill_id, (counts.get(row.skill_id) || 0) + 1);
+  if (typeof limit === "number") {
+    query = query.limit(limit);
   }
 
-  const items = ((skills || []) as Array<{ id: number; name: string }>)
-    .map((skill) => ({
+  const { data } = await query;
+
+  return ((data || []) as Array<{ id: number; name: string; project_count: number }>).map(
+    (skill) => ({
       id: skill.id,
       name: skill.name,
       slug: slugifySegment(skill.name),
-      count: counts.get(skill.id) || 0,
-    }))
-    .sort(
-      (left, right) =>
-        right.count - left.count || left.name.localeCompare(right.name),
-    );
-
-  return typeof limit === "number" ? items.slice(0, limit) : items;
+      count: skill.project_count,
+    }),
+  );
 }
 
 export async function getTechnologyBySlug(techSlug: string) {
@@ -135,24 +101,13 @@ export async function getProjectKindDirectory(): Promise<
 > {
   const supabase = await getPublicReadClient();
   const { data } = await supabase
-    .from("projects")
-    .select("kind")
-    .eq("moderation_status", "approved")
-    .eq("status", "published");
+    .from("project_kind_directory_stats")
+    .select("kind, total")
+    .order("total", { ascending: false });
 
-  const counts = new Map<string, number>();
-
-  for (const row of (data || []) as Array<{ kind: string | null }>) {
-    if (!row.kind) {
-      continue;
-    }
-
-    counts.set(row.kind, (counts.get(row.kind) || 0) + 1);
-  }
-
-  return Array.from(counts.entries()).map(([kind, count]) => ({
-    kind,
-    count,
+  return ((data || []) as Array<{ kind: string; total: number }>).map((row) => ({
+    kind: row.kind,
+    count: row.total,
   }));
 }
 
@@ -172,91 +127,32 @@ export async function getCreatorsBySkillId(
   limit = 24,
 ): Promise<DirectoryCreator[]> {
   const supabase = await getPublicReadClient();
-  const { data: profileSkills } = await supabase
-    .from("profile_skills")
-    .select("profile_id")
-    .eq("skill_id", skillId);
+  // Public creators that list the skill, with country/category names joined and
+  // the page limit applied in SQL (was: fetch every matching profile, filter
+  // moderation + resolve names in JS, then slice).
+  const { data } = await supabase
+    .from("creator_skill_directory")
+    .select("username, name, headline, avatar_url, city, country_name, category_name")
+    .eq("skill_id", skillId)
+    .order("score", { ascending: false, nullsFirst: false })
+    .limit(limit);
 
-  const profileIds = Array.from(
-    new Set(
-      ((profileSkills || []) as Array<{ profile_id: string }>).map(
-        (row) => row.profile_id,
-      ),
-    ),
-  );
-
-  if (profileIds.length === 0) {
-    return [];
-  }
-
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select(
-      "id, username, name, headline, avatar_url, city, country_id, category_id, moderation_status",
-    )
-    .in("id", profileIds)
-    .not("username", "is", null);
-
-  const rows = ((profiles || []) as Array<{
-    id: string;
-    username: string | null;
+  return ((data || []) as Array<{
+    username: string;
     name: string | null;
     headline: string | null;
     avatar_url: string | null;
     city: string | null;
-    country_id: number | null;
-    category_id: number | null;
-    moderation_status: string | null;
-  }>).filter(
-    (row) => row.username && isPublicModerationStatus(row.moderation_status),
-  );
-
-  const countryIds = Array.from(
-    new Set(
-      rows
-        .map((row) => row.country_id)
-        .filter((id): id is number => typeof id === "number"),
-    ),
-  );
-  const categoryIds = Array.from(
-    new Set(
-      rows
-        .map((row) => row.category_id)
-        .filter((id): id is number => typeof id === "number"),
-    ),
-  );
-
-  const [countriesResponse, categoriesResponse] = await Promise.all([
-    countryIds.length > 0
-      ? supabase.from("countries").select("id, name").in("id", countryIds)
-      : Promise.resolve({ data: [] }),
-    categoryIds.length > 0
-      ? supabase
-          .from("profile_categories")
-          .select("id, name")
-          .in("id", categoryIds)
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const countryMap = new Map(
-    ((countriesResponse.data || []) as Array<{ id: number; name: string }>).map(
-      (row) => [row.id, row.name],
-    ),
-  );
-  const categoryMap = new Map(
-    ((categoriesResponse.data || []) as Array<{ id: number; name: string }>).map(
-      (row) => [row.id, row.name],
-    ),
-  );
-
-  return rows.slice(0, limit).map((row) => ({
-    username: row.username!,
+    country_name: string | null;
+    category_name: string | null;
+  }>).map((row) => ({
+    username: row.username,
     name: row.name,
     headline: row.headline,
     avatarUrl: row.avatar_url,
     city: row.city,
-    countryName: row.country_id ? countryMap.get(row.country_id) || null : null,
-    categoryName: row.category_id ? categoryMap.get(row.category_id) || null : null,
+    countryName: row.country_name,
+    categoryName: row.category_name,
     score: null,
   }));
 }
@@ -277,35 +173,19 @@ export async function getProjectsBySkillId(
   limit = 24,
 ): Promise<DirectoryProject[]> {
   const supabase = await getPublicReadClient();
-  const { data: projectSkills } = await supabase
-    .from("project_skills")
-    .select("project_id")
-    .eq("skill_id", skillId);
-
-  const projectIds = Array.from(
-    new Set(
-      ((projectSkills || []) as Array<{ project_id: string }>).map(
-        (row) => row.project_id,
-      ),
-    ),
-  );
-
-  if (projectIds.length === 0) {
-    return [];
-  }
-
-  const { data: projects } = await supabase
-    .from("projects")
+  // Approved + published projects that list the skill, with owner name/username
+  // joined and the limit applied in SQL (was: fetch all matching project ids,
+  // re-query with a large .in() list, then resolve owners separately).
+  const { data } = await supabase
+    .from("project_skill_directory")
     .select(
-      "id, owner_id, title, slug, description, cover_url, score, moderation_status, kind",
+      "id, owner_id, title, slug, description, cover_url, score, kind, owner_name, owner_username",
     )
-    .in("id", projectIds)
-    .eq("moderation_status", "approved")
-    .eq("status", "published")
-    .order("score", { ascending: false })
+    .eq("skill_id", skillId)
+    .order("score", { ascending: false, nullsFirst: false })
     .limit(limit);
 
-  const rows = ((projects || []) as Array<{
+  return ((data || []) as Array<{
     id: string;
     owner_id: string;
     title: string;
@@ -313,38 +193,20 @@ export async function getProjectsBySkillId(
     description: string | null;
     cover_url: string | null;
     score: number | null;
-    moderation_status: string | null;
     kind: string | null;
-  }>);
-
-  const ownerIds = Array.from(new Set(rows.map((row) => row.owner_id)));
-  const { data: owners } = ownerIds.length > 0
-    ? await supabase
-        .from("profiles")
-        .select("user_id, username, name")
-        .in("user_id", ownerIds)
-    : { data: [] };
-
-  const ownerMap = new Map(
-    ((owners || []) as Array<{ user_id: string; username: string | null; name: string | null }>).map(
-      (row) => [row.user_id, row],
-    ),
-  );
-
-  return rows.map((row) => {
-    const owner = ownerMap.get(row.owner_id);
-    return {
-      id: row.id,
-      title: row.title,
-      slug: row.slug,
-      description: row.description,
-      coverUrl: row.cover_url,
-      score: row.score,
-      kind: row.kind,
-      ownerName: owner?.name || null,
-      ownerUsername: owner?.username || null,
-    };
-  });
+    owner_name: string | null;
+    owner_username: string | null;
+  }>).map((row) => ({
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    description: row.description,
+    coverUrl: row.cover_url,
+    score: row.score,
+    kind: row.kind,
+    ownerName: row.owner_name,
+    ownerUsername: row.owner_username,
+  }));
 }
 
 /**
@@ -358,46 +220,21 @@ export async function getTalentSkillDirectory(): Promise<
   TechnologyDirectoryItem[]
 > {
   const supabase = await getPublicReadClient();
-  const [{ data: skills }, { data: profiles }, { data: profileSkills }] =
-    await Promise.all([
-      supabase.from("skills").select("id, name"),
-      supabase
-        .from("profiles")
-        .select("id, moderation_status")
-        .not("username", "is", null),
-      supabase.from("profile_skills").select("skill_id, profile_id"),
-    ]);
+  // Per-skill count of public profiles, aggregated in SQL.
+  const { data } = await supabase
+    .from("skill_directory_stats")
+    .select("id, name, profile_count")
+    .order("profile_count", { ascending: false })
+    .order("name", { ascending: true });
 
-  const publicIds = new Set(
-    ((profiles || []) as Array<{ id: string; moderation_status: string | null }>)
-      .filter((row) => isPublicModerationStatus(row.moderation_status))
-      .map((row) => row.id),
-  );
-
-  const counts = new Map<number, number>();
-
-  for (const row of (profileSkills || []) as Array<{
-    skill_id: number;
-    profile_id: string;
-  }>) {
-    if (!publicIds.has(row.profile_id)) {
-      continue;
-    }
-
-    counts.set(row.skill_id, (counts.get(row.skill_id) || 0) + 1);
-  }
-
-  return ((skills || []) as Array<{ id: number; name: string }>)
-    .map((skill) => ({
+  return ((data || []) as Array<{ id: number; name: string; profile_count: number }>).map(
+    (skill) => ({
       id: skill.id,
       name: skill.name,
       slug: slugifySegment(skill.name),
-      count: counts.get(skill.id) || 0,
-    }))
-    .sort(
-      (left, right) =>
-        right.count - left.count || left.name.localeCompare(right.name),
-    );
+      count: skill.profile_count,
+    }),
+  );
 }
 
 export async function getTalentSkillBySlug(skillSlug: string) {
@@ -422,37 +259,18 @@ export async function getProfileCategoryDirectory(): Promise<
   ProfileCategoryDirectoryItem[]
 > {
   const supabase = await getPublicReadClient();
-  const [{ data: categories }, { data: profiles }] = await Promise.all([
-    supabase.from("profile_categories").select("id, name").order("name"),
-    supabase
-      .from("profiles")
-      .select("category_id, username, moderation_status"),
-  ]);
+  // Per-category count of public talents, aggregated in SQL.
+  const { data } = await supabase
+    .from("profile_category_directory_stats")
+    .select("id, name, total")
+    .order("name", { ascending: true });
 
-  const counts = new Map<number, number>();
-
-  for (const row of (profiles || []) as Array<{
-    category_id: number | null;
-    username: string | null;
-    moderation_status: string | null;
-  }>) {
-    if (!row.category_id || !row.username) {
-      continue;
-    }
-
-    if (!isPublicModerationStatus(row.moderation_status)) {
-      continue;
-    }
-
-    counts.set(row.category_id, (counts.get(row.category_id) || 0) + 1);
-  }
-
-  return ((categories || []) as Array<{ id: number; name: string }>).map(
+  return ((data || []) as Array<{ id: number; name: string; total: number }>).map(
     (category) => ({
       id: category.id,
       name: category.name,
       slug: slugifySegment(category.name),
-      count: counts.get(category.id) || 0,
+      count: category.total,
     }),
   );
 }

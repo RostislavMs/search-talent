@@ -107,7 +107,11 @@ export async function getMyProjects() {
     .from("projects")
     .select("*")
     .eq("owner_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    // Safety cap so a power user with thousands of projects can't pull the
+    // whole set (with media/skills hydration) into memory at once. Paginated
+    // views should use getMyProjectsPage instead.
+    .limit(500);
 
   const withTechnologies = await attachTechnologies(data || []);
   return attachMedia(withTechnologies);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isPublicModerationStatus } from "@/lib/moderation";
+import { getCreatorRatings } from "@/lib/db/leaderboards";
 import {
   calculateProjectRating,
   getProjectCompletenessScore,
@@ -237,39 +237,62 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
 
-  let projectQuery = supabase
-    .from("projects")
-    .select(
-      "id, title, slug, description, score, cover_url, project_status, owner_id, created_at, moderation_status, kind, kind_metadata, role, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results",
-    )
-    .eq("status", "published");
+  const activeSort = sort === "rating" || sort === "newest" ? sort : "relevance";
+  // Candidate ordering for the SQL pre-filter: newest rows for the "newest"
+  // sort, otherwise the highest-scoring rows, so that capping the candidate set
+  // never drops the rows most likely to surface on the first pages.
+  const candidateOrder = activeSort === "newest" ? "newest" : "score";
+  // Generous cap on the (correctly filtered) candidate set. The composite
+  // project rating + relevance are still computed in JS over these candidates.
+  const CANDIDATE_LIMIT = 1000;
 
-  if (projectKind) {
-    projectQuery = projectQuery.eq("kind", projectKind);
-  }
-
-  let profileQuery = supabase
-    .from("profiles")
-    .select("id, user_id, username, name, headline, avatar_url, country_id, city, category_id, experience_level, employment_types, work_formats, moderation_status, score, created_at")
-    .not("username", "is", null);
-
-  // Profile rating still uses the persisted Wilson `score` column. Project
-  // rating is recomputed below to match the homepage leaderboard, so its
-  // min/max filter has to run in-memory after the composite rating exists.
-  if (typeof minScore === "number") {
-    profileQuery = profileQuery.gte("score", minScore);
-  }
-
-  if (typeof maxScore === "number") {
-    profileQuery = profileQuery.lte("score", maxScore);
-  }
-
-  const [
-    projectsResponse,
-    profilesResponse,
-  ] = await Promise.all([
-    projectQuery.limit(200),
-    profileQuery.limit(200),
+  // All facet filters + the text query run in SQL (search_projects /
+  // search_profiles RPCs), so the candidate set is correctly filtered before
+  // the JS rating/relevance/sort step — no more "filter the first 200 rows"
+  // bug. Profile score min/max is on the persisted Wilson score (SQL); project
+  // min/max is on the composite rating and is applied in JS below. Both entities
+  // are always queried so the inactive tab's `totals` count stays accurate; the
+  // response zeroes the array the active scope does not need.
+  const [projectsResponse, profilesResponse, creatorRatings] = await Promise.all([
+    supabase
+      .rpc("search_projects", {
+        p_q: q || null,
+        p_kind: projectKind,
+        p_project_status: projectStatus,
+        p_skill_ids: skillIds.length > 0 ? skillIds : null,
+        p_has_media: hasMedia,
+        p_order: candidateOrder,
+        p_limit: CANDIDATE_LIMIT,
+      })
+      .select(
+        "id, title, slug, description, score, cover_url, project_status, owner_id, created_at, kind, kind_metadata, role, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results",
+      ),
+    supabase
+      .rpc("search_profiles", {
+        p_q: q || null,
+        p_country_id: countryId,
+        p_category_id: categoryId,
+        p_skill_ids: skillIds.length > 0 ? skillIds : null,
+        p_language_ids: languageIds.length > 0 ? languageIds : null,
+        p_experience_level: experienceLevel,
+        p_employment_types: employmentTypes.length > 0 ? employmentTypes : null,
+        p_work_formats: workFormats.length > 0 ? workFormats : null,
+        p_has_avatar: hasAvatar,
+        // Rating min/max for profiles is applied in JS below against the
+        // composite creator rating (the value shown on cards and used to
+        // sort), not the persisted Wilson-only profiles.score — so the SQL
+        // pre-filter must not narrow on that column.
+        p_min_score: null,
+        p_max_score: null,
+        p_order: candidateOrder,
+        p_limit: CANDIDATE_LIMIT,
+      })
+      .select(
+        "id, user_id, username, name, headline, avatar_url, country_id, city, category_id, experience_level, employment_types, work_formats, score, created_at",
+      ),
+    // Composite all-time creator rating per profile id — same value the
+    // homepage leaderboard shows. Shares the leaderboard cache.
+    getCreatorRatings(),
   ]);
 
   const rawProjects = (projectsResponse.data || []) as ProjectRow[];
@@ -459,7 +482,6 @@ export async function GET(request: Request) {
   }
 
   let projects = rawProjects
-    .filter((project) => isPublicModerationStatus(project.moderation_status))
     .map((project) => {
       const owner = ownerMap.get(project.owner_id);
       const technologies = projectSkillsMap.get(project.id) || [];
@@ -537,37 +559,9 @@ export async function GET(request: Request) {
     })
     .filter((project) => Boolean(project.slug))
     .filter((project) => {
-      if (q) {
-        const queryMatches =
-          project.relevance > 0 ||
-          matchesQuery(project.title, q) ||
-          matchesQuery(project.description, q);
-
-        if (!queryMatches) {
-          return false;
-        }
-      }
-
-      if (projectStatus && project.project_status !== projectStatus) {
-        return false;
-      }
-
-      // AND semantics: the project must list every selected skill. On the
-      // skill landing pages this keeps the locked skill mandatory while extra
-      // skills narrow the results further.
-      if (
-        skillIds.length > 0 &&
-        !skillIds.every((id) =>
-          project.technologies.some((item) => item.id === id),
-        )
-      ) {
-        return false;
-      }
-
-      if (hasMedia && project.mediaCount === 0) {
-        return false;
-      }
-
+      // Facet + text filters (status, kind, skills, hasMedia, q) run in SQL via
+      // search_projects. Only the composite-rating range is applied here,
+      // because that rating is computed in JS to match the homepage leaderboard.
       if (typeof minScore === "number" && (project.score ?? 0) < minScore) {
         return false;
       }
@@ -580,8 +574,6 @@ export async function GET(request: Request) {
     });
 
   let users = rawProfiles
-    .filter((profile) => isPublicModerationStatus(profile.moderation_status))
-    .filter((profile) => Boolean(profile.username))
     .map((profile) => {
       const technologies = profileSkillsMap.get(profile.id) || [];
       const countryName = profile.country_id ? countryMap.get(profile.country_id) || null : null;
@@ -590,6 +582,12 @@ export async function GET(request: Request) {
       return {
         ...profile,
         username: profile.username || "",
+        // Use the composite leaderboard rating (completeness + portfolio +
+        // community trust + production + tech + freshness + badges) instead of
+        // the persisted Wilson-only profiles.score, so the card rating and the
+        // "sort by rating" order match the homepage leaderboard. Falls back to
+        // the persisted score if the leaderboard map is unavailable.
+        score: creatorRatings[profile.id] ?? profile.score ?? 0,
         technologies,
         countryName,
         categoryName,
@@ -607,63 +605,13 @@ export async function GET(request: Request) {
       };
     })
     .filter((profile) => {
-      if (q) {
-        const queryMatches =
-          profile.relevance > 0 ||
-          matchesQuery(profile.username, q) ||
-          matchesQuery(profile.name, q) ||
-          matchesQuery(profile.headline, q);
-
-        if (!queryMatches) {
-          return false;
-        }
-      }
-
-      if (countryId && profile.country_id !== countryId) {
+      // Rating range filters against the composite rating set above (matching
+      // the value shown on the card), mirroring how project min/max is applied.
+      if (typeof minScore === "number" && (profile.score ?? 0) < minScore) {
         return false;
       }
 
-      if (categoryId && profile.category_id !== categoryId) {
-        return false;
-      }
-
-      // AND semantics: the profile must list every selected skill (locked
-      // skill stays mandatory, extra skills narrow the results).
-      if (
-        skillIds.length > 0 &&
-        !skillIds.every((id) =>
-          profile.technologies.some((item) => item.id === id),
-        )
-      ) {
-        return false;
-      }
-
-      if (
-        languageIds.length > 0 &&
-        !profile.languageIds.some((item) => languageIds.includes(item))
-      ) {
-        return false;
-      }
-
-      if (experienceLevel && profile.experience_level !== experienceLevel) {
-        return false;
-      }
-
-      if (
-        employmentTypes.length > 0 &&
-        !employmentTypes.some((item) => (profile.employment_types || []).includes(item))
-      ) {
-        return false;
-      }
-
-      if (
-        workFormats.length > 0 &&
-        !workFormats.some((item) => (profile.work_formats || []).includes(item))
-      ) {
-        return false;
-      }
-
-      if (hasAvatar && !profile.avatar_url) {
+      if (typeof maxScore === "number" && (profile.score ?? 0) > maxScore) {
         return false;
       }
 
@@ -691,7 +639,6 @@ export async function GET(request: Request) {
       new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime(),
   } as const;
 
-  const activeSort = sort === "rating" || sort === "newest" ? sort : "relevance";
   const totals = {
     projects: projects.length,
     users: users.length,

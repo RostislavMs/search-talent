@@ -7,7 +7,7 @@ import { buildTalentCategoryMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 
 const DiscoveryPage = nextDynamic(() => import("@/components/discovery-page"), {
-  loading: () => <DiscoveryPageSkeleton mode="creators" />,
+  loading: () => <DiscoveryPageSkeleton mode="creators" heroVariant="minimal" />,
 });
 
 // Rendered per request — see the note in /projects/tag/[tag]; the on-demand

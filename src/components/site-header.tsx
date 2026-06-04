@@ -183,10 +183,10 @@ export default function SiteHeader({
 
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--border)] bg-[color:var(--surface)]/90 backdrop-blur">
-      <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-2 sm:px-6 sm:py-3">
         <LocalizedLink
           href="/"
-          className="relative block h-10 w-[124px] shrink-0"
+          className="relative block h-9 w-[112px] shrink-0 sm:h-10 sm:w-[124px]"
         >
           <OptimizedImage
             src={logoImage}

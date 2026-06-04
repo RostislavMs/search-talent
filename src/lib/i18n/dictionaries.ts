@@ -329,6 +329,9 @@ export const dictionaries = {
       unpinSuccessMessage: "Project unpinned.",
       pinFailedMessage: "Could not update pin right now.",
       openProfile: "Open profile",
+      relatedCreatorsTitle: "Related creators",
+      relatedCreatorsSubtitle:
+        "Talents who share technologies or a field with this profile.",
       open: "Open",
       profile: "Profile",
       unsavedChangesTitle: "Unsaved changes",
@@ -650,6 +653,9 @@ export const dictionaries = {
       voteStateIdle: "Choose whether this project helped or impressed you.",
       ownerVoteHint:
         "This is your project. Community ratings show how visitors react to it.",
+      relatedTitle: "Related projects",
+      relatedSubtitle:
+        "More public work that shares technologies with this project.",
     },
     projectComments: {
       title: "Comments",
@@ -2351,6 +2357,9 @@ export const dictionaries = {
       unpinSuccessMessage: "Проєкт відкріплено.",
       pinFailedMessage: "Зараз не вдалося оновити статус закріплення.",
       openProfile: "Відкрити профіль",
+      relatedCreatorsTitle: "Схожі фахівці",
+      relatedCreatorsSubtitle:
+        "Фахівці зі спільними технологіями або напрямом діяльності.",
       open: "Відкрити",
       profile: "Профіль",
       unsavedChangesTitle: "Незбережені зміни",
@@ -2643,6 +2652,8 @@ export const dictionaries = {
         "Оцініть проєкт, якщо він був корисним або справив враження.",
       ownerVoteHint:
         "Це ваш проєкт. Оцінки спільноти показують, як на нього реагують відвідувачі.",
+      relatedTitle: "Схожі проєкти",
+      relatedSubtitle: "Інші публічні проєкти зі спільними технологіями.",
     },
     projectComments: {
       title: "Коментарі",

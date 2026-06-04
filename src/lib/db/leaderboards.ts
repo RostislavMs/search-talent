@@ -22,8 +22,43 @@ import { getBadgeBonusPoints } from "@/lib/db/badges";
 import { createAdminClient, createPublicReadOnlyClient } from "@/lib/supabase/admin";
 
 // ---- row types ------------------------------------------------------------
+//
+// These mirror the aggregate views leaderboard_project_stats /
+// leaderboard_profile_stats (see supabase/23_leaderboard_stat_views.sql). The
+// views compute all vote / media / skill / section counts in Postgres so the
+// leaderboard reads one compact row per project / profile instead of paging
+// the entire votes / media / skills / section tables into memory.
 
-type PublicProfileRow = {
+type ProjectStatsRow = {
+  id: string;
+  owner_id: string;
+  title: string;
+  slug: string | null;
+  description: string | null;
+  role: string | null;
+  kind: string | null;
+  kind_metadata: Record<string, unknown> | null;
+  project_status: string | null;
+  team_size: number | null;
+  project_url: string | null;
+  repository_url: string | null;
+  started_on: string | null;
+  completed_on: string | null;
+  problem: string | null;
+  solution: string | null;
+  results: string | null;
+  cover_url: string | null;
+  created_at: string | null;
+  likes: number;
+  dislikes: number;
+  recent_likes: number;
+  recent_dislikes: number;
+  media_count: number;
+  recent_media_count: number;
+  tech_count: number;
+};
+
+type ProfileStatsRow = {
   id: string;
   user_id: string;
   username: string | null;
@@ -54,34 +89,18 @@ type PublicProfileRow = {
   salary_expectations: string | null;
   salary_currency: string | null;
   additional_info: string | null;
+  profile_likes: number;
+  profile_dislikes: number;
+  recent_profile_likes: number;
+  recent_profile_dislikes: number;
+  skills_count: number;
+  languages_count: number;
+  education_count: number;
+  certificate_count: number;
+  qa_count: number;
+  work_experience_count: number;
+  unified_tech_count: number;
 };
-
-type PublicProjectRow = {
-  id: string;
-  owner_id: string;
-  title: string;
-  slug: string | null;
-  description: string | null;
-  role: string | null;
-  project_status: string | null;
-  team_size: number | null;
-  project_url: string | null;
-  repository_url: string | null;
-  started_on: string | null;
-  completed_on: string | null;
-  problem: string | null;
-  solution: string | null;
-  results: string | null;
-  cover_url: string | null;
-  created_at: string | null;
-};
-
-type VoteRow = { project_id: string; value: number; created_at: string | null };
-type ProfileVoteRow = { profile_id: string; value: number; created_at: string | null };
-type MediaRow = { project_id: string; created_at: string | null };
-type ProjectSkillRow = { project_id: string; skill_id: number };
-type ProfileRelationRow = { profile_id: string; skill_id?: number; language_id?: number };
-type ProfileSectionRow = { profile_id: string };
 
 // ---- public types ---------------------------------------------------------
 
@@ -120,6 +139,15 @@ export type RankedCreator = {
 export type LeaderboardsResult = {
   creators: Record<LeaderboardTimeframe, RankedCreator[]>;
   projects: Record<LeaderboardTimeframe, RankedProject[]>;
+};
+
+type LeaderboardData = {
+  // The public top-10 lists consumed by the homepage / top-* routes.
+  result: LeaderboardsResult;
+  // All-time composite creator rating keyed by profile id. Exposed so other
+  // surfaces (e.g. the talents search) can rank/display the SAME rating as the
+  // homepage leaderboard instead of the persisted Wilson-only profiles.score.
+  creatorRatings: Record<string, number>;
 };
 
 // ---- helpers --------------------------------------------------------------
@@ -166,53 +194,6 @@ async function fetchAll<T>(build: () => PagedQuery<T>): Promise<T[]> {
   return collected;
 }
 
-async function fetchAllTolerant<T>(build: () => PagedQuery<T>): Promise<T[]> {
-  try {
-    return await fetchAll<T>(build);
-  } catch {
-    return [];
-  }
-}
-
-function countVotes(
-  rows: VoteRow[] | ProfileVoteRow[],
-  timeframe: LeaderboardTimeframe,
-) {
-  return rows.reduce(
-    (r, row) => {
-      if (timeframe === "month" && !isWithinTimeframe(row.created_at, "month"))
-        return r;
-      if (row.value === 1) r.likes += 1;
-      if (row.value === -1) r.dislikes += 1;
-      return r;
-    },
-    { likes: 0, dislikes: 0 },
-  );
-}
-
-function countByKey<T extends Record<string, unknown>>(
-  rows: T[],
-  key: keyof T & string,
-) {
-  const map = new Map<string, number>();
-  for (const row of rows) {
-    const k = String(row[key]);
-    map.set(k, (map.get(k) || 0) + 1);
-  }
-  return map;
-}
-
-type ReadOnlyClient = NonNullable<ReturnType<typeof createPublicReadOnlyClient>>;
-
-function trySelectSections(supabase: ReadOnlyClient, table: string) {
-  return fetchAllTolerant<ProfileSectionRow>(
-    () =>
-      supabase.from(table).select("profile_id") as unknown as PagedQuery<
-        ProfileSectionRow
-      >,
-  );
-}
-
 // ---- main loader ----------------------------------------------------------
 
 const EMPTY_RESULT: LeaderboardsResult = {
@@ -220,160 +201,50 @@ const EMPTY_RESULT: LeaderboardsResult = {
   projects: { all: [], month: [] },
 };
 
-async function loadLeaderboards(): Promise<LeaderboardsResult> {
+async function loadLeaderboardData(): Promise<LeaderboardData> {
   const supabase = createPublicReadOnlyClient();
 
   if (!supabase) {
-    return EMPTY_RESULT;
+    return { result: EMPTY_RESULT, creatorRatings: {} };
   }
 
-  const [
-    profiles,
-    projects,
-    votes,
-    media,
-    projectSkills,
-    profileSkills,
-    profileLanguages,
-    educationRows,
-    certificateRows,
-    qaRows,
-    workExpRows,
-    profileVotes,
-  ] = await Promise.all([
-    fetchAll<PublicProfileRow>(
+  // Per-project and per-profile aggregates are computed in Postgres by the
+  // leaderboard_*_stats views, so we fetch O(projects) + O(profiles) compact
+  // rows instead of every vote / media / skill / section row.
+  const [projectStats, profileStats] = await Promise.all([
+    fetchAll<ProjectStatsRow>(
       () =>
         supabase
-          .from("profiles")
-          .select(
-            "id, user_id, username, name, avatar_url, headline, bio, country_id, city, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info",
-          )
-          .not("username", "is", null) as unknown as PagedQuery<PublicProfileRow>,
+          .from("leaderboard_project_stats")
+          .select("*") as unknown as PagedQuery<ProjectStatsRow>,
     ),
-    fetchAll<PublicProjectRow>(
+    fetchAll<ProfileStatsRow>(
       () =>
         supabase
-          .from("projects")
-          .select(
-            "id, owner_id, title, slug, description, role, kind, kind_metadata, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, cover_url, created_at",
-          )
-          .eq("status", "published") as unknown as PagedQuery<PublicProjectRow>,
-    ),
-    fetchAll<VoteRow>(
-      () =>
-        supabase
-          .from("votes")
-          .select("project_id, value, created_at") as unknown as PagedQuery<VoteRow>,
-    ),
-    fetchAll<MediaRow>(
-      () =>
-        supabase
-          .from("project_media")
-          .select("project_id, created_at") as unknown as PagedQuery<MediaRow>,
-    ),
-    fetchAll<ProjectSkillRow>(
-      () =>
-        supabase
-          .from("project_skills")
-          .select("project_id, skill_id") as unknown as PagedQuery<ProjectSkillRow>,
-    ),
-    fetchAll<ProfileRelationRow>(
-      () =>
-        supabase
-          .from("profile_skills")
-          .select("profile_id, skill_id") as unknown as PagedQuery<ProfileRelationRow>,
-    ),
-    fetchAll<ProfileRelationRow>(
-      () =>
-        supabase
-          .from("profile_languages")
-          .select("profile_id, language_id") as unknown as PagedQuery<ProfileRelationRow>,
-    ),
-    trySelectSections(supabase, "profile_education"),
-    trySelectSections(supabase, "profile_certificates"),
-    trySelectSections(supabase, "profile_qas"),
-    trySelectSections(supabase, "profile_work_experience"),
-    fetchAllTolerant<ProfileVoteRow>(
-      () =>
-        supabase
-          .from("profile_votes")
-          .select("profile_id, value, created_at") as unknown as PagedQuery<ProfileVoteRow>,
+          .from("leaderboard_profile_stats")
+          .select("*") as unknown as PagedQuery<ProfileStatsRow>,
     ),
   ]);
 
   // index: profile by user_id
-  const profileByUserId = new Map(profiles.map((p) => [p.user_id, p]));
+  const profileByUserId = new Map(profileStats.map((p) => [p.user_id, p]));
 
   // index: profile.id -> user_id (used when awarding badges from rank lists)
-  const userIdByProfileId = new Map(profiles.map((p) => [p.id, p.user_id]));
+  const userIdByProfileId = new Map(profileStats.map((p) => [p.id, p.user_id]));
 
   // badge counts per user — feeds the rating bonus capped at +5
   const badgeCounts = await getBadgeCountsForUsers(
     supabase,
-    profiles.map((p) => p.user_id),
+    profileStats.map((p) => p.user_id),
   );
 
   // track completeness per profile so we can award `complete_profile` after
   // ranking finishes (without recomputing inside the award loop).
   const completenessByProfileId = new Map<string, number>();
 
-  // index: votes grouped by project
-  const votesByProject = new Map<string, VoteRow[]>();
-  for (const v of votes) {
-    const arr = votesByProject.get(v.project_id) || [];
-    arr.push(v);
-    votesByProject.set(v.project_id, arr);
-  }
-
-  // index: media grouped by project
-  const mediaByProject = new Map<string, MediaRow[]>();
-  for (const m of media) {
-    const arr = mediaByProject.get(m.project_id) || [];
-    arr.push(m);
-    mediaByProject.set(m.project_id, arr);
-  }
-
-  // index: skill sets
-  const projectSkillSet = new Map<string, Set<number>>();
-  for (const r of projectSkills) {
-    const s = projectSkillSet.get(r.project_id) || new Set();
-    s.add(r.skill_id);
-    projectSkillSet.set(r.project_id, s);
-  }
-
-  const profileSkillSet = new Map<string, Set<number>>();
-  for (const r of profileSkills) {
-    if (typeof r.skill_id !== "number") continue;
-    const s = profileSkillSet.get(r.profile_id) || new Set();
-    s.add(r.skill_id);
-    profileSkillSet.set(r.profile_id, s);
-  }
-
-  const profileLangSet = new Map<string, Set<number>>();
-  for (const r of profileLanguages) {
-    if (typeof r.language_id !== "number") continue;
-    const s = profileLangSet.get(r.profile_id) || new Set();
-    s.add(r.language_id);
-    profileLangSet.set(r.profile_id, s);
-  }
-
-  // index: profile votes by profile
-  const pvByProfile = new Map<string, ProfileVoteRow[]>();
-  for (const v of profileVotes) {
-    const arr = pvByProfile.get(v.profile_id) || [];
-    arr.push(v);
-    pvByProfile.set(v.profile_id, arr);
-  }
-
-  // index: profile section counts
-  const eduCount = countByKey(educationRows, "profile_id");
-  const certCount = countByKey(certificateRows, "profile_id");
-  const qaCount = countByKey(qaRows, "profile_id");
-  const weCount = countByKey(workExpRows, "profile_id");
-
   // index: projects by owner
-  const projectsByOwner = new Map<string, PublicProjectRow[]>();
-  for (const p of projects) {
+  const projectsByOwner = new Map<string, ProjectStatsRow[]>();
+  for (const p of projectStats) {
     const arr = projectsByOwner.get(p.owner_id) || [];
     arr.push(p);
     projectsByOwner.set(p.owner_id, arr);
@@ -391,23 +262,15 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
   };
 
   for (const tf of ["all", "month"] as const) {
-    for (const project of projects) {
+    for (const project of projectStats) {
       if (!project.slug) continue;
 
-      const pv = votesByProject.get(project.id) || [];
-      const allVotes = countVotes(pv, "all");
-      const recentVotes = countVotes(pv, "month");
-      const mi = mediaByProject.get(project.id) || [];
-      const mediaCount = mi.length;
-      const recentMediaCount = mi.filter((m) =>
-        isWithinTimeframe(m.created_at, "month"),
-      ).length;
-      const techCount = (projectSkillSet.get(project.id) || new Set()).size;
+      const mediaCount = project.media_count;
+      const recentMediaCount = project.recent_media_count;
+      const techCount = project.tech_count;
 
-      const projectKindMetadata = (
-        project as { kind_metadata?: Record<string, unknown> | null }
-      ).kind_metadata;
-      const projectKind = (project as { kind?: string | null }).kind;
+      const projectKindMetadata = project.kind_metadata;
+      const projectKind = project.kind;
       const hasKindMetadata =
         projectKind != null &&
         projectKindMetadata != null &&
@@ -436,10 +299,10 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
 
       const rating = calculateProjectRating({
         timeframe: tf,
-        likes: allVotes.likes,
-        dislikes: allVotes.dislikes,
-        recentLikes: recentVotes.likes,
-        recentDislikes: recentVotes.dislikes,
+        likes: project.likes,
+        dislikes: project.dislikes,
+        recentLikes: project.recent_likes,
+        recentDislikes: project.recent_dislikes,
         mediaCount,
         recentMediaCount,
         technologyCount: techCount,
@@ -459,10 +322,10 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         ownerName: owner?.name ?? null,
         ownerUsername: owner?.username ?? null,
         rating,
-        likes: allVotes.likes,
-        dislikes: allVotes.dislikes,
-        monthlyLikes: recentVotes.likes,
-        monthlyDislikes: recentVotes.dislikes,
+        likes: project.likes,
+        dislikes: project.dislikes,
+        monthlyLikes: project.recent_likes,
+        monthlyDislikes: project.recent_dislikes,
         mediaCount,
         technologyCount: techCount,
       });
@@ -485,7 +348,7 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
   };
 
   for (const tf of ["all", "month"] as const) {
-    for (const profile of profiles) {
+    for (const profile of profileStats) {
       if (!profile.username) continue;
 
       const owned = projectsByOwner.get(profile.user_id) || [];
@@ -501,29 +364,26 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
           ? ratings.reduce((s, v) => s + v, 0) / ratings.length
           : 0;
 
-      // profile votes
-      const pv = pvByProfile.get(profile.id) || [];
-      const allPv = countVotes(pv, "all");
-      const recentPv = countVotes(pv, "month");
+      // profile votes (aggregated in the view)
+      const allPv = { likes: profile.profile_likes, dislikes: profile.profile_dislikes };
+      const recentPv = {
+        likes: profile.recent_profile_likes,
+        dislikes: profile.recent_profile_dislikes,
+      };
 
-      // media across owned projects
-      const allMedia = ownedIds.flatMap(
-        (id) => mediaByProject.get(id) || [],
+      // media across owned projects — sum of the per-project counts
+      const mediaCount = owned.reduce((s, p) => s + (p.media_count || 0), 0);
+      const recentMediaCount = owned.reduce(
+        (s, p) => s + (p.recent_media_count || 0),
+        0,
       );
-      const recentMediaCount = allMedia.filter((m) =>
-        isWithinTimeframe(m.created_at, "month"),
-      ).length;
       const recentProjectCount = owned.filter((p) =>
         isWithinTimeframe(p.created_at, "month"),
       ).length;
 
-      // unified tech set (profile skills + project skills)
-      const techIds = new Set<number>([
-        ...Array.from(profileSkillSet.get(profile.id) || new Set<number>()),
-        ...ownedIds.flatMap((id) =>
-          Array.from(projectSkillSet.get(id) || new Set<number>()),
-        ),
-      ]);
+      // unified tech breadth (profile skills + owned project skills) — counted
+      // in the view as unified_tech_count.
+      const technologyCount = profile.unified_tech_count;
 
       // newest project date
       const newestProject = owned.reduce<string | null>((best, p) => {
@@ -561,12 +421,12 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         salaryExpectations: profile.salary_expectations,
         salaryCurrency: profile.salary_currency,
         additionalInfo: profile.additional_info,
-        skillsCount: (profileSkillSet.get(profile.id) || new Set()).size,
-        languagesCount: (profileLangSet.get(profile.id) || new Set()).size,
-        educationCount: eduCount.get(profile.id) || 0,
-        certificateCount: certCount.get(profile.id) || 0,
-        qaCount: qaCount.get(profile.id) || 0,
-        workExperienceCount: weCount.get(profile.id) || 0,
+        skillsCount: profile.skills_count,
+        languagesCount: profile.languages_count,
+        educationCount: profile.education_count,
+        certificateCount: profile.certificate_count,
+        qaCount: profile.qa_count,
+        workExperienceCount: profile.work_experience_count,
       });
 
       completenessByProfileId.set(profile.id, completeness);
@@ -580,9 +440,9 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
         profileCompleteness: completeness,
         projectCount: owned.length,
         recentProjectCount,
-        mediaCount: allMedia.length,
+        mediaCount,
         recentMediaCount,
-        technologyCount: techIds.size,
+        technologyCount,
         bestProjectRating: bestRating,
         averageProjectRating: avgRating,
         newestProjectCreatedAt: newestProject,
@@ -660,26 +520,47 @@ async function loadLeaderboards(): Promise<LeaderboardsResult> {
     await Promise.all(awards);
   }
 
+  // Full all-time rating map (every ranked creator, not just the top 10) so
+  // other surfaces can look up the same composite rating by profile id.
+  const creatorRatings: Record<string, number> = {};
+  for (const creator of rankedCreators.all) {
+    creatorRatings[creator.id] = creator.rating;
+  }
+
   return {
-    creators: {
-      all: rankedCreators.all.slice(0, 10),
-      month: rankedCreators.month.slice(0, 10),
+    result: {
+      creators: {
+        all: rankedCreators.all.slice(0, 10),
+        month: rankedCreators.month.slice(0, 10),
+      },
+      projects: {
+        all: rankedProjects.all.slice(0, 10),
+        month: rankedProjects.month.slice(0, 10),
+      },
     },
-    projects: {
-      all: rankedProjects.all.slice(0, 10),
-      month: rankedProjects.month.slice(0, 10),
-    },
+    creatorRatings,
   };
 }
 
 // Cached entry point. The leaderboard reads only public data, so we use the
 // anon read-only client (cookies are not allowed inside `unstable_cache`).
 // Mutations invalidate the cache via `revalidateTag(LEADERBOARDS_CACHE_TAG)`.
-export const getLeaderboards = unstable_cache(
-  loadLeaderboards,
-  ["leaderboards-v1"],
+const getLeaderboardData = unstable_cache(
+  loadLeaderboardData,
+  ["leaderboards-v2"],
   {
     revalidate: LEADERBOARDS_CACHE_REVALIDATE_SECONDS,
     tags: [LEADERBOARDS_CACHE_TAG],
   },
 );
+
+export async function getLeaderboards(): Promise<LeaderboardsResult> {
+  return (await getLeaderboardData()).result;
+}
+
+// All-time composite creator rating (0-100) keyed by profile id — the same
+// number shown on the homepage leaderboard. Shares the leaderboard cache, so
+// callers pay nothing extra beyond the first computation per revalidate window.
+export async function getCreatorRatings(): Promise<Record<string, number>> {
+  return (await getLeaderboardData()).creatorRatings;
+}

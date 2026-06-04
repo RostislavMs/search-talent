@@ -14,7 +14,7 @@ import { buildMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 
 const DiscoveryPage = dynamic(() => import("@/components/discovery-page"), {
-  loading: () => <DiscoveryPageSkeleton mode="projects" />,
+  loading: () => <DiscoveryPageSkeleton mode="projects" heroVariant="minimal" />,
 });
 
 export const revalidate = 21600;

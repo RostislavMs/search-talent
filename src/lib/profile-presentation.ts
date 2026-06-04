@@ -287,6 +287,23 @@ export function getProfileFontStack(fontPreset: ProfileFontPreset) {
   }
 }
 
+export function withAlpha(hex: string, alpha: number) {
+  const normalized = hex.replace("#", "");
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((part) => `${part}${part}`)
+          .join("")
+      : normalized;
+  const parsed = Number.parseInt(value, 16);
+  const r = Number.isNaN(parsed) ? 255 : (parsed >> 16) & 255;
+  const g = Number.isNaN(parsed) ? 255 : (parsed >> 8) & 255;
+  const b = Number.isNaN(parsed) ? 255 : parsed & 255;
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export function getProfileTextScale(textScale: ProfileTextScale) {
   switch (textScale) {
     case "sm":

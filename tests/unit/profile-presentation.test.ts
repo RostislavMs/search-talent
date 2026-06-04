@@ -8,7 +8,22 @@ import {
   normalizeProfileSettings,
   normalizeSectionOrder,
   profileSectionIds,
+  withAlpha,
 } from "@/lib/profile-presentation";
+
+describe("withAlpha", () => {
+  it("converts a 6-digit hex to rgba with the given alpha", () => {
+    expect(withAlpha("#0f172a", 0.5)).toBe("rgba(15, 23, 42, 0.5)");
+  });
+
+  it("expands a 3-digit hex shorthand", () => {
+    expect(withAlpha("#fff", 1)).toBe("rgba(255, 255, 255, 1)");
+  });
+
+  it("falls back to white channels for an invalid hex", () => {
+    expect(withAlpha("not-a-color", 0.2)).toBe("rgba(255, 255, 255, 0.2)");
+  });
+});
 
 describe("createDefaultProfilePresentation", () => {
   it("returns an object with all expected default values", () => {

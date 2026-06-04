@@ -94,12 +94,15 @@ export default async function SavedItemsPage({
 
   const dictionary = getDictionary(locale);
 
-  const { count: totalCount } = await supabase
-    .from("bookmarks")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id);
+  // Total comes from the denormalized counter on the profile (maintained by
+  // trigger) instead of count(*) over bookmarks on every page load.
+  const { data: counterRow } = await supabase
+    .from("profiles")
+    .select("bookmarks_count")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  const totalItems = totalCount || 0;
+  const totalItems = counterRow?.bookmarks_count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const offset = (safePage - 1) * PAGE_SIZE;

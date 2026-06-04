@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import ArticleCard from "@/components/article-card";
 import { ButtonLink } from "@/components/ui/Button";
+import { buttonStyles } from "@/components/ui/button-styles";
 import FormSelect from "@/components/ui/form-select";
 import { getCategoryDisplayName, sortArticleCategories } from "@/lib/articles";
 import { getArticleFeed } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, getMetadataBase } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,6 +27,15 @@ export async function generateMetadata({
     pathname: "/articles",
     title: dict.metadata.articles.title,
     description: dict.metadata.articles.description,
+    feeds: [
+      {
+        url: new URL(
+          `/${safeLocale}/articles/feed.xml`,
+          getMetadataBase(),
+        ).toString(),
+        title: `${dict.site.name} — ${dict.metadata.articles.title}`,
+      },
+    ],
   });
 }
 
@@ -71,6 +81,25 @@ export default async function ArticlesPage({
               <ButtonLink href="/projects" variant="secondary">
                 {dictionary.home.browseProjects}
               </ButtonLink>
+              <a
+                href={`/${safeLocale}/articles/feed.xml`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={safeLocale === "uk" ? "RSS-стрічка статей" : "Articles RSS feed"}
+                className={buttonStyles({ variant: "ghost", className: "gap-2" })}
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  fill="currentColor"
+                  className="h-3.5 w-3.5"
+                  aria-hidden="true"
+                >
+                  <path d="M2 11a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+                  <path d="M2 5.5a.5.5 0 0 1 .5-.5c5.247 0 9.5 4.253 9.5 9.5a.5.5 0 0 1-1 0A8.5 8.5 0 0 0 2.5 6a.5.5 0 0 1-.5-.5z" />
+                  <path d="M2 1.5a.5.5 0 0 1 .5-.5C9.404 1 15 6.596 15 13.5a.5.5 0 0 1-1 0C14 7.149 8.851 2 2.5 2a.5.5 0 0 1-.5-.5z" />
+                </svg>
+                RSS
+              </a>
             </div>
           </div>
 

@@ -61,7 +61,7 @@ export default function ProfileAiSummaryPublic({
 
   return (
     <div
-      className="mt-2 max-w-3xl rounded-xl app-panel p-2.5 text-sm leading-6 text-[color:var(--foreground)] sm:mt-3 sm:p-3"
+      className="mt-2 w-full rounded-xl app-panel p-2.5 text-sm leading-6 text-[color:var(--foreground)] sm:mt-3 sm:p-3"
       aria-label={dict.publicLabel}
     >
       <div className="flex items-start gap-2">

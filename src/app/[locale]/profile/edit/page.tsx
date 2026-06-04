@@ -2,10 +2,7 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { notFound, redirect } from "next/navigation";
 import AvatarUpload from "@/components/avatar-upload";
-import CoverUpload from "@/components/cover-upload";
-import DeleteAccountSection from "@/components/delete-account-section";
 import EmailVerificationButton from "@/components/email-verification-button";
-import GithubIntegrationCard from "@/components/github-integration-card";
 import { ButtonLink } from "@/components/ui/Button";
 
 const ProfileForm = dynamic(() => import("@/components/profile-form"), {
@@ -93,16 +90,16 @@ export default async function ProfileEditPage({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
+      <section className="rounded-hero app-card p-5 sm:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {dictionary.dashboardProfile.eyebrow}
             </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display mt-2 text-xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-2xl">
               {dictionary.dashboardProfile.title}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
+            <p className="mt-2 hidden max-w-2xl text-sm leading-6 app-muted sm:block">
               {dictionary.dashboardProfile.description}
             </p>
           </div>
@@ -123,11 +120,6 @@ export default async function ProfileEditPage({
           fallbackText={fallbackText}
         />
 
-        <CoverUpload
-          userId={profile.user_id}
-          currentCoverUrl={profile.cover_url || null}
-        />
-
         <div className="mt-6 flex items-center gap-4">
           <p className="text-sm font-medium text-[color:var(--foreground)]">
             {dictionary.emailVerification.sectionTitle}
@@ -139,14 +131,8 @@ export default async function ProfileEditPage({
       </section>
 
       <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
-        <ProfileForm profile={profile} />
+        <ProfileForm profile={profile} email={user.email ?? ""} />
       </section>
-
-      <div className="mt-8">
-        <GithubIntegrationCard returnTo="/profile/edit" />
-      </div>
-
-      <DeleteAccountSection email={user.email ?? ""} />
     </main>
   );
 }

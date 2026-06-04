@@ -46,12 +46,15 @@ export function buildMetadata({
   title,
   description,
   noindex = false,
+  feeds,
 }: {
   locale: Locale;
   pathname: string;
   title: string;
   description: string;
   noindex?: boolean;
+  /** RSS feeds advertised via `<link rel="alternate" type="application/rss+xml">`. */
+  feeds?: Array<{ url: string; title: string }>;
 }): Metadata {
   const dictionary = getDictionary(locale);
   const canonicalPath = createLocalePath(locale, pathname);
@@ -77,6 +80,16 @@ export function buildMetadata({
           getMetadataBase(),
         ).toString(),
       },
+      ...(feeds && feeds.length > 0
+        ? {
+            types: {
+              "application/rss+xml": feeds.map((feed) => ({
+                url: feed.url,
+                title: feed.title,
+              })),
+            },
+          }
+        : {}),
     },
     openGraph: {
       type: "website",

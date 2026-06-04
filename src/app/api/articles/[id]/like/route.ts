@@ -68,13 +68,16 @@ export async function POST(
     }
   }
 
-  const { count } = await supabase
-    .from("article_likes")
-    .select("*", { count: "exact", head: true })
-    .eq("article_id", id);
+  // Read the denormalized counter (maintained by trigger) — a single PK lookup
+  // instead of counting every like row for the article.
+  const { data: counts } = await supabase
+    .from("articles")
+    .select("likes_count")
+    .eq("id", id)
+    .maybeSingle();
 
   return NextResponse.json({
     liked: !existingLike,
-    likesCount: count ?? 0,
+    likesCount: counts?.likes_count ?? 0,
   });
 }
