@@ -148,6 +148,11 @@ type LeaderboardData = {
   // surfaces (e.g. the talents search) can rank/display the SAME rating as the
   // homepage leaderboard instead of the persisted Wilson-only profiles.score.
   creatorRatings: Record<string, number>;
+  // All-time composite project rating keyed by project id. Same purpose as
+  // creatorRatings: profile project sections, the user projects page and the
+  // related-projects section all display this composite rating instead of the
+  // persisted Wilson-only projects.score.
+  projectRatings: Record<string, number>;
 };
 
 // ---- helpers --------------------------------------------------------------
@@ -205,7 +210,7 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
   const supabase = createPublicReadOnlyClient();
 
   if (!supabase) {
-    return { result: EMPTY_RESULT, creatorRatings: {} };
+    return { result: EMPTY_RESULT, creatorRatings: {}, projectRatings: {} };
   }
 
   // Per-project and per-profile aggregates are computed in Postgres by the
@@ -527,6 +532,13 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
     creatorRatings[creator.id] = creator.rating;
   }
 
+  // Full all-time project rating map (every scored project) so other surfaces
+  // can look up the same composite rating by project id.
+  const projectRatings: Record<string, number> = {};
+  for (const [projectId, rating] of projectRatingsMap.all) {
+    projectRatings[projectId] = rating;
+  }
+
   return {
     result: {
       creators: {
@@ -539,6 +551,7 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
       },
     },
     creatorRatings,
+    projectRatings,
   };
 }
 
@@ -563,4 +576,12 @@ export async function getLeaderboards(): Promise<LeaderboardsResult> {
 // callers pay nothing extra beyond the first computation per revalidate window.
 export async function getCreatorRatings(): Promise<Record<string, number>> {
   return (await getLeaderboardData()).creatorRatings;
+}
+
+// All-time composite project rating (0-100) keyed by project id — the same
+// number shown on the homepage leaderboard and the /projects search. Shares the
+// leaderboard cache, so callers pay nothing beyond the first computation per
+// revalidate window.
+export async function getProjectRatings(): Promise<Record<string, number>> {
+  return (await getLeaderboardData()).projectRatings;
 }

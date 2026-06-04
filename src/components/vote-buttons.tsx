@@ -145,14 +145,27 @@ export default function VoteButtons({
         </p>
       ) : (
         <>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-2 sm:gap-3">
             <Button
               onClick={() => vote(1)}
               disabled={loading}
               variant={voteState.currentVote === 1 ? "primary" : "secondary"}
               aria-pressed={voteState.currentVote === 1}
+              aria-label={`${dictionary.projectPage.likeProject} (${voteState.likes})`}
+              className="gap-1.5"
             >
-              {dictionary.projectPage.likeProject} ({voteState.likes})
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-4 w-4 shrink-0"
+                aria-hidden="true"
+              >
+                <path d="M2 21h2.5a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H2v10Zm5.5-10.5 4.2-7a1.4 1.4 0 0 1 2.6.7V8h5.1a1.7 1.7 0 0 1 1.7 2l-1.3 8.2a2 2 0 0 1-2 1.7H7.5V10.5Z" />
+              </svg>
+              <span className="hidden sm:inline">
+                {dictionary.projectPage.likeProject}{" "}
+              </span>
+              ({voteState.likes})
             </Button>
 
             <Button
@@ -160,8 +173,21 @@ export default function VoteButtons({
               disabled={loading}
               variant={voteState.currentVote === -1 ? "primary" : "ghost"}
               aria-pressed={voteState.currentVote === -1}
+              aria-label={`${dictionary.projectPage.dislikeProject} (${voteState.dislikes})`}
+              className="gap-1.5"
             >
-              {dictionary.projectPage.dislikeProject} ({voteState.dislikes})
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-4 w-4 shrink-0"
+                aria-hidden="true"
+              >
+                <path d="M22 3h-2.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1H22V3Zm-5.5 10.5-4.2 7a1.4 1.4 0 0 1-2.6-.7V16H4.6a1.7 1.7 0 0 1-1.7-2l1.3-8.2a2 2 0 0 1 2-1.7h10.3v9.4Z" />
+              </svg>
+              <span className="hidden sm:inline">
+                {dictionary.projectPage.dislikeProject}{" "}
+              </span>
+              ({voteState.dislikes})
             </Button>
 
             <ContentReportButton

@@ -181,6 +181,7 @@ export default async function PublicProjectPage({
     technologies,
     media,
     voteSummary,
+    rating,
     isAuthenticated,
     isOwner,
     isBookmarked,
@@ -352,11 +353,6 @@ export default async function PublicProjectPage({
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="mr-1 h-3.5 w-3.5" aria-hidden="true"><path fillRule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
                 {dictionary.projectPage.backToProjects}
               </ButtonLink>
-              {owner?.username && (
-                <ButtonLink href={`/u/${owner.username}`} variant="secondary" size="sm">
-                  {dictionary.projectPage.viewCreator}: {owner.name || owner.username}
-                </ButtonLink>
-              )}
               {isOwner && (
                 <ButtonLink href={`/projects/edit/${project.id}`} size="sm">
                   {dictionary.projectPage.manageProject}
@@ -389,19 +385,29 @@ export default async function PublicProjectPage({
 
             <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
               <span className="font-display rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-on-soft">
-                {voteSummary.score} {dictionary.common.scoreSuffix}
+                {rating ?? voteSummary.score} {dictionary.common.scoreSuffix}
               </span>
               {statusLabel && (
                 <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">
                   {statusLabel}
                 </span>
               )}
-              {owner && (
-                <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">
-                  {dictionary.projectPage.createdBy}:{" "}
-                  {owner.name || owner.username || dictionary.projectPage.creatorFallback}
-                </span>
-              )}
+              {owner &&
+                (owner.username ? (
+                  <ButtonLink
+                    href={`/u/${owner.username}`}
+                    variant="ghost"
+                    className="rounded-full app-panel px-3 py-1 text-sm app-muted transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
+                  >
+                    {dictionary.projectPage.createdBy}:{" "}
+                    {owner.name || owner.username || dictionary.projectPage.creatorFallback}
+                  </ButtonLink>
+                ) : (
+                  <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">
+                    {dictionary.projectPage.createdBy}:{" "}
+                    {owner.name || dictionary.projectPage.creatorFallback}
+                  </span>
+                ))}
               {project.github_full_name ? (
                 <a
                   href={`https://github.com/${project.github_full_name}`}

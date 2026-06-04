@@ -46,20 +46,22 @@ export default function CreatorCard({
           )}
         </div>
 
-        <div className="min-w-0 flex-1 pt-0.5">
-          <h3 className="font-display truncate text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
-            {name}
-          </h3>
-          <p className="mt-0.5 truncate text-sm app-muted">
-            @{creator.username || dictionary.common.creator.toLowerCase()}
-          </p>
-        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+          <div className="min-w-0">
+            <h3 className="font-display truncate text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
+              {name}
+            </h3>
+            <p className="mt-0.5 truncate text-sm app-muted">
+              @{creator.username || dictionary.common.creator.toLowerCase()}
+            </p>
+          </div>
 
-        {typeof creator.score === "number" && (
-          <span className="font-display shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
-            {creator.score} {dictionary.common.scoreSuffix}
-          </span>
-        )}
+          {typeof creator.score === "number" && (
+            <span className="font-display shrink-0 self-start whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
+              {creator.score} {dictionary.common.scoreSuffix}
+            </span>
+          )}
+        </div>
       </div>
 
       {creator.headline && (
