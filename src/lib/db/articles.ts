@@ -31,6 +31,8 @@ type ArticleRow = {
   moderation_status: string | null;
   moderation_note: string | null;
   views_count: number | null;
+  likes_count: number | null;
+  comments_count: number | null;
   pinned_until: string | null;
   published_at: string | null;
   created_at: string | null;
@@ -43,11 +45,6 @@ type ArticleCategoryRow = {
   name_uk: string | null;
   description: string | null;
   admin_only: boolean | null;
-};
-
-type ArticleLikeRow = {
-  article_id: string;
-  user_id: string;
 };
 
 type ArticleCommentRow = {
@@ -92,16 +89,6 @@ function mapAuthor(row: ProfileSummaryRow | null | undefined): ArticleAuthor | n
     name: row.name || null,
     avatarUrl: row.avatar_url || null,
   };
-}
-
-function buildCountMap(rows: Array<{ article_id: string }>) {
-  const map = new Map<string, number>();
-
-  for (const row of rows) {
-    map.set(row.article_id, (map.get(row.article_id) || 0) + 1);
-  }
-
-  return map;
 }
 
 function buildCommentTree(
@@ -183,8 +170,6 @@ function toFeedItem(
   row: ArticleRow,
   categoryMap: Map<number, ArticleCategory>,
   authorMap: Map<string, ArticleAuthor>,
-  likesCountMap: Map<string, number>,
-  commentsCountMap: Map<string, number>,
 ): ArticleFeedItem {
   return {
     id: row.id,
@@ -197,8 +182,8 @@ function toFeedItem(
     publishedAt: row.published_at,
     createdAt: row.created_at,
     viewsCount: row.views_count ?? 0,
-    likesCount: likesCountMap.get(row.id) || 0,
-    commentsCount: commentsCountMap.get(row.id) || 0,
+    likesCount: row.likes_count ?? 0,
+    commentsCount: row.comments_count ?? 0,
     category: row.category_id ? categoryMap.get(row.category_id) || null : null,
     author: row.author_user_id ? authorMap.get(row.author_user_id) || null : null,
     authorDeleted: row.author_user_id === null,
@@ -230,7 +215,7 @@ export async function getArticleFeed(params?: {
   let query = supabase
     .from("articles")
     .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, pinned_until, published_at, created_at",
+      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at",
     )
     .eq("status", "published")
     .limit(60);
@@ -283,52 +268,33 @@ export async function getArticleFeed(params?: {
     });
   }
 
-  const articleIds = rows.map((item) => item.id);
-  const [likesResponse, commentsResponse, categoryMap, authorMap, categories] =
-    await Promise.all([
-      articleIds.length > 0
-        ? supabase.from("article_likes").select("article_id, user_id").in("article_id", articleIds)
-        : Promise.resolve({ data: [] }),
-      articleIds.length > 0
-        ? supabase.from("article_comments").select("article_id").in("article_id", articleIds)
-        : Promise.resolve({ data: [] }),
-      getCategoriesMap(
-        supabase,
-        Array.from(
-          new Set(
-            rows
-              .map((item) => item.category_id)
-              .filter((item): item is number => typeof item === "number"),
-          ),
+  const [categoryMap, authorMap, categories] = await Promise.all([
+    getCategoriesMap(
+      supabase,
+      Array.from(
+        new Set(
+          rows
+            .map((item) => item.category_id)
+            .filter((item): item is number => typeof item === "number"),
         ),
       ),
-      getAuthorsMap(
-        supabase,
-        Array.from(
-          new Set(
-            rows
-              .map((item) => item.author_user_id)
-              .filter((id): id is string => Boolean(id)),
-          ),
+    ),
+    getAuthorsMap(
+      supabase,
+      Array.from(
+        new Set(
+          rows
+            .map((item) => item.author_user_id)
+            .filter((id): id is string => Boolean(id)),
         ),
       ),
-      getArticleCategories(),
-    ]);
-
-  const likesCountMap = buildCountMap(
-    ((likesResponse.data || []) as ArticleLikeRow[]).map((item) => ({
-      article_id: item.article_id,
-    })),
-  );
-  const commentsCountMap = buildCountMap(
-    ((commentsResponse.data || []) as Array<{ article_id: string }>).map((item) => ({
-      article_id: item.article_id,
-    })),
-  );
+    ),
+    getArticleCategories(),
+  ]);
 
   const now = Date.now();
   const items = rows
-    .map((item) => toFeedItem(item, categoryMap, authorMap, likesCountMap, commentsCountMap))
+    .map((item) => toFeedItem(item, categoryMap, authorMap))
     .sort((left, right) => {
       // Pinned articles always come first
       const leftPinned = left.pinnedUntil && new Date(left.pinnedUntil).getTime() > now ? 1 : 0;
@@ -364,7 +330,7 @@ export async function getArticleDetail(slug: string) {
   const { data: row } = await supabase
     .from("articles")
     .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, pinned_until, published_at, created_at",
+      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -384,7 +350,7 @@ export async function getArticleDetail(slug: string) {
     return null;
   }
 
-  const [categoryMap, authorMap, likesResponse, commentsResponse, currentLikeResponse] =
+  const [categoryMap, authorMap, commentsResponse, currentLikeResponse] =
     await Promise.all([
       getCategoriesMap(
         supabase,
@@ -394,7 +360,6 @@ export async function getArticleDetail(slug: string) {
         supabase,
         article.author_user_id ? [article.author_user_id] : [],
       ),
-      supabase.from("article_likes").select("article_id, user_id").eq("article_id", article.id),
       supabase
         .from("article_comments")
         .select("id, article_id, author_user_id, parent_id, body, created_at")
@@ -421,23 +386,7 @@ export async function getArticleDetail(slug: string) {
       ),
     ),
   );
-  const likesCountMap = buildCountMap(
-    ((likesResponse.data || []) as ArticleLikeRow[]).map((item) => ({
-      article_id: item.article_id,
-    })),
-  );
-  const commentsCountMap = buildCountMap(
-    commentRows.map((item) => ({
-      article_id: item.article_id,
-    })),
-  );
-  const feedItem = toFeedItem(
-    article,
-    categoryMap,
-    authorMap,
-    likesCountMap,
-    commentsCountMap,
-  );
+  const feedItem = toFeedItem(article, categoryMap, authorMap);
 
   const commentTree = buildCommentTree(commentRows, commentAuthorMap);
 
@@ -498,7 +447,7 @@ export async function getDashboardArticles() {
   const { data } = await supabase
     .from("articles")
     .select(
-      "id, category_id, title, slug, status, moderation_status, moderation_note, views_count, published_at, created_at",
+      "id, category_id, title, slug, status, moderation_status, moderation_note, views_count, likes_count, comments_count, published_at, created_at",
     )
     .eq("author_user_id", user.id)
     .order("created_at", { ascending: false });
@@ -512,18 +461,13 @@ export async function getDashboardArticles() {
     moderation_status: string | null;
     moderation_note: string | null;
     views_count: number | null;
+    likes_count: number | null;
+    comments_count: number | null;
     published_at: string | null;
     created_at: string | null;
   }>;
 
-  const articleIds = rows.map((item) => item.id);
-  const [likesResponse, commentsResponse, categoryMap, categories] = await Promise.all([
-    articleIds.length > 0
-      ? supabase.from("article_likes").select("article_id").in("article_id", articleIds)
-      : Promise.resolve({ data: [] }),
-    articleIds.length > 0
-      ? supabase.from("article_comments").select("article_id").in("article_id", articleIds)
-      : Promise.resolve({ data: [] }),
+  const [categoryMap, categories] = await Promise.all([
     getCategoriesMap(
       supabase,
       Array.from(
@@ -537,17 +481,6 @@ export async function getDashboardArticles() {
     getArticleCategories(),
   ]);
 
-  const likesCountMap = buildCountMap(
-    ((likesResponse.data || []) as Array<{ article_id: string }>).map((item) => ({
-      article_id: item.article_id,
-    })),
-  );
-  const commentsCountMap = buildCountMap(
-    ((commentsResponse.data || []) as Array<{ article_id: string }>).map((item) => ({
-      article_id: item.article_id,
-    })),
-  );
-
   return {
     userId: user.id,
     items: rows.map(
@@ -559,8 +492,8 @@ export async function getDashboardArticles() {
         createdAt: item.created_at,
         publishedAt: item.published_at,
         viewsCount: item.views_count ?? 0,
-        likesCount: likesCountMap.get(item.id) || 0,
-        commentsCount: commentsCountMap.get(item.id) || 0,
+        likesCount: item.likes_count ?? 0,
+        commentsCount: item.comments_count ?? 0,
         category: item.category_id ? categoryMap.get(item.category_id) || null : null,
         moderationStatus: item.moderation_status,
         moderationNote: item.moderation_note,
@@ -582,20 +515,13 @@ export async function getArticleModerationQueue() {
   const { data } = await supabase
     .from("articles")
     .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, pinned_until, published_at, created_at",
+      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at",
     )
     .order("created_at", { ascending: false })
     .limit(60);
 
   const rows = (data || []) as ArticleRow[];
-  const articleIds = rows.map((item) => item.id);
-  const [likesResponse, commentsResponse, categoryMap, authorMap] = await Promise.all([
-    articleIds.length > 0
-      ? supabase.from("article_likes").select("article_id, user_id").in("article_id", articleIds)
-      : Promise.resolve({ data: [] }),
-    articleIds.length > 0
-      ? supabase.from("article_comments").select("article_id").in("article_id", articleIds)
-      : Promise.resolve({ data: [] }),
+  const [categoryMap, authorMap] = await Promise.all([
     getCategoriesMap(
       supabase,
       Array.from(
@@ -618,17 +544,6 @@ export async function getArticleModerationQueue() {
     ),
   ]);
 
-  const likesCountMap = buildCountMap(
-    ((likesResponse.data || []) as ArticleLikeRow[]).map((item) => ({
-      article_id: item.article_id,
-    })),
-  );
-  const commentsCountMap = buildCountMap(
-    ((commentsResponse.data || []) as Array<{ article_id: string }>).map((item) => ({
-      article_id: item.article_id,
-    })),
-  );
-
   const moderationRank = {
     under_review: 3,
     restricted: 2,
@@ -638,7 +553,7 @@ export async function getArticleModerationQueue() {
 
   return rows
     .map((item) => ({
-      ...toFeedItem(item, categoryMap, authorMap, likesCountMap, commentsCountMap),
+      ...toFeedItem(item, categoryMap, authorMap),
       status: normalizeArticleStatus(item.status),
       moderationStatus: item.moderation_status,
       moderationNote: item.moderation_note,

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import BookmarkButton from "@/components/bookmark-button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import ProjectComments from "@/components/project-comments";
+import RelatedProjects from "@/components/related-projects";
+import { ProjectCardGridSkeleton } from "@/components/skeletons/card-skeletons";
 import ProjectGallery from "@/components/project-gallery";
 import GithubSyncButton from "@/components/github-sync-button";
 import GithubInsightsPanel from "@/components/github-insights-panel";
@@ -728,6 +731,20 @@ export default async function PublicProjectPage({
           )}
         </aside>
       </section>
+
+      <Suspense
+        fallback={
+          <section className="mt-5 rounded-2xl app-card p-4 sm:mt-8 sm:rounded-hero sm:p-6">
+            <ProjectCardGridSkeleton count={3} />
+          </section>
+        }
+      >
+        <RelatedProjects
+          projectId={project.id}
+          skillIds={technologies.map((technology) => technology.id)}
+          dictionary={dictionary}
+        />
+      </Suspense>
     </main>
   );
 }

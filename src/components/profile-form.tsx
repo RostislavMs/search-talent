@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
 import {
@@ -44,6 +44,7 @@ import {
   profileHeroAlignments,
   profileSectionSizes,
   profileTextScales,
+  withAlpha,
   type ProfileBackgroundMode,
   type ProfileCardStyle,
   type ProfileFontPreset,
@@ -59,6 +60,8 @@ import { profilePayloadSchema } from "@/lib/validation/profile";
 import type { ProfileCategory } from "@/lib/profile-categories";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import GithubIntegrationCard from "@/components/github-integration-card";
+import DeleteAccountSection from "@/components/delete-account-section";
 import OptimizedImage from "@/components/ui/optimized-image";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
@@ -399,7 +402,99 @@ function serializeProfileDraft({
   });
 }
 
-export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
+const editorDataSections = [
+  "basic",
+  "professional",
+  "experience",
+  "skills",
+  "languages",
+  "education",
+  "certificates",
+  "qa",
+  "contacts",
+] as const;
+
+const editorMetaSections = ["appearance", "visibility"] as const;
+
+const editorAccountSections = ["integrations", "deletion"] as const;
+
+type EditorSectionId =
+  | (typeof editorDataSections)[number]
+  | (typeof editorMetaSections)[number]
+  | (typeof editorAccountSections)[number];
+
+function ControlGroup({
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border app-border bg-[color:var(--surface)] p-5 ${className ?? ""}`}
+    >
+      <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
+        {title}
+      </p>
+      <div className="mt-4">{children}</div>
+    </div>
+  );
+}
+
+function ColorField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3 rounded-2xl border app-border bg-[color:var(--surface-muted)] px-3 py-2.5 transition-colors hover:bg-[color:var(--surface)]">
+      <span
+        className="relative inline-flex h-9 w-9 shrink-0 overflow-hidden rounded-full border app-border"
+        style={{ backgroundColor: value }}
+      >
+        <input
+          type="color"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          aria-label={label}
+        />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-medium text-[color:var(--foreground)]">
+          {label}
+        </span>
+        <span className="block font-mono text-xs uppercase app-soft">
+          {value}
+        </span>
+      </span>
+    </label>
+  );
+}
+
+function navItemClass(active: boolean) {
+  return [
+    "w-full cursor-pointer rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors",
+    active
+      ? "bg-[color:var(--surface-muted)] text-[color:var(--foreground)]"
+      : "app-soft hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
+  ].join(" ");
+}
+
+export default function ProfileForm({
+  profile,
+  email,
+}: {
+  profile: ProfileRecord;
+  email: string;
+}) {
   const router = useRouter();
   const dictionary = useDictionary();
   const locale = useCurrentLocale();
@@ -478,6 +573,12 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           },
           moveUp: "\u0412\u0438\u0449\u0435",
           moveDown: "\u041d\u0438\u0436\u0447\u0435",
+          groups: {
+            colors: "\u041a\u043e\u043b\u044c\u043e\u0440\u0438",
+            typography: "\u0422\u0438\u043f\u043e\u0433\u0440\u0430\u0444\u0456\u043a\u0430",
+            background: "\u0424\u043e\u043d",
+            layout: "\u0420\u043e\u0437\u043a\u043b\u0430\u0434\u043a\u0430",
+          },
         }
       : {
           title: "Profile presentation",
@@ -528,27 +629,33 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           },
           moveUp: "Move up",
           moveDown: "Move down",
+          groups: {
+            colors: "Colors",
+            typography: "Typography",
+            background: "Background",
+            layout: "Layout",
+          },
         };
   const presentationExtrasUi =
     locale === "uk"
       ? {
-          uploadBackground: "Р—Р°РІР°РЅС‚Р°Р¶РёС‚Рё С„РѕРЅ",
-          replaceBackground: "Р—Р°РјС–РЅРёС‚Рё С„РѕРЅ",
-          removeBackground: "РџСЂРёР±СЂР°С‚Рё С„РѕРЅ",
-          backgroundReady: "Р¤РѕРЅ РіРѕС‚РѕРІРёР№",
-          backgroundUploading: "Р—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С„РѕРЅСѓ...",
-          backgroundUploadFailed: "РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё С„РѕРЅ.",
-          dragHint: "РџРµСЂРµС‚СЏРіСѓР№С‚Рµ Р±Р»РѕРєРё РјРёС€РєРѕСЋ, С‰РѕР± Р·РјС–РЅСЋРІР°С‚Рё РїРѕСЂСЏРґРѕРє.",
-          dragHandle: "С‚СЏРіРЅСѓС‚Рё",
-          blockSize: "РЁРёСЂРёРЅР° Р±Р»РѕРєСѓ",
+          uploadBackground: "Завантажити фон",
+          replaceBackground: "Замінити фон",
+          removeBackground: "Прибрати фон",
+          backgroundReady: "Фон готовий",
+          backgroundUploading: "Завантаження фону...",
+          backgroundUploadFailed: "Не вдалося завантажити фон.",
+          dragHint: "Перетягуйте блоки мишкою, щоб змінювати порядок.",
+          dragHandle: "тягнути",
+          blockSize: "Ширина блоку",
           sizes: {
-            compact: "РљРѕРјРїР°РєС‚РЅРёР№",
-            regular: "Р—РІРёС‡Р°Р№РЅРёР№",
-            wide: "РЁРёСЂРѕРєРёР№",
-            full: "РќР° РІСЃСЋ С€РёСЂРёРЅСѓ",
+            compact: "Компактний",
+            regular: "Звичайний",
+            wide: "Широкий",
+            full: "На всю ширину",
           },
           bioHint:
-            "Р РѕР·РєР°Р¶С–С‚СЊ РєРѕСЂРѕС‚РєРѕ, С‡РёРј РІРё СЃРёР»СЊРЅС–, Сѓ СЏРєРѕРјСѓ СЃС‚РёР»С– РїСЂР°С†СЋС”С‚Рµ С– С‰Рѕ РІР°Р¶Р»РёРІРѕ РґР»СЏ СЃРїС–РІРїСЂР°С†С–.",
+            "Розкажіть коротко, чим ви сильні, у якому стилі працюєте і що важливо для співпраці.",
         }
       : {
           uploadBackground: "Upload background",
@@ -572,15 +679,15 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
   const workspaceUi =
     locale === "uk"
       ? {
-          content: "Р РµРґР°РіСѓРІР°РЅРЅСЏ РїСЂРѕС„С–Р»СЋ",
-          builder: "РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РїСЂРѕС„С–Р»СЋ",
+          content: "Редагування профілю",
+          builder: "Конструктор профілю",
           contentDescription:
-            "РўСѓС‚ Р·РјС–РЅСЋСЋС‚СЊСЃСЏ СЃР°РјС– РґР°РЅС–: С‚РµРєСЃС‚Рё, РґРѕСЃРІС–Рґ, РєРѕРЅС‚Р°РєС‚Рё, СЃРµСЂС‚РёС„С–РєР°С‚Рё, РЅР°РІРёС‡РєРё С‚Р° С–РЅС€Рµ РЅР°РїРѕРІРЅРµРЅРЅСЏ.",
+            "Тут змінюються самі дані: тексти, досвід, контакти, сертифікати, навички та інше наповнення.",
           builderDescription:
-            "РўСѓС‚ Р·Р±РёСЂР°С”С‚СЊСЃСЏ Р·РѕРІРЅС–С€РЅС–Р№ РІРёРіР»СЏРґ РїСЂРѕС„С–Р»СЋ: С„РѕРЅ, СЃС‚РёР»СЊ С– СЂРµР°Р»СЊРЅС– Р±Р»РѕРєРё, СЏРєС– РјРѕР¶РЅР° РїРµСЂРµС‚СЏРіСѓРІР°С‚Рё С‚Р° Р·РјС–РЅСЋРІР°С‚Рё РїРѕ С€РёСЂРёРЅС–.",
-          canvasTitle: "РџРѕР»РѕС‚РЅРѕ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂР°",
+            "Тут збирається зовнішній вигляд профілю: фон, стиль і реальні блоки, які можна перетягувати та змінювати по ширині.",
+          canvasTitle: "Полотно конструктора",
           canvasDescription:
-            "РџРµСЂРµС‚СЏРіРЅС–С‚СЊ РєР°СЂС‚РєСѓ РЅР° РЅРѕРІРµ РјС–СЃС†Рµ, Р° С€РёСЂРёРЅСѓ Р·РјС–РЅСЋР№С‚Рµ РїСЂСЏРјРѕ РЅР° СЃР°РјС–Р№ РєР°СЂС‚С†С–.",
+            "Перетягніть картку на нове місце, а ширину змінюйте прямо на самій картці.",
         }
       : {
           content: "Profile content",
@@ -593,20 +700,62 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           canvasDescription:
             "Drag a card to a new position and change its width directly on the card.",
         };
+  const sectionNavUi =
+    locale === "uk"
+      ? {
+          menuLabel: "Розділи",
+          close: "Закрити",
+          contentGroup: "Контент",
+          styleGroup: "Оформлення",
+          accountGroup: "Акаунт",
+          basic: "Основне",
+          professional: "Професійні деталі",
+          experience: "Досвід роботи",
+          skills: "Навички",
+          languages: "Мови",
+          education: "Освіта",
+          certificates: "Сертифікати",
+          qa: "Q&A",
+          contacts: "Контакти",
+          appearance: "Вигляд",
+          visibility: "Видимість",
+          integrations: "Інтеграції",
+          deletion: "Видалення",
+        }
+      : {
+          menuLabel: "Sections",
+          close: "Close",
+          contentGroup: "Content",
+          styleGroup: "Style",
+          accountGroup: "Account",
+          basic: "Basics",
+          professional: "Professional",
+          experience: "Experience",
+          skills: "Skills",
+          languages: "Languages",
+          education: "Education",
+          certificates: "Certificates",
+          qa: "Q&A",
+          contacts: "Contacts",
+          appearance: "Appearance",
+          visibility: "Visibility",
+          integrations: "Integrations",
+          deletion: "Deletion",
+        };
   const draftUi =
     locale === "uk"
       ? {
-          resetCustomization: "РЎРєРёРЅСѓС‚Рё РєР°СЃС‚РѕРјС–Р·Р°С†С–СЋ",
+          resetCustomization: "Скинути кастомізацію",
           resetCustomizationHint:
-            "РџРѕРІРµСЂС‚Р°С” РєРѕР»СЊРѕСЂРё, С„РѕРЅ, СЃС‚РёР»СЊ РєР°СЂС‚РѕРє, РїРѕСЂСЏРґРѕРє С– С€РёСЂРёРЅСѓ Р±Р»РѕРєС–РІ РґРѕ СЃС‚Р°РЅРґР°СЂС‚РЅРѕРіРѕ РІРёРіР»СЏРґСѓ.",
-          unsavedChanges: "Р„ РЅРµР·Р±РµСЂРµР¶РµРЅС– Р·РјС–РЅРё.",
+            "Повертає кольори, фон, стиль карток, порядок і ширину блоків до стандартного вигляду.",
+          unsavedChanges: "Є незбережені зміни.",
           unsavedChangesHint:
-            "РЇРєС‰Рѕ РїС–РґРµС‚Рµ Р·С– СЃС‚РѕСЂС–РЅРєРё Р·Р°СЂР°Р·, С†С– РїСЂР°РІРєРё РјРѕР¶СѓС‚СЊ Р·Р°РіСѓР±РёС‚РёСЃСЏ.",
+            "Якщо підете зі сторінки зараз, ці правки можуть загубитися.",
           confirmLeave:
-            "РЈ РІР°СЃ С” РЅРµР·Р±РµСЂРµР¶РµРЅС– Р·РјС–РЅРё РїСЂРѕС„С–Р»СЋ. РЎРїСЂР°РІРґС– РїРµСЂРµР№С‚Рё Р·С– СЃС‚РѕСЂС–РЅРєРё?",
-          confirmLeaveTitle: "Р—Р°Р»РёС€РёС‚Рё СЃС‚РѕСЂС–РЅРєСѓ?",
-          confirmLeaveContinue: "РўР°Рє, РїС–С‚Рё",
-          confirmLeaveStay: "Р—Р°Р»РёС€РёС‚РёСЃСЊ",
+            "У вас є незбережені зміни профілю. Справді перейти зі сторінки?",
+          confirmLeaveTitle: "Залишити сторінку?",
+          confirmLeaveContinue: "Так, піти",
+          confirmLeaveStay: "Залишитись",
         }
       : {
           resetCustomization: "Reset customization",
@@ -692,9 +841,8 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
   const [workExperience, setWorkExperience] = useState<
     ProfileWorkExperienceEntry[]
   >(profile.work_experience || []);
-  const [editorMode, setEditorMode] = useState<"content" | "builder">(
-    "content",
-  );
+  const [activeSection, setActiveSection] = useState<EditorSectionId>("basic");
+  const [navModalOpen, setNavModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingCertificateId, setUploadingCertificateId] = useState<
     string | null
@@ -1079,7 +1227,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
       if (file.size > getBackgroundMaxSize(nextMode)) {
         throw new Error(
           locale === "uk"
-            ? "Р¤Р°Р№Р» С„РѕРЅСѓ Р·Р°РІРµР»РёРєРёР№ РґР»СЏ С†СЊРѕРіРѕ С‚РёРїСѓ."
+            ? "Файл фону завеликий для цього типу."
             : "Background file is too large for this type.",
         );
       }
@@ -1507,10 +1655,10 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           title,
           lines: [
             form.headline ||
-              (locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ headline" : "Add a headline"),
+              (locale === "uk" ? "Додайте headline" : "Add a headline"),
             form.bio ||
               (locale === "uk"
-                ? "Р—Р°РїРѕРІРЅС–С‚СЊ Р±С–Рѕ, С‰РѕР± Р±Р»РѕРє РІРёРіР»СЏРґР°РІ Р¶РёРІРѕ."
+                ? "Заповніть біо, щоб блок виглядав живо."
                 : "Fill the bio so this card feels alive."),
           ],
         };
@@ -1522,19 +1670,19 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
             form.experience_level
               ? getExperienceLevelLabel(form.experience_level, locale)
               : locale === "uk"
-                ? "РћР±РµСЂС–С‚СЊ РґРѕСЃРІС–Рґ"
+                ? "Оберіть досвід"
                 : "Choose experience",
             form.salary_expectations
               ? `${form.salary_expectations}${form.salary_currency ? ` ${form.salary_currency.toUpperCase()}` : ""}`
               : locale === "uk"
-                ? "Р”РѕРґР°Р№С‚Рµ РѕС‡С–РєСѓРІР°РЅРЅСЏ РїРѕ РѕРїР»Р°С‚С–"
+                ? "Додайте очікування по оплаті"
                 : "Add salary expectations",
             selectedEmploymentTypes.length > 0
               ? selectedEmploymentTypes
                   .map((item) => getEmploymentTypeLabel(item, dictionary))
                   .join(", ")
               : locale === "uk"
-                ? "Р’Р°СЂС–Р°РЅС‚Рё Р·Р°Р№РЅСЏС‚РѕСЃС‚С–"
+                ? "Варіанти зайнятості"
                 : "Employment types",
           ],
         };
@@ -1549,14 +1697,14 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   .map((item) =>
                     [
                       item.position ||
-                        (locale === "uk" ? "РџРѕСЃР°РґР°" : "Position"),
+                        (locale === "uk" ? "Посада" : "Position"),
                       item.company_name ||
-                        (locale === "uk" ? "РљРѕРјРїР°РЅС–СЏ" : "Company"),
+                        (locale === "uk" ? "Компанія" : "Company"),
                     ]
                       .filter(Boolean)
-                      .join(" вЂў "),
+                      .join(" • "),
                   )
-              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ РјС–СЃС†Рµ СЂРѕР±РѕС‚Рё" : "Add a work entry"],
+              : [locale === "uk" ? "Додайте місце роботи" : "Add a work entry"],
         };
       case "skills":
         return {
@@ -1568,7 +1716,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   .filter((item) => skills.includes(item.id))
                   .slice(0, 6)
                   .map((item) => item.name)
-              : [locale === "uk" ? "РћР±РµСЂС–С‚СЊ РЅР°РІРёС‡РєРё" : "Choose skills"],
+              : [locale === "uk" ? "Оберіть навички" : "Choose skills"],
         };
       case "languages":
         return {
@@ -1580,10 +1728,10 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   const languageName =
                     meta.languages.find(
                       (option) => option.id === item.language_id,
-                    )?.name || (locale === "uk" ? "РњРѕРІР°" : "Language");
-                  return `${languageName} вЂў ${getLanguageLevelLabel(item.proficiency_level, dictionary)}`;
+                    )?.name || (locale === "uk" ? "Мова" : "Language");
+                  return `${languageName} • ${getLanguageLevelLabel(item.proficiency_level, dictionary)}`;
                 })
-              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ РјРѕРІРё" : "Add languages"],
+              : [locale === "uk" ? "Додайте мови" : "Add languages"],
         };
       case "education":
         return {
@@ -1596,13 +1744,13 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   .map((item) =>
                     [
                       item.institution ||
-                        (locale === "uk" ? "РќР°РІС‡Р°Р»СЊРЅРёР№ Р·Р°РєР»Р°Рґ" : "Institution"),
+                        (locale === "uk" ? "Навчальний заклад" : "Institution"),
                       item.degree || item.field_of_study || "",
                     ]
                       .filter(Boolean)
-                      .join(" вЂў "),
+                      .join(" • "),
                   )
-              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ РѕСЃРІС–С‚Сѓ" : "Add education"],
+              : [locale === "uk" ? "Додайте освіту" : "Add education"],
         };
       case "certificates":
         return {
@@ -1613,7 +1761,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
               ? certificates
                   .slice(0, 3)
                   .map((item) => item.title || item.issuer || "Certificate")
-              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ СЃРµСЂС‚РёС„С–РєР°С‚Рё" : "Add certificates"],
+              : [locale === "uk" ? "Додайте сертифікати" : "Add certificates"],
         };
       case "qa":
         return {
@@ -1626,9 +1774,9 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                   .map(
                     (item) =>
                       item.question ||
-                      (locale === "uk" ? "РџРёС‚Р°РЅРЅСЏ" : "Question"),
+                      (locale === "uk" ? "Питання" : "Question"),
                   )
-              : [locale === "uk" ? "Р”РѕРґР°Р№С‚Рµ Q&A" : "Add Q&A"],
+              : [locale === "uk" ? "Додайте Q&A" : "Add Q&A"],
         };
       case "contacts":
         return {
@@ -1636,12 +1784,12 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           title,
           lines: [
             form.contact_email ||
-              (locale === "uk" ? "Email РЅРµ РґРѕРґР°РЅРѕ" : "No email yet"),
+              (locale === "uk" ? "Email не додано" : "No email yet"),
             form.telegram_username ||
               form.phone ||
               form.linkedin ||
               (locale === "uk"
-                ? "Р”РѕРґР°Р№С‚Рµ СЃРїРѕСЃРѕР±Рё Р·РІ'СЏР·РєСѓ"
+                ? "Додайте способи зв'язку"
                 : "Add contact methods"),
           ],
         };
@@ -1651,10 +1799,10 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           title,
           lines: [
             locale === "uk"
-              ? "Р‘Р»РѕРє РїРѕРєР°Р·СѓС” РѕРїСѓР±Р»С–РєРѕРІР°РЅС– СЃС‚Р°С‚С‚С– Р· РїСѓР±Р»С–С‡РЅРѕС— СЃС‚РѕСЂС–РЅРєРё."
+              ? "Блок показує опубліковані статті з публічної сторінки."
               : "This block shows published articles on the public page.",
             locale === "uk"
-              ? "РЈ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС– РІРё РєРµСЂСѓС”С‚Рµ СЂРѕР·С‚Р°С€СѓРІР°РЅРЅСЏРј С– С€РёСЂРёРЅРѕСЋ."
+              ? "У конструкторі ви керуєте розташуванням і шириною."
               : "Use the builder to control its position and width.",
           ],
         };
@@ -1665,51 +1813,81 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           title,
           lines: [
             locale === "uk"
-              ? "Р‘Р»РѕРє РїРѕРєР°Р·СѓС” РѕРїСѓР±Р»С–РєРѕРІР°РЅС– РїСЂРѕС”РєС‚Рё Р· РїСѓР±Р»С–С‡РЅРѕС— СЃС‚РѕСЂС–РЅРєРё."
+              ? "Блок показує опубліковані проєкти з публічної сторінки."
               : "This block shows published projects on the public page.",
             locale === "uk"
-              ? "РЈ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС– РІРё РєРµСЂСѓС”С‚Рµ СЂРѕР·С‚Р°С€СѓРІР°РЅРЅСЏРј С– С€РёСЂРёРЅРѕСЋ."
+              ? "У конструкторі ви керуєте розташуванням і шириною."
               : "Use the builder to control its position and width.",
           ],
         };
     }
   });
 
+  const navGroups: { caption: string; ids: readonly EditorSectionId[] }[] = [
+    { caption: sectionNavUi.contentGroup, ids: editorDataSections },
+    { caption: sectionNavUi.styleGroup, ids: editorMetaSections },
+    { caption: sectionNavUi.accountGroup, ids: editorAccountSections },
+  ];
+
+  const renderNav = (onPick?: () => void) => (
+    <nav className="flex flex-col gap-5">
+      {navGroups.map((group) => (
+        <div key={group.caption} className="flex flex-col gap-1">
+          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-eyebrow app-soft">
+            {group.caption}
+          </p>
+          {group.ids.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                setActiveSection(id);
+                onPick?.();
+              }}
+              aria-current={activeSection === id ? "page" : undefined}
+              className={navItemClass(activeSection === id)}
+            >
+              {sectionNavUi[id]}
+            </button>
+          ))}
+        </div>
+      ))}
+    </nav>
+  );
+
   return (
     <div className="space-y-8">
-      <section className="rounded-panel app-panel p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
-              {editorMode === "content"
-                ? workspaceUi.content
-                : workspaceUi.builder}
-            </h2>
-            <p className="mt-2 text-sm leading-6 app-muted">
-              {editorMode === "content"
-                ? workspaceUi.contentDescription
-                : workspaceUi.builderDescription}
-            </p>
-          </div>
+      <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
+        <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
+          {renderNav()}
+        </aside>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={editorMode === "content" ? "primary" : "secondary"}
-              onClick={() => setEditorMode("content")}
-            >
-              {workspaceUi.content}
-            </Button>
-            <Button
-              variant={editorMode === "builder" ? "primary" : "secondary"}
-              onClick={() => setEditorMode("builder")}
-            >
-              {workspaceUi.builder}
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
+        <div className="flex min-w-0 flex-col gap-8">
+          <button
+            type="button"
+            onClick={() => setNavModalOpen(true)}
+            className="flex w-full cursor-pointer items-center justify-between rounded-2xl border app-border bg-[color:var(--surface)] px-4 py-3 text-left transition-colors hover:bg-[color:var(--surface-muted)] lg:hidden"
+          >
+            <span className="text-sm font-semibold text-[color:var(--foreground)]">
+              {sectionNavUi[activeSection]}
+            </span>
+            <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-eyebrow app-soft">
+              {sectionNavUi.menuLabel}
+              <svg
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                className="h-3.5 w-3.5"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </span>
+          </button>
+      <section className={activeSection === "basic" ? "space-y-4" : "hidden"}>
         <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.basicProfileInfo}
         </h2>
@@ -1768,7 +1946,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         />
       </section>
 
-      <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
+      <section className={activeSection === "professional" ? "space-y-4" : "hidden"}>
         <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.professionalDetails}
         </h2>
@@ -1862,34 +2040,28 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
       <section
         className={
-          editorMode === "builder"
+          activeSection === "appearance"
             ? "space-y-5 rounded-panel app-panel p-5"
             : "hidden"
         }
       >
-        <div>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
-                {customizationUi.title}
-              </h2>
-              <p className="mt-2 text-sm leading-6 app-muted">
-                {customizationUi.description}
-              </p>
-            </div>
-            <div className="max-w-sm text-right">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => void resetCustomization()}
-              >
-                {draftUi.resetCustomization}
-              </Button>
-              <p className="mt-2 text-xs app-soft">
-                {draftUi.resetCustomizationHint}
-              </p>
-            </div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
+              {customizationUi.title}
+            </h2>
+            <p className="mt-2 text-sm leading-6 app-muted">
+              {customizationUi.description}
+            </p>
           </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void resetCustomization()}
+            title={draftUi.resetCustomizationHint}
+          >
+            {draftUi.resetCustomization}
+          </Button>
         </div>
 
         <div
@@ -1925,12 +2097,15 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
                 className="absolute inset-0 h-full w-full object-cover"
               />
             )}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `linear-gradient(135deg, ${presentation.surfaceColor}dd 0%, ${presentation.panelColor}dd 58%, ${presentation.accentColor}55 100%)`,
-            }}
-          />
+          {presentation.backgroundUrl &&
+            presentation.backgroundMode !== "gradient" && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(135deg, ${withAlpha(presentation.surfaceColor, Math.min(0.95, 0.55 + presentation.overlayStrength / 130))} 0%, ${withAlpha(presentation.panelColor, Math.min(0.92, 0.44 + presentation.overlayStrength / 150))} 60%, ${withAlpha(presentation.accentColor, 0.22)} 100%)`,
+                }}
+              />
+            )}
           <div
             className="relative rounded-3xl p-5"
             style={{
@@ -1982,233 +2157,239 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {(
-            [
-              ["accentColor", customizationUi.accentColor],
-              ["surfaceColor", customizationUi.surfaceColor],
-              ["panelColor", customizationUi.panelColor],
-              ["textColor", customizationUi.textColor],
-              ["mutedColor", customizationUi.mutedColor],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key} className="space-y-2">
-              <span className="block text-sm font-medium text-[color:var(--foreground)]">
-                {label}
-              </span>
-              <input
-                type="color"
-                className="h-12 w-full rounded-2xl border app-border bg-[color:var(--surface)] p-2"
-                value={presentation[key]}
-                onChange={(event) =>
-                  updatePresentation(
-                    key,
-                    event.target.value as ProfilePresentation[typeof key],
-                  )
-                }
-              />
-            </label>
-          ))}
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-[color:var(--foreground)]">
-              {customizationUi.fontPreset}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {profileFontPresets.map((fontPreset) => (
-                <Button
-                  key={fontPreset}
-                  variant={
-                    presentation.fontPreset === fontPreset
-                      ? "primary"
-                      : "secondary"
-                  }
-                  size="sm"
-                  onClick={() =>
+        <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+          <ControlGroup title={customizationUi.groups.colors}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(
+                [
+                  ["accentColor", customizationUi.accentColor],
+                  ["surfaceColor", customizationUi.surfaceColor],
+                  ["panelColor", customizationUi.panelColor],
+                  ["textColor", customizationUi.textColor],
+                  ["mutedColor", customizationUi.mutedColor],
+                ] as const
+              ).map(([key, label]) => (
+                <ColorField
+                  key={key}
+                  label={label}
+                  value={presentation[key]}
+                  onChange={(value) =>
                     updatePresentation(
-                      "fontPreset",
-                      fontPreset as ProfileFontPreset,
+                      key,
+                      value as ProfilePresentation[typeof key],
                     )
                   }
-                >
-                  {customizationUi.fonts[fontPreset]}
-                </Button>
+                />
               ))}
             </div>
-          </div>
+          </ControlGroup>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-[color:var(--foreground)]">
-              {customizationUi.textScale}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {profileTextScales.map((textScale) => (
-                <Button
-                  key={textScale}
-                  variant={
-                    presentation.textScale === textScale
-                      ? "primary"
-                      : "secondary"
-                  }
-                  size="sm"
-                  onClick={() =>
-                    updatePresentation(
-                      "textScale",
-                      textScale as ProfileTextScale,
-                    )
-                  }
-                >
-                  {customizationUi.scales[textScale]}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-[color:var(--foreground)]">
-              {customizationUi.cardStyle}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {profileCardStyles.map((cardStyle) => (
-                <Button
-                  key={cardStyle}
-                  variant={
-                    presentation.cardStyle === cardStyle
-                      ? "primary"
-                      : "secondary"
-                  }
-                  size="sm"
-                  onClick={() =>
-                    updatePresentation(
-                      "cardStyle",
-                      cardStyle as ProfileCardStyle,
-                    )
-                  }
-                >
-                  {customizationUi.cards[cardStyle]}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-[color:var(--foreground)]">
-              {customizationUi.heroAlignment}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {profileHeroAlignments.map((heroAlignment) => (
-                <Button
-                  key={heroAlignment}
-                  variant={
-                    presentation.heroAlignment === heroAlignment
-                      ? "primary"
-                      : "secondary"
-                  }
-                  size="sm"
-                  onClick={() =>
-                    updatePresentation(
-                      "heroAlignment",
-                      heroAlignment as ProfileHeroAlignment,
-                    )
-                  }
-                >
-                  {customizationUi.alignments[heroAlignment]}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-[color:var(--foreground)]">
-              {customizationUi.backgroundMode}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {profileBackgroundModes.map((backgroundMode) => (
-                <Button
-                  key={backgroundMode}
-                  variant={
-                    presentation.backgroundMode === backgroundMode
-                      ? "primary"
-                      : "secondary"
-                  }
-                  size="sm"
-                  onClick={() =>
-                    updatePresentation(
-                      "backgroundMode",
-                      backgroundMode as ProfileBackgroundMode,
-                    )
-                  }
-                >
-                  {customizationUi.modes[backgroundMode]}
-                </Button>
-              ))}
-            </div>
-            <div className="rounded-2xl border app-border bg-[color:var(--surface)] p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm app-muted">
-                  {presentation.backgroundUrl
-                    ? presentationExtrasUi.backgroundReady
-                    : customizationUi.backgroundHint}
-                </span>
-                {presentation.backgroundUrl && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => void clearBackgroundAsset()}
-                  >
-                    {presentationExtrasUi.removeBackground}
-                  </Button>
-                )}
+          <ControlGroup title={customizationUi.groups.typography}>
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-[color:var(--foreground)]">
+                  {customizationUi.fontPreset}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {profileFontPresets.map((fontPreset) => (
+                    <Button
+                      key={fontPreset}
+                      variant={
+                        presentation.fontPreset === fontPreset
+                          ? "primary"
+                          : "secondary"
+                      }
+                      size="sm"
+                      onClick={() =>
+                        updatePresentation(
+                          "fontPreset",
+                          fontPreset as ProfileFontPreset,
+                        )
+                      }
+                    >
+                      {customizationUi.fonts[fontPreset]}
+                    </Button>
+                  ))}
+                </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-3">
-                <label className="inline-flex cursor-pointer items-center rounded-full border app-border bg-[color:var(--surface-muted)] px-4 py-2 text-sm font-medium text-[color:var(--foreground)]">
-                  <span>
-                    {uploadingBackground
-                      ? presentationExtrasUi.backgroundUploading
-                      : presentation.backgroundUrl
-                        ? presentationExtrasUi.replaceBackground
-                        : presentationExtrasUi.uploadBackground}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-[color:var(--foreground)]">
+                  {customizationUi.textScale}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {profileTextScales.map((textScale) => (
+                    <Button
+                      key={textScale}
+                      variant={
+                        presentation.textScale === textScale
+                          ? "primary"
+                          : "secondary"
+                      }
+                      size="sm"
+                      onClick={() =>
+                        updatePresentation(
+                          "textScale",
+                          textScale as ProfileTextScale,
+                        )
+                      }
+                    >
+                      {customizationUi.scales[textScale]}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ControlGroup>
+
+          <ControlGroup title={customizationUi.groups.layout}>
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-[color:var(--foreground)]">
+                  {customizationUi.cardStyle}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {profileCardStyles.map((cardStyle) => (
+                    <Button
+                      key={cardStyle}
+                      variant={
+                        presentation.cardStyle === cardStyle
+                          ? "primary"
+                          : "secondary"
+                      }
+                      size="sm"
+                      onClick={() =>
+                        updatePresentation(
+                          "cardStyle",
+                          cardStyle as ProfileCardStyle,
+                        )
+                      }
+                    >
+                      {customizationUi.cards[cardStyle]}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-[color:var(--foreground)]">
+                  {customizationUi.heroAlignment}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {profileHeroAlignments.map((heroAlignment) => (
+                    <Button
+                      key={heroAlignment}
+                      variant={
+                        presentation.heroAlignment === heroAlignment
+                          ? "primary"
+                          : "secondary"
+                      }
+                      size="sm"
+                      onClick={() =>
+                        updatePresentation(
+                          "heroAlignment",
+                          heroAlignment as ProfileHeroAlignment,
+                        )
+                      }
+                    >
+                      {customizationUi.alignments[heroAlignment]}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ControlGroup>
+
+          <ControlGroup title={customizationUi.groups.background}>
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {profileBackgroundModes.map((backgroundMode) => (
+                  <Button
+                    key={backgroundMode}
+                    variant={
+                      presentation.backgroundMode === backgroundMode
+                        ? "primary"
+                        : "secondary"
+                    }
+                    size="sm"
+                    onClick={() =>
+                      updatePresentation(
+                        "backgroundMode",
+                        backgroundMode as ProfileBackgroundMode,
+                      )
+                    }
+                  >
+                    {customizationUi.modes[backgroundMode]}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="rounded-2xl border app-border bg-[color:var(--surface-muted)] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-sm app-muted">
+                    {presentation.backgroundUrl
+                      ? presentationExtrasUi.backgroundReady
+                      : customizationUi.backgroundHint}
+                  </span>
+                  {presentation.backgroundUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void clearBackgroundAsset()}
+                    >
+                      {presentationExtrasUi.removeBackground}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <label className="inline-flex cursor-pointer items-center rounded-full border app-border bg-[color:var(--surface)] px-4 py-2 text-sm font-medium text-[color:var(--foreground)]">
+                    <span>
+                      {uploadingBackground
+                        ? presentationExtrasUi.backgroundUploading
+                        : presentation.backgroundUrl
+                          ? presentationExtrasUi.replaceBackground
+                          : presentationExtrasUi.uploadBackground}
+                    </span>
+                    <input
+                      type="file"
+                      accept={getBackgroundAcceptValue(
+                        presentation.backgroundMode,
+                      )}
+                      disabled={uploadingBackground}
+                      className="sr-only"
+                      onChange={(event) => void uploadBackgroundAsset(event)}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {presentation.backgroundMode !== "gradient" && (
+                <label className="block space-y-2">
+                  <span className="flex items-center justify-between text-sm font-medium text-[color:var(--foreground)]">
+                    <span>{customizationUi.overlay}</span>
+                    <span className="app-soft">
+                      {presentation.overlayStrength}%
+                    </span>
                   </span>
                   <input
-                    type="file"
-                    accept={getBackgroundAcceptValue(
-                      presentation.backgroundMode,
-                    )}
-                    disabled={uploadingBackground}
-                    className="sr-only"
-                    onChange={(event) => void uploadBackgroundAsset(event)}
+                    type="range"
+                    min="0"
+                    max="85"
+                    step="1"
+                    value={presentation.overlayStrength}
+                    onChange={(event) =>
+                      updatePresentation(
+                        "overlayStrength",
+                        clampOverlayStrength(Number(event.target.value)),
+                      )
+                    }
+                    className="w-full accent-[color:var(--brand)]"
                   />
                 </label>
-              </div>
+              )}
             </div>
-          </div>
-
-          <label className="space-y-2">
-            <span className="block text-sm font-medium text-[color:var(--foreground)]">
-              {customizationUi.overlay}
-            </span>
-            <input
-              type="range"
-              min="0"
-              max="85"
-              step="1"
-              value={presentation.overlayStrength}
-              onChange={(event) =>
-                updatePresentation(
-                  "overlayStrength",
-                  clampOverlayStrength(Number(event.target.value)),
-                )
-              }
-            />
-            <span className="text-sm app-muted">
-              {presentation.overlayStrength}%
-            </span>
-          </label>
+          </ControlGroup>
         </div>
 
         <div>
@@ -2313,7 +2494,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
       </section>
 
-      <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
+      <section className={activeSection === "experience" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.workExperience}
@@ -2425,7 +2606,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
       </section>
 
-      <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
+      <section className={activeSection === "contacts" ? "space-y-4" : "hidden"}>
         <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.locationContactsAndLinks}
         </h2>
@@ -2546,7 +2727,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         />
       </section>
 
-      <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
+      <section className={activeSection === "skills" ? "space-y-4" : "hidden"}>
         <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.skills}
         </h2>
@@ -2558,7 +2739,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         />
       </section>
 
-      <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
+      <section className={activeSection === "languages" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.languagesWithLevel}
@@ -2613,7 +2794,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
       </section>
 
-      <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
+      <section className={activeSection === "education" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.education}
@@ -2695,7 +2876,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
       </section>
 
-      <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
+      <section className={activeSection === "certificates" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.certificates}
@@ -2812,7 +2993,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
       </section>
 
-      <section className={editorMode === "content" ? "space-y-4" : "hidden"}>
+      <section className={activeSection === "qa" ? "space-y-4" : "hidden"}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.profileQa}
@@ -2860,7 +3041,7 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
 
       <section
         className={
-          editorMode === "builder"
+          activeSection === "visibility"
             ? "space-y-4 rounded-3xl app-panel p-5"
             : "hidden"
         }
@@ -2894,6 +3075,20 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         </div>
       </section>
 
+      <section
+        className={activeSection === "integrations" ? "space-y-4" : "hidden"}
+      >
+        <GithubIntegrationCard returnTo="/profile/edit" />
+      </section>
+
+      <section
+        className={activeSection === "deletion" ? "space-y-4" : "hidden"}
+      >
+        <DeleteAccountSection email={email} />
+      </section>
+        </div>
+      </div>
+
       {hasUnsavedChanges ? (
         <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
           <p className="text-sm font-medium text-[color:var(--foreground)]">
@@ -2912,6 +3107,37 @@ export default function ProfileForm({ profile }: { profile: ProfileRecord }) {
         {saving ? dictionary.forms.saving : dictionary.forms.saveProfile}
       </Button>
       {errorMessage && <p className="text-sm text-rose-500">{errorMessage}</p>}
+
+      {navModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(2,6,23,0.55)] p-4 sm:items-center lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setNavModalOpen(false);
+            }
+          }}
+        >
+          <div className="flex max-h-[85dvh] w-full max-w-md flex-col rounded-panel border app-border bg-[color:var(--surface)] p-5 shadow-[0_28px_90px_rgba(2,6,23,0.4)]">
+            <div className="mb-4 flex shrink-0 items-center justify-between">
+              <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
+                {sectionNavUi.menuLabel}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setNavModalOpen(false)}
+              >
+                {sectionNavUi.close}
+              </Button>
+            </div>
+            <div className="-mr-2 overflow-y-auto overscroll-contain pr-2">
+              {renderNav(() => setNavModalOpen(false))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={pendingLeaveUrl !== null}

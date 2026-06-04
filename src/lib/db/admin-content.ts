@@ -117,7 +117,7 @@ export async function getAdminArticlesList(
   let query = supabase
     .from("articles")
     .select(
-      "id, title, slug, created_at, moderation_status, author_user_id",
+      "id, title, slug, created_at, moderation_status, author_user_id, likes_count, comments_count",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -139,30 +139,13 @@ export async function getAdminArticlesList(
     created_at: string;
     moderation_status: string | null;
     author_user_id: string;
+    likes_count: number | null;
+    comments_count: number | null;
   };
   const rows = (data || []) as Row[];
 
   const authorIds = Array.from(new Set(rows.map((row) => row.author_user_id)));
   const profileMap = await getProfilesByUserIds(authorIds);
-
-  const articleIds = rows.map((row) => row.id);
-  const [likesResponse, commentsResponse] = await Promise.all([
-    articleIds.length
-      ? supabase.from("article_likes").select("article_id").in("article_id", articleIds)
-      : Promise.resolve({ data: [] as { article_id: string }[] }),
-    articleIds.length
-      ? supabase.from("article_comments").select("article_id").in("article_id", articleIds)
-      : Promise.resolve({ data: [] as { article_id: string }[] }),
-  ]);
-
-  const likeCounts = new Map<string, number>();
-  for (const row of (likesResponse.data || []) as { article_id: string }[]) {
-    likeCounts.set(row.article_id, (likeCounts.get(row.article_id) || 0) + 1);
-  }
-  const commentCounts = new Map<string, number>();
-  for (const row of (commentsResponse.data || []) as { article_id: string }[]) {
-    commentCounts.set(row.article_id, (commentCounts.get(row.article_id) || 0) + 1);
-  }
 
   const items: AdminArticleRow[] = rows.map((row) => ({
     id: row.id,
@@ -173,8 +156,8 @@ export async function getAdminArticlesList(
     authorUserId: row.author_user_id,
     authorLabel: authorLabel(profileMap.get(row.author_user_id)),
     authorHref: authorHref(profileMap.get(row.author_user_id)),
-    likes: likeCounts.get(row.id) || 0,
-    commentsCount: commentCounts.get(row.id) || 0,
+    likes: row.likes_count ?? 0,
+    commentsCount: row.comments_count ?? 0,
   }));
 
   const total = count || 0;
@@ -260,7 +243,7 @@ export async function getAdminProjectsList(
   const projectIds = rows.map((row) => row.id);
   const votesResponse = projectIds.length
     ? await supabase
-        .from("project_votes")
+        .from("votes")
         .select("project_id, value")
         .in("project_id", projectIds)
     : { data: [] as { project_id: string; value: number | null }[] };

@@ -107,6 +107,7 @@ function getStrings(locale: string) {
       lockedHowTo: "Як отримати",
       firstThreshold: "Перший рівень",
       empty: "Поки що бейджів немає.",
+      showAll: "Усі бейджі",
     };
   }
 
@@ -123,6 +124,7 @@ function getStrings(locale: string) {
     lockedHowTo: "How to earn",
     firstThreshold: "First threshold",
     empty: "No badges yet.",
+    showAll: "All badges",
   };
 }
 
@@ -148,9 +150,13 @@ function renderTierDots(tier: number, rarity: BadgeRarity, earned: boolean) {
 export default function BadgeShelf({
   badges,
   locale,
+  maxVisible,
+  maxVisibleMobile,
 }: {
   badges: BadgeWithProgress[];
   locale: string;
+  maxVisible?: number;
+  maxVisibleMobile?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState<{
@@ -216,11 +222,16 @@ export default function BadgeShelf({
   }
 
   const earnedCount = badges.filter((entry) => entry.earned).length;
+  const desktopMax = maxVisible ?? badges.length;
+  const mobileMax = maxVisibleMobile ?? desktopMax;
+  const visibleBadges = badges.slice(0, desktopMax);
+  const mobileHidden = Math.max(0, badges.length - mobileMax);
+  const desktopHidden = Math.max(0, badges.length - desktopMax);
 
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        {badges.map((entry) => {
+        {visibleBadges.map((entry, index) => {
           const { badge, earned, tier } = entry;
           const { name, description } = getBadgeLabel(badge, locale);
           const showsTierDots = badge.tierThresholds.length > 1;
@@ -245,7 +256,8 @@ export default function BadgeShelf({
               onBlur={() => clearTooltip(badge.id)}
               aria-label={ariaLabel}
               className={[
-                "relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--foreground)]/30",
+                index >= mobileMax ? "hidden sm:inline-flex" : "inline-flex",
+                "relative h-10 w-10 cursor-pointer items-center justify-center rounded-full border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--foreground)]/30",
                 chipClasses,
               ].join(" ")}
             >
@@ -268,6 +280,28 @@ export default function BadgeShelf({
             </button>
           );
         })}
+        {mobileHidden > 0 && (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label={strings.showAll}
+            title={strings.showAll}
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-full border app-border bg-[color:var(--surface)] px-3 text-sm font-semibold text-[color:var(--foreground)] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--foreground)]/30 sm:hidden"
+          >
+            +{mobileHidden}
+          </button>
+        )}
+        {desktopHidden > 0 && (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label={strings.showAll}
+            title={strings.showAll}
+            className="hidden h-10 cursor-pointer items-center justify-center rounded-full border app-border bg-[color:var(--surface)] px-3 text-sm font-semibold text-[color:var(--foreground)] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--foreground)]/30 sm:inline-flex"
+          >
+            +{desktopHidden}
+          </button>
+        )}
       </div>
 
       {mounted && focused &&

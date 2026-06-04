@@ -63,6 +63,7 @@ type SearchUser = {
   name: string | null;
   headline: string | null;
   avatar_url: string | null;
+  score: number | null;
   countryName: string | null;
   city: string | null;
   categoryName: string | null;
@@ -1689,6 +1690,7 @@ export default function DiscoveryPage({
                       name: creator.name,
                       headline: creator.headline,
                       avatar_url: creator.avatar_url,
+                      score: creator.score,
                       categoryName: creator.categoryName,
                       countryName: creator.countryName,
                       city: creator.city,

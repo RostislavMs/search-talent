@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import ArticleCard from "@/components/article-card";
 import HomeTopRated from "@/components/home-top-rated";
 import SeoFaqSection from "@/components/seo-faq-section";
+import HomePageSkeleton from "@/components/skeletons/home-page-skeleton";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -136,17 +138,6 @@ export default async function LocalizedHomePage({
   params: Promise<{ locale: string }>;
 }) {
   const locale = (await getLocaleValue(params)) as Locale;
-  const dictionary = getDictionary(locale);
-  const marketing = getMarketingContent(locale);
-  const [leaderboards, latestArticles, viewer] = await Promise.all([
-    getLeaderboards(),
-    getLatestArticles(6),
-    getCurrentViewerRole(),
-  ]);
-  const isAuthenticated = Boolean(viewer.user);
-  const topCreator = leaderboards.creators.all[0];
-  const topProject = leaderboards.projects.all[0];
-  const topArticle = latestArticles[0];
 
   const organizationSchema = buildOrganizationSchema();
   const webSiteSchema = buildWebSiteSchema();
@@ -162,6 +153,28 @@ export default async function LocalizedHomePage({
         dangerouslySetInnerHTML={{ __html: safeJsonLd(webSiteSchema) }}
       />
 
+      <Suspense fallback={<HomePageSkeleton />}>
+        <HomeContent locale={locale} />
+      </Suspense>
+    </main>
+  );
+}
+
+async function HomeContent({ locale }: { locale: Locale }) {
+  const dictionary = getDictionary(locale);
+  const marketing = getMarketingContent(locale);
+  const [leaderboards, latestArticles, viewer] = await Promise.all([
+    getLeaderboards(),
+    getLatestArticles(6),
+    getCurrentViewerRole(),
+  ]);
+  const isAuthenticated = Boolean(viewer.user);
+  const topCreator = leaderboards.creators.all[0];
+  const topProject = leaderboards.projects.all[0];
+  const topArticle = latestArticles[0];
+
+  return (
+    <>
       <section className="bg-brand-hero overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:rounded-hero sm:p-8 md:p-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)] lg:gap-8">
           <div>
@@ -396,6 +409,6 @@ export default async function LocalizedHomePage({
           items={marketing.home.faq}
         />
       </div>
-    </main>
+    </>
   );
 }

@@ -17,6 +17,7 @@ type ProfileVoteButtonsProps = {
   initialDislikes: number;
   isAuthenticated: boolean;
   isOwner: boolean;
+  className?: string;
 };
 
 type VoteState = {
@@ -61,6 +62,7 @@ export default function ProfileVoteButtons({
   initialDislikes,
   isAuthenticated,
   isOwner,
+  className,
 }: ProfileVoteButtonsProps) {
   const locale = useCurrentLocale();
   const dictionary = useDictionary();
@@ -128,7 +130,7 @@ export default function ProfileVoteButtons({
   };
 
   return (
-    <section className="mt-8 rounded-panel app-panel p-5">
+    <section className={className ?? "mt-8 rounded-panel app-panel p-5"}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">

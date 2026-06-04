@@ -26,6 +26,12 @@ import {
   normalizeProfileSettings,
   type ProfilePresentation,
 } from "@/lib/profile-presentation";
+import {
+  RELATED_ITEMS_LIMIT,
+  rankBySharedSkills,
+  rankRelatedCreators,
+  tallySharedSkills,
+} from "@/lib/related";
 
 function getRelationName(
   relation: { name?: string | null } | Array<{ name?: string | null }> | null,
@@ -263,7 +269,9 @@ export async function getPublicProjectPageData(
     await Promise.all([
       supabase
         .from("profiles")
-        .select("id, user_id, username, name, headline, avatar_url, city, country_id")
+        .select(
+          "id, user_id, username, name, headline, avatar_url, city, country_id, countries ( name )",
+        )
         .eq("user_id", typedProject.owner_id)
         .maybeSingle(),
       supabase
@@ -296,18 +304,25 @@ export async function getPublicProjectPageData(
         : Promise.resolve({ data: null }),
     ]);
 
-  const owner = ownerResponse.data;
-  let countryName: string | null = null;
-
-  if (owner?.country_id) {
-    const { data: country } = await supabase
-      .from("countries")
-      .select("name")
-      .eq("id", owner.country_id)
-      .maybeSingle();
-
-    countryName = country?.name || null;
-  }
+  const owner = ownerResponse.data as
+    | {
+        id: string;
+        user_id: string;
+        username: string | null;
+        name: string | null;
+        headline: string | null;
+        avatar_url: string | null;
+        city: string | null;
+        country_id: number | null;
+        countries:
+          | { name?: string | null }
+          | Array<{ name?: string | null }>
+          | null;
+      }
+    | null;
+  // Country name is embedded via the profiles.country_id -> countries FK in the
+  // owner select above, so no extra round-trip is needed here.
+  const countryName = getRelationName(owner?.countries ?? null);
 
   return {
     project: typedProject,
@@ -736,7 +751,7 @@ export async function getUserArticlesPage(
   const { data: articles } = await supabase
     .from("articles")
     .select(
-      "id, slug, title, excerpt, content, cover_image_url, hero_video_url, views_count, published_at, created_at, pinned_until, category_id",
+      "id, slug, title, excerpt, content, cover_image_url, hero_video_url, views_count, likes_count, comments_count, published_at, created_at, pinned_until, category_id",
     )
     .eq("author_user_id", profile.user_id)
     .eq("status", "published")
@@ -753,12 +768,13 @@ export async function getUserArticlesPage(
     cover_image_url: string | null;
     hero_video_url: string | null;
     views_count: number | null;
+    likes_count: number | null;
+    comments_count: number | null;
     published_at: string | null;
     created_at: string | null;
     pinned_until: string | null;
     category_id: number | null;
   }>;
-  const articleIds = rows.map((item) => item.id);
   const categoryIds = Array.from(
     new Set(
       rows
@@ -767,26 +783,17 @@ export async function getUserArticlesPage(
     ),
   );
 
-  const [likesResponse, commentsResponse, categoriesResponse] = await Promise.all([
-    articleIds.length > 0
-      ? supabase.from("article_likes").select("article_id").in("article_id", articleIds)
-      : Promise.resolve({ data: [] }),
-    articleIds.length > 0
-      ? supabase
-          .from("article_comments")
-          .select("article_id")
-          .in("article_id", articleIds)
-      : Promise.resolve({ data: [] }),
+  // Like/comment counts are read straight from the denormalized
+  // articles.likes_count / comments_count columns (maintained by triggers),
+  // so only category metadata needs a follow-up lookup.
+  const categoriesResponse =
     categoryIds.length > 0
-      ? supabase
+      ? await supabase
           .from("article_categories")
           .select("id, slug, name, name_uk, description, admin_only")
           .in("id", categoryIds)
-      : Promise.resolve({ data: [] }),
-  ]);
+      : { data: [] };
 
-  const likeRows = (likesResponse.data || []) as Array<{ article_id: string }>;
-  const commentRows = (commentsResponse.data || []) as Array<{ article_id: string }>;
   const categoryRows = (categoriesResponse.data || []) as Array<{
     id: number;
     slug: string;
@@ -796,14 +803,6 @@ export async function getUserArticlesPage(
     admin_only: boolean | null;
   }>;
 
-  const likesMap = new Map<string, number>();
-  for (const row of likeRows) {
-    likesMap.set(row.article_id, (likesMap.get(row.article_id) || 0) + 1);
-  }
-  const commentsMap = new Map<string, number>();
-  for (const row of commentRows) {
-    commentsMap.set(row.article_id, (commentsMap.get(row.article_id) || 0) + 1);
-  }
   const categoryMap = new Map(
     categoryRows.map((item) => [
       item.id,
@@ -839,8 +838,8 @@ export async function getUserArticlesPage(
       cover_image_url: item.cover_image_url,
       hero_video_url: item.hero_video_url,
       views_count: item.views_count || 0,
-      likes_count: likesMap.get(item.id) || 0,
-      comments_count: commentsMap.get(item.id) || 0,
+      likes_count: item.likes_count || 0,
+      comments_count: item.comments_count || 0,
       published_at: item.published_at,
       created_at: item.created_at,
       pinned_until: item.pinned_until,
@@ -912,4 +911,347 @@ export async function getUserProjectsPage(
     currentPage,
     totalPages,
   };
+}
+
+export type RelatedProjectItem = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  score: number | null;
+  cover_url: string | null;
+  kind: string | null;
+  ownerName: string | null;
+  ownerUsername: string | null;
+};
+
+type RelatedProjectRow = {
+  id: string;
+  owner_id: string;
+  title: string;
+  slug: string | null;
+  description: string | null;
+  score: number | null;
+  cover_url: string | null;
+  kind: string | null;
+  created_at: string | null;
+  moderation_status: string | null;
+};
+
+/**
+ * Public projects that share at least one technology with the given project,
+ * ranked by overlap (then score, then recency). Powers the "Related projects"
+ * section on the project detail page — internal linking that deepens crawl
+ * paths and keeps visitors exploring. Returns `[]` when the project has no
+ * skills or nothing public overlaps, so the caller can skip the section.
+ */
+export async function getRelatedProjects(
+  projectId: string,
+  referenceSkillIds: number[],
+  limit = RELATED_ITEMS_LIMIT,
+): Promise<RelatedProjectItem[]> {
+  noStore();
+
+  if (referenceSkillIds.length === 0 || limit <= 0) {
+    return [];
+  }
+
+  const supabase = await createClient();
+
+  // 1. Candidate projects that share at least one of the reference skills.
+  const { data: skillLinks } = await supabase
+    .from("project_skills")
+    .select("project_id, skill_id")
+    .in("skill_id", referenceSkillIds)
+    .limit(1000);
+
+  const sharedCounts = tallySharedSkills(
+    ((skillLinks || []) as Array<{ project_id: string; skill_id: number }>).map(
+      (row) => ({ entityId: row.project_id, skillId: row.skill_id }),
+    ),
+    referenceSkillIds,
+    projectId,
+  );
+
+  if (sharedCounts.size === 0) {
+    return [];
+  }
+
+  // Hydrate a few more candidates than we need so published / moderation
+  // filtering still leaves a full row to rank.
+  const hydrateCap = Math.max(limit * 4, 24);
+  const candidateIds = Array.from(sharedCounts.keys())
+    .sort((a, b) => (sharedCounts.get(b) || 0) - (sharedCounts.get(a) || 0))
+    .slice(0, hydrateCap);
+
+  // 2. Keep only public, published candidates with a slug to link to.
+  const { data: rows } = await supabase
+    .from("projects")
+    .select(
+      "id, owner_id, title, slug, description, score, cover_url, kind, created_at, moderation_status",
+    )
+    .in("id", candidateIds)
+    .eq("status", "published")
+    .not("slug", "is", null);
+
+  const projects = ((rows || []) as RelatedProjectRow[]).filter((row) =>
+    isPublicModerationStatus(row.moderation_status),
+  );
+
+  if (projects.length === 0) {
+    return [];
+  }
+
+  // 3. Resolve owner display names in a single batched query.
+  const ownerIds = Array.from(new Set(projects.map((row) => row.owner_id)));
+  const { data: owners } = await supabase
+    .from("profiles")
+    .select("user_id, name, username")
+    .in("user_id", ownerIds);
+  const ownerByUserId = new Map(
+    (
+      (owners || []) as Array<{
+        user_id: string;
+        name: string | null;
+        username: string | null;
+      }>
+    ).map((owner) => [owner.user_id, owner]),
+  );
+
+  // 4. Rank by shared-skill overlap, breaking ties on score then recency.
+  const ranked = rankBySharedSkills(
+    projects.map((row) => ({
+      id: row.id,
+      sharedSkillCount: sharedCounts.get(row.id) || 0,
+      score: row.score ?? 0,
+      createdAt: row.created_at,
+      row,
+    })),
+    limit,
+  );
+
+  return ranked.map(({ row }) => {
+    const owner = ownerByUserId.get(row.owner_id);
+    return {
+      id: row.id,
+      title: row.title,
+      slug: row.slug as string,
+      description: row.description,
+      score: row.score,
+      cover_url: row.cover_url,
+      kind: row.kind,
+      ownerName: owner?.name ?? null,
+      ownerUsername: owner?.username ?? null,
+    };
+  });
+}
+
+export type RelatedCreatorItem = {
+  username: string;
+  name: string | null;
+  headline: string | null;
+  avatar_url: string | null;
+  categoryName: string | null;
+  countryName: string | null;
+  city: string | null;
+  technologies: Array<{ id: number; name: string }>;
+};
+
+type RelatedCreatorRow = {
+  id: string;
+  username: string | null;
+  name: string | null;
+  headline: string | null;
+  avatar_url: string | null;
+  city: string | null;
+  country_id: number | null;
+  category_id: number | null;
+  created_at: string | null;
+  moderation_status: string | null;
+};
+
+/**
+ * Public creators related to the given profile, ranked by shared technologies
+ * and (as a fallback / tiebreaker) the same profile category. Powers the
+ * "Related creators" section on the public profile page — profile-to-profile
+ * internal links that help visitors discover similar talent. Returns `[]` when
+ * nothing public is related, so the caller can skip the section.
+ */
+export async function getRelatedCreators(
+  profileId: string,
+  referenceSkillIds: number[],
+  categoryId: number | null,
+  limit = RELATED_ITEMS_LIMIT,
+): Promise<RelatedCreatorItem[]> {
+  noStore();
+
+  if (limit <= 0) {
+    return [];
+  }
+
+  const supabase = await createClient();
+
+  // 1. Skill-overlap candidates.
+  let sharedCounts = new Map<string, number>();
+  if (referenceSkillIds.length > 0) {
+    const { data: skillLinks } = await supabase
+      .from("profile_skills")
+      .select("profile_id, skill_id")
+      .in("skill_id", referenceSkillIds)
+      .limit(1000);
+
+    sharedCounts = tallySharedSkills(
+      (
+        (skillLinks || []) as Array<{ profile_id: string; skill_id: number }>
+      ).map((row) => ({ entityId: row.profile_id, skillId: row.skill_id })),
+      referenceSkillIds,
+      profileId,
+    );
+  }
+
+  const hydrateCap = Math.max(limit * 4, 24);
+  const candidateIds = new Set<string>(
+    Array.from(sharedCounts.keys())
+      .sort((a, b) => (sharedCounts.get(b) || 0) - (sharedCounts.get(a) || 0))
+      .slice(0, hydrateCap),
+  );
+
+  // 2. Same-category fill so creators with few skills still get neighbours.
+  if (categoryId !== null) {
+    const { data: categoryRows } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("category_id", categoryId)
+      .eq("moderation_status", "approved")
+      .not("username", "is", null)
+      .neq("id", profileId)
+      // Surface the strongest creators in the category fallback instead of an
+      // arbitrary heap-order slice once the category grows past hydrateCap.
+      .order("score", { ascending: false })
+      .limit(hydrateCap);
+
+    for (const row of (categoryRows || []) as Array<{ id: string }>) {
+      candidateIds.add(row.id);
+    }
+  }
+
+  if (candidateIds.size === 0) {
+    return [];
+  }
+
+  // 3. Hydrate candidate profiles (public only).
+  const { data: profileRows } = await supabase
+    .from("profiles")
+    .select(
+      "id, username, name, headline, avatar_url, city, country_id, category_id, created_at, moderation_status",
+    )
+    .in("id", Array.from(candidateIds))
+    .not("username", "is", null);
+
+  const candidates = ((profileRows || []) as RelatedCreatorRow[]).filter(
+    (row) =>
+      row.id !== profileId &&
+      row.username !== null &&
+      isPublicModerationStatus(row.moderation_status),
+  );
+
+  if (candidates.length === 0) {
+    return [];
+  }
+
+  // 4. Rank by skill overlap, then same-category, then recency.
+  const ranked = rankRelatedCreators(
+    candidates.map((row) => ({
+      id: row.id,
+      sharedSkillCount: sharedCounts.get(row.id) || 0,
+      sameCategory: categoryId !== null && row.category_id === categoryId,
+      createdAt: row.created_at,
+      row,
+    })),
+    limit,
+  );
+
+  if (ranked.length === 0) {
+    return [];
+  }
+
+  // 5. Resolve display details (skills, country, category) in batched queries.
+  const rankedIds = ranked.map((item) => item.id);
+  const countryIds = Array.from(
+    new Set(
+      ranked
+        .map((item) => item.row.country_id)
+        .filter((value): value is number => typeof value === "number"),
+    ),
+  );
+  const categoryIds = Array.from(
+    new Set(
+      ranked
+        .map((item) => item.row.category_id)
+        .filter((value): value is number => typeof value === "number"),
+    ),
+  );
+
+  const [skillsResponse, countriesResponse, categoriesResponse] =
+    await Promise.all([
+      supabase
+        .from("profile_skills")
+        .select("profile_id, skill_id, skills ( name )")
+        .in("profile_id", rankedIds),
+      countryIds.length > 0
+        ? supabase.from("countries").select("id, name").in("id", countryIds)
+        : Promise.resolve({ data: [] }),
+      categoryIds.length > 0
+        ? supabase
+            .from("profile_categories")
+            .select("id, name")
+            .in("id", categoryIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+  const technologiesByProfile = new Map<
+    string,
+    Array<{ id: number; name: string }>
+  >();
+  for (const relation of (skillsResponse.data || []) as Array<{
+    profile_id: string;
+    skill_id: number;
+    skills: { name?: string | null } | Array<{ name?: string | null }> | null;
+  }>) {
+    const name = getRelationName(relation.skills);
+    if (!name) {
+      continue;
+    }
+    const list = technologiesByProfile.get(relation.profile_id) || [];
+    list.push({ id: relation.skill_id, name });
+    technologiesByProfile.set(relation.profile_id, list);
+  }
+
+  const countryNameById = new Map(
+    ((countriesResponse.data || []) as Array<{ id: number; name: string }>).map(
+      (row) => [row.id, row.name],
+    ),
+  );
+  const categoryNameById = new Map(
+    ((categoriesResponse.data || []) as Array<{ id: number; name: string }>).map(
+      (row) => [row.id, row.name],
+    ),
+  );
+
+  return ranked.map(({ row }) => ({
+    username: row.username as string,
+    name: row.name,
+    headline: row.headline,
+    avatar_url: row.avatar_url,
+    categoryName:
+      row.category_id !== null
+        ? categoryNameById.get(row.category_id) ?? null
+        : null,
+    countryName:
+      row.country_id !== null
+        ? countryNameById.get(row.country_id) ?? null
+        : null,
+    city: row.city,
+    technologies: technologiesByProfile.get(row.id) || [],
+  }));
 }

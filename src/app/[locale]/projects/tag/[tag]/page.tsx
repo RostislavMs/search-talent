@@ -7,7 +7,7 @@ import { buildProjectsTagMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 
 const DiscoveryPage = nextDynamic(() => import("@/components/discovery-page"), {
-  loading: () => <DiscoveryPageSkeleton mode="projects" />,
+  loading: () => <DiscoveryPageSkeleton mode="projects" heroVariant="minimal" />,
 });
 
 // Rendered per request. These facet pages have no pre-built params (the long

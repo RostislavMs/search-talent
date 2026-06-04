@@ -86,12 +86,15 @@ export default async function FollowersPage({
 
   const dictionary = getDictionary(locale);
 
-  const { count: totalCount } = await supabase
-    .from("follows")
-    .select("id", { count: "exact", head: true })
-    .eq("following_user_id", user.id);
+  // Total comes from the denormalized counter on the profile (maintained by
+  // trigger) instead of count(*) over follows on every page load.
+  const { data: counterRow } = await supabase
+    .from("profiles")
+    .select("followers_count")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  const totalItems = totalCount || 0;
+  const totalItems = counterRow?.followers_count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const offset = (safePage - 1) * PAGE_SIZE;

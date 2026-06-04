@@ -22,28 +22,12 @@ import type { PublicProfilePageData } from "@/lib/db/public";
 import {
   getProfileFontStack,
   getProfileTextScale,
+  withAlpha,
   type ProfilePresentation,
   type ProfileSectionId,
   type ProfileSectionSize,
 } from "@/lib/profile-presentation";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-
-function withAlpha(hex: string, alpha: number) {
-  const normalized = hex.replace("#", "");
-  const value =
-    normalized.length === 3
-      ? normalized
-          .split("")
-          .map((part) => `${part}${part}`)
-          .join("")
-      : normalized;
-  const parsed = Number.parseInt(value, 16);
-  const r = Number.isNaN(parsed) ? 255 : (parsed >> 16) & 255;
-  const g = Number.isNaN(parsed) ? 255 : (parsed >> 8) & 255;
-  const b = Number.isNaN(parsed) ? 255 : parsed & 255;
-
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 function getExperienceLabel(value: string | null, locale: string) {
   if (!value) {
@@ -358,7 +342,7 @@ export default function PublicProfileShowcase({
           </div>
         )}
         <div className="relative p-4 sm:p-6 lg:p-8">
-          <section className="relative overflow-hidden rounded-2xl app-card p-4 sm:p-6 lg:p-8">
+          <section className="relative overflow-hidden rounded-2xl app-card p-4 sm:p-6 lg:flex lg:min-h-[22rem] lg:flex-col lg:justify-center lg:p-8">
             {presentation.backgroundUrl && presentation.backgroundMode === "image" && (
               <div className="absolute inset-0 -z-0">
                 <OptimizedImage
@@ -394,13 +378,8 @@ export default function PublicProfileShowcase({
             )}
             <div className="relative grid grid-cols-1 gap-6 sm:gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
               <div className={presentation.heroAlignment === "center" ? "text-center" : "text-left"}>
-                <div className={`flex flex-wrap items-center gap-3 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
-                  <ButtonLink href="/talents" variant="ghost" size="sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="mr-1 h-3.5 w-3.5" aria-hidden="true"><path fillRule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
-                    {dictionary.creatorProfile.backToSearch}
-                  </ButtonLink>
-                  {isOwner && <ButtonLink href="/profile/edit" size="sm">{dictionary.creatorProfile.editProfile}</ButtonLink>}
-                  {!isOwner && isAdmin && (
+                {!isOwner && isAdmin && (
+                  <div className={`mb-4 flex flex-wrap items-center gap-3 sm:mb-5 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
                     <AdminContentQuickActions
                       targetType="profile"
                       targetId={profile.id}
@@ -408,11 +387,10 @@ export default function PublicProfileShowcase({
                       locale={locale}
                       redirectAfterDelete="/talents"
                     />
-                  )}
-                  <ProfilePdfExport data={data} />
-                </div>
+                  </div>
+                )}
 
-                <div className={`mt-4 flex gap-3 sm:mt-5 sm:gap-4 ${presentation.heroAlignment === "center" ? "flex-col items-center" : "flex-col items-start sm:flex-row"}`}>
+                <div className={`flex items-center gap-3 sm:gap-4 ${presentation.heroAlignment === "center" ? "flex-col" : "flex-row"}`}>
                   <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl app-panel text-2xl font-semibold text-[color:var(--foreground)] sm:h-20 sm:w-20 sm:rounded-3xl sm:text-3xl">
                     {profile.avatar_url ? <OptimizedImage src={profile.avatar_url} alt={displayName} fill sizes="(max-width: 640px) 64px, 80px" className="object-cover" /> : <span>{displayName.slice(0, 1).toUpperCase()}</span>}
                   </div>
@@ -420,49 +398,68 @@ export default function PublicProfileShowcase({
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold uppercase tracking-eyebrow sm:text-xs" style={{ color: presentation.mutedColor }}>{profile.categoryName || dictionary.common.creator}</p>
                     <h1 className="font-display mt-1 font-semibold tracking-tight sm:mt-1.5" style={{ fontSize: `clamp(1.4rem, 3.6vw, ${2.2 * typeScale.heading}rem)`, lineHeight: 1.1 }}>{displayName}</h1>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2 sm:mt-2">
-                      <p className="text-sm app-muted">@{profile.username}</p>
-                      <VerifiedBadge verified={profile.email_verified} />
-                    </div>
-                    {profile.headline && <p className="mt-2 max-w-3xl text-sm leading-6 app-muted sm:mt-3 sm:leading-7">{profile.headline}</p>}
-                    {profile.username ? (
-                      <ProfileAiSummaryPublic
-                        username={profile.username}
-                        isAuthenticated={isAuthenticated}
-                      />
-                    ) : null}
-                    <div className={`mt-3 flex flex-wrap items-center gap-1.5 sm:mt-4 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
-                      {(profile.city || profile.countryName) && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{[profile.city, profile.countryName].filter(Boolean).join(", ")}</span>}
-                      {profile.experience_level && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{getExperienceLabel(profile.experience_level, locale)}</span>}
-                      {isOwner && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{dictionary.creatorProfile.ownerView}</span>}
-                      {isOwner && (
-                        <ProfileCompletenessButton
-                          completeness={completeness}
-                          locale={locale}
-                          editHref={`/${locale}/profile/edit`}
-                        />
-                      )}
-                    </div>
-                    {badges.length > 0 && (
-                      <div className={`mt-3 sm:mt-4 ${presentation.heroAlignment === "center" ? "flex justify-center" : ""}`}>
-                        <BadgeShelf badges={badges} locale={locale} />
-                      </div>
-                    )}
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-4 xl:self-start">
-                <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} isAuthenticated={isAuthenticated} isOwner={isOwner} />
-                {!isOwner && (
-                  <div className="flex flex-wrap gap-2">
-                    <FollowButton followingUserId={profile.user_id} initialFollowing={isFollowing} isAuthenticated={isAuthenticated} />
-                    <BookmarkButton targetType="profile" targetId={profile.id} initialBookmarked={isBookmarked} isAuthenticated={isAuthenticated} />
+                <div className={`mt-3 flex flex-wrap items-center gap-2 sm:mt-4 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
+                  <p className="text-sm app-muted">@{profile.username}</p>
+                  <VerifiedBadge verified={profile.email_verified} />
+                </div>
+                {profile.headline && <p className="mt-3 text-sm leading-6 app-muted sm:leading-7">{profile.headline}</p>}
+                <div className={`mt-3 flex flex-wrap items-center gap-1.5 sm:mt-4 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
+                  {(profile.city || profile.countryName) && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{[profile.city, profile.countryName].filter(Boolean).join(", ")}</span>}
+                  {profile.experience_level && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{getExperienceLabel(profile.experience_level, locale)}</span>}
+                  {isOwner && (
+                    <span className="hidden sm:inline-flex">
+                      <ProfileCompletenessButton
+                        completeness={completeness}
+                        locale={locale}
+                        editHref={`/${locale}/profile/edit`}
+                      />
+                    </span>
+                  )}
+                </div>
+                {badges.length > 0 && (
+                  <div className={`mt-3 sm:mt-4 ${presentation.heroAlignment === "center" ? "flex justify-center" : ""}`}>
+                    <BadgeShelf badges={badges} locale={locale} maxVisible={10} maxVisibleMobile={5} />
                   </div>
                 )}
               </div>
+
+              <div className="space-y-4 xl:self-start">
+                <div className="hidden xl:block">
+                  <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} isAuthenticated={isAuthenticated} isOwner={isOwner} />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {isOwner && (
+                    <ButtonLink href="/profile/edit" size="sm">
+                      {dictionary.creatorProfile.editProfile}
+                    </ButtonLink>
+                  )}
+                  {!isOwner && (
+                    <FollowButton followingUserId={profile.user_id} initialFollowing={isFollowing} isAuthenticated={isAuthenticated} />
+                  )}
+                  {!isOwner && (
+                    <BookmarkButton targetType="profile" targetId={profile.id} initialBookmarked={isBookmarked} isAuthenticated={isAuthenticated} />
+                  )}
+                  <ProfilePdfExport data={data} label="PDF" />
+                </div>
+              </div>
             </div>
           </section>
+
+          {profile.username ? (
+            <div className="mt-4 sm:mt-6">
+              <ProfileAiSummaryPublic
+                username={profile.username}
+                isAuthenticated={isAuthenticated}
+              />
+            </div>
+          ) : null}
+
+          <div className="xl:hidden">
+            <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} isAuthenticated={isAuthenticated} isOwner={isOwner} className="mt-4 rounded-panel bg-[color:var(--surface-muted)] p-5 sm:mt-6" />
+          </div>
 
           <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-12">
             {visibleSections.map((section) => (

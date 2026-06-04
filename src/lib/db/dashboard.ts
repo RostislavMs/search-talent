@@ -1,13 +1,10 @@
-﻿import { getProfileCompletenessScore } from "@/lib/leaderboards";
+import { getProfileCompletenessScore } from "@/lib/leaderboards";
 import { createClient } from "@/lib/supabase/server";
 
-type CreatedAtRow = {
-  created_at: string | null;
-};
+type EmbeddedCount = { count: number }[] | null;
 
-type ProfileRow = {
+type DashboardProfileRow = {
   id: string;
-  user_id: string;
   username: string | null;
   name: string | null;
   headline: string | null;
@@ -30,7 +27,6 @@ type ProfileRow = {
   avatar_url: string | null;
   country_id: number | null;
   category_id: number | null;
-  created_at: string | null;
   experience_level: string | null;
   experience_years: number | null;
   employment_types: string[] | null;
@@ -38,39 +34,12 @@ type ProfileRow = {
   salary_expectations: string | null;
   salary_currency: string | null;
   additional_info: string | null;
-};
-
-type ProjectRow = {
-  id: string;
-  owner_id: string;
-  title: string;
-  slug: string | null;
-  project_status: string | null;
-  created_at: string | null;
-};
-
-type VoteRow = {
-  project_id: string;
-  value: number | null;
-  created_at: string | null;
-};
-
-type CountryRow = {
-  id: number;
-  name: string;
-};
-
-type CategoryRow = {
-  id: number;
-  name: string;
-};
-
-type SkillRelationRow = {
-  skills: { name?: string | null } | Array<{ name?: string | null }> | null;
-};
-
-type ProfileRelationRow = {
-  profile_id: string;
+  profile_skills: EmbeddedCount;
+  profile_languages: EmbeddedCount;
+  profile_education: EmbeddedCount;
+  profile_certificates: EmbeddedCount;
+  profile_qas: EmbeddedCount;
+  profile_work_experience: EmbeddedCount;
 };
 
 export type UserDashboardStats = {
@@ -172,190 +141,62 @@ export type DashboardStats = {
   }>;
 };
 
-function getMonthKeys(length: number) {
-  const keys: string[] = [];
-  const current = new Date();
-  const firstDayUtc = Date.UTC(current.getUTCFullYear(), current.getUTCMonth(), 1);
+// Shape returned by the get_dashboard_activity() SQL RPC (heavy-table aggregates
+// computed in Postgres). The profile-derived breakdowns below are computed in JS
+// because they depend on the shared completeness formula and salary text parsing.
+type DashboardActivity = {
+  projectsTotal: number;
+  profilesTotal: number;
+  publicProfilesTotal: number;
+  categoriesTotal: number;
+  votesTotal: number;
+  likes: number;
+  dislikes: number;
+  avgProjectScore: number;
+  monthlyActivity: DashboardStats["monthlyActivity"];
+  statusBreakdown: DashboardStats["statusBreakdown"];
+  topProjects: DashboardStats["topProjects"];
+  topSkills: DashboardStats["topSkills"];
+};
 
-  for (let index = length - 1; index >= 0; index -= 1) {
-    const date = new Date(firstDayUtc);
-    date.setUTCMonth(date.getUTCMonth() - index);
-    const year = date.getUTCFullYear();
-    const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
-    keys.push(`${year}-${month}`);
-  }
-
-  return keys;
-}
-
-function toMonthKey(value: string | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return `${date.getUTCFullYear()}-${`${date.getUTCMonth() + 1}`.padStart(2, "0")}`;
-}
-
-function aggregateByMonth(rows: CreatedAtRow[], monthKeys: string[]) {
-  const counts = new Map<string, number>(monthKeys.map((key) => [key, 0]));
-
-  for (const row of rows) {
-    const key = toMonthKey(row.created_at);
-    if (!key || !counts.has(key)) continue;
-    counts.set(key, (counts.get(key) || 0) + 1);
-  }
-
-  return counts;
-}
-
-function getRelationName(relation: SkillRelationRow["skills"]) {
-  if (Array.isArray(relation)) {
-    return relation[0]?.name || null;
-  }
-
-  return relation?.name || null;
-}
-
-function getCountMap(rows: ProfileRelationRow[]) {
-  const countMap = new Map<string, number>();
-  for (const row of rows) {
-    countMap.set(row.profile_id, (countMap.get(row.profile_id) || 0) + 1);
-  }
-  return countMap;
-}
-
-function getProfileCompletionScore(
-  profile: ProfileRow,
-  profileSkills: Map<string, number>,
-  profileLanguages: Map<string, number>,
-  profileEducation: Map<string, number>,
-  profileCertificates: Map<string, number>,
-  profileQas: Map<string, number>,
-  profileWorkExperience: Map<string, number>,
-) {
-  return Math.round(
-    getProfileCompletenessScore({
-      username: profile.username,
-      name: profile.name,
-      avatarUrl: profile.avatar_url,
-      headline: profile.headline,
-      bio: profile.bio,
-      countryId: profile.country_id,
-      city: profile.city,
-      website: profile.website,
-      github: profile.github,
-      twitter: profile.twitter,
-      linkedin: profile.linkedin,
-      behance: profile.behance,
-      dribbble: profile.dribbble,
-      artstation: profile.artstation,
-      vimeo: profile.vimeo,
-      youtube: profile.youtube,
-      instagram: profile.instagram,
-      contactEmail: profile.contact_email,
-      telegramUsername: profile.telegram_username,
-      phone: profile.phone,
-      preferredContactMethod: profile.preferred_contact_method,
-      experienceLevel: profile.experience_level,
-      experienceYears: profile.experience_years,
-      employmentTypesCount: profile.employment_types?.length || 0,
-      workFormatsCount: profile.work_formats?.length || 0,
-      salaryExpectations: profile.salary_expectations,
-      salaryCurrency: profile.salary_currency,
-      additionalInfo: profile.additional_info,
-      skillsCount: profileSkills.get(profile.id) || 0,
-      languagesCount: profileLanguages.get(profile.id) || 0,
-      educationCount: profileEducation.get(profile.id) || 0,
-      certificateCount: profileCertificates.get(profile.id) || 0,
-      qaCount: profileQas.get(profile.id) || 0,
-      workExperienceCount: profileWorkExperience.get(profile.id) || 0,
-    }) * 100,
-  );
+function embeddedCount(relation: EmbeddedCount): number {
+  return relation?.[0]?.count ?? 0;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
-  const monthKeys = getMonthKeys(6);
 
-  const [
-    profilesResponse,
-    projectsResponse,
-    votesResponse,
-    countriesResponse,
-    categoriesResponse,
-    projectSkillsResponse,
-    profileSkillsResponse,
-    profileLanguagesResponse,
-    profileEducationResponse,
-    profileCertificatesResponse,
-    profileQasResponse,
-    profileWorkExperienceResponse,
-  ] = await Promise.all([
-    supabase.from("profiles").select("id, user_id, username, name, headline, bio, city, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, contact_email, telegram_username, phone, preferred_contact_method, avatar_url, country_id, category_id, created_at, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info"),
-    supabase.from("projects").select("id, owner_id, title, slug, project_status, created_at"),
-    supabase.from("votes").select("project_id, value, created_at"),
-    supabase.from("countries").select("id, name"),
-    supabase.from("profile_categories").select("id, name"),
-    supabase.from("project_skills").select(`project_id, skills ( name )`),
-    supabase.from("profile_skills").select(`profile_id, skills ( name )`),
-    supabase.from("profile_languages").select("profile_id"),
-    supabase.from("profile_education").select("profile_id"),
-    supabase.from("profile_certificates").select("profile_id"),
-    supabase.from("profile_qas").select("profile_id"),
-    supabase.from("profile_work_experience").select("profile_id"),
-  ]);
+  // Heavy aggregates (votes / projects / skills / monthly / top lists) are
+  // computed in SQL. Only profile rows are read into JS — with per-profile
+  // section counts via PostgREST `(count)` embedding (no join-row fetches) —
+  // because completeness scoring and salary parsing stay in the TS layer.
+  const [activityResponse, profilesResponse, countriesResponse, categoriesResponse] =
+    await Promise.all([
+      supabase.rpc("get_dashboard_activity"),
+      supabase
+        .from("profiles")
+        .select(
+          "id, username, name, headline, bio, city, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, contact_email, telegram_username, phone, preferred_contact_method, avatar_url, country_id, category_id, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info, profile_skills(count), profile_languages(count), profile_education(count), profile_certificates(count), profile_qas(count), profile_work_experience(count)",
+        ),
+      supabase.from("countries").select("id, name"),
+      supabase.from("profile_categories").select("id, name"),
+    ]);
 
-  const profiles = (profilesResponse.data || []) as ProfileRow[];
-  const projects = (projectsResponse.data || []) as ProjectRow[];
-  const votes = (votesResponse.data || []) as VoteRow[];
-  const countries = (countriesResponse.data || []) as CountryRow[];
-  const categories = (categoriesResponse.data || []) as CategoryRow[];
-  const projectSkills = (projectSkillsResponse.data || []) as Array<SkillRelationRow & { project_id: string }>;
-  const profileSkills = (profileSkillsResponse.data || []) as Array<SkillRelationRow & { profile_id: string }>;
-  const profileLanguages = (profileLanguagesResponse.data || []) as ProfileRelationRow[];
-  const profileEducation = (profileEducationResponse.data || []) as ProfileRelationRow[];
-  const profileCertificates = (profileCertificatesResponse.data || []) as ProfileRelationRow[];
-  const profileQas = (profileQasResponse.data || []) as ProfileRelationRow[];
-  const profileWorkExperience = (profileWorkExperienceResponse.data || []) as ProfileRelationRow[];
+  const activity = (activityResponse.data || {}) as Partial<DashboardActivity>;
+  const profiles = (profilesResponse.data || []) as unknown as DashboardProfileRow[];
+  const countries = (countriesResponse.data || []) as Array<{ id: number; name: string }>;
+  const categories = (categoriesResponse.data || []) as Array<{ id: number; name: string }>;
 
   const countryMap = new Map(countries.map((country) => [country.id, country.name]));
   const categoryMap = new Map(categories.map((category) => [category.id, category.name]));
-  const profileByUserId = new Map(profiles.map((profile) => [profile.user_id, profile]));
-  const profileSkillCountMap = getCountMap(profileSkills.map((item) => ({ profile_id: item.profile_id })));
-  const profileLanguageCountMap = getCountMap(profileLanguages);
-  const profileEducationCountMap = getCountMap(profileEducation);
-  const profileCertificateCountMap = getCountMap(profileCertificates);
-  const profileQaCountMap = getCountMap(profileQas);
-  const profileWorkExperienceCountMap = getCountMap(profileWorkExperience);
-
-  const statusCounts = new Map<string, number>();
-  for (const project of projects) {
-    const key = project.project_status || "unknown";
-    statusCounts.set(key, (statusCounts.get(key) || 0) + 1);
-  }
-
-  const voteStatsByProject = new Map<string, { likes: number; dislikes: number; score: number }>();
-  for (const vote of votes) {
-    const current = voteStatsByProject.get(vote.project_id) || { likes: 0, dislikes: 0, score: 0 };
-    if (vote.value === 1) {
-      current.likes += 1;
-      current.score += 1;
-    }
-    if (vote.value === -1) {
-      current.dislikes += 1;
-      current.score -= 1;
-    }
-    voteStatsByProject.set(vote.project_id, current);
-  }
 
   const countryCounts = new Map<string, number>();
   const categoryCounts = new Map<string, number>();
-  const completionCounts = new Map<"starter" | "growing" | "complete", number>([["starter", 0], ["growing", 0], ["complete", 0]]);
+  const completionCounts = new Map<"starter" | "growing" | "complete", number>([
+    ["starter", 0],
+    ["growing", 0],
+    ["complete", 0],
+  ]);
   const experienceCounts = new Map<string, number>();
   const salaryCounts = new Map<string, number>();
   const workFormatCounts = new Map<string, number>();
@@ -385,7 +226,44 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   }
 
   const completionScores = profiles.map((profile) => {
-    const score = getProfileCompletionScore(profile, profileSkillCountMap, profileLanguageCountMap, profileEducationCountMap, profileCertificateCountMap, profileQaCountMap, profileWorkExperienceCountMap);
+    const score = Math.round(
+      getProfileCompletenessScore({
+        username: profile.username,
+        name: profile.name,
+        avatarUrl: profile.avatar_url,
+        headline: profile.headline,
+        bio: profile.bio,
+        countryId: profile.country_id,
+        city: profile.city,
+        website: profile.website,
+        github: profile.github,
+        twitter: profile.twitter,
+        linkedin: profile.linkedin,
+        behance: profile.behance,
+        dribbble: profile.dribbble,
+        artstation: profile.artstation,
+        vimeo: profile.vimeo,
+        youtube: profile.youtube,
+        instagram: profile.instagram,
+        contactEmail: profile.contact_email,
+        telegramUsername: profile.telegram_username,
+        phone: profile.phone,
+        preferredContactMethod: profile.preferred_contact_method,
+        experienceLevel: profile.experience_level,
+        experienceYears: profile.experience_years,
+        employmentTypesCount: profile.employment_types?.length || 0,
+        workFormatsCount: profile.work_formats?.length || 0,
+        salaryExpectations: profile.salary_expectations,
+        salaryCurrency: profile.salary_currency,
+        additionalInfo: profile.additional_info,
+        skillsCount: embeddedCount(profile.profile_skills),
+        languagesCount: embeddedCount(profile.profile_languages),
+        educationCount: embeddedCount(profile.profile_education),
+        certificateCount: embeddedCount(profile.profile_certificates),
+        qaCount: embeddedCount(profile.profile_qas),
+        workExperienceCount: embeddedCount(profile.profile_work_experience),
+      }) * 100,
+    );
     const band = score >= 80 ? "complete" : score >= 45 ? "growing" : "starter";
     completionCounts.set(band, (completionCounts.get(band) || 0) + 1);
 
@@ -440,43 +318,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     return score;
   });
 
-  const combinedSkillCounts = new Map<string, number>();
-  for (const relation of [...projectSkills, ...profileSkills]) {
-    const name = getRelationName(relation.skills);
-    if (!name) continue;
-    combinedSkillCounts.set(name, (combinedSkillCounts.get(name) || 0) + 1);
-  }
-
-  const profileMonthly = aggregateByMonth(profiles, monthKeys);
-  const projectsMonthly = aggregateByMonth(projects, monthKeys);
-  const votesMonthly = aggregateByMonth(votes, monthKeys);
-
-  const topProjects = projects
-    .map((project) => {
-      const voteStats = voteStatsByProject.get(project.id) || { likes: 0, dislikes: 0, score: 0 };
-      const ownerProfile = profileByUserId.get(project.owner_id);
-      return {
-        id: project.id,
-        title: project.title,
-        slug: project.slug,
-        likes: voteStats.likes,
-        dislikes: voteStats.dislikes,
-        score: voteStats.score,
-        ownerName: ownerProfile?.name || ownerProfile?.username || null,
-        categoryName:
-          ownerProfile?.category_id && categoryMap.get(ownerProfile.category_id)
-            ? (categoryMap.get(ownerProfile.category_id) as string)
-            : null,
-      };
-    })
-    .sort((left, right) => right.score - left.score || right.likes - left.likes)
-    .slice(0, 6);
-
-  const averageProjectScore =
-    projects.length > 0
-      ? Math.round(projects.reduce((sum, project) => sum + (voteStatsByProject.get(project.id)?.score || 0), 0) / projects.length)
-      : 0;
-
   const averageProfileCompletion =
     completionScores.length > 0
       ? Math.round(completionScores.reduce((sum, value) => sum + value, 0) / completionScores.length)
@@ -484,24 +325,30 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   return {
     siteTotals: {
-      profiles: profiles.length,
-      publicProfiles: profiles.filter((profile) => Boolean(profile.username)).length,
+      profiles: activity.profilesTotal ?? 0,
+      publicProfiles: activity.publicProfilesTotal ?? 0,
       countries: countryCounts.size,
-      categories: categories.length,
-      projects: projects.length,
-      votes: votes.length,
-      likes: votes.filter((vote) => vote.value === 1).length,
-      dislikes: votes.filter((vote) => vote.value === -1).length,
+      categories: activity.categoriesTotal ?? 0,
+      projects: activity.projectsTotal ?? 0,
+      votes: activity.votesTotal ?? 0,
+      likes: activity.likes ?? 0,
+      dislikes: activity.dislikes ?? 0,
       avgProfileCompletion: averageProfileCompletion,
-      avgProjectScore: averageProjectScore,
+      avgProjectScore: activity.avgProjectScore ?? 0,
     },
-    monthlyActivity: monthKeys.map((key) => ({ key, profiles: profileMonthly.get(key) || 0, projects: projectsMonthly.get(key) || 0, votes: votesMonthly.get(key) || 0 })),
-    statusBreakdown: [...statusCounts.entries()].map(([key, value]) => ({ key, value })).sort((left, right) => right.value - left.value),
-    categoryBreakdown: [...categoryCounts.entries()].map(([label, value]) => ({ label, value })).sort((left, right) => right.value - left.value).slice(0, 10),
-    countryBreakdown: [...countryCounts.entries()].map(([label, value]) => ({ label, value })).sort((left, right) => right.value - left.value).slice(0, 10),
+    monthlyActivity: activity.monthlyActivity ?? [],
+    statusBreakdown: activity.statusBreakdown ?? [],
+    categoryBreakdown: [...categoryCounts.entries()]
+      .map(([label, value]) => ({ label, value }))
+      .sort((left, right) => right.value - left.value)
+      .slice(0, 10),
+    countryBreakdown: [...countryCounts.entries()]
+      .map(([label, value]) => ({ label, value }))
+      .sort((left, right) => right.value - left.value)
+      .slice(0, 10),
     completionBreakdown: [...completionCounts.entries()].map(([key, value]) => ({ key, value })),
-    topProjects,
-    topSkills: [...combinedSkillCounts.entries()].map(([name, value]) => ({ name, value })).sort((left, right) => right.value - left.value).slice(0, 14),
+    topProjects: activity.topProjects ?? [],
+    topSkills: activity.topSkills ?? [],
     experienceBreakdown: [...experienceCounts.entries()]
       .map(([key, value]) => ({ key, label: key, value }))
       .sort((left, right) => right.value - left.value),
@@ -533,50 +380,47 @@ export async function getUserDashboardStats(userId: string): Promise<UserDashboa
 
   const [
     profileResponse,
-    projectsResponse,
+    projectsCountResponse,
     articlesResponse,
-    followersResponse,
-    followingResponse,
-    bookmarksResponse,
+    receivedVotesResponse,
   ] = await Promise.all([
-    supabase.from("profiles").select("id, name, username").eq("user_id", userId).maybeSingle(),
-    supabase.from("projects").select("id").eq("owner_id", userId),
-    supabase.from("articles").select("id, views_count").eq("author_user_id", userId),
-    supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_user_id", userId),
-    supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_user_id", userId),
-    supabase.from("bookmarks").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabase
+      .from("profiles")
+      .select("id, name, username, followers_count, following_count, bookmarks_count")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabase.from("projects").select("id", { count: "exact", head: true }).eq("owner_id", userId),
+    supabase.from("articles").select("views_count").eq("author_user_id", userId),
+    // Likes/dislikes across all of the user's projects, aggregated in SQL instead
+    // of fetching every vote row to count in JS. Follower / following / bookmark
+    // totals are read from the denormalized counters on the profile row.
+    supabase.rpc("get_user_received_votes", { p_user_id: userId }).single(),
   ]);
 
-  const profile = profileResponse.data;
-  const userProjects = projectsResponse.data || [];
-  const userArticles = (articlesResponse.data || []) as Array<{ id: string; views_count: number | null }>;
-
-  let receivedLikes = 0;
-  let receivedDislikes = 0;
-
-  if (userProjects.length > 0) {
-    const projectIds = userProjects.map((p) => p.id);
-    const { data: projectVotes } = await supabase
-      .from("votes")
-      .select("value")
-      .in("project_id", projectIds);
-
-    for (const vote of projectVotes || []) {
-      if (vote.value === 1) receivedLikes += 1;
-      if (vote.value === -1) receivedDislikes += 1;
-    }
-  }
+  const profile = profileResponse.data as {
+    id: string;
+    name: string | null;
+    username: string | null;
+    followers_count: number | null;
+    following_count: number | null;
+    bookmarks_count: number | null;
+  } | null;
+  const userArticles = (articlesResponse.data || []) as Array<{ views_count: number | null }>;
+  const receivedVotes = (receivedVotesResponse.data || { likes: 0, dislikes: 0 }) as {
+    likes: number;
+    dislikes: number;
+  };
 
   return {
     name: profile?.name || profile?.username || null,
     username: profile?.username || null,
-    projectsCount: userProjects.length,
+    projectsCount: projectsCountResponse.count || 0,
     articlesCount: userArticles.length,
-    followersCount: followersResponse.count || 0,
-    followingCount: followingResponse.count || 0,
-    bookmarksCount: bookmarksResponse.count || 0,
-    receivedLikes,
-    receivedDislikes,
+    followersCount: profile?.followers_count ?? 0,
+    followingCount: profile?.following_count ?? 0,
+    bookmarksCount: profile?.bookmarks_count ?? 0,
+    receivedLikes: receivedVotes?.likes || 0,
+    receivedDislikes: receivedVotes?.dislikes || 0,
     articleViews: userArticles.reduce((sum, a) => sum + (a.views_count || 0), 0),
   };
 }

@@ -109,7 +109,7 @@ export default function AvatarUpload({
           <p className="text-sm font-medium text-[color:var(--foreground)]">
             {dictionary.dashboardProfile.currentAvatar}
           </p>
-          <p className="mt-1 text-sm app-muted">
+          <p className="mt-1 hidden text-sm app-muted sm:block">
             {dictionary.dashboardProfile.avatarHint}
           </p>
         </div>

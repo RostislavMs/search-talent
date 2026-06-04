@@ -107,21 +107,17 @@ export type UsersListResult = {
   };
 };
 
-type AuthUser = {
-  id: string;
-  email: string | null | undefined;
-  created_at: string | null | undefined;
-  last_sign_in_at?: string | null | undefined;
-};
-
-type ProfileIndexRow = {
-  id: string;
-  user_id: string;
-  name: string | null;
+type AdminUsersListRpcRow = {
+  userId: string;
+  profileId: string | null;
+  email: string | null;
+  displayName: string | null;
   username: string | null;
-  avatar_url: string | null;
-  moderation_status: string | null;
-  created_at: string | null;
+  avatarUrl: string | null;
+  moderationStatus: string | null;
+  createdAt: string | null;
+  lastSignInAt: string | null;
+  isAdmin: boolean;
 };
 
 function normalizeStatus(value: string | null | undefined): ModerationStatus | null {
@@ -148,112 +144,40 @@ export async function getAdminUsersList(
   } = params;
 
   const supabase = await createClient();
-  const adminClient = createAdminClient();
-
-  const { data: adminRows } = await supabase
-    .from("platform_admins")
-    .select("user_id");
-  const adminIds = new Set(
-    (adminRows || []).map((row) => row.user_id as string).filter(Boolean),
-  );
-
-  let authUsers: AuthUser[] = [];
-  let authTotal = 0;
-
-  if (adminClient) {
-    const { data } = await adminClient.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000,
-    });
-    authUsers = (data?.users || []).map((user) => ({
-      id: user.id,
-      email: user.email,
-      created_at: user.created_at,
-      last_sign_in_at: user.last_sign_in_at,
-    }));
-    authTotal = (data && "total" in data && typeof data.total === "number"
-      ? data.total
-      : authUsers.length) as number;
-  }
-
-  const { data: profileRowsData } = await supabase
-    .from("profiles")
-    .select(
-      "id, user_id, name, username, avatar_url, moderation_status, created_at",
-    );
-  const profileRows = (profileRowsData || []) as ProfileIndexRow[];
-  const profilesByUserId = new Map<string, ProfileIndexRow>();
-  for (const row of profileRows) {
-    profilesByUserId.set(row.user_id, row);
-  }
-
-  const combined: AdminUserRow[] = authUsers.length
-    ? authUsers.map((user) => {
-        const profile = profilesByUserId.get(user.id);
-        return {
-          userId: user.id,
-          profileId: profile?.id || null,
-          email: user.email || null,
-          displayName: profile?.name || null,
-          username: profile?.username || null,
-          avatarUrl: profile?.avatar_url || null,
-          moderationStatus: normalizeStatus(profile?.moderation_status),
-          createdAt: user.created_at || profile?.created_at || null,
-          lastSignInAt: user.last_sign_in_at || null,
-          isAdmin: adminIds.has(user.id),
-        };
-      })
-    : profileRows.map((profile) => ({
-        userId: profile.user_id,
-        profileId: profile.id,
-        email: null,
-        displayName: profile.name,
-        username: profile.username,
-        avatarUrl: profile.avatar_url,
-        moderationStatus: normalizeStatus(profile.moderation_status),
-        createdAt: profile.created_at,
-        lastSignInAt: null,
-        isAdmin: adminIds.has(profile.user_id),
-      }));
-
-  const normalizedSearch = search.trim().toLowerCase();
-  const filtered = combined.filter((row) => {
-    if (role === "admin" && !row.isAdmin) return false;
-    if (role === "user" && row.isAdmin) return false;
-
-    if (status !== "all" && row.moderationStatus !== status) {
-      if (!(status === "approved" && row.moderationStatus === null)) {
-        return false;
-      }
-    }
-
-    if (normalizedSearch) {
-      const haystack = [row.displayName, row.username, row.email]
-        .filter((value): value is string => Boolean(value))
-        .join(" ")
-        .toLowerCase();
-      if (!haystack.includes(normalizedSearch)) return false;
-    }
-
-    return true;
-  });
-
-  filtered.sort((left, right) => {
-    const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
-    const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
-    return rightTime - leftTime;
-  });
-
-  const total = filtered.length;
   const safePage = Math.max(1, page);
   const offset = (safePage - 1) * perPage;
-  const items = filtered.slice(offset, offset + perPage);
 
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const newThisWeek = combined.filter((row) => {
-    if (!row.createdAt) return false;
-    return new Date(row.createdAt).getTime() >= weekAgo;
-  }).length;
+  // Filtering, sorting and pagination all run in SQL (admin_users_list joins
+  // auth.users -> profiles -> platform_admins). The RPC is SECURITY DEFINER and
+  // guarded by an admin check, so it returns emails only to platform admins.
+  const { data } = await supabase.rpc("admin_users_list", {
+    p_search: search,
+    p_role: role,
+    p_status: status,
+    p_limit: perPage,
+    p_offset: offset,
+  });
+
+  const payload = (data || {}) as {
+    total?: number;
+    summary?: { totalUsers: number; totalAdmins: number; newThisWeek: number };
+    items?: AdminUsersListRpcRow[];
+  };
+
+  const items: AdminUserRow[] = (payload.items || []).map((row) => ({
+    userId: row.userId,
+    profileId: row.profileId ?? null,
+    email: row.email ?? null,
+    displayName: row.displayName ?? null,
+    username: row.username ?? null,
+    avatarUrl: row.avatarUrl ?? null,
+    moderationStatus: normalizeStatus(row.moderationStatus),
+    createdAt: row.createdAt ?? null,
+    lastSignInAt: row.lastSignInAt ?? null,
+    isAdmin: Boolean(row.isAdmin),
+  }));
+
+  const total = payload.total ?? 0;
 
   return {
     items,
@@ -262,9 +186,9 @@ export async function getAdminUsersList(
     perPage,
     hasMore: offset + items.length < total,
     summary: {
-      totalUsers: authTotal || combined.length,
-      totalAdmins: adminIds.size,
-      newThisWeek,
+      totalUsers: payload.summary?.totalUsers ?? 0,
+      totalAdmins: payload.summary?.totalAdmins ?? 0,
+      newThisWeek: payload.summary?.newThisWeek ?? 0,
     },
   };
 }

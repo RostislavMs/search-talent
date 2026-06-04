@@ -8,6 +8,7 @@ type CreatorCardData = {
   name?: string | null;
   headline?: string | null;
   avatar_url?: string | null;
+  score?: number | null;
   categoryName?: string | null;
   countryName?: string | null;
   city?: string | null;
@@ -53,6 +54,12 @@ export default function CreatorCard({
             @{creator.username || dictionary.common.creator.toLowerCase()}
           </p>
         </div>
+
+        {typeof creator.score === "number" && (
+          <span className="font-display shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
+            {creator.score} {dictionary.common.scoreSuffix}
+          </span>
+        )}
       </div>
 
       {creator.headline && (

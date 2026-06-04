@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import PublicProfileShowcase from "@/components/public-profile-showcase";
+import RelatedCreators from "@/components/related-creators";
+import { CreatorCardGridSkeleton } from "@/components/skeletons/card-skeletons";
 import { getPublicProfilePageData } from "@/lib/db/public";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
@@ -173,6 +176,22 @@ export default async function PublicProfilePage({
         data={data}
         isAdmin={viewer.isAdmin}
       />
+      <Suspense
+        fallback={
+          <section className="mx-auto mt-5 max-w-[90rem] px-4 pb-10 sm:mt-8 sm:px-6">
+            <div className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
+              <CreatorCardGridSkeleton count={3} />
+            </div>
+          </section>
+        }
+      >
+        <RelatedCreators
+          profileId={data.profile.id}
+          skillIds={data.technologies.map((technology) => technology.id)}
+          categoryId={data.profile.category_id}
+          dictionary={dictionary}
+        />
+      </Suspense>
     </>
   );
 }
