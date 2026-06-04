@@ -25,8 +25,20 @@ function PersonalStatCard({
   return (
     <a
       href={href}
-      className="group block rounded-2xl border app-border bg-[color:var(--surface)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-[0_18px_40px_rgba(2,6,23,0.18)]"
+      className="group relative block rounded-2xl border app-border bg-[color:var(--surface)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-[0_18px_40px_rgba(2,6,23,0.18)]"
     >
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="absolute right-4 top-4 h-4 w-4 app-soft transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[color:var(--foreground)]"
+        aria-hidden="true"
+      >
+        <path d="M6 3.5 10.5 8 6 12.5" />
+      </svg>
       <div
         className={`mb-3 h-1 w-10 rounded-full ${accent} transition-all duration-200 group-hover:w-16`}
       />
@@ -473,8 +485,9 @@ export default function DashboardAnalytics({
 
   return (
     <div className="space-y-6">
-      {/* ─── Quick actions ─── */}
-      <nav className="flex flex-wrap gap-2">
+      {/* ─── Quick actions (hidden on < lg; the same destinations are reachable
+           via the clickable stat cards and the global menu on small screens) ─── */}
+      <nav className="hidden flex-wrap gap-2 lg:flex">
         <ButtonLink href="/profile/edit" size="sm">
           {ui.editProfile}
         </ButtonLink>

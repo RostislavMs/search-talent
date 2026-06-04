@@ -73,15 +73,11 @@ export default async function DashboardPage({
     getUserDashboardStats(user.id),
   ]);
 
-  const greeting = userStats.name
-    ? `${dictionary.dashboard.welcomeBack}, ${userStats.name}`
-    : dictionary.dashboard.welcomeBack;
-
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
-          {greeting}
+          {dictionary.nav.dashboard}
         </h1>
         <p className="mt-1 text-sm app-muted">
           {dictionary.dashboard.updatedDaily}

@@ -5,7 +5,6 @@ import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import ArticleInteractions from "@/components/article-interactions";
 import ArticlePinButton from "@/components/article-pin-button";
 import ReportArticleButton from "@/components/report-article-button";
-import DeleteArticleButton from "@/components/delete-article-button";
 import RichTextRenderer from "@/components/rich-text-renderer";
 import { ButtonLink } from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -188,7 +187,7 @@ export default async function ArticleDetailPage({
       <div className="rounded-hero app-card">
         <div className="border-b app-border p-6 sm:p-8">
           <div className="flex flex-wrap gap-3">
-            <ButtonLink href="/articles" variant="ghost">
+            <ButtonLink href="/articles" variant="secondary">
               {ui.back}
             </ButtonLink>
             {!isOwner && viewerUserId && (
@@ -204,21 +203,6 @@ export default async function ArticleDetailPage({
                 locale={safeLocale}
               />
             )}
-            {isOwner ? (
-              <DeleteArticleButton
-                articleId={article.id}
-                label={ui.delete}
-                pendingLabel={ui.deleting}
-                confirmMessage={ui.confirmDelete}
-                errorFallback={ui.deleteFailed}
-                redirectHref={
-                  article.author?.username
-                    ? `/u/${article.author.username}/articles`
-                    : "/articles"
-                }
-                variant="secondary"
-              />
-            ) : null}
             {!isOwner && isAdmin ? (
               <AdminContentQuickActions
                 targetType="article"
@@ -227,11 +211,6 @@ export default async function ArticleDetailPage({
                 locale={safeLocale}
                 redirectAfterDelete="/articles"
               />
-            ) : null}
-            {article.category ? (
-              <span className="rounded-full bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-700 dark:text-orange-300">
-                {getCategoryDisplayName(article.category, safeLocale)}
-              </span>
             ) : null}
             {article.status === "draft" ? (
               <span className="rounded-full bg-white/8 px-4 py-2 text-sm font-medium text-[color:var(--foreground)]">

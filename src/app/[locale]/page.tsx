@@ -188,11 +188,16 @@ async function HomeContent({ locale }: { locale: Locale }) {
               {dictionary.home.description}
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-2 sm:mt-8 sm:gap-3">
-              <ButtonLink href="/talents" size="lg">
+            <div className="mt-6 flex flex-col gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-3">
+              <ButtonLink href="/talents" size="lg" className="w-full sm:w-auto">
                 {dictionary.home.searchCreators}
               </ButtonLink>
-              <ButtonLink href="/projects" variant="secondary" size="lg">
+              <ButtonLink
+                href="/projects"
+                variant="secondary"
+                size="lg"
+                className="w-full sm:w-auto"
+              >
                 {dictionary.home.browseProjects}
               </ButtonLink>
               {isAuthenticated ? (
@@ -200,7 +205,7 @@ async function HomeContent({ locale }: { locale: Locale }) {
                   href="/dashboard"
                   variant="ghost"
                   size="lg"
-                  className="border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                  className="w-full border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white sm:w-auto"
                 >
                   {dictionary.home.openDashboard}
                 </ButtonLink>
@@ -209,7 +214,7 @@ async function HomeContent({ locale }: { locale: Locale }) {
                   href="/signup"
                   variant="ghost"
                   size="lg"
-                  className="border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                  className="w-full border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white sm:w-auto"
                 >
                   {dictionary.home.createAccount}
                 </ButtonLink>

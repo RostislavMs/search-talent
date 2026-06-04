@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfileVoteSummary } from "@/lib/db/profile-votes";
 import { getProjectVoteSummary } from "@/lib/db/project-votes";
+import { getCreatorRatings, getProjectRatings } from "@/lib/db/leaderboards";
 import {
   normalizeProfileSettings,
   type ProfilePresentation,
@@ -138,6 +139,9 @@ export type PublicProjectPageData = {
   technologies: Array<{ id: number; name: string }>;
   media: ProjectMediaItem[];
   voteSummary: Awaited<ReturnType<typeof getProjectVoteSummary>>;
+  // Composite project rating (0-100) — same value as the homepage / search.
+  // Null when the project is not ranked yet (falls back to net votes in the UI).
+  rating: number | null;
   isAuthenticated: boolean;
   isOwner: boolean;
   isBookmarked: boolean;
@@ -205,6 +209,9 @@ export type PublicProfilePageData = {
   badges: BadgeWithProgress[];
   completeness: ProfileCompletenessBreakdown;
   voteSummary: Awaited<ReturnType<typeof getProfileVoteSummary>>;
+  // Composite creator rating (0-100) — the same value shown on the talents
+  // cards and homepage leaderboard. Null when the profile is not ranked yet.
+  profileRating: number | null;
   isAuthenticated: boolean;
   isOwner: boolean;
   isBookmarked: boolean;
@@ -324,6 +331,11 @@ export async function getPublicProjectPageData(
   // owner select above, so no extra round-trip is needed here.
   const countryName = getRelationName(owner?.countries ?? null);
 
+  // Composite rating shown on the homepage / search (votes + media + tech +
+  // completeness + freshness), not the Wilson-only net votes. Shares the
+  // leaderboard cache.
+  const projectRatings = await getProjectRatings();
+
   return {
     project: typedProject,
     owner: owner
@@ -359,6 +371,7 @@ export async function getPublicProjectPageData(
       normalizeProjectMediaItem(item),
     ),
     voteSummary,
+    rating: projectRatings[typedProject.id] ?? null,
     isAuthenticated: Boolean(user),
     isOwner,
     isBookmarked: Boolean(bookmarkResponse.data),
@@ -565,6 +578,16 @@ export async function getPublicProfilePageData(
     workExperienceCount,
   });
 
+  // The persisted projects.score column is Wilson-only (votes), so it reads 0
+  // for projects with no votes even when the composite rating shown on the
+  // homepage / search is higher. Override with the same composite rating here.
+  // The creator rating map (same leaderboard cache) backs the profile rating
+  // badge, which would otherwise show only net votes.
+  const [projectRatings, creatorRatings] = await Promise.all([
+    getProjectRatings(),
+    getCreatorRatings(),
+  ]);
+
   return {
     profile: {
       ...typedProfile,
@@ -636,12 +659,18 @@ export async function getPublicProfilePageData(
       cover_url: string | null;
       is_pinned: boolean | null;
       moderation_status: string | null;
-    }>).filter((project) => isPublicModerationStatus(project.moderation_status)),
+    }>)
+      .filter((project) => isPublicModerationStatus(project.moderation_status))
+      .map((project) => ({
+        ...project,
+        score: projectRatings[project.id] ?? project.score,
+      })),
     articles:
       (articlesResponse.data || []) as PublicProfilePageData["articles"],
     badges,
     completeness,
     voteSummary,
+    profileRating: creatorRatings[typedProfile.id] ?? null,
     isAuthenticated: Boolean(user),
     isOwner,
     isBookmarked: Boolean(bookmarkResponse.data),
@@ -901,12 +930,21 @@ export async function getUserProjectsPage(
     .order("created_at", { ascending: false })
     .range(from, to);
 
+  // Override the Wilson-only persisted score with the composite rating shown on
+  // the homepage / search (see getPublicProfilePageData for the rationale).
+  const projectRatings = await getProjectRatings();
+
   return {
     profile: {
       name: profile.name,
       username: profile.username,
     },
-    projects: (projects || []) as UserProjectsPageResult["projects"],
+    projects: ((projects || []) as UserProjectsPageResult["projects"]).map(
+      (project) => ({
+        ...project,
+        score: projectRatings[project.id] ?? project.score,
+      }),
+    ),
     totalCount,
     currentPage,
     totalPages,
@@ -1018,12 +1056,18 @@ export async function getRelatedProjects(
     ).map((owner) => [owner.user_id, owner]),
   );
 
+  // Override the Wilson-only persisted score with the composite rating shown on
+  // the homepage / search (see getPublicProfilePageData for the rationale).
+  const projectRatings = await getProjectRatings();
+  const ratingFor = (row: RelatedProjectRow) =>
+    projectRatings[row.id] ?? row.score;
+
   // 4. Rank by shared-skill overlap, breaking ties on score then recency.
   const ranked = rankBySharedSkills(
     projects.map((row) => ({
       id: row.id,
       sharedSkillCount: sharedCounts.get(row.id) || 0,
-      score: row.score ?? 0,
+      score: ratingFor(row) ?? 0,
       createdAt: row.created_at,
       row,
     })),
@@ -1037,7 +1081,7 @@ export async function getRelatedProjects(
       title: row.title,
       slug: row.slug as string,
       description: row.description,
-      score: row.score,
+      score: ratingFor(row),
       cover_url: row.cover_url,
       kind: row.kind,
       ownerName: owner?.name ?? null,

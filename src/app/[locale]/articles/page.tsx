@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import ArticleCard from "@/components/article-card";
 import { ButtonLink } from "@/components/ui/Button";
-import { buttonStyles } from "@/components/ui/button-styles";
 import FormSelect from "@/components/ui/form-select";
 import { getCategoryDisplayName, sortArticleCategories } from "@/lib/articles";
 import { getArticleFeed } from "@/lib/db/articles";
@@ -77,29 +76,9 @@ export default async function ArticlesPage({
               {ui.description}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <ButtonLink href="/articles/new">{ui.createArticle}</ButtonLink>
-              <ButtonLink href="/projects" variant="secondary">
-                {dictionary.home.browseProjects}
+              <ButtonLink href="/articles/new" className="w-full sm:w-auto">
+                {ui.createArticle}
               </ButtonLink>
-              <a
-                href={`/${safeLocale}/articles/feed.xml`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={safeLocale === "uk" ? "RSS-стрічка статей" : "Articles RSS feed"}
-                className={buttonStyles({ variant: "ghost", className: "gap-2" })}
-              >
-                <svg
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                  className="h-3.5 w-3.5"
-                  aria-hidden="true"
-                >
-                  <path d="M2 11a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
-                  <path d="M2 5.5a.5.5 0 0 1 .5-.5c5.247 0 9.5 4.253 9.5 9.5a.5.5 0 0 1-1 0A8.5 8.5 0 0 0 2.5 6a.5.5 0 0 1-.5-.5z" />
-                  <path d="M2 1.5a.5.5 0 0 1 .5-.5C9.404 1 15 6.596 15 13.5a.5.5 0 0 1-1 0C14 7.149 8.851 2 2.5 2a.5.5 0 0 1-.5-.5z" />
-                </svg>
-                RSS
-              </a>
             </div>
           </div>
 

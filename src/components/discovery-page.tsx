@@ -1075,6 +1075,14 @@ export default function DiscoveryPage({
           </div>
 
           <div className="flex flex-wrap gap-2 sm:gap-3">
+            {mode === "projects" && (
+              <ButtonLink
+                href="/projects/new"
+                className="bg-white text-slate-950 hover:bg-white/90"
+              >
+                {dictionary.forms.createProject}
+              </ButtonLink>
+            )}
             <ButtonLink
               href="/dashboard"
               variant="ghost"

@@ -225,6 +225,7 @@ export default function PublicProfileShowcase({
     badges,
     completeness,
     voteSummary,
+    profileRating,
     isAuthenticated,
     isOwner,
     isBookmarked,
@@ -428,7 +429,7 @@ export default function PublicProfileShowcase({
 
               <div className="space-y-4 xl:self-start">
                 <div className="hidden xl:block">
-                  <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} isAuthenticated={isAuthenticated} isOwner={isOwner} />
+                  <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} rating={profileRating} isAuthenticated={isAuthenticated} isOwner={isOwner} />
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {isOwner && (
@@ -458,7 +459,7 @@ export default function PublicProfileShowcase({
           ) : null}
 
           <div className="xl:hidden">
-            <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} isAuthenticated={isAuthenticated} isOwner={isOwner} className="mt-4 rounded-panel bg-[color:var(--surface-muted)] p-5 sm:mt-6" />
+            <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} rating={profileRating} isAuthenticated={isAuthenticated} isOwner={isOwner} className="mt-4 rounded-panel bg-[color:var(--surface-muted)] p-5 sm:mt-6" />
           </div>
 
           <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-12">
