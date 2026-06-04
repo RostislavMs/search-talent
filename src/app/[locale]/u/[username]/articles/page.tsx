@@ -7,7 +7,10 @@ import { buttonStyles } from "@/components/ui/button-styles";
 import { getCategoryDisplayName, type ArticleFeedItem } from "@/lib/articles";
 import { getDashboardArticles } from "@/lib/db/articles";
 import { getUserArticlesPage } from "@/lib/db/public";
-import { normalizeModerationStatus } from "@/lib/moderation";
+import {
+  isPublicModerationStatus,
+  normalizeModerationStatus,
+} from "@/lib/moderation";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata, getMetadataBase } from "@/lib/seo";
@@ -36,18 +39,35 @@ export async function generateMetadata({
   const { locale, username } = await getRouteParams(params);
   const dictionary = getDictionary(locale);
 
+  // Mirror the projects tab: real name in the title (not @username), a unique
+  // per-creator description, and noindex driven by moderation_status.
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name, moderation_status")
+    .eq("username", username)
+    .maybeSingle();
+
+  const displayName = profile?.name?.trim() || `@${username}`;
+  const articlesLabel = dictionary.creatorProfile.articles;
+  const description =
+    locale === "uk"
+      ? `Статті автора ${displayName} на SearchTalent: технічні гайди, кейси та інсайти спільноти.`
+      : `Articles by ${displayName} on SearchTalent: technical guides, case studies, and community insights.`;
+
   return buildMetadata({
     locale,
     pathname: `/u/${username}/articles`,
-    title: `${locale === "uk" ? "Статті" : "Articles"} — @${username}`,
-    description: dictionary.metadata.creatorProfile.description,
+    title: `${articlesLabel} — ${displayName}`,
+    description,
+    noindex: !profile || !isPublicModerationStatus(profile.moderation_status),
     feeds: [
       {
         url: new URL(
           `/${locale}/u/${username}/articles/feed.xml`,
           getMetadataBase(),
         ).toString(),
-        title: `@${username} — ${locale === "uk" ? "Статті" : "Articles"}`,
+        title: `${displayName} — ${articlesLabel}`,
       },
     ],
   });

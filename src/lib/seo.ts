@@ -98,18 +98,17 @@ export function buildMetadata({
       title,
       description,
       siteName: dictionary.site.name,
-      images: [
-        {
-          url: new URL("/logo.webp", getMetadataBase()).toString(),
-          alt: dictionary.site.name,
-        },
-      ],
+      // og:image intentionally omitted here: the file-based `opengraph-image`
+      // convention is the single source of truth. The `[locale]` segment image
+      // is inherited by every page, and profile/project/article routes override
+      // it with a richer, content-specific card. Hardcoding /logo.webp here
+      // either duplicated or shadowed those dynamic images.
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [new URL("/logo.webp", getMetadataBase()).toString()],
+      // twitter:image falls back to the file-based og:image (see above).
     },
   };
 
@@ -295,10 +294,20 @@ export function buildProjectPageMetadata({
   const topTech = topTechnologies[0] || (locale === "uk" ? "сучасним стеком" : "modern tools");
   const stack = joinList(topTechnologies.slice(0, 3));
   const categoryLabel = category || (locale === "uk" ? "IT-проєкт" : "IT project");
+  // The project name is the primary keyword and must stay readable at the
+  // front of the SERP snippet, so clamp it before appending stack/author —
+  // otherwise a long title + tech + author + " | SearchTalent" runs to 150+
+  // chars and the keyword gets truncated away. (The description is already
+  // clamped to 155 below; titles had no guard at all.)
+  const clampedTitle = truncateText(safeTitle, 50);
   const title =
     locale === "uk"
-      ? `${safeTitle} — створено з ${topTech} автором ${safeAuthor}`
-      : `${safeTitle} — Built with ${topTech} by ${safeAuthor}`;
+      ? hasTech
+        ? `${clampedTitle} — ${topTech}, автор ${safeAuthor}`
+        : `${clampedTitle} — проєкт від ${safeAuthor}`
+      : hasTech
+        ? `${clampedTitle} — ${topTech} by ${safeAuthor}`
+        : `${clampedTitle} by ${safeAuthor}`;
   // Only mention the stack when the project actually lists technologies —
   // otherwise the genitive "на стеку <stack>" template collides with the
   // "сучасним стеком" fallback and reads as "на стеку сучасним стеком".
@@ -366,10 +375,13 @@ export function buildTalentCategoryMetadata({
     locale === "uk"
       ? `${role} — портфоліо та фахівці`
       : `${role} Portfolios & Talents`;
+  // count is shown in parentheses (not "Browse 0 …") so the copy stays correct
+  // for an empty category and dodges uk/en plural agreement entirely.
+  const countSuffix = count > 0 ? ` (${count})` : "";
   const description =
     locale === "uk"
-      ? `Переглядайте ${count} публічних профілів у категорії ${role}. Реальні проєкти, стек технологій і публічні портфоліо на SearchTalent.`
-      : `Browse ${count} verified ${role} portfolios. Real projects, tech stacks, and public talent profiles on SearchTalent.`;
+      ? `Профілі фахівців у категорії ${role}${countSuffix}. Реальні проєкти, стек технологій і публічні портфоліо на SearchTalent.`
+      : `${role} talent portfolios${countSuffix}. Real projects, tech stacks, and public profiles on SearchTalent.`;
 
   return buildMetadata({
     locale,
@@ -397,10 +409,11 @@ export function buildTechnologyTalentsMetadata({
     locale === "uk"
       ? `${technology} — фахівці з реальними портфоліо`
       : `${technology} Talents with Real Portfolios`;
+  const countSuffix = count > 0 ? ` (${count})` : "";
   const description =
     locale === "uk"
-      ? `Переглядайте ${count} публічних профілів фахівців, які працюють з ${technology}. Реальні проєкти, стек і кейси на SearchTalent.`
-      : `Browse ${count} public profiles of specialists working with ${technology}. Real projects, stacks, and portfolios on SearchTalent.`;
+      ? `Фахівці, які працюють з ${technology}${countSuffix}. Реальні проєкти, стек технологій і кейси на SearchTalent.`
+      : `Specialists working with ${technology}${countSuffix}. Real projects, stacks, and portfolios on SearchTalent.`;
 
   return buildMetadata({
     locale,
@@ -428,10 +441,11 @@ export function buildProjectsTagMetadata({
     locale === "uk"
       ? `${technology} — IT-проєкти з публічним портфоліо`
       : `${technology} IT Projects & Portfolios`;
+  const countSuffix = count > 0 ? ` (${count})` : "";
   const description =
     locale === "uk"
-      ? `${count} публічних IT-проєктів зі стеком ${technology}. Скриншоти, контекст виконання та автори на SearchTalent.`
-      : `${count} public IT projects built with ${technology}. Screenshots, delivery context, and creators on SearchTalent.`;
+      ? `Публічні IT-проєкти зі стеком ${technology}${countSuffix}. Скриншоти, контекст виконання та автори на SearchTalent.`
+      : `Public IT projects built with ${technology}${countSuffix}. Screenshots, delivery context, and creators on SearchTalent.`;
 
   return buildMetadata({
     locale,

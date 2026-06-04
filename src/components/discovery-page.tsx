@@ -337,7 +337,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       modes: {
         projects: {
           eyebrow: "Каталог портфоліо",
-          title: "Портфоліо та Реальні IT-Проєкти — Каталог для Натхнення",
+          title: "Реальні IT-проєкти та портфоліо авторів",
           description:
             "Досліджуйте каталог фріланс-портфоліо з реальними IT-проєктами: шукайте за стеком, статусом і темою, щоб знайти натхнення чи відкрити нових авторів.",
           placeholder: "Шукайте проєкти, технології або авторів...",
@@ -369,8 +369,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
         },
         creators: {
           eyebrow: "Профілі талантів",
-          title:
-            "Пошук Талантів — Профілі Розробників, Дизайнерів та IT-Фахівців",
+          title: "Пошук IT-талантів — профілі та портфоліо",
           description:
             "Переглядайте публічні профілі та портфоліо IT-спеціалістів. Відбирайте авторів за навичками, локацією, досвідом і напрямком роботи — без зайвих проєктних результатів.",
           placeholder: "Шукайте таланти, ролі або навички...",
@@ -444,7 +443,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
     modes: {
       projects: {
         eyebrow: "Portfolio catalog",
-        title: "Creative Portfolios & Real IT Projects — Explore the Catalog",
+        title: "Real IT Projects & Creator Portfolios",
         description:
           "Browse a catalog of creative portfolios and real IT projects. Search by stack, status, or topic to find inspiring work and discover new creators — no profile noise in the results.",
         placeholder: "Search projects, technologies, or authors...",
@@ -476,7 +475,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       },
       creators: {
         eyebrow: "Talent profiles",
-        title: "Discover IT Talent — Developer, Designer & Specialist Profiles",
+        title: "Discover IT Talent — Profiles & Portfolios",
         description:
           "Explore public profiles and portfolios of IT specialists. Filter by skills, location, experience, and work format to discover the right creators — no project noise in the results.",
         placeholder: "Search talents, roles, or skills...",
