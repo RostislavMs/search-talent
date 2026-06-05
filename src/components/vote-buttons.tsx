@@ -123,20 +123,14 @@ export default function VoteButtons({
 
   return (
     <section className="rounded-panel app-panel p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
-            {dictionary.projectPage.community}
-          </h2>
-          <p className="mt-1 text-sm app-muted">
-            {voteState.likes} {dictionary.projectPage.likes} / {voteState.dislikes}{" "}
-            {dictionary.projectPage.dislikes}
-          </p>
-        </div>
-
-        <span className="font-display rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
-          {voteState.likes - voteState.dislikes} {dictionary.common.scoreSuffix}
-        </span>
+      <div>
+        <h2 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
+          {dictionary.projectPage.community}
+        </h2>
+        <p className="mt-1 text-sm app-muted">
+          {voteState.likes} {dictionary.projectPage.likes} / {voteState.dislikes}{" "}
+          {dictionary.projectPage.dislikes}
+        </p>
       </div>
 
       {isOwner ? (

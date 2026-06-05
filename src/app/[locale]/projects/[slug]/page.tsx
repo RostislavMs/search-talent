@@ -188,6 +188,18 @@ export default async function PublicProjectPage({
   } = data;
   const isAdmin = viewer.isAdmin;
   const statusLabel = getStatusLabel(project.project_status, dictionary);
+  // Problem / Solution / Results render in a row, but a missing block must not
+  // leave a dead column — match the column count to how many blocks exist so
+  // 1 fills the full width and 2 split it evenly.
+  const storyCount = [project.problem, project.solution, project.results].filter(
+    Boolean,
+  ).length;
+  const storyGridCols =
+    storyCount >= 3
+      ? "lg:grid-cols-3"
+      : storyCount === 2
+        ? "lg:grid-cols-2"
+        : "grid-cols-1";
   const projectKind = normalizeProjectKind(
     (project as { kind?: string | null }).kind,
   );
@@ -384,11 +396,11 @@ export default async function PublicProjectPage({
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
-              <span className="font-display rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-on-soft">
+              <span className="inline-flex items-center font-display rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-on-soft">
                 {rating ?? voteSummary.score} {dictionary.common.scoreSuffix}
               </span>
               {statusLabel && (
-                <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">
+                <span className="inline-flex items-center rounded-full app-panel px-3 py-1 text-sm app-muted">
                   {statusLabel}
                 </span>
               )}
@@ -403,7 +415,7 @@ export default async function PublicProjectPage({
                     {owner.name || owner.username || dictionary.projectPage.creatorFallback}
                   </ButtonLink>
                 ) : (
-                  <span className="rounded-full app-panel px-3 py-1 text-sm app-muted">
+                  <span className="inline-flex items-center rounded-full app-panel px-3 py-1 text-sm app-muted">
                     {dictionary.projectPage.createdBy}:{" "}
                     {owner.name || dictionary.projectPage.creatorFallback}
                   </span>
@@ -413,7 +425,7 @@ export default async function PublicProjectPage({
                   href={`https://github.com/${project.github_full_name}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="cursor-pointer rounded-full app-panel px-3 py-1 text-sm app-muted transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
+                  className="inline-flex items-center cursor-pointer rounded-full app-panel px-3 py-1 text-sm app-muted transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
                 >
                   🔗 {dictionary.githubIntegration.syncedFromGithubBadge}
                 </a>
@@ -598,7 +610,7 @@ export default async function PublicProjectPage({
           </section>
 
           {(project.problem || project.solution || project.results) && (
-            <section className="grid gap-4 lg:grid-cols-3">
+            <section className={`grid gap-4 ${storyGridCols}`}>
               {project.problem && (
                 <article className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
                   <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)] sm:text-xl">
