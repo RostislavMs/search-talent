@@ -812,7 +812,7 @@ export const dictionaries = {
       licenseLabel: "License",
       readmeTitle: "Project README",
       contributionSectionTitle: "Author's contribution",
-      narrativeSectionTitle: "Behind the scenes",
+      narrativeSectionTitle: "Project story",
       syncedFromGithubBadge: "Synced from GitHub",
     },
     aiDraft: {
@@ -2810,7 +2810,7 @@ export const dictionaries = {
       licenseLabel: "Ліцензія",
       readmeTitle: "README проєкту",
       contributionSectionTitle: "Внесок автора",
-      narrativeSectionTitle: "За лаштунками",
+      narrativeSectionTitle: "Історія проєкту",
       syncedFromGithubBadge: "Підтягнуто з GitHub",
     },
     aiDraft: {
