@@ -11,6 +11,8 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: [
           "/api/",
+          "/admin",
+          "/admin/",
           "/dashboard",
           "/dashboard/",
           "/login",
@@ -22,6 +24,8 @@ export default function robots(): MetadataRoute.Robots {
           "/profile/",
           "/feedback",
           "/search",
+          "/*/admin",
+          "/*/admin/",
           "/*/dashboard",
           "/*/dashboard/",
           "/*/login",

@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     template: "%s | SearchTalent",
   },
   description:
-    "SearchTalent — community platform where developers, designers, and IT specialists publish portfolios, projects, and articles. Discover talent, follow creators, and showcase your work.",
+    "Community platform where developers, designers, and IT specialists publish portfolios, projects, and articles. Discover talent and showcase your work.",
   keywords: [
     "talent community",
     "creative portfolio",

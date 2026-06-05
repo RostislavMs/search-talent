@@ -7,7 +7,10 @@ import { ButtonLink } from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { getMyProjectsPage } from "@/lib/db/projects";
 import { getUserProjectsPage } from "@/lib/db/public";
-import { normalizeModerationStatus } from "@/lib/moderation";
+import {
+  isPublicModerationStatus,
+  normalizeModerationStatus,
+} from "@/lib/moderation";
 import { buildProjectPath } from "@/lib/projects";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -39,20 +42,31 @@ export async function generateMetadata({
 
   // Prefer the creator's real name in the title; fall back to @username only
   // when the profile has no name set (mirrors the H1 in the public view).
+  // moderation_status drives noindex: a profile that was hidden/restricted
+  // after first being indexed must stop advertising index:true here, because
+  // metadata is generated before the page's own notFound() visibility gate.
   const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name")
+    .select("name, moderation_status")
     .eq("username", username)
     .maybeSingle();
 
   const displayName = profile?.name?.trim() || `@${username}`;
+  // Per-creator description so each portfolio gets a unique snippet instead of
+  // the shared generic creatorProfile.description (which duplicated across
+  // every creator and also wrongly read identically for the /articles tab).
+  const description =
+    locale === "uk"
+      ? `Портфоліо-проєкти автора ${displayName} на SearchTalent: реальні роботи, стек технологій і контекст виконання.`
+      : `Portfolio projects by ${displayName} on SearchTalent: real work, technology stacks, and delivery context.`;
 
   return buildMetadata({
     locale,
     pathname: `/u/${username}/projects`,
     title: `${dictionary.creatorProfile.projects} — ${displayName}`,
-    description: dictionary.metadata.creatorProfile.description,
+    description,
+    noindex: !profile || !isPublicModerationStatus(profile.moderation_status),
   });
 }
 
