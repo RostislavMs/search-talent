@@ -60,7 +60,7 @@ export default async function EditArticlePage({
   const { data: article } = await supabase
     .from("articles")
     .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status",
+      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, content_locale, translations",
     )
     .eq("id", id)
     .maybeSingle();
@@ -77,6 +77,35 @@ export default async function EditArticlePage({
   const categoryRow = article.category_id
     ? categories.find((c) => c.id === article.category_id)
     : null;
+
+  type StoredVersion = {
+    title?: string | null;
+    excerpt?: string | null;
+    content?: string | null;
+    cover_image_url?: string | null;
+    cover_image_storage_path?: string | null;
+    hero_video_url?: string | null;
+    hero_video_storage_path?: string | null;
+  };
+
+  const rawTranslations = (article.translations || {}) as Record<
+    string,
+    StoredVersion
+  >;
+  const translations = Object.fromEntries(
+    Object.entries(rawTranslations).map(([loc, version]) => [
+      loc,
+      {
+        title: version?.title || "",
+        excerpt: version?.excerpt || null,
+        content: version?.content || "",
+        coverImageUrl: version?.cover_image_url || null,
+        coverImageStoragePath: version?.cover_image_storage_path || null,
+        heroVideoUrl: version?.hero_video_url || null,
+        heroVideoStoragePath: version?.hero_video_storage_path || null,
+      },
+    ]),
+  );
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
@@ -95,6 +124,8 @@ export default async function EditArticlePage({
           coverImageStoragePath: article.cover_image_storage_path || null,
           heroVideoUrl: article.hero_video_url || null,
           heroVideoStoragePath: article.hero_video_storage_path || null,
+          contentLocale: article.content_locale === "en" ? "en" : "uk",
+          translations,
         }}
       />
     </main>

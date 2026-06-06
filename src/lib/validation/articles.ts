@@ -32,6 +32,20 @@ const optionalUrl = z
     return /^https?:\/\//i.test(value) ? value : `https://${value}`;
   });
 
+const articleLocales = ["uk", "en"] as const;
+
+// A complete secondary-language version. Only sent when the author actually
+// filled the other language, so both title and content are required here.
+export const articleTranslationSchema = z.object({
+  title: z.string().trim().min(3, "Title is too short").max(180, "Title is too long"),
+  excerpt: z.string().trim().max(420, "Excerpt is too long").nullable().default(null),
+  content: z.string().trim().min(20, "Content is too short").max(50000, "Content is too long"),
+  cover_image_url: optionalUrl.nullable().default(null),
+  cover_image_storage_path: z.string().trim().max(500).nullable().default(null),
+  hero_video_url: optionalUrl.nullable().default(null),
+  hero_video_storage_path: z.string().trim().max(500).nullable().default(null),
+});
+
 export const articlePayloadSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().trim().min(3, "Title is too short").max(180, "Title is too long"),
@@ -43,6 +57,14 @@ export const articlePayloadSchema = z.object({
   cover_image_storage_path: z.string().trim().max(500).nullable().default(null),
   hero_video_url: optionalUrl.nullable().default(null),
   hero_video_storage_path: z.string().trim().max(500).nullable().default(null),
+  // Locale of the primary (top-level) version above.
+  content_locale: z.enum(articleLocales).default("uk"),
+  // Optional secondary-language versions keyed by locale. A string key (rather
+  // than an enum key) keeps this partial — sending zero or one translation is
+  // valid; unknown keys are ignored downstream.
+  translations: z
+    .record(z.string(), articleTranslationSchema)
+    .default({}),
 });
 
 export const articleCommentPayloadSchema = z.object({

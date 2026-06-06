@@ -165,7 +165,7 @@ async function HomeContent({ locale }: { locale: Locale }) {
   const marketing = getMarketingContent(locale);
   const [leaderboards, latestArticles, viewer] = await Promise.all([
     getLeaderboards(),
-    getLatestArticles(6),
+    getLatestArticles(6, locale),
     getCurrentViewerRole(),
   ]);
   const isAuthenticated = Boolean(viewer.user);

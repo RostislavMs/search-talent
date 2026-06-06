@@ -40,8 +40,8 @@ export async function getFeaturedTalents(limit = 8) {
   }));
 }
 
-export async function getLatestArticles(limit = 6) {
-  const feed = await getArticleFeed({ sort: "recent" });
+export async function getLatestArticles(limit = 6, locale?: string | null) {
+  const feed = await getArticleFeed({ sort: "recent", locale });
   return feed.items.slice(0, limit);
 }
 

@@ -188,7 +188,7 @@ async function renderOwnerView({
   locale: string;
   username: string;
 }) {
-  const dashboard = await getDashboardArticles();
+  const dashboard = await getDashboardArticles(locale);
   const ui = getOwnerUi(locale);
 
   if (!dashboard) {

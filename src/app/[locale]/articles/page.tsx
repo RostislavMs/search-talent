@@ -57,6 +57,7 @@ export default async function ArticlesPage({
     categorySlug: category || null,
     authorQuery: author || null,
     sort: sort || null,
+    locale: safeLocale,
   });
   const sortedCategories = sortArticleCategories(feed.categories, safeLocale);
   const ui = dictionary.articlesPage;
