@@ -16,6 +16,7 @@ import {
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { compressImageFile } from "@/lib/image-compression";
+import { extractPlainTextFromRichText } from "@/lib/rich-text";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 
 function inferAssetKind(file: File) {
@@ -59,7 +60,7 @@ function versionHasContent(version: LangVersion) {
   return Boolean(
     version.title.trim() ||
       version.excerpt.trim() ||
-      version.content.replace(/<[^>]*>/g, "").trim() ||
+      extractPlainTextFromRichText(version.content) ||
       version.coverImageUrl ||
       version.heroVideoUrl,
   );
@@ -366,7 +367,7 @@ export default function ArticleComposer({
     for (const loc of filledLocales) {
       const body = versions[loc].content;
       const bodyIsEmpty =
-        !body.replace(/<[^>]*>/g, "").trim() &&
+        !extractPlainTextFromRichText(body) &&
         !/<(?:img|iframe|video|figure)\b/i.test(body);
 
       if (bodyIsEmpty) {
