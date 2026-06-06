@@ -12,8 +12,31 @@ import {
 } from "@/lib/articles";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { isPublicModerationStatus } from "@/lib/moderation";
+import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { createClient } from "@/lib/supabase/server";
 import { getReactionsForTargets } from "@/lib/db/reactions";
+
+// Shape of a single language version, both as stored in the `translations`
+// jsonb column and as accepted from the API payload.
+export type ArticleLocalizedFields = {
+  title: string;
+  excerpt: string | null;
+  content: string;
+  cover_image_url: string | null;
+  cover_image_storage_path: string | null;
+  hero_video_url: string | null;
+  hero_video_storage_path: string | null;
+};
+
+type ArticleTranslationInput = {
+  title: string;
+  excerpt?: string | null;
+  content: string;
+  cover_image_url?: string | null;
+  cover_image_storage_path?: string | null;
+  hero_video_url?: string | null;
+  hero_video_storage_path?: string | null;
+};
 
 type ArticleRow = {
   id: string;
@@ -36,6 +59,8 @@ type ArticleRow = {
   pinned_until: string | null;
   published_at: string | null;
   created_at: string | null;
+  content_locale: string | null;
+  translations: Record<string, Partial<ArticleLocalizedFields>> | null;
 };
 
 type ArticleCategoryRow = {
@@ -166,19 +191,89 @@ async function getAuthorsMap(
   );
 }
 
+// Pick the language version a reader should see. Defaults to the primary
+// (top-level) version; if the reader's locale differs and a non-empty
+// translation exists, that one is returned. Otherwise we fall back to primary.
+function pickLocalizedVersion(
+  row: ArticleRow,
+  locale?: string | null,
+): ArticleLocalizedFields {
+  const primary: ArticleLocalizedFields = {
+    title: row.title,
+    excerpt: row.excerpt,
+    content: row.content ?? "",
+    cover_image_url: row.cover_image_url,
+    cover_image_storage_path: row.cover_image_storage_path,
+    hero_video_url: row.hero_video_url,
+    hero_video_storage_path: row.hero_video_storage_path,
+  };
+
+  const primaryLocale = row.content_locale || "uk";
+
+  if (!locale || locale === primaryLocale) {
+    return primary;
+  }
+
+  const alt = row.translations?.[locale];
+
+  if (alt && (alt.title?.trim() || alt.content?.trim())) {
+    return {
+      title: alt.title?.trim() ? alt.title : primary.title,
+      excerpt: alt.excerpt ?? null,
+      content: alt.content?.trim() ? alt.content : primary.content,
+      cover_image_url: alt.cover_image_url ?? null,
+      cover_image_storage_path: alt.cover_image_storage_path ?? null,
+      hero_video_url: alt.hero_video_url ?? null,
+      hero_video_storage_path: alt.hero_video_storage_path ?? null,
+    };
+  }
+
+  return primary;
+}
+
+// Sanitizes and normalizes the secondary-language versions for storage,
+// dropping any entry that matches the primary locale.
+export function buildSanitizedTranslations(
+  translations: Partial<Record<string, ArticleTranslationInput>> | undefined,
+  primaryLocale: string,
+): Record<string, ArticleLocalizedFields> {
+  const result: Record<string, ArticleLocalizedFields> = {};
+
+  for (const [locale, version] of Object.entries(translations ?? {})) {
+    if (!version || locale === primaryLocale) {
+      continue;
+    }
+
+    result[locale] = {
+      title: version.title,
+      excerpt: version.excerpt ?? null,
+      content: sanitizeRichTextHtml(version.content),
+      cover_image_url: version.cover_image_url ?? null,
+      cover_image_storage_path: version.cover_image_storage_path ?? null,
+      hero_video_url: version.hero_video_url ?? null,
+      hero_video_storage_path: version.hero_video_storage_path ?? null,
+    };
+  }
+
+  return result;
+}
+
 function toFeedItem(
   row: ArticleRow,
   categoryMap: Map<number, ArticleCategory>,
   authorMap: Map<string, ArticleAuthor>,
+  locale?: string | null,
 ): ArticleFeedItem {
+  const localized = pickLocalizedVersion(row, locale);
+
   return {
     id: row.id,
     slug: row.slug,
-    title: row.title,
-    excerpt: row.excerpt,
-    content: row.content,
-    coverImageUrl: row.cover_image_url,
-    heroVideoUrl: row.hero_video_url,
+    title: localized.title,
+    excerpt: localized.excerpt,
+    content: localized.content,
+    coverImageUrl: localized.cover_image_url,
+    heroVideoUrl: localized.hero_video_url,
     publishedAt: row.published_at,
     createdAt: row.created_at,
     viewsCount: row.views_count ?? 0,
@@ -206,6 +301,7 @@ export async function getArticleFeed(params?: {
   categorySlug?: string | null;
   authorQuery?: string | null;
   sort?: string | null;
+  locale?: string | null;
 }) {
   noStore();
   const viewer = await getCurrentViewerRole();
@@ -215,7 +311,7 @@ export async function getArticleFeed(params?: {
   let query = supabase
     .from("articles")
     .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at",
+      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at, content_locale, translations",
     )
     .eq("status", "published")
     .limit(60);
@@ -294,7 +390,7 @@ export async function getArticleFeed(params?: {
 
   const now = Date.now();
   const items = rows
-    .map((item) => toFeedItem(item, categoryMap, authorMap))
+    .map((item) => toFeedItem(item, categoryMap, authorMap, params?.locale))
     .sort((left, right) => {
       // Pinned articles always come first
       const leftPinned = left.pinnedUntil && new Date(left.pinnedUntil).getTime() > now ? 1 : 0;
@@ -322,7 +418,7 @@ export async function getArticleFeed(params?: {
   };
 }
 
-export async function getArticleDetail(slug: string) {
+export async function getArticleDetail(slug: string, locale?: string | null) {
   noStore();
   const viewer = await getCurrentViewerRole();
   const supabase = viewer.supabase;
@@ -330,7 +426,7 @@ export async function getArticleDetail(slug: string) {
   const { data: row } = await supabase
     .from("articles")
     .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at",
+      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at, content_locale, translations",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -386,7 +482,8 @@ export async function getArticleDetail(slug: string) {
       ),
     ),
   );
-  const feedItem = toFeedItem(article, categoryMap, authorMap);
+  const feedItem = toFeedItem(article, categoryMap, authorMap, locale);
+  const localized = pickLocalizedVersion(article, locale);
 
   const commentTree = buildCommentTree(commentRows, commentAuthorMap);
 
@@ -417,9 +514,9 @@ export async function getArticleDetail(slug: string) {
     status,
     moderationStatus: article.moderation_status,
     moderationNote: article.moderation_note,
-    content: article.content || "",
-    coverImageStoragePath: article.cover_image_storage_path,
-    heroVideoStoragePath: article.hero_video_storage_path,
+    content: localized.content || "",
+    coverImageStoragePath: localized.cover_image_storage_path,
+    heroVideoStoragePath: localized.hero_video_storage_path,
     currentUserLiked: Boolean(currentLikeResponse.data),
     reactions: articleReactionsMap[article.id] || [],
     comments: commentTree,
@@ -433,7 +530,7 @@ export async function getArticleDetail(slug: string) {
   };
 }
 
-export async function getDashboardArticles() {
+export async function getDashboardArticles(locale?: string | null) {
   noStore();
   const supabase = await createClient();
   const {
@@ -447,7 +544,7 @@ export async function getDashboardArticles() {
   const { data } = await supabase
     .from("articles")
     .select(
-      "id, category_id, title, slug, status, moderation_status, moderation_note, views_count, likes_count, comments_count, published_at, created_at",
+      "id, category_id, title, slug, status, moderation_status, moderation_note, views_count, likes_count, comments_count, published_at, created_at, content_locale, translations",
     )
     .eq("author_user_id", user.id)
     .order("created_at", { ascending: false });
@@ -465,6 +562,8 @@ export async function getDashboardArticles() {
     comments_count: number | null;
     published_at: string | null;
     created_at: string | null;
+    content_locale: string | null;
+    translations: Record<string, Partial<ArticleLocalizedFields>> | null;
   }>;
 
   const [categoryMap, categories] = await Promise.all([
@@ -483,11 +582,17 @@ export async function getDashboardArticles() {
 
   return {
     userId: user.id,
-    items: rows.map(
-      (item): ArticleDashboardItem => ({
+    items: rows.map((item): ArticleDashboardItem => {
+      const primaryLocale = item.content_locale || "uk";
+      const localizedTitle =
+        locale && locale !== primaryLocale
+          ? item.translations?.[locale]?.title?.trim() || item.title
+          : item.title;
+
+      return {
         id: item.id,
         slug: item.slug,
-        title: item.title,
+        title: localizedTitle,
         status: normalizeArticleStatus(item.status),
         createdAt: item.created_at,
         publishedAt: item.published_at,
@@ -497,13 +602,13 @@ export async function getDashboardArticles() {
         category: item.category_id ? categoryMap.get(item.category_id) || null : null,
         moderationStatus: item.moderation_status,
         moderationNote: item.moderation_note,
-      }),
-    ),
+      };
+    }),
     categories,
   };
 }
 
-export async function getArticleModerationQueue() {
+export async function getArticleModerationQueue(locale?: string | null) {
   noStore();
   const viewer = await getCurrentViewerRole();
 
@@ -515,7 +620,7 @@ export async function getArticleModerationQueue() {
   const { data } = await supabase
     .from("articles")
     .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at",
+      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at, content_locale, translations",
     )
     .order("created_at", { ascending: false })
     .limit(60);
@@ -553,7 +658,7 @@ export async function getArticleModerationQueue() {
 
   return rows
     .map((item) => ({
-      ...toFeedItem(item, categoryMap, authorMap),
+      ...toFeedItem(item, categoryMap, authorMap, locale),
       status: normalizeArticleStatus(item.status),
       moderationStatus: item.moderation_status,
       moderationNote: item.moderation_note,

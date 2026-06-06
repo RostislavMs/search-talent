@@ -93,12 +93,12 @@ export default async function NewArticlePage({
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
       <section className="rounded-hero app-card p-6 sm:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
               {ui.title}
             </h1>
-            <p className="mt-3 max-w-3xl text-base leading-8 app-muted">
+            <p className="mt-3 hidden max-w-3xl text-base leading-8 app-muted xl:block">
               {ui.description}
             </p>
           </div>
@@ -120,6 +120,7 @@ export default async function NewArticlePage({
           locale={safeLocale}
           categories={dashboard.categories}
           isAdmin={viewer.isAdmin}
+          showHeading={false}
         />
       </section>
     </main>

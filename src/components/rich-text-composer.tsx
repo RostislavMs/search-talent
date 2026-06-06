@@ -39,6 +39,8 @@ type RichTextComposerProps = {
   contentClassName?: string;
   toolbarSuffix?: ReactNode;
   showYouTube?: boolean;
+  /** Keep the formatting toolbar pinned to the top of the viewport while scrolling. */
+  stickyToolbar?: boolean;
   onUploadInlineAsset?: (
     file: File,
     kind: "image",
@@ -181,6 +183,7 @@ export default function RichTextComposer({
   contentClassName = "",
   toolbarSuffix,
   showYouTube = false,
+  stickyToolbar = false,
   onUploadInlineAsset,
 }: RichTextComposerProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -533,9 +536,24 @@ export default function RichTextComposer({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-panel border app-border bg-[color:var(--surface)] shadow-[0_22px_90px_rgba(2,6,23,0.18)]">
+      <div
+        className={cls(
+          "rounded-panel border app-border bg-[color:var(--surface)] shadow-[0_22px_90px_rgba(2,6,23,0.18)]",
+          // `overflow-hidden` clips children to the rounded corners, but it also
+          // breaks `position: sticky` for the toolbar — so we drop it when the
+          // toolbar needs to pin and round the toolbar's top corners instead.
+          stickyToolbar ? "" : "overflow-hidden",
+        )}
+      >
         {/* -------- Toolbar -------- */}
-        <div className="relative border-b app-border bg-[color:var(--surface-muted)]/55 px-3 py-2">
+        <div
+          className={cls(
+            "relative border-b app-border px-3 py-2",
+            stickyToolbar
+              ? "sticky top-20 z-30 rounded-t-panel bg-[color:var(--surface-muted)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--surface-muted)]/80"
+              : "bg-[color:var(--surface-muted)]/55",
+          )}
+        >
           <div className="flex flex-wrap items-center gap-1">
             {/* + Block menu */}
             <div className="relative" ref={blocksMenuRef}>

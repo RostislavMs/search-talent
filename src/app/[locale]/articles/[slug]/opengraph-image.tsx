@@ -15,7 +15,7 @@ export default async function Image({
   const { locale, slug } = await params;
   const safeLocale = isLocale(locale) ? locale : "en";
   const isUk = safeLocale === "uk";
-  const data = await getArticleDetail(slug);
+  const data = await getArticleDetail(slug, safeLocale);
 
   const title = data?.article.title || (isUk ? "Стаття" : "Article");
   const authorLabel = data?.article.authorDeleted

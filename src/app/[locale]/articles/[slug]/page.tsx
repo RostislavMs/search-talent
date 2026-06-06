@@ -49,7 +49,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug } = await params;
   const safeLocale = isLocale(locale) ? locale : "en";
-  const data = await getArticleDetail(slug);
+  const data = await getArticleDetail(slug, safeLocale);
 
   const isDraft = data?.article.status !== "published";
   const isNotPublicModeration = !isPublicModerationStatus(
@@ -78,7 +78,7 @@ export default async function ArticleDetailPage({
 }) {
   const { locale, slug } = await params;
   const safeLocale = isLocale(locale) ? locale : "en";
-  const data = await getArticleDetail(slug);
+  const data = await getArticleDetail(slug, safeLocale);
 
   if (!data) {
     notFound();

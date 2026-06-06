@@ -4,7 +4,10 @@ import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { deleteStorageObject } from "@/lib/storage/provider";
 import { createClient } from "@/lib/supabase/server";
 import { articlePayloadSchema, routeArticleIdSchema } from "@/lib/validation/articles";
-import { ensureUniqueArticleSlug } from "@/lib/db/articles";
+import {
+  buildSanitizedTranslations,
+  ensureUniqueArticleSlug,
+} from "@/lib/db/articles";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { z } from "zod";
 
@@ -79,6 +82,11 @@ export async function PUT(
       cover_image_storage_path: payload.cover_image_storage_path,
       hero_video_url: payload.hero_video_url,
       hero_video_storage_path: payload.hero_video_storage_path,
+      content_locale: payload.content_locale,
+      translations: buildSanitizedTranslations(
+        payload.translations,
+        payload.content_locale,
+      ),
       status: payload.status,
       published_at: payload.status === "published" ? now : null,
     })

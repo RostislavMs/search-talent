@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { ensureUniqueArticleSlug } from "@/lib/db/articles";
+import {
+  buildSanitizedTranslations,
+  ensureUniqueArticleSlug,
+} from "@/lib/db/articles";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { articlePayloadSchema } from "@/lib/validation/articles";
@@ -51,6 +54,11 @@ export async function POST(request: Request) {
       cover_image_storage_path: payload.cover_image_storage_path,
       hero_video_url: payload.hero_video_url,
       hero_video_storage_path: payload.hero_video_storage_path,
+      content_locale: payload.content_locale,
+      translations: buildSanitizedTranslations(
+        payload.translations,
+        payload.content_locale,
+      ),
       status: payload.status,
       moderation_status: "approved",
       published_at: payload.status === "published" ? now : null,
