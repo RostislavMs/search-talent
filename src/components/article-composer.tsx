@@ -137,8 +137,6 @@ export default function ArticleComposer({
         uploadCover: "Завантажити обкладинку",
         uploadHero: "Завантажити hero-відео",
         uploading: "Завантаження...",
-        contentNote:
-          "Контент зберігається як rich text із форматуванням та медіа.",
         saveDraft: "Зберегти чернетку",
         publishNow: "Опублікувати",
         remove: "Прибрати",
@@ -168,8 +166,6 @@ export default function ArticleComposer({
         uploadCover: "Upload cover",
         uploadHero: "Upload hero video",
         uploading: "Uploading...",
-        contentNote:
-          "The body is stored as rich text with formatting and media support.",
         saveDraft: "Save draft",
         publishNow: "Publish now",
         remove: "Remove",
@@ -310,11 +306,6 @@ export default function ArticleComposer({
           maxLength={50000}
           showYouTube
           contentClassName="min-h-[32rem] text-[15px] leading-8"
-          toolbarSuffix={
-            <span className="rounded-full border app-border px-3 py-2 text-xs font-medium app-soft">
-              {ui.contentNote}
-            </span>
-          }
           onUploadInlineAsset={async (file) => {
             const result = await uploadAsset(file, "inline");
 
