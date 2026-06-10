@@ -119,6 +119,9 @@ export function buildModerationDecisionEmail(input: ModerationDecisionEmailInput
     "{name}",
     escapeHtml(input.recipientName || ""),
   );
+  // Plaintext version uses the raw name — plaintext is not HTML-rendered, so no
+  // escaping (and no tag-stripping) is needed.
+  const plainGreeting = email.greeting.replace("{name}", input.recipientName || "");
   const intro = input.status === "removed" ? email.removedIntro : email.restrictedIntro;
   const typeWord = email.types[input.contentKind];
   const safeTitle = escapeHtml(input.contentTitle || "");
@@ -137,7 +140,7 @@ export function buildModerationDecisionEmail(input: ModerationDecisionEmailInput
     <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #94a3b8;">${escapeHtml(email.signature)}</p>`;
 
   const text = [
-    `${greeting.replace(/<[^>]+>/g, "")}`,
+    plainGreeting,
     intro,
     `${typeWord}: “${input.contentTitle || ""}”`.trim(),
     input.note ? `${email.noteLabel} ${input.note}` : "",
