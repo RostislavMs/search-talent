@@ -64,8 +64,7 @@ export default async function VerifyPage({
         </div>
 
         <div className="mt-8 rounded-3xl app-panel p-5 text-sm leading-7 app-muted">
-          SearchTalent checks your session when you open the dashboard, so after
-          confirming the email you can simply return there and continue.
+          {dictionary.auth.verify.hint}
         </div>
       </section>
     </main>

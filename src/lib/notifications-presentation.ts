@@ -35,6 +35,14 @@ export function describeNotification(
       const badge = `${item.metadata.badgeEmoji ?? "🏅"} ${localizedName ?? ""}`.trim();
       return dict.actions.newBadge.replace("{badge}", badge);
     }
+    case "moderation_decision": {
+      const status = item.metadata.moderationStatus;
+      const kind = item.metadata.contentKind;
+      if (status && kind) {
+        return dict.actions.moderation[status][kind];
+      }
+      return "";
+    }
     default:
       return "";
   }
@@ -75,6 +83,9 @@ export function buildNotificationHref(
     case "profile":
       if (item.metadata.actorUsername) {
         return `${base}/u/${item.metadata.actorUsername}`;
+      }
+      if (item.metadata.profileUsername) {
+        return `${base}/u/${item.metadata.profileUsername}`;
       }
       return `${base}/talents`;
     case "badge":

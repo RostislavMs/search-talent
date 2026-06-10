@@ -5,6 +5,7 @@ export const NOTIFICATION_TYPES = [
   "reaction",
   "new_follower",
   "new_badge",
+  "moderation_decision",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -39,6 +40,12 @@ export type NotificationMetadata = {
   badgeTier?: number;
   /** Recipient's public profile username — used to deep-link badge notifications to /u/<username>. */
   profileUsername?: string | null;
+  /** Moderation notifications: the decision applied to the recipient's content. */
+  moderationStatus?: "removed" | "restricted";
+  /** Moderation notifications: which kind of content was actioned. */
+  contentKind?: "article" | "project" | "profile";
+  /** Moderation notifications: human-readable title of the actioned content. */
+  contentTitle?: string;
 };
 
 export type NotificationItem = {

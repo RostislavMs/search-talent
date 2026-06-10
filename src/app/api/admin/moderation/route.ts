@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
+import type { NotificationMetadata } from "@/lib/constants/notifications";
+import { createNotifications } from "@/lib/db/notifications";
+import { sendEmail } from "@/lib/email/resend";
+import { buildModerationDecisionEmail } from "@/lib/email/templates";
+import { defaultLocale, isLocale, type Locale } from "@/lib/i18n/config";
 import {
   getModerationActionType,
   normalizeModerationStatus,
 } from "@/lib/moderation";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
+import { getSiteUrl } from "@/lib/seo";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { moderationUpdateSchema } from "@/lib/validation/report";
 import { parseJsonRequest } from "@/lib/validation/request";
 
@@ -116,5 +123,141 @@ export async function POST(request: Request) {
     );
   }
 
+  // Notify the content owner when their content is removed or restricted.
+  // Best-effort: a failure here must never fail the moderation action.
+  if (
+    payload.moderationStatus === "removed" ||
+    payload.moderationStatus === "restricted"
+  ) {
+    try {
+      await notifyContentOwner({
+        targetType: payload.targetType,
+        targetId: payload.targetId,
+        status: payload.moderationStatus,
+        note: payload.resolutionNote || null,
+      });
+    } catch (error) {
+      console.error("[moderation] owner notification failed", error);
+    }
+  }
+
   return NextResponse.json({ success: true });
+}
+
+/**
+ * Sends the content owner an in-app notification and a best-effort email when
+ * their content is removed or restricted. Uses the service-role client so it
+ * can write notifications for another user and read their auth email.
+ */
+async function notifyContentOwner({
+  targetType,
+  targetId,
+  status,
+  note,
+}: {
+  targetType: "profile" | "project" | "article";
+  targetId: string;
+  status: "removed" | "restricted";
+  note: string | null;
+}) {
+  const admin = createAdminClient();
+
+  if (!admin) {
+    return;
+  }
+
+  const metadata: NotificationMetadata = {
+    moderationStatus: status,
+    contentKind: targetType,
+  };
+  let ownerId: string | null = null;
+  let contentTitle = "";
+
+  if (targetType === "article") {
+    const { data } = await admin
+      .from("articles")
+      .select("author_user_id, title, slug")
+      .eq("id", targetId)
+      .maybeSingle();
+    ownerId = data?.author_user_id ?? null;
+    contentTitle = data?.title ?? "";
+    metadata.articleSlug = data?.slug ?? undefined;
+  } else if (targetType === "project") {
+    const { data } = await admin
+      .from("projects")
+      .select("owner_id, title")
+      .eq("id", targetId)
+      .maybeSingle();
+    ownerId = data?.owner_id ?? null;
+    contentTitle = data?.title ?? "";
+    metadata.projectId = targetId;
+  } else {
+    const { data } = await admin
+      .from("profiles")
+      .select("user_id, name, username")
+      .eq("id", targetId)
+      .maybeSingle();
+    ownerId = data?.user_id ?? null;
+    contentTitle = data?.name?.trim() || data?.username || "";
+    metadata.profileUsername = data?.username ?? undefined;
+  }
+
+  if (!ownerId) {
+    return;
+  }
+
+  metadata.contentTitle = contentTitle;
+
+  await createNotifications(admin, {
+    recipientUserId: ownerId,
+    actorUserId: null,
+    type: "moderation_decision",
+    targetType,
+    targetId,
+    metadata,
+  });
+
+  const { data: ownerAuth } = await admin.auth.admin.getUserById(ownerId);
+  const recipientEmail = ownerAuth?.user?.email;
+
+  if (!recipientEmail) {
+    return;
+  }
+
+  const rawLocale =
+    (ownerAuth?.user?.user_metadata?.locale as string | undefined) ||
+    defaultLocale;
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : defaultLocale;
+
+  const { data: ownerProfile } = await admin
+    .from("profiles")
+    .select("name, username")
+    .eq("user_id", ownerId)
+    .maybeSingle();
+  const recipientName =
+    ownerProfile?.name?.trim() || ownerProfile?.username || "";
+
+  const siteUrl = getSiteUrl().replace(/\/$/, "");
+  const path =
+    targetType === "article"
+      ? metadata.articleSlug
+        ? `/${locale}/articles/${metadata.articleSlug}`
+        : `/${locale}/articles`
+      : targetType === "project"
+        ? `/${locale}/projects/${targetId}`
+        : metadata.profileUsername
+          ? `/${locale}/u/${metadata.profileUsername}`
+          : `/${locale}/talents`;
+
+  const { subject, html, text } = buildModerationDecisionEmail({
+    recipientName,
+    contentKind: targetType,
+    contentTitle,
+    status,
+    note,
+    url: `${siteUrl}${path}`,
+    locale,
+  });
+
+  await sendEmail({ to: recipientEmail, subject, html, text });
 }

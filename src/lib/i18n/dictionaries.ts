@@ -700,6 +700,7 @@ export const dictionaries = {
       deleteError: "Could not remove the notification.",
       someone: "Someone",
       you: "You",
+      moderationActor: "Moderation",
       actions: {
         mention: "mentioned you in a comment",
         commentReply: "replied to your comment",
@@ -707,6 +708,18 @@ export const dictionaries = {
         reaction: "reacted with {emoji} to your post",
         newFollower: "started following you",
         newBadge: "earned the {badge} badge",
+        moderation: {
+          removed: {
+            article: "removed your article",
+            project: "removed your project",
+            profile: "removed your profile",
+          },
+          restricted: {
+            article: "restricted your article",
+            project: "restricted your project",
+            profile: "restricted your profile",
+          },
+        },
       },
     },
     githubIntegration: {
@@ -911,6 +924,23 @@ export const dictionaries = {
           "You are receiving this because you have a Search Talent profile.",
         manageNotifications: "Manage notifications",
       },
+      moderation: {
+        subject: "A moderation update about your content",
+        greeting: "Hi {name},",
+        removedIntro:
+          "Your content has been removed by our moderation team and is no longer available on Search Talent.",
+        restrictedIntro:
+          "Your content has been restricted by our moderation team and is no longer publicly visible on Search Talent.",
+        noteLabel: "Moderator note:",
+        cta: "Review your content",
+        signature:
+          "You are receiving this because you have a Search Talent profile.",
+        types: {
+          article: "Article",
+          project: "Project",
+          profile: "Profile",
+        },
+      },
     },
     pdfExport: {
       download: "Download PDF",
@@ -1088,6 +1118,19 @@ export const dictionaries = {
         uploadFailedMessage: "Could not upload the cover right now.",
         removeFailedMessage: "Could not remove the cover right now.",
       },
+      changePassword: {
+        sectionTitle: "Password",
+        sectionDescription:
+          "Change the password you use to sign in to Search Talent.",
+        currentLabel: "Current password",
+        newLabel: "New password",
+        confirmLabel: "Confirm new password",
+        submit: "Change password",
+        submitting: "Changing...",
+        success: "Your password has been changed.",
+        wrongCurrent: "Your current password is incorrect.",
+        genericError: "Could not change your password. Please try again.",
+      },
       deleteAccount: {
         sectionTitle: "Danger zone",
         sectionDescription:
@@ -1155,6 +1198,7 @@ export const dictionaries = {
         login: "Log in",
         openDashboard: "Open dashboard",
         backHome: "Back to home",
+        hint: "SearchTalent checks your session when you open the dashboard, so after confirming the email you can simply return there and continue.",
       },
       forgotPassword: {
         eyebrow: "Forgot your password?",
@@ -2698,6 +2742,7 @@ export const dictionaries = {
       deleteError: "Не вдалося видалити сповіщення.",
       someone: "Хтось",
       you: "Ви",
+      moderationActor: "Модерація",
       actions: {
         mention: "згадав(ла) вас у коментарі",
         commentReply: "відповів(ла) на ваш коментар",
@@ -2705,6 +2750,18 @@ export const dictionaries = {
         reaction: "поставив(ла) реакцію {emoji} на ваш пост",
         newFollower: "почав(ла) стежити за вами",
         newBadge: "отримав(-ла) бейдж {badge}",
+        moderation: {
+          removed: {
+            article: "прибрала вашу статтю",
+            project: "прибрала ваш проєкт",
+            profile: "прибрала ваш профіль",
+          },
+          restricted: {
+            article: "обмежила вашу статтю",
+            project: "обмежила ваш проєкт",
+            profile: "обмежила ваш профіль",
+          },
+        },
       },
     },
     githubIntegration: {
@@ -2909,6 +2966,23 @@ export const dictionaries = {
           "Ви отримали цей лист, тому що у вас є профіль у Search Talent.",
         manageNotifications: "Керувати сповіщеннями",
       },
+      moderation: {
+        subject: "Оновлення модерації щодо вашого контенту",
+        greeting: "Привіт, {name}!",
+        removedIntro:
+          "Ваш контент прибрано нашою командою модерації, і він більше не доступний на Search Talent.",
+        restrictedIntro:
+          "Ваш контент обмежено нашою командою модерації, і він більше не показується публічно на Search Talent.",
+        noteLabel: "Коментар модератора:",
+        cta: "Переглянути ваш контент",
+        signature:
+          "Ви отримали цей лист, тому що у вас є профіль у Search Talent.",
+        types: {
+          article: "Стаття",
+          project: "Проєкт",
+          profile: "Профіль",
+        },
+      },
     },
     pdfExport: {
       download: "Завантажити PDF",
@@ -3087,6 +3161,19 @@ export const dictionaries = {
         uploadFailedMessage: "Зараз не вдалося завантажити обкладинку.",
         removeFailedMessage: "Зараз не вдалося прибрати обкладинку.",
       },
+      changePassword: {
+        sectionTitle: "Пароль",
+        sectionDescription:
+          "Змініть пароль, яким ви входите в Search Talent.",
+        currentLabel: "Поточний пароль",
+        newLabel: "Новий пароль",
+        confirmLabel: "Підтвердьте новий пароль",
+        submit: "Змінити пароль",
+        submitting: "Зміна...",
+        success: "Пароль змінено.",
+        wrongCurrent: "Поточний пароль неправильний.",
+        genericError: "Не вдалося змінити пароль. Спробуйте ще раз.",
+      },
       deleteAccount: {
         sectionTitle: "Небезпечна зона",
         sectionDescription:
@@ -3154,6 +3241,7 @@ export const dictionaries = {
         login: "Увійти",
         openDashboard: "Відкрити дашборд",
         backHome: "На головну",
+        hint: "SearchTalent перевіряє вашу сесію при відкритті дашборда, тож після підтвердження email ви можете просто повернутися туди й продовжити.",
       },
       forgotPassword: {
         eyebrow: "Забули пароль?",
