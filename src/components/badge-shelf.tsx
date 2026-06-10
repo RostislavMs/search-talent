@@ -104,7 +104,6 @@ function getStrings(locale: string) {
       nextLevel: "Наступний рівень",
       maxLevel: "Максимальний рівень",
       locked: "Не отримано",
-      lockedHowTo: "Як отримати",
       firstThreshold: "Перший рівень",
       empty: "Поки що бейджів немає.",
       showAll: "Усі бейджі",
@@ -121,7 +120,6 @@ function getStrings(locale: string) {
     nextLevel: "Next level",
     maxLevel: "Max level",
     locked: "Not earned",
-    lockedHowTo: "How to earn",
     firstThreshold: "First threshold",
     empty: "No badges yet.",
     showAll: "All badges",
@@ -467,11 +465,6 @@ export default function BadgeShelf({
                       {earned && awardedAt && (
                         <p className="mt-2 text-xs opacity-70">
                           {strings.awardedOn}: {formatAwardedAt(awardedAt, locale)}
-                        </p>
-                      )}
-                      {!earned && (
-                        <p className="mt-2 text-xs opacity-70">
-                          {strings.lockedHowTo}: {description}
                         </p>
                       )}
                     </div>

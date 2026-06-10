@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { projectPayloadSchema, routeProjectIdSchema } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
+import { isPublicModerationStatus } from "@/lib/moderation";
+import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 
 export async function PATCH(
   request: Request,
@@ -30,7 +32,7 @@ export async function PATCH(
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, owner_id, slug")
+    .select("id, owner_id, slug, moderation_status, followers_notified_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -124,6 +126,21 @@ export async function PATCH(
         { status: 400 },
       );
     }
+  }
+
+  // First publish (draft -> published) notifies the owner's followers. The
+  // followers_notified_at guard keeps re-publishes and later edits silent.
+  if (
+    updatedProject.status === "published" &&
+    !project.followers_notified_at &&
+    isPublicModerationStatus(project.moderation_status)
+  ) {
+    void dispatchPublishSideEffects({
+      contentType: "project",
+      contentId: project.id,
+      authorUserId: user.id,
+      title: payload.title,
+    });
   }
 
   return NextResponse.json({

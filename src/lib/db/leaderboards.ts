@@ -7,8 +7,11 @@ import {
 } from "@/lib/db/badges";
 import {
   COMPLETE_PROFILE_BADGE_THRESHOLD,
+  RECOGNITION_MIN_POOL,
+  RISING_STAR_MONTHLY_THRESHOLD,
   TOP_10_THRESHOLD,
   TOP_100_THRESHOLD,
+  type BadgeKey,
 } from "@/lib/constants/badges";
 import {
   calculateProjectRating,
@@ -236,6 +239,11 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
 
   // index: profile.id -> user_id (used when awarding badges from rank lists)
   const userIdByProfileId = new Map(profileStats.map((p) => [p.id, p.user_id]));
+
+  // index: project.id -> owner user_id (used to award project_of_the_month)
+  const ownerIdByProjectId = new Map(
+    projectStats.map((p) => [p.id, p.owner_id]),
+  );
 
   // badge counts per user — feeds the rating bonus capped at +5
   const badgeCounts = await getBadgeCountsForUsers(
@@ -486,10 +494,18 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
   }
 
   // Award derived badges that depend on results computed above:
-  //   complete_profile  (profile-completeness threshold)
-  //   top_100_all_time  (rank within all-time top-100)
-  //   hall_of_fame      (rank within all-time top-10)
-  //   top_10_monthly    (rank within current month top-10)
+  //   complete_profile      (profile-completeness threshold)
+  //   rising_star           (rank within current month top-50)
+  //   top_100_all_time      (rank within all-time top-100)
+  //   hall_of_fame          (rank within all-time top-10)
+  //   top_10_monthly        (rank within current month top-10)
+  //   project_of_the_month  (#1 project in the monthly ranking)
+  //
+  // Recognition badges are GATED: a rank is only meaningful once enough peers
+  // actually compete for it (RECOGNITION_MIN_POOL) and the recipient has a real
+  // score (rating > 0). Below the pool floor we award nothing, so a tiny early
+  // user base doesn't hand every recognition badge to everyone.
+  //
   // Writes need service-role privileges since RLS blocks anon writes.
   const adminClient = createAdminClient();
   if (adminClient) {
@@ -502,22 +518,71 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
       awards.push(awardBadgeByKey(adminClient, userId, "complete_profile"));
     }
 
-    for (const entry of rankedCreators.all.slice(0, TOP_100_THRESHOLD)) {
-      const userId = userIdByProfileId.get(entry.id);
-      if (!userId) continue;
-      awards.push(awardBadgeByKey(adminClient, userId, "top_100_all_time"));
-    }
+    // Competitive pool sizes — only creators/projects with a real rating count.
+    const allPool = rankedCreators.all.filter((c) => c.rating > 0).length;
+    const monthPool = rankedCreators.month.filter((c) => c.rating > 0).length;
+    const monthProjectPool = rankedProjects.month.filter(
+      (p) => p.rating > 0,
+    ).length;
 
-    for (const entry of rankedCreators.all.slice(0, TOP_10_THRESHOLD)) {
-      const userId = userIdByProfileId.get(entry.id);
-      if (!userId) continue;
-      awards.push(awardBadgeByKey(adminClient, userId, "hall_of_fame"));
-    }
+    // Award the top `take` ranked creators a recognition badge, but only when
+    // the pool clears `minPool` and each recipient's own rating is > 0.
+    const awardRankedCreators = (
+      list: RankedCreator[],
+      take: number,
+      pool: number,
+      minPool: number,
+      key: BadgeKey,
+    ) => {
+      if (pool < minPool) return;
+      for (const entry of list.slice(0, take)) {
+        if (entry.rating <= 0) continue;
+        const userId = userIdByProfileId.get(entry.id);
+        if (!userId) continue;
+        awards.push(awardBadgeByKey(adminClient, userId, key));
+      }
+    };
 
-    for (const entry of rankedCreators.month.slice(0, TOP_10_THRESHOLD)) {
-      const userId = userIdByProfileId.get(entry.id);
-      if (!userId) continue;
-      awards.push(awardBadgeByKey(adminClient, userId, "top_10_monthly"));
+    awardRankedCreators(
+      rankedCreators.all,
+      TOP_100_THRESHOLD,
+      allPool,
+      RECOGNITION_MIN_POOL.top_100_all_time,
+      "top_100_all_time",
+    );
+    awardRankedCreators(
+      rankedCreators.all,
+      TOP_10_THRESHOLD,
+      allPool,
+      RECOGNITION_MIN_POOL.hall_of_fame,
+      "hall_of_fame",
+    );
+    awardRankedCreators(
+      rankedCreators.month,
+      TOP_10_THRESHOLD,
+      monthPool,
+      RECOGNITION_MIN_POOL.top_10_monthly,
+      "top_10_monthly",
+    );
+    awardRankedCreators(
+      rankedCreators.month,
+      RISING_STAR_MONTHLY_THRESHOLD,
+      monthPool,
+      RECOGNITION_MIN_POOL.rising_star,
+      "rising_star",
+    );
+
+    // project_of_the_month — owner of the #1 monthly project, gated the same way.
+    if (monthProjectPool >= RECOGNITION_MIN_POOL.project_of_the_month) {
+      const topProject = rankedProjects.month[0];
+      if (topProject && topProject.rating > 0) {
+        const ownerId = ownerIdByProjectId.get(topProject.id);
+        if (ownerId) {
+          awards.push(
+            awardBadgeByKey(adminClient, ownerId, "project_of_the_month"),
+          );
+        }
+      }
     }
 
     // Run all awards in parallel. Errors are already swallowed inside

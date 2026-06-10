@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { awardSqlBadgesForUser } from "@/lib/db/badges";
 import { rateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
@@ -49,6 +50,11 @@ export async function POST() {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  // Re-evaluate badges so the `verified_email` badge is awarded immediately
+  // rather than waiting for an unrelated trigger (project/comment/etc.). Errors
+  // are swallowed inside the helper — they must not fail the verification.
+  await awardSqlBadgesForUser(supabase, user.id);
 
   return NextResponse.json({ verified: true });
 }

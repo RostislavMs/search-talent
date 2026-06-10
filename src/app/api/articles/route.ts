@@ -7,6 +7,7 @@ import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { articlePayloadSchema } from "@/lib/validation/articles";
 import { parseJsonRequest } from "@/lib/validation/request";
+import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 
 export async function POST(request: Request) {
   const context = await getCurrentViewerRole();
@@ -71,6 +72,18 @@ export async function POST(request: Request) {
       { error: error?.message || "Could not create article" },
       { status: 400 },
     );
+  }
+
+  // Notify followers about the new article. New articles are created with
+  // moderation_status 'approved', so a published one is publicly visible.
+  if (payload.status === "published") {
+    void dispatchPublishSideEffects({
+      contentType: "article",
+      contentId: data.id,
+      authorUserId: context.user.id,
+      title: payload.title,
+      articleSlug: data.slug,
+    });
   }
 
   return NextResponse.json({ article: data });

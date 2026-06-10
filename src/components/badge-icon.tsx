@@ -194,6 +194,95 @@ function Shield({ className }: IconProps) {
   );
 }
 
+function Sprout({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M12 21v-8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M12 13C12 9.5 9 7.5 4 7.5c0 4 2.5 6.5 8 5.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 11c0-3 2.5-5 7-5 0 3.5-2.5 5.8-7 5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function EnvelopeCheck({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M3.5 7.5C3.5 6.67 4.17 6 5 6h14c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5H5c-.83 0-1.5-.67-1.5-1.5v-9Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m4 7 8 6 8-6"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m9 13 2 2 3.5-3.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function Sparkle({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M12 3c.4 3.7 1.3 4.6 5 5-3.7.4-4.6 1.3-5 5-.4-3.7-1.3-4.6-5-5 3.7-.4 4.6-1.3 5-5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M18.5 14c.2 1.7.6 2.1 2.3 2.3-1.7.2-2.1.6-2.3 2.3-.2-1.7-.6-2.1-2.3-2.3 1.7-.2 2.1-.6 2.3-2.3Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CalendarStar({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <rect
+        x="4"
+        y="5"
+        width="16"
+        height="15"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="m12 11.5 1.1 2.2 2.4.3-1.75 1.7.42 2.4L12 16.95 9.83 18.1l.42-2.4L8.5 14l2.4-.3L12 11.5Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const ICON_MAP: Record<BadgeKey, (props: IconProps) => React.ReactElement> = {
   first_project: Rocket,
   storyteller: Feather,
@@ -201,12 +290,16 @@ const ICON_MAP: Record<BadgeKey, (props: IconProps) => React.ReactElement> = {
   conversationalist: ChatBubble,
   loved: Heart,
   community_voice: Megaphone,
+  rising_star: Sparkle,
   top_100_all_time: Medal,
   top_10_monthly: Trophy,
+  project_of_the_month: CalendarStar,
   hall_of_fame: Crown,
+  verified_email: EnvelopeCheck,
   complete_profile: CheckShield,
   verified_github: GithubLogo,
   veteran: Shield,
+  early_adopter: Sprout,
 };
 
 export default function BadgeIcon({

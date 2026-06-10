@@ -8,6 +8,7 @@ import { getIntegrationForUser } from "@/lib/db/github-integrations";
 import { fetchRepoFullDetail } from "@/lib/integrations/github";
 import { mapRepoToProjectColumns } from "@/lib/db/github-sync";
 import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
+import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -116,6 +117,17 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+  }
+
+  // Notify followers about the new project. Fresh projects default to
+  // moderation_status 'approved', so a published one is publicly visible.
+  if (project.status === "published") {
+    void dispatchPublishSideEffects({
+      contentType: "project",
+      contentId: project.id,
+      authorUserId: user.id,
+      title: payload.title,
+    });
   }
 
   return NextResponse.json({

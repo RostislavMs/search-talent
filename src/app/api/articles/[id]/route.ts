@@ -9,6 +9,8 @@ import {
   ensureUniqueArticleSlug,
 } from "@/lib/db/articles";
 import { parseJsonRequest } from "@/lib/validation/request";
+import { isPublicModerationStatus } from "@/lib/moderation";
+import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { z } from "zod";
 
 const pinSchema = z.object({
@@ -34,7 +36,7 @@ export async function PUT(
 
   const { data: existing } = await context.supabase
     .from("articles")
-    .select("id, author_user_id, slug")
+    .select("id, author_user_id, slug, moderation_status, followers_notified_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -96,6 +98,23 @@ export async function PUT(
 
   if (error || !data) {
     return NextResponse.json({ error: error?.message || "Could not update article" }, { status: 400 });
+  }
+
+  // First publish (draft -> published) notifies the author's followers. The
+  // actor is the author, not the (possibly admin) editor. The
+  // followers_notified_at guard keeps re-publishes and later edits silent.
+  if (
+    payload.status === "published" &&
+    !existing.followers_notified_at &&
+    isPublicModerationStatus(existing.moderation_status)
+  ) {
+    void dispatchPublishSideEffects({
+      contentType: "article",
+      contentId: id,
+      authorUserId: existing.author_user_id,
+      title: payload.title,
+      articleSlug: data.slug,
+    });
   }
 
   return NextResponse.json({ article: data });
