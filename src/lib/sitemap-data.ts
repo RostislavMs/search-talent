@@ -5,7 +5,12 @@ import {
   getTechnologyDirectory,
 } from "@/lib/db/marketing";
 import { normalizeProjectKind } from "@/lib/projects";
-import { createLocalePath, locales, type Locale } from "@/lib/i18n/config";
+import {
+  createLocalePath,
+  defaultLocale,
+  locales,
+  type Locale,
+} from "@/lib/i18n/config";
 import { getMetadataBase } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,14 +29,18 @@ export type SitemapId = (typeof SITEMAP_IDS)[number];
 
 export type SitemapEntry = {
   url: string;
-  lastModified: Date;
-  alternates: Array<{ locale: Locale; href: string }>;
+  lastModified?: Date;
+  alternates: Array<{ locale: Locale | "x-default"; href: string }>;
 };
 
 const SITEMAP_PAGE_SIZE = 5000;
 const MIN_ITEMS_FOR_PROGRAMMATIC_PAGE = 5;
 const MIN_TALENT_ITEMS_FOR_PAGE = 3;
 const MIN_PROJECT_TYPE_ITEMS_FOR_PAGE = 3;
+
+// Stable lastmod for static/legal/info pages — bump when their content
+// actually changes (avoids signalling "updated" on every sitemap render).
+const STATIC_LASTMOD = new Date("2026-06-10T00:00:00.000Z");
 
 const staticRoutes = [
   "/",
@@ -50,15 +59,24 @@ const staticRoutes = [
 function buildEntry(
   baseUrl: URL,
   route: string,
-  lastModified: Date,
+  lastModified?: Date,
 ): SitemapEntry {
   return {
     url: new URL(createLocalePath(locales[0], route), baseUrl).toString(),
     lastModified,
-    alternates: locales.map((locale) => ({
-      locale,
-      href: new URL(createLocalePath(locale, route), baseUrl).toString(),
-    })),
+    alternates: [
+      ...locales.map((locale) => ({
+        locale,
+        href: new URL(createLocalePath(locale, route), baseUrl).toString(),
+      })),
+      {
+        locale: "x-default" as const,
+        href: new URL(
+          createLocalePath(defaultLocale, route),
+          baseUrl,
+        ).toString(),
+      },
+    ],
   };
 }
 
@@ -66,14 +84,16 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
   const baseUrl = getMetadataBase();
 
   if (id === "static") {
-    return staticRoutes.map((route) => buildEntry(baseUrl, route, new Date()));
+    return staticRoutes.map((route) =>
+      buildEntry(baseUrl, route, STATIC_LASTMOD),
+    );
   }
 
   if (id === "project-tags") {
     const items = await getTechnologyDirectory(200);
     return items
       .filter((item) => item.count >= MIN_ITEMS_FOR_PROGRAMMATIC_PAGE)
-      .map((item) => buildEntry(baseUrl, `/projects/tag/${item.slug}`, new Date()));
+      .map((item) => buildEntry(baseUrl, `/projects/tag/${item.slug}`));
   }
 
   if (id === "project-types") {
@@ -84,27 +104,21 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
           normalizeProjectKind(item.kind) !== null &&
           item.count >= MIN_PROJECT_TYPE_ITEMS_FOR_PAGE,
       )
-      .map((item) =>
-        buildEntry(baseUrl, `/projects/type/${item.kind}`, new Date()),
-      );
+      .map((item) => buildEntry(baseUrl, `/projects/type/${item.kind}`));
   }
 
   if (id === "talent-skills") {
     const items = await getTalentSkillDirectory();
     return items
       .filter((item) => item.count >= MIN_TALENT_ITEMS_FOR_PAGE)
-      .map((item) =>
-        buildEntry(baseUrl, `/talents/skill/${item.slug}`, new Date()),
-      );
+      .map((item) => buildEntry(baseUrl, `/talents/skill/${item.slug}`));
   }
 
   if (id === "talent-roles") {
     const items = await getProfileCategoryDirectory();
     return items
       .filter((item) => item.count >= MIN_TALENT_ITEMS_FOR_PAGE)
-      .map((item) =>
-        buildEntry(baseUrl, `/talents/role/${item.slug}`, new Date()),
-      );
+      .map((item) => buildEntry(baseUrl, `/talents/role/${item.slug}`));
   }
 
   const supabase = await createClient();

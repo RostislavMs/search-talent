@@ -45,12 +45,12 @@ function HeroLiveCardSkeleton() {
 export function HomeHeroSkeleton() {
   return (
     <section className="bg-brand-hero overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:rounded-hero sm:p-8 md:p-10">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)] lg:gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:gap-8">
         <div>
           <HeroBar className="h-4 w-32 rounded-full" />
           <div className="mt-4 space-y-3">
-            <HeroBar className="h-9 w-full max-w-3xl sm:h-14" />
-            <HeroBar className="h-9 w-4/5 max-w-2xl sm:h-14" />
+            <HeroBar className="h-9 w-full max-w-3xl sm:h-12" />
+            <HeroBar className="h-9 w-4/5 max-w-2xl sm:h-12" />
           </div>
           <div className="mt-4 space-y-2">
             <HeroBar className="h-4 w-full max-w-2xl" />
