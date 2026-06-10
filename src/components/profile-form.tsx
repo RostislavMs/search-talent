@@ -62,6 +62,7 @@ import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import GithubIntegrationCard from "@/components/github-integration-card";
 import DeleteAccountSection from "@/components/delete-account-section";
+import ChangePasswordSection from "@/components/change-password-section";
 import OptimizedImage from "@/components/ui/optimized-image";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
@@ -720,7 +721,7 @@ export default function ProfileForm({
           appearance: "Вигляд",
           visibility: "Видимість",
           integrations: "Інтеграції",
-          deletion: "Видалення",
+          deletion: "Безпека",
         }
       : {
           menuLabel: "Sections",
@@ -740,7 +741,7 @@ export default function ProfileForm({
           appearance: "Appearance",
           visibility: "Visibility",
           integrations: "Integrations",
-          deletion: "Deletion",
+          deletion: "Security",
         };
   const draftUi =
     locale === "uk"
@@ -3084,6 +3085,7 @@ export default function ProfileForm({
       <section
         className={activeSection === "deletion" ? "space-y-4" : "hidden"}
       >
+        <ChangePasswordSection />
         <DeleteAccountSection email={email} />
       </section>
         </div>

@@ -103,6 +103,13 @@ async function notifyNewFollower({
   followerUserId: string;
   followingUserId: string;
 }) {
+  // Paused: follower emails need an email-preference toggle + unsubscribe link
+  // before they can be sent at scale. The in-app notification is created
+  // separately and is unaffected. Flip FOLLOWER_EMAILS_ENABLED=true to re-enable.
+  if (process.env.FOLLOWER_EMAILS_ENABLED !== "true") {
+    return;
+  }
+
   const admin = createAdminClient();
   if (!admin) {
     // No service role configured — skip notifications silently.

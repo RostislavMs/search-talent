@@ -71,9 +71,34 @@ export const resetPasswordSchema = z
     }
   });
 
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(1, "password_required")
+      .max(AUTH_LIMITS.passwordMaxLength, "password_too_long"),
+    newPassword: signupPasswordSchema,
+    confirmPassword: z.string().min(1, "confirm_password_required"),
+  })
+  .superRefine(({ newPassword, confirmPassword }, context) => {
+    if (newPassword !== confirmPassword) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["confirmPassword"],
+        message: "passwords_do_not_match",
+      });
+    }
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
-export type AuthFieldName = "email" | "password" | "confirmPassword";
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type AuthFieldName =
+  | "email"
+  | "password"
+  | "confirmPassword"
+  | "currentPassword"
+  | "newPassword";
 export type AuthFieldErrors = Partial<Record<AuthFieldName, string>>;
 
 export function getAuthFieldErrors(error: z.ZodError): AuthFieldErrors {

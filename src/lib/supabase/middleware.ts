@@ -46,5 +46,14 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Already authenticated — keep users out of the login/signup pages.
+  // (reset-password is intentionally excluded: the recovery flow signs the
+  // user in to let them set a new password.)
+  if (user && locale && (section === "login" || section === "signup")) {
+    const url = request.nextUrl.clone();
+    url.pathname = createLocalePath(locale, "/dashboard");
+    return NextResponse.redirect(url);
+  }
+
   return response;
 }

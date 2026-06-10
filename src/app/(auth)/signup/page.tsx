@@ -68,6 +68,9 @@ export default function SignupPage() {
           "/verify",
           process.env.NEXT_PUBLIC_APP_URL,
         ),
+        // Persist the signup locale into user_metadata so Supabase Auth email
+        // templates can localize via {{ .Data.locale }} (see supabase/email-templates).
+        data: { locale: router.locale },
       },
     });
 

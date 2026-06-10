@@ -99,13 +99,17 @@ export default function NotificationsList({
           const actorName =
             item.type === "new_badge"
               ? dict.you
-              : item.metadata.actorName ||
-                item.metadata.actorUsername ||
-                dict.someone;
+              : item.type === "moderation_decision"
+                ? dict.moderationActor
+                : item.metadata.actorName ||
+                  item.metadata.actorUsername ||
+                  dict.someone;
           const fallbackEmoji =
             item.type === "new_badge"
               ? item.metadata.badgeEmoji ?? "🏅"
-              : null;
+              : item.type === "moderation_decision"
+                ? "🛡️"
+                : null;
           return (
             <li
               key={item.id}
