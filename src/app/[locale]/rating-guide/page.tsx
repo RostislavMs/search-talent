@@ -377,7 +377,7 @@ function getCopy(locale: Locale): GuideCopy {
       badges: {
         title: "Бонус від бейджів",
         description:
-          "12 бейджів за різні досягнення (перший проєкт, 25+ підписників, верифікований GitHub, top-10 місяця тощо). Кожен дає невеликий бонус до рейтингу — до +5 балів сумарно. Фарм бейджів не зламає формулу.",
+          "16 бейджів за різні досягнення (перший проєкт, 25+ підписників, верифікований GitHub, top-10 місяця тощо). Кожен дає невеликий бонус до рейтингу — до +5 балів сумарно. Фарм бейджів не зламає формулу.",
         bullets: [
           "Деякі бейджі мають 3 рівні (наприклад, 50/250/1000 коментарів). Вищий рівень = більше визнання.",
           "Бейджі видно на профілі — натисніть на іконку, щоб побачити опис і прогрес.",
@@ -596,7 +596,7 @@ function getCopy(locale: Locale): GuideCopy {
     badges: {
       title: "Badge bonus",
       description:
-        "12 badges for different achievements (first project, 25+ followers, verified GitHub, top-10 of the month, etc.). Each adds a small bonus to the rating — up to +5 points total. Farming badges won't break the formula.",
+        "16 badges for different achievements (first project, 25+ followers, verified GitHub, top-10 of the month, etc.). Each adds a small bonus to the rating — up to +5 points total. Farming badges won't break the formula.",
       bullets: [
         "Some badges have 3 tiers (e.g. 50/250/1000 comments). Higher tier = more recognition.",
         "Badges show on the profile — click an icon to see description and progress.",

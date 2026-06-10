@@ -43,6 +43,14 @@ export function describeNotification(
       }
       return "";
     }
+    case "new_content": {
+      const title = item.metadata.contentTitle ?? "";
+      const template =
+        item.targetType === "project"
+          ? dict.actions.newProject
+          : dict.actions.newArticle;
+      return template.replace("{title}", title);
+    }
     default:
       return "";
   }

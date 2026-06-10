@@ -13,6 +13,8 @@ const baseDict = {
     newComment: "commented on your content",
     reaction: "reacted with {emoji} to your post",
     newFollower: "started following you",
+    newArticle: "published a new article: {title}",
+    newProject: "published a new project: {title}",
   },
 } as unknown as Parameters<typeof describeNotification>[1];
 
@@ -56,6 +58,28 @@ describe("describeNotification", () => {
     const item = makeItem({ type: "new_follower", targetType: "profile" });
     expect(describeNotification(item, baseDict)).toBe("started following you");
   });
+
+  it("substitutes the title for a published article", () => {
+    const item = makeItem({
+      type: "new_content",
+      targetType: "article",
+      metadata: { contentTitle: "Hello World" },
+    });
+    expect(describeNotification(item, baseDict)).toBe(
+      "published a new article: Hello World",
+    );
+  });
+
+  it("uses the project copy when new_content targets a project", () => {
+    const item = makeItem({
+      type: "new_content",
+      targetType: "project",
+      metadata: { contentTitle: "My Project" },
+    });
+    expect(describeNotification(item, baseDict)).toBe(
+      "published a new project: My Project",
+    );
+  });
 });
 
 describe("buildNotificationHref", () => {
@@ -88,6 +112,26 @@ describe("buildNotificationHref", () => {
       metadata: { actorUsername: "alice" },
     });
     expect(buildNotificationHref(item, "en")).toBe("/en/u/alice");
+  });
+
+  it("links to the article page for a published-article notification", () => {
+    const item = makeItem({
+      type: "new_content",
+      targetType: "article",
+      targetId: "a-1",
+      metadata: { articleSlug: "my-post", contentTitle: "My Post" },
+    });
+    expect(buildNotificationHref(item, "en")).toBe("/en/articles/my-post");
+  });
+
+  it("links to the project page for a published-project notification", () => {
+    const item = makeItem({
+      type: "new_content",
+      targetType: "project",
+      targetId: "p-1",
+      metadata: { projectId: "p-1", contentTitle: "My Project" },
+    });
+    expect(buildNotificationHref(item, "uk")).toBe("/uk/projects/p-1");
   });
 
   it("falls back to /notifications when target type is unknown", () => {

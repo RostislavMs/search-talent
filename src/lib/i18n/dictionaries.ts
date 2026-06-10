@@ -708,6 +708,8 @@ export const dictionaries = {
         reaction: "reacted with {emoji} to your post",
         newFollower: "started following you",
         newBadge: "earned the {badge} badge",
+        newArticle: "published a new article: {title}",
+        newProject: "published a new project: {title}",
         moderation: {
           removed: {
             article: "removed your article",
@@ -2750,6 +2752,8 @@ export const dictionaries = {
         reaction: "поставив(ла) реакцію {emoji} на ваш пост",
         newFollower: "почав(ла) стежити за вами",
         newBadge: "отримав(-ла) бейдж {badge}",
+        newArticle: "опублікував(ла) нову статтю: {title}",
+        newProject: "опублікував(ла) новий проєкт: {title}",
         moderation: {
           removed: {
             article: "прибрала вашу статтю",

@@ -5,12 +5,16 @@ export const BADGE_KEYS = [
   "conversationalist",
   "loved",
   "community_voice",
+  "rising_star",
   "top_100_all_time",
   "top_10_monthly",
+  "project_of_the_month",
   "hall_of_fame",
+  "verified_email",
   "complete_profile",
   "verified_github",
   "veteran",
+  "early_adopter",
 ] as const;
 
 export type BadgeKey = (typeof BADGE_KEYS)[number];
@@ -90,3 +94,38 @@ export const COMPLETE_PROFILE_BADGE_THRESHOLD = 0.9;
  */
 export const TOP_100_THRESHOLD = 100;
 export const TOP_10_THRESHOLD = 10;
+
+/**
+ * Monthly rank cutoff for the softer `rising_star` recognition badge — a
+ * gentler step than `top_10_monthly`, awarded for reaching the monthly top-50.
+ */
+export const RISING_STAR_MONTHLY_THRESHOLD = 50;
+
+/**
+ * Minimum competitive pool (creators/projects with a real rating > 0) required
+ * before a recognition badge is awarded. A rank is only meaningful once enough
+ * peers actually compete for it — below the floor we award nothing, so a tiny
+ * early user base doesn't hand every recognition badge to everyone. Tune these
+ * up as the platform grows.
+ */
+export const RECOGNITION_MIN_POOL: Record<
+  | "top_100_all_time"
+  | "top_10_monthly"
+  | "hall_of_fame"
+  | "rising_star"
+  | "project_of_the_month",
+  number
+> = {
+  rising_star: 30,
+  top_100_all_time: 50,
+  top_10_monthly: 20,
+  project_of_the_month: 15,
+  hall_of_fame: 25,
+};
+
+/**
+ * Registration-rank cutoff for the `early_adopter` ("Pioneer") badge: the
+ * first N users to ever register earn it permanently. Mirrors the literal used
+ * by `award_badges_for_user` in supabase/30_more_badges.sql — keep them in sync.
+ */
+export const EARLY_ADOPTER_MAX_RANK = 500;
