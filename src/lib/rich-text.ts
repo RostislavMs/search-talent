@@ -1,5 +1,4 @@
 import DOMPurify from "isomorphic-dompurify";
-import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 
 export { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 
