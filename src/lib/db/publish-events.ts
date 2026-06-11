@@ -4,11 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createNotifications } from "@/lib/db/notifications";
 import type { NotificationTargetType } from "@/lib/constants/notifications";
 
-type PublishContentType = Extract<NotificationTargetType, "article" | "project">;
+type PublishContentType = Extract<NotificationTargetType, "article" | "project" | "poll">;
 
 type PublishEventInput = {
   contentType: PublishContentType;
-  /** Row id in `articles` / `projects`. */
+  /** Row id in `articles` / `projects` / `polls`. */
   contentId: string;
   /** Content owner — the actor shown on the notification and whose followers are pinged. */
   authorUserId: string;
@@ -16,6 +16,8 @@ type PublishEventInput = {
   title: string;
   /** Article slug for the deep-link. Ignored for projects (linked by id). */
   articleSlug?: string | null;
+  /** Poll slug for the deep-link. */
+  pollSlug?: string | null;
 };
 
 /**
@@ -37,7 +39,12 @@ export async function dispatchPublishSideEffects(
   if (!admin) return;
 
   try {
-    const table = input.contentType === "article" ? "articles" : "projects";
+    const table =
+      input.contentType === "article"
+        ? "articles"
+        : input.contentType === "poll"
+          ? "polls"
+          : "projects";
 
     // Atomically claim the notify flag. A returned row means we are the first
     // to publish this content; an empty result means it was already notified
@@ -70,7 +77,9 @@ export async function dispatchPublishSideEffects(
     const metadata =
       input.contentType === "article"
         ? { contentTitle: input.title, articleSlug: input.articleSlug ?? undefined }
-        : { contentTitle: input.title, projectId: input.contentId };
+        : input.contentType === "poll"
+          ? { contentTitle: input.title, pollSlug: input.pollSlug ?? undefined }
+          : { contentTitle: input.title, projectId: input.contentId };
 
     await createNotifications(
       admin,

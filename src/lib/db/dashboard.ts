@@ -47,6 +47,7 @@ export type UserDashboardStats = {
   username: string | null;
   projectsCount: number;
   articlesCount: number;
+  pollsCount: number;
   followersCount: number;
   followingCount: number;
   bookmarksCount: number;
@@ -382,6 +383,7 @@ export async function getUserDashboardStats(userId: string): Promise<UserDashboa
     profileResponse,
     projectsCountResponse,
     articlesResponse,
+    pollsCountResponse,
     receivedVotesResponse,
   ] = await Promise.all([
     supabase
@@ -391,6 +393,7 @@ export async function getUserDashboardStats(userId: string): Promise<UserDashboa
       .maybeSingle(),
     supabase.from("projects").select("id", { count: "exact", head: true }).eq("owner_id", userId),
     supabase.from("articles").select("views_count").eq("author_user_id", userId),
+    supabase.from("polls").select("id", { count: "exact", head: true }).eq("author_user_id", userId),
     // Likes/dislikes across all of the user's projects, aggregated in SQL instead
     // of fetching every vote row to count in JS. Follower / following / bookmark
     // totals are read from the denormalized counters on the profile row.
@@ -416,6 +419,7 @@ export async function getUserDashboardStats(userId: string): Promise<UserDashboa
     username: profile?.username || null,
     projectsCount: projectsCountResponse.count || 0,
     articlesCount: userArticles.length,
+    pollsCount: pollsCountResponse.count || 0,
     followersCount: profile?.followers_count ?? 0,
     followingCount: profile?.following_count ?? 0,
     bookmarksCount: profile?.bookmarks_count ?? 0,

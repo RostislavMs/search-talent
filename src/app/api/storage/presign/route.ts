@@ -14,6 +14,8 @@ import { parseJsonRequest } from "@/lib/validation/request";
 const SCOPES = [
   "project-media",
   "article-image",
+  "poll-image",
+  "poll-cover",
   "certificate",
   "profile-background",
   "avatar",
@@ -36,6 +38,8 @@ const MAX_PROJECT_VIDEO_BYTES_DEFAULT = 100 * 1024 * 1024;
 const MAX_BYTES: Record<Scope, number> = {
   "project-media": ABSOLUTE_MAX_BYTES,
   "article-image": 10 * 1024 * 1024,
+  "poll-image": 10 * 1024 * 1024,
+  "poll-cover": 10 * 1024 * 1024,
   certificate: 25 * 1024 * 1024,
   "profile-background": 25 * 1024 * 1024,
   avatar: 10 * 1024 * 1024,
@@ -45,6 +49,8 @@ const MAX_BYTES: Record<Scope, number> = {
 const ALLOWED_MIME_PREFIX: Record<Scope, string[]> = {
   "project-media": ["image/", "video/"],
   "article-image": ["image/"],
+  "poll-image": ["image/"],
+  "poll-cover": ["image/"],
   certificate: ["image/", "application/pdf"],
   "profile-background": ["image/", "video/"],
   avatar: ["image/"],
@@ -80,6 +86,9 @@ function buildKey(scope: Scope, ownerId: string, fileName: string, projectId?: s
       return `${projectId}/${stamp}-${safeName}`;
     case "article-image":
       return `articles/${ownerId}/${stamp}-${safeName}`;
+    case "poll-image":
+    case "poll-cover":
+      return `polls/${ownerId}/${stamp}-${safeName}`;
     case "certificate":
       return `certificates/${ownerId}/${stamp}-${safeName}`;
     case "profile-background":

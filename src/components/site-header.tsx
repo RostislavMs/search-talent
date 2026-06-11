@@ -40,6 +40,7 @@ export default function SiteHeader({
   const pathname = stripLocaleFromPathname(usePathname() || "/");
   const profileMenuRef = useRef<HTMLDetailsElement>(null);
   const mobileMenuRef = useRef<HTMLDetailsElement>(null);
+  const communityMenuRef = useRef<HTMLDetailsElement>(null);
 
   const closeProfileMenu = () => {
     if (profileMenuRef.current) {
@@ -50,6 +51,12 @@ export default function SiteHeader({
   const closeMobileMenu = () => {
     if (mobileMenuRef.current) {
       mobileMenuRef.current.open = false;
+    }
+  };
+
+  const closeCommunityMenu = () => {
+    if (communityMenuRef.current) {
+      communityMenuRef.current.open = false;
     }
   };
 
@@ -70,6 +77,12 @@ export default function SiteHeader({
       ) {
         mobileMenuRef.current.open = false;
       }
+      if (
+        communityMenuRef.current?.open &&
+        !communityMenuRef.current.contains(target)
+      ) {
+        communityMenuRef.current.open = false;
+      }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -79,6 +92,9 @@ export default function SiteHeader({
       }
       if (mobileMenuRef.current?.open) {
         mobileMenuRef.current.open = false;
+      }
+      if (communityMenuRef.current?.open) {
+        communityMenuRef.current.open = false;
       }
     };
 
@@ -92,10 +108,11 @@ export default function SiteHeader({
     };
   }, []);
 
-  // Close both menus when the route changes (e.g. after navigation).
+  // Close all menus when the route changes (e.g. after navigation).
   useEffect(() => {
     closeProfileMenu();
     closeMobileMenu();
+    closeCommunityMenu();
   }, [pathname]);
   const articlesLabel =
     dictionary.nav.search === "Search" ? "Articles" : "Статті";
@@ -105,8 +122,14 @@ export default function SiteHeader({
     { href: "/", label: dictionary.nav.home },
     { href: "/talents", label: talentsLabel },
     { href: "/projects", label: dictionary.nav.projects },
-    { href: "/articles", label: articlesLabel },
   ];
+  // Community groups the content types (articles, polls) under one dropdown.
+  const communityLinks = [
+    { href: "/articles", label: articlesLabel },
+    { href: "/polls", label: dictionary.nav.polls },
+  ];
+  const communityActive =
+    pathname.startsWith("/articles") || pathname.startsWith("/polls");
 
   const headerExtraLinks = viewer
     ? [{ href: "/dashboard", label: dictionary.nav.dashboard }]
@@ -123,6 +146,10 @@ export default function SiteHeader({
               {
                 href: `/u/${viewer.username}/articles`,
                 label: dictionary.nav.myArticles,
+              },
+              {
+                href: `/u/${viewer.username}/polls`,
+                label: dictionary.nav.myPolls,
               },
             ]
           : []),
@@ -198,8 +225,47 @@ export default function SiteHeader({
           />
         </LocalizedLink>
 
-        <nav className="hidden flex-1 items-center justify-center lg:flex">
+        <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex">
           <HeaderNav links={[...primaryLinks, ...headerExtraLinks]} />
+
+          <details ref={communityMenuRef} className="relative">
+            <summary className={menuTriggerClasses(communityActive)}>
+              <span>{dictionary.nav.community}</span>
+              <svg
+                aria-hidden="true"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="transition-transform"
+              >
+                <path
+                  d="M6 9l6 6 6-6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </summary>
+
+            <div className="absolute left-0 mt-3 w-60 rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-2 shadow-2xl">
+              {communityLinks.map((link) => {
+                const active =
+                  pathname === link.href || pathname.startsWith(`${link.href}/`);
+                return (
+                  <LocalizedLink
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeCommunityMenu}
+                    className={menuLinkClasses(active)}
+                  >
+                    {link.label}
+                  </LocalizedLink>
+                );
+              })}
+            </div>
+          </details>
         </nav>
 
         <div className="ml-auto flex items-center lg:ml-0">
@@ -333,6 +399,23 @@ export default function SiteHeader({
                   onClick={closeMobileMenu}
                 />
               ))}
+            </div>
+
+            <div className="mt-3">
+              <p className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
+                {dictionary.nav.community}
+              </p>
+              <div className="space-y-1">
+                {communityLinks.map((link) => (
+                  <NavLink
+                    key={link.href}
+                    href={link.href}
+                    label={link.label}
+                    mobile
+                    onClick={closeMobileMenu}
+                  />
+                ))}
+              </div>
             </div>
 
             {viewer ? (
