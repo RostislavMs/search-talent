@@ -73,14 +73,14 @@ function HeroLiveCard({
   return (
     <LocalizedLink
       href={href}
-      className="group block rounded-2xl border border-white/10 bg-black/25 p-4 backdrop-blur transition hover:border-white/25 hover:bg-black/40 sm:p-5"
+      className="group block rounded-2xl border border-white/10 bg-black/25 p-3 backdrop-blur transition hover:border-white/25 hover:bg-black/40 sm:p-4"
     >
       <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
         {label}
       </p>
-      <div className="mt-3 flex items-start gap-3">
+      <div className="mt-2.5 flex items-start gap-3">
         {avatarLabel ? (
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/10 text-sm font-semibold text-white">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/10 text-sm font-semibold text-white">
             {avatarUrl ? (
               <OptimizedImage
                 src={avatarUrl}
@@ -95,7 +95,7 @@ function HeroLiveCard({
           </div>
         ) : null}
         <div className="min-w-0 flex-1">
-          <p className="font-display truncate text-base font-semibold text-white sm:text-lg">
+          <p className="font-display truncate text-sm font-semibold text-white sm:text-base">
             {primary}
           </p>
           {secondary ? (
@@ -105,7 +105,7 @@ function HeroLiveCard({
           ) : null}
         </div>
       </div>
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-3 flex items-center justify-between gap-3">
         {meta ? (
           <span className="font-display rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white">
             {meta}
@@ -123,11 +123,11 @@ function HeroLiveCard({
 
 function HeroFallbackCard({ label, text }: { label: string; text: string }) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur sm:p-5">
+    <article className="rounded-2xl border border-white/10 bg-black/20 p-3 backdrop-blur sm:p-4">
       <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
         {label}
       </p>
-      <p className="mt-3 text-sm leading-6 text-white/70">{text}</p>
+      <p className="mt-2.5 text-sm leading-6 text-white/70">{text}</p>
     </article>
   );
 }
@@ -165,7 +165,7 @@ async function HomeContent({ locale }: { locale: Locale }) {
   const marketing = getMarketingContent(locale);
   const [leaderboards, latestArticles, viewer] = await Promise.all([
     getLeaderboards(),
-    getLatestArticles(6, locale),
+    getLatestArticles(4, locale),
     getCurrentViewerRole(),
   ]);
   const isAuthenticated = Boolean(viewer.user);
@@ -222,7 +222,7 @@ async function HomeContent({ locale }: { locale: Locale }) {
             </div>
           </div>
 
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-2.5 sm:space-y-3">
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
               {dictionary.home.cards.eyebrow}
             </p>
@@ -333,7 +333,7 @@ async function HomeContent({ locale }: { locale: Locale }) {
       {/* Action — як це працює */}
       <section
         aria-labelledby="home-how-heading"
-        className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-7"
+        className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-6"
       >
         <h2
           id="home-how-heading"
@@ -342,40 +342,40 @@ async function HomeContent({ locale }: { locale: Locale }) {
           {marketing.home.howItWorksTitle}
         </h2>
 
-        <div className="mt-6 grid gap-5 lg:grid-cols-2">
-          <article className="rounded-panel app-panel p-4 sm:p-5">
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <article className="rounded-panel app-panel p-4 sm:p-4">
             <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
               {marketing.home.talentTrackTitle}
             </h3>
-            <div className="mt-5 space-y-4">
+            <div className="mt-4 space-y-3">
               {marketing.home.talentSteps.map((step, index) => (
-                <div key={step.title} className="rounded-2xl bg-[color:var(--surface)] p-4">
+                <div key={step.title} className="rounded-2xl bg-[color:var(--surface)] p-3.5">
                   <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     {index + 1}
                   </p>
-                  <h4 className="mt-2 font-semibold text-[color:var(--foreground)]">
+                  <h4 className="mt-1.5 font-semibold text-[color:var(--foreground)]">
                     {step.title}
                   </h4>
-                  <p className="mt-2 text-sm leading-7 app-muted">{step.description}</p>
+                  <p className="mt-1.5 text-sm leading-6 app-muted">{step.description}</p>
                 </div>
               ))}
             </div>
           </article>
 
-          <article className="rounded-panel app-panel p-4 sm:p-5">
+          <article className="rounded-panel app-panel p-4 sm:p-4">
             <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
               {marketing.home.explorerTrackTitle}
             </h3>
-            <div className="mt-5 space-y-4">
+            <div className="mt-4 space-y-3">
               {marketing.home.explorerSteps.map((step, index) => (
-                <div key={step.title} className="rounded-2xl bg-[color:var(--surface)] p-4">
+                <div key={step.title} className="rounded-2xl bg-[color:var(--surface)] p-3.5">
                   <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     {index + 1}
                   </p>
-                  <h4 className="mt-2 font-semibold text-[color:var(--foreground)]">
+                  <h4 className="mt-1.5 font-semibold text-[color:var(--foreground)]">
                     {step.title}
                   </h4>
-                  <p className="mt-2 text-sm leading-7 app-muted">{step.description}</p>
+                  <p className="mt-1.5 text-sm leading-6 app-muted">{step.description}</p>
                 </div>
               ))}
             </div>
@@ -400,9 +400,9 @@ async function HomeContent({ locale }: { locale: Locale }) {
           </p>
         </div>
 
-        <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {latestArticles.map((article) => (
-            <ArticleCard key={article.id} article={article} locale={locale} />
+            <ArticleCard key={article.id} article={article} locale={locale} compact />
           ))}
         </div>
       </section>

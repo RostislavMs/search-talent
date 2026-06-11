@@ -1,3 +1,4 @@
+import FaqAccordion from "@/components/faq-accordion";
 import {
   buildFaqSchema,
   safeJsonLd,
@@ -31,16 +32,7 @@ export default function SeoFaqSection({
         ) : null}
       </div>
 
-      <div className="mt-6 grid gap-4">
-        {items.map((item) => (
-          <article key={item.question} className="rounded-3xl app-panel p-4 sm:p-5">
-            <h3 className="text-base font-semibold text-[color:var(--foreground)]">
-              {item.question}
-            </h3>
-            <p className="mt-3 text-sm leading-7 app-muted">{item.answer}</p>
-          </article>
-        ))}
-      </div>
+      <FaqAccordion items={items} />
     </section>
   );
 }

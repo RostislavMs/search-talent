@@ -10,9 +10,15 @@ import {
 export default function ArticleCard({
   article,
   locale,
+  compact = false,
 }: {
   article: ArticleFeedItem;
   locale: string;
+  /**
+   * Tighter padding and smaller title — used where cards sit in a dense
+   * multi-column row (e.g. 4-up on the homepage) so they don't tower.
+   */
+  compact?: boolean;
 }) {
   const isUkrainian = locale === "uk";
   const authorLabel = article.authorDeleted
@@ -59,7 +65,7 @@ export default function ArticleCard({
         </div>
       )}
 
-      <div className="p-6">
+      <div className={compact ? "p-4" : "p-6"}>
         <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
           {isPinned && !article.coverImageUrl && !article.heroVideoUrl && (
             <>
@@ -74,7 +80,11 @@ export default function ArticleCard({
           <span>{publishedLabel}</span>
         </div>
 
-        <h3 className="font-display mt-3 text-2xl font-medium leading-snug tracking-tight text-[color:var(--foreground)]">
+        <h3
+          className={`font-display mt-3 font-medium leading-snug tracking-tight text-[color:var(--foreground)] ${
+            compact ? "text-lg" : "text-2xl"
+          }`}
+        >
           {article.title}
         </h3>
 
@@ -82,7 +92,11 @@ export default function ArticleCard({
           {article.excerpt || article.content || ""}
         </p>
 
-        <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-t app-border pt-4 text-xs app-muted">
+        <div
+          className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-t app-border text-xs app-muted ${
+            compact ? "mt-4 pt-3" : "mt-6 pt-4"
+          }`}
+        >
           <span className="flex items-center gap-2">
             <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-[10px] font-semibold text-[color:var(--foreground)]">
               {article.author?.avatarUrl ? (

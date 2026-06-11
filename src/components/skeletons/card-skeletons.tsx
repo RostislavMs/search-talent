@@ -115,13 +115,15 @@ export function CreatorCardGridSkeleton({ count = 6 }: { count?: number }) {
   );
 }
 
-export function ArticleCardGridSkeleton({ count = 6 }: { count?: number }) {
+export function ArticleCardGridSkeleton({
+  count = 6,
+  className = "grid gap-6 md:grid-cols-2 xl:grid-cols-3",
+}: {
+  count?: number;
+  className?: string;
+}) {
   return (
-    <div
-      role="status"
-      aria-busy="true"
-      className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
-    >
+    <div role="status" aria-busy="true" className={className}>
       {Array.from({ length: count }).map((_, index) => (
         <ArticleCardSkeleton key={index} />
       ))}
