@@ -69,19 +69,19 @@ export default function HomeTopRated({
   const projectItems = projects[projectTimeframe];
 
   return (
-    <div className="space-y-8 sm:space-y-12">
-      <section className="bg-brand-hero rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.24)] sm:rounded-hero sm:p-8 md:p-10">
+    <div className="space-y-6 sm:space-y-8">
+      <section className="bg-brand-hero rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.24)] sm:rounded-hero sm:p-7 md:p-8">
         <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
           {dictionary.home.topRatedEyebrow}
         </p>
-        <h2 className="font-display mt-3 max-w-3xl text-3xl font-medium leading-[1.05] tracking-tight sm:mt-4 sm:text-5xl md:text-6xl">
+        <h2 className="font-display mt-3 text-3xl font-medium leading-[1.05] tracking-tight sm:text-4xl md:text-5xl">
           {dictionary.home.topRatedTitle}
         </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-white/78 sm:mt-4 sm:text-lg sm:leading-8">
+        <p className="mt-3 text-sm leading-7 text-white/78 sm:text-base sm:leading-7">
           {dictionary.home.topRatedDescription}
         </p>
 
-        <div className="mt-5 sm:mt-6">
+        <div className="mt-5">
           <LocalizedLink
             href="/rating-guide"
             className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
@@ -99,11 +99,11 @@ export default function HomeTopRated({
           </LocalizedLink>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:mt-8 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
           {Object.values(dictionary.home.ratingSignals).map((item) => (
             <div
               key={item.title}
-              className="rounded-3xl border border-white/10 bg-black/25 p-4 backdrop-blur sm:p-5"
+              className="rounded-3xl border border-white/10 bg-black/25 p-4 backdrop-blur"
             >
               <p className="text-sm font-semibold text-white">{item.title}</p>
               <p className="mt-2 text-sm leading-6 text-white/72">{item.description}</p>
@@ -114,11 +114,11 @@ export default function HomeTopRated({
 
       <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6 md:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl">
               {dictionary.home.topCreatorsTitle}
             </h2>
-            <p className="mt-1.5 max-w-2xl text-sm app-muted sm:mt-2 sm:text-base">
+            <p className="mt-1.5 text-sm app-muted sm:mt-2 sm:text-base">
               {dictionary.home.topCreatorsDescription}
             </p>
           </div>
@@ -145,14 +145,14 @@ export default function HomeTopRated({
               <LocalizedLink
                 key={creator.id}
                 href={`/u/${creator.username}`}
-                className={`group rounded-2xl border app-border bg-[color:var(--surface)] p-4 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-5 ${
+                className={`group rounded-2xl border app-border bg-[color:var(--surface)] p-4 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-4 ${
                   index < 2 ? "lg:col-span-2" : ""
                 }`}
               >
-                <div className="flex flex-col gap-3 sm:gap-4">
-                  <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3 sm:gap-3.5">
                     <div
-                      className={`font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-semibold sm:h-11 sm:w-11 sm:rounded-2xl sm:text-sm ${
+                      className={`font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-semibold sm:h-10 sm:w-10 sm:rounded-2xl sm:text-sm ${
                         index < 3
                           ? "bg-brand text-brand-foreground"
                           : "border app-border bg-[color:var(--surface-muted)] text-[color:var(--muted-foreground)]"
@@ -161,7 +161,7 @@ export default function HomeTopRated({
                       #{index + 1}
                     </div>
 
-                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-sm font-semibold text-[color:var(--foreground)] sm:h-14 sm:w-14 sm:text-base">
+                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-sm font-semibold text-[color:var(--foreground)] sm:h-12 sm:w-12 sm:text-base">
                       {creator.avatar_url ? (
                         <OptimizedImage
                           src={creator.avatar_url}
@@ -222,11 +222,11 @@ export default function HomeTopRated({
 
       <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6 md:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl">
               {dictionary.home.topProjectsTitle}
             </h2>
-            <p className="mt-1.5 max-w-2xl text-sm app-muted sm:mt-2 sm:text-base">
+            <p className="mt-1.5 text-sm app-muted sm:mt-2 sm:text-base">
               {dictionary.home.topProjectsDescription}
             </p>
           </div>
@@ -253,14 +253,12 @@ export default function HomeTopRated({
               <LocalizedLink
                 key={project.id}
                 href={buildProjectPath(project.id, project.slug)}
-                className={`group rounded-2xl border app-border bg-[color:var(--surface)] p-4 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-5 ${
-                  index < 2 ? "lg:col-span-2" : ""
-                }`}
+                className="group rounded-2xl border app-border bg-[color:var(--surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-3"
               >
-                <div className="flex flex-col gap-4 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-5">
-                  <div className="md:flex md:items-center md:gap-4">
+                <div className="flex flex-col gap-3 md:grid md:grid-cols-[12rem_minmax(0,1fr)] md:items-stretch md:gap-4">
+                  <div className="relative h-44 w-full overflow-hidden rounded-2xl border app-border bg-[color:var(--surface-muted)] sm:h-52 md:h-full md:min-h-[8.5rem]">
                     <div
-                      className={`font-display hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold md:flex ${
+                      className={`font-display absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-xs font-semibold shadow-sm ${
                         index < 3
                           ? "bg-brand text-brand-foreground"
                           : "border app-border bg-[color:var(--surface-muted)] text-[color:var(--muted-foreground)]"
@@ -268,46 +266,30 @@ export default function HomeTopRated({
                     >
                       #{index + 1}
                     </div>
-
-                    <div
-                      className={`relative h-48 w-full overflow-hidden rounded-2xl border app-border bg-[color:var(--surface-muted)] sm:h-56 md:h-32 md:w-48 md:rounded-2xl ${
-                        index < 2 ? "" : "lg:h-24 lg:w-32"
-                      }`}
-                    >
-                      <div
-                        className={`font-display absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-xs font-semibold shadow-sm md:hidden ${
-                          index < 3
-                            ? "bg-brand text-brand-foreground"
-                            : "border app-border bg-[color:var(--surface-muted)] text-[color:var(--muted-foreground)]"
-                        }`}
-                      >
-                        #{index + 1}
+                    {project.cover_url ? (
+                      <OptimizedImage
+                        src={project.cover_url}
+                        alt={project.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 192px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.14),_transparent_45%),linear-gradient(135deg,_rgba(148,163,184,0.28),_rgba(255,255,255,0.8))] p-3">
+                        <span className="rounded-full bg-white/85 px-2 py-1 text-[10px] font-medium text-slate-700 shadow-sm">
+                          {dictionary.common.project}
+                        </span>
                       </div>
-                      {project.cover_url ? (
-                        <OptimizedImage
-                          src={project.cover_url}
-                          alt={project.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 192px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.14),_transparent_45%),linear-gradient(135deg,_rgba(148,163,184,0.28),_rgba(255,255,255,0.8))] p-3">
-                          <span className="rounded-full bg-white/85 px-2 py-1 text-[10px] font-medium text-slate-700 shadow-sm">
-                            {dictionary.common.project}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
 
-                  <div className="min-w-0">
+                  <div className="flex min-w-0 flex-col justify-center">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h3 className="truncate text-lg font-semibold text-[color:var(--foreground)]">
+                        <h3 className="truncate text-base font-semibold text-[color:var(--foreground)]">
                           {project.title}
                         </h3>
-                        <p className="mt-1 text-sm app-muted">
+                        <p className="mt-0.5 text-sm app-muted">
                           {project.ownerName || project.ownerUsername
                             ? `${dictionary.common.by} ${project.ownerName || project.ownerUsername}`
                             : dictionary.common.project}
@@ -317,12 +299,12 @@ export default function HomeTopRated({
                     </div>
 
                     {project.description && (
-                      <p className="mt-3 line-clamp-2 text-sm leading-6 app-muted">
+                      <p className="mt-2 line-clamp-2 text-sm leading-snug app-muted">
                         {project.description}
                       </p>
                     )}
 
-                    <div className="mt-4 flex flex-wrap gap-2 text-xs app-soft">
+                    <div className="mt-2.5 flex flex-wrap gap-2 text-xs app-soft">
                       <span className="rounded-full app-panel px-3 py-1">
                         {dictionary.projectPage.likes}: {project.likes}
                       </span>
@@ -333,16 +315,6 @@ export default function HomeTopRated({
                         {dictionary.home.technologyCountLabel}: {project.technologyCount}
                       </span>
                     </div>
-                  </div>
-
-                  <div
-                    className={`flex justify-end md:items-center ${
-                      index < 2 ? "" : "lg:hidden"
-                    }`}
-                  >
-                    <span className="rounded-full border app-border px-4 py-2 text-sm font-medium app-muted transition group-hover:bg-[color:var(--surface-muted)] group-hover:text-[color:var(--foreground)]">
-                      {dictionary.common.viewProject}
-                    </span>
                   </div>
                 </div>
               </LocalizedLink>

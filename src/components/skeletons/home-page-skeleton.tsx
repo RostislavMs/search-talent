@@ -79,7 +79,10 @@ export default function HomePageSkeleton() {
           <Skeleton className="h-4 w-full rounded" />
         </div>
         <div className="mt-6">
-          <ArticleCardGridSkeleton />
+          <ArticleCardGridSkeleton
+            count={4}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          />
         </div>
       </section>
     </div>
