@@ -1,4 +1,7 @@
 import DOMPurify from "isomorphic-dompurify";
+import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
+
+export { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 
 const allowedTags = new Set([
   "a",
@@ -271,21 +274,6 @@ export function normalizeRichTextForEditor(value: string): string {
   }
 
   return Array.from(root.childNodes).map(sanitizeNode).join("").trim();
-}
-
-export function extractPlainTextFromRichText(value: string) {
-  if (!value.trim()) {
-    return "";
-  }
-
-  // Use the same regex-based approach on server and client so the rendered
-  // preview text matches between SSR and hydration. The DOM-based path used
-  // `textContent`, which concatenates block-level text without separators
-  // (e.g. "<p>foo</p><p>bar</p>" became "foobar"), while the regex path
-  // replaces each tag with a space ("foo bar"), causing hydration mismatches.
-  const sanitized =
-    typeof window === "undefined" ? value : sanitizeRichTextHtml(value);
-  return sanitized.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 const youtubeUrlPatterns = [

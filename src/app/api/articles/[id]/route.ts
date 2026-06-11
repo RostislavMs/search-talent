@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
+import { buildSanitizedTranslations } from "@/lib/article-translations";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { deleteStorageObject } from "@/lib/storage/provider";
 import { createClient } from "@/lib/supabase/server";
 import { articlePayloadSchema, routeArticleIdSchema } from "@/lib/validation/articles";
-import {
-  buildSanitizedTranslations,
-  ensureUniqueArticleSlug,
-} from "@/lib/db/articles";
+import { ensureUniqueArticleSlug } from "@/lib/db/articles";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
