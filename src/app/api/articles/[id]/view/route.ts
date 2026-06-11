@@ -18,7 +18,7 @@ export async function POST(
 
   const { data: article } = await supabase
     .from("articles")
-    .select("id, views_count, status, moderation_status")
+    .select("id, status, moderation_status")
     .eq("id", id)
     .maybeSingle();
 
@@ -26,15 +26,17 @@ export async function POST(
     return NextResponse.json({ error: "Article not found" }, { status: 404 });
   }
 
-  const nextViewsCount = (article.views_count ?? 0) + 1;
-  const { error } = await supabase
-    .from("articles")
-    .update({ views_count: nextViewsCount })
-    .eq("id", id);
+  // Atomic, RLS-safe increment. Anonymous viewers can no longer write to the articles
+  // table directly (articles_update_compat is now author/admin only), so the count is
+  // bumped through a SECURITY DEFINER RPC that only ever touches views_count on a
+  // publicly visible article. This also fixes the previous lost-update race.
+  const { data: viewsCount, error } = await supabase.rpc("increment_article_views", {
+    p_article_id: id,
+  });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ viewsCount: nextViewsCount });
+  return NextResponse.json({ viewsCount: viewsCount ?? null });
 }

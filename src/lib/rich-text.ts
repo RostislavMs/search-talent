@@ -1,3 +1,5 @@
+import DOMPurify from "isomorphic-dompurify";
+
 const allowedTags = new Set([
   "a",
   "blockquote",
@@ -142,70 +144,86 @@ function sanitizeNode(node: Node): string {
   return `<${tag}>${content}</${tag}>`;
 }
 
-const allowedServerTagPattern = new RegExp(
-  `</?(?:${[
-    "a",
-    "blockquote",
-    "br",
-    "code",
-    "em",
-    "figure",
-    "figcaption",
-    "h3",
-    "iframe",
-    "img",
-    "li",
-    "mark",
-    "ol",
-    "p",
-    "strong",
-    "ul",
-  ].join("|")})(?:\\s[^<>]*)?>`,
-  "i",
-);
+const ALLOWED_TAGS = [
+  "a",
+  "blockquote",
+  "br",
+  "code",
+  "em",
+  "figure",
+  "figcaption",
+  "h3",
+  "iframe",
+  "img",
+  "li",
+  "mark",
+  "ol",
+  "p",
+  "strong",
+  "ul",
+];
 
-const youtubeIframeSrcPattern =
-  /src\s*=\s*("https:\/\/www\.youtube(?:-nocookie)?\.com\/embed\/[\w-]+"|'https:\/\/www\.youtube(?:-nocookie)?\.com\/embed\/[\w-]+')/i;
+const ALLOWED_ATTR = [
+  "href",
+  "src",
+  "alt",
+  "target",
+  "rel",
+  "frameborder",
+  "allowfullscreen",
+  "allow",
+];
+
+// Only http(s) links and inline image data URLs survive; javascript:, vbscript:,
+// data:text/html, mailto:, tel: and relative URLs are stripped from href/src.
+const ALLOWED_URI_REGEXP = /^(?:https?:\/\/|data:image\/)/i;
+
+let domPurifyHooksReady = false;
+
+function ensureDomPurifyHooks() {
+  if (domPurifyHooksReady) {
+    return;
+  }
+
+  // Keep only YouTube embed iframes; drop every other iframe entirely. DOMPurify
+  // already removes scripts, inline event handlers and dangerous URL schemes.
+  DOMPurify.addHook("uponSanitizeElement", (node, data) => {
+    if (data.tagName !== "iframe") {
+      return;
+    }
+    const element = node as Element;
+    const src = element.getAttribute?.("src") ?? "";
+    if (!youtubeEmbedPattern.test(src)) {
+      element.parentNode?.removeChild(element);
+    }
+  });
+
+  // Force safe link behaviour on any surviving anchor that still has an href.
+  DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+    const element = node as Element;
+    if (element.tagName === "A" && element.getAttribute("href")) {
+      element.setAttribute("target", "_blank");
+      element.setAttribute("rel", "noreferrer");
+    }
+  });
+
+  domPurifyHooksReady = true;
+}
 
 /**
- * Server-safe HTML sanitizer used during SSR or when DOMParser is unavailable.
- * Strips dangerous constructs (scripts, event handlers, javascript: URLs, unsafe
- * iframes, data: URLs) and removes any tag outside the allowlist. The client
- * sanitizer (sanitizeNode) runs the more rigorous pass after hydration.
+ * Hardened HTML sanitizer for stored and rendered rich text. Backed by DOMPurify so it
+ * behaves identically at write-time, during SSR and on the client — closing the bypasses
+ * the previous hand-rolled regex pass allowed (e.g. `<img/src=x/onerror=…>` and unquoted
+ * `href=javascript:`). The allowlist mirrors the tags the editor can produce.
  */
-function sanitizeOnServer(value: string): string {
-  let html = value;
-
-  // Drop scripts/styles entirely (with content).
-  html = html.replace(
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-    "",
-  );
-  html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "");
-
-  // Strip inline event handlers (onclick, onerror, etc.).
-  html = html.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "");
-  html = html.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "");
-  html = html.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "");
-
-  // Neutralise javascript:/vbscript:/data: URLs (allow data:image/* for inline imgs).
-  html = html.replace(/\b(?:href|src|formaction|action)\s*=\s*"javascript:[^"]*"/gi, "");
-  html = html.replace(/\b(?:href|src|formaction|action)\s*=\s*'javascript:[^']*'/gi, "");
-  html = html.replace(/\b(?:href|src|formaction|action)\s*=\s*"vbscript:[^"]*"/gi, "");
-  html = html.replace(/\b(?:href|src|formaction|action)\s*=\s*"data:(?!image\/)[^"]*"/gi, "");
-
-  // Allow only youtube embed iframes.
-  html = html.replace(/<iframe\b([^>]*)>/gi, (match, attrs) =>
-    youtubeIframeSrcPattern.test(attrs) ? match : "",
-  );
-  html = html.replace(/<\/iframe>/gi, (match) => match);
-
-  // Remove any tag not in the server allowlist (keeps inner text).
-  html = html.replace(/<\/?([a-zA-Z][\w-]*)(?:\s[^<>]*)?>/g, (match) =>
-    allowedServerTagPattern.test(match) ? match : "",
-  );
-
-  return html.trim();
+function sanitizeWithDomPurify(html: string): string {
+  ensureDomPurifyHooks();
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+    ALLOWED_URI_REGEXP,
+    ALLOW_DATA_ATTR: false,
+  });
 }
 
 export function sanitizeRichTextHtml(value: string) {
@@ -215,12 +233,33 @@ export function sanitizeRichTextHtml(value: string) {
     return "";
   }
 
-  if (typeof window === "undefined") {
-    return sanitizeOnServer(trimmed);
+  // Pure plain text (no markup) gets paragraph formatting; identical on server & client.
+  if (!/[<>&]/.test(trimmed)) {
+    return normalizePlainTextToHtml(trimmed);
+  }
+
+  return sanitizeWithDomPurify(trimmed);
+}
+
+/**
+ * Editor-only normaliser for the contenteditable composer. Browsers emit non-semantic
+ * markup (<div>, <b>, styled <span>); this rebuilds it into the semantic allowlist
+ * (<p>, <strong>, <mark>, …) for a clean WYSIWYG value. Runs on the client only; if ever
+ * invoked on the server it defers to the hardened DOMPurify sanitizer above.
+ */
+export function normalizeRichTextForEditor(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "";
   }
 
   if (!/[<>&]/.test(trimmed)) {
     return normalizePlainTextToHtml(trimmed);
+  }
+
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return sanitizeWithDomPurify(trimmed);
   }
 
   const parser = new DOMParser();

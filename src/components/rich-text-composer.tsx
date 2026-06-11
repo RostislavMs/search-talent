@@ -16,7 +16,7 @@ import emojiI18nUk from "@emoji-mart/data/i18n/uk.json";
 import {
   extractPlainTextFromRichText,
   extractYouTubeVideoId,
-  sanitizeRichTextHtml,
+  normalizeRichTextForEditor,
 } from "@/lib/rich-text";
 
 const EmojiPicker = dynamic(() => import("@emoji-mart/react").then((m) => m.default), { ssr: false });
@@ -248,7 +248,7 @@ export default function RichTextComposer({
   useEffect(() => {
     const el = editorRef.current;
     if (!el) return;
-    const sanitized = sanitizeRichTextHtml(value);
+    const sanitized = normalizeRichTextForEditor(value);
     if (lastSyncRef.current === sanitized && el.innerHTML === sanitized)
       return;
     if (document.activeElement !== el) el.innerHTML = sanitized;
@@ -282,7 +282,7 @@ export default function RichTextComposer({
   const emitChange = useCallback(() => {
     const el = editorRef.current;
     if (!el) return;
-    const sanitized = sanitizeRichTextHtml(el.innerHTML);
+    const sanitized = normalizeRichTextForEditor(el.innerHTML);
     lastSyncRef.current = sanitized;
     onChange(sanitized);
   }, [onChange]);
@@ -291,7 +291,7 @@ export default function RichTextComposer({
   const normalizeEditorDom = useCallback(() => {
     const el = editorRef.current;
     if (!el) return;
-    const sanitized = sanitizeRichTextHtml(el.innerHTML);
+    const sanitized = normalizeRichTextForEditor(el.innerHTML);
     lastSyncRef.current = sanitized;
     if (el.innerHTML !== sanitized) el.innerHTML = sanitized;
     onChange(sanitized);
