@@ -88,6 +88,16 @@ export default function InteractiveBackgroundNetwork() {
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
+
+    // The network is cursor-reactive, so it's pure overhead on touch devices
+    // (no pointer to react to) and on small viewports. Running its
+    // requestAnimationFrame loop there only taxes the main thread — which
+    // shows up as poor INP and battery drain on mobile. Skip it entirely.
+    const finePointer = window.matchMedia("(pointer: fine)").matches;
+    if (reduceMotion || !finePointer || window.innerWidth < 1024) {
+      return;
+    }
+
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     const pointer = { x: -9999, y: -9999, active: false };
@@ -411,6 +421,18 @@ export default function InteractiveBackgroundNetwork() {
 
     rafId = requestAnimationFrame(draw);
 
+    // Pause the loop while the tab is hidden — no point burning frames the
+    // user can't see.
+    const onVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      } else if (!rafId) {
+        rafId = requestAnimationFrame(draw);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", resize);
@@ -418,6 +440,7 @@ export default function InteractiveBackgroundNetwork() {
       window.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("mouseleave", onLeave);
       window.removeEventListener("blur", onLeave);
+      document.removeEventListener("visibilitychange", onVisibility);
       themeObserver.disconnect();
     };
   }, []);
