@@ -11,7 +11,19 @@ export default function HomePageSkeleton() {
   return (
     <div role="status" aria-busy="true">
       <HomeHeroSkeleton />
+      <HomeBelowHeroSkeleton />
+    </div>
+  );
+}
 
+/**
+ * Everything on the home page below the hero. Used as the Suspense fallback
+ * for the data-dependent sections while the static hero headline (the LCP
+ * element) is already painted in the initial HTML.
+ */
+export function HomeBelowHeroSkeleton() {
+  return (
+    <div role="status" aria-busy="true">
       {/* Why */}
       <section className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-7">
         <Skeleton className="h-9 w-2/3 max-w-md rounded" />

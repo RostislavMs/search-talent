@@ -19,7 +19,7 @@ function HeroBar({ className = "" }: { className?: string }) {
 }
 
 /** Mirrors the live "top talent / project / article" card in the home hero. */
-function HeroLiveCardSkeleton() {
+export function HeroLiveCardSkeleton() {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/25 p-3 sm:p-4">
       <HeroBar className="h-3 w-24 rounded-full" />

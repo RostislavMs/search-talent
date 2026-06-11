@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import ArticleCard from "@/components/article-card";
 import HomeTopRated from "@/components/home-top-rated";
 import SeoFaqSection from "@/components/seo-faq-section";
-import HomePageSkeleton from "@/components/skeletons/home-page-skeleton";
+import { HomeBelowHeroSkeleton } from "@/components/skeletons/home-page-skeleton";
+import { HeroLiveCardSkeleton } from "@/components/skeletons/hero-skeletons";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -11,7 +12,7 @@ import { formatArticleDate } from "@/lib/articles";
 import { getLatestArticles } from "@/lib/db/marketing";
 import { getLeaderboards } from "@/lib/db/leaderboards";
 import { isLocale, type Locale } from "@/lib/i18n/config";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { buildProjectPath } from "@/lib/projects";
@@ -138,6 +139,7 @@ export default async function LocalizedHomePage({
   params: Promise<{ locale: string }>;
 }) {
   const locale = (await getLocaleValue(params)) as Locale;
+  const dictionary = getDictionary(locale);
 
   const organizationSchema = buildOrganizationSchema();
   const webSiteSchema = buildWebSiteSchema();
@@ -153,28 +155,13 @@ export default async function LocalizedHomePage({
         dangerouslySetInnerHTML={{ __html: safeJsonLd(webSiteSchema) }}
       />
 
-      <Suspense fallback={<HomePageSkeleton />}>
-        <HomeContent locale={locale} />
-      </Suspense>
-    </main>
-  );
-}
-
-async function HomeContent({ locale }: { locale: Locale }) {
-  const dictionary = getDictionary(locale);
-  const marketing = getMarketingContent(locale);
-  const [leaderboards, latestArticles, viewer] = await Promise.all([
-    getLeaderboards(),
-    getLatestArticles(4, locale),
-    getCurrentViewerRole(),
-  ]);
-  const isAuthenticated = Boolean(viewer.user);
-  const topCreator = leaderboards.creators.all[0];
-  const topProject = leaderboards.projects.all[0];
-  const topArticle = latestArticles[0];
-
-  return (
-    <>
+      {/*
+        The hero headline is static (locale dictionary only — no DB), so it
+        renders in the initial HTML and paints as the LCP element immediately,
+        instead of waiting behind a Suspense boundary for leaderboard/article
+        queries. Only the data-dependent pieces (live cards, auth CTA, and the
+        sections below the hero) stream in behind Suspense.
+      */}
       <section className="bg-brand-hero overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:rounded-hero sm:p-8 md:p-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:gap-8">
           <div>
@@ -200,25 +187,9 @@ async function HomeContent({ locale }: { locale: Locale }) {
               >
                 {dictionary.home.browseProjects}
               </ButtonLink>
-              {isAuthenticated ? (
-                <ButtonLink
-                  href="/dashboard"
-                  variant="ghost"
-                  size="lg"
-                  className="w-full border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white sm:w-auto"
-                >
-                  {dictionary.home.openDashboard}
-                </ButtonLink>
-              ) : (
-                <ButtonLink
-                  href="/signup"
-                  variant="ghost"
-                  size="lg"
-                  className="w-full border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white sm:w-auto"
-                >
-                  {dictionary.home.createAccount}
-                </ButtonLink>
-              )}
+              <Suspense fallback={<HeroAuthCta dictionary={dictionary} />}>
+                <HeroAuthCtaResolved dictionary={dictionary} />
+              </Suspense>
             </div>
           </div>
 
@@ -226,71 +197,155 @@ async function HomeContent({ locale }: { locale: Locale }) {
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
               {dictionary.home.cards.eyebrow}
             </p>
-
-            {topCreator ? (
-              <HeroLiveCard
-                href={`/u/${topCreator.username}`}
-                label={dictionary.home.cards.topTalent.label}
-                primary={topCreator.name || topCreator.username}
-                secondary={`@${topCreator.username}`}
-                meta={`${topCreator.rating} ${dictionary.home.leaderboardScore}`}
-                cta={dictionary.home.cards.topTalent.cta}
-                avatarUrl={topCreator.avatar_url}
-                avatarLabel={topCreator.name || topCreator.username}
-              />
-            ) : (
-              <HeroFallbackCard
-                label={dictionary.home.cards.topTalent.label}
-                text={dictionary.home.cards.topTalent.fallback}
-              />
-            )}
-
-            {topProject ? (
-              <HeroLiveCard
-                href={buildProjectPath(topProject.id, topProject.slug)}
-                label={dictionary.home.cards.topProject.label}
-                primary={topProject.title}
-                secondary={
-                  topProject.ownerName || topProject.ownerUsername
-                    ? `${dictionary.common.by} ${topProject.ownerName || topProject.ownerUsername}`
-                    : undefined
-                }
-                meta={`${topProject.rating} ${dictionary.home.leaderboardScore}`}
-                cta={dictionary.home.cards.topProject.cta}
-              />
-            ) : (
-              <HeroFallbackCard
-                label={dictionary.home.cards.topProject.label}
-                text={dictionary.home.cards.topProject.fallback}
-              />
-            )}
-
-            {topArticle ? (
-              <HeroLiveCard
-                href={`/articles/${topArticle.slug}`}
-                label={dictionary.home.cards.freshArticle.label}
-                primary={topArticle.title}
-                secondary={
-                  topArticle.author?.name ||
-                  topArticle.author?.username ||
-                  undefined
-                }
-                meta={formatArticleDate(
-                  topArticle.publishedAt || topArticle.createdAt,
-                  locale,
-                )}
-                cta={dictionary.home.cards.freshArticle.cta}
-              />
-            ) : (
-              <HeroFallbackCard
-                label={dictionary.home.cards.freshArticle.label}
-                text={dictionary.home.cards.freshArticle.fallback}
-              />
-            )}
+            <Suspense
+              fallback={
+                <>
+                  <HeroLiveCardSkeleton />
+                  <HeroLiveCardSkeleton />
+                  <HeroLiveCardSkeleton />
+                </>
+              }
+            >
+              <HeroLiveCards locale={locale} dictionary={dictionary} />
+            </Suspense>
           </div>
         </div>
       </section>
 
+      <Suspense fallback={<HomeBelowHeroSkeleton />}>
+        <HomeBelowContent locale={locale} />
+      </Suspense>
+    </main>
+  );
+}
+
+/**
+ * Auth-dependent hero CTA. Defaults to the "create account" button (which is
+ * what anonymous visitors — the bulk of home traffic — see anyway), so the
+ * Suspense fallback is identical to the final render for them: zero shift.
+ * Signed-in viewers see the same-sized button swap to "open dashboard".
+ */
+function HeroAuthCta({ dictionary }: { dictionary: Dictionary }) {
+  return (
+    <ButtonLink
+      href="/signup"
+      variant="ghost"
+      size="lg"
+      className="w-full border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white sm:w-auto"
+    >
+      {dictionary.home.createAccount}
+    </ButtonLink>
+  );
+}
+
+async function HeroAuthCtaResolved({ dictionary }: { dictionary: Dictionary }) {
+  const viewer = await getCurrentViewerRole();
+
+  if (!viewer.user) {
+    return <HeroAuthCta dictionary={dictionary} />;
+  }
+
+  return (
+    <ButtonLink
+      href="/dashboard"
+      variant="ghost"
+      size="lg"
+      className="w-full border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white sm:w-auto"
+    >
+      {dictionary.home.openDashboard}
+    </ButtonLink>
+  );
+}
+
+async function HeroLiveCards({
+  locale,
+  dictionary,
+}: {
+  locale: Locale;
+  dictionary: Dictionary;
+}) {
+  const [leaderboards, latestArticles] = await Promise.all([
+    getLeaderboards(),
+    getLatestArticles(4, locale),
+  ]);
+  const topCreator = leaderboards.creators.all[0];
+  const topProject = leaderboards.projects.all[0];
+  const topArticle = latestArticles[0];
+
+  return (
+    <>
+      {topCreator ? (
+        <HeroLiveCard
+          href={`/u/${topCreator.username}`}
+          label={dictionary.home.cards.topTalent.label}
+          primary={topCreator.name || topCreator.username}
+          secondary={`@${topCreator.username}`}
+          meta={`${topCreator.rating} ${dictionary.home.leaderboardScore}`}
+          cta={dictionary.home.cards.topTalent.cta}
+          avatarUrl={topCreator.avatar_url}
+          avatarLabel={topCreator.name || topCreator.username}
+        />
+      ) : (
+        <HeroFallbackCard
+          label={dictionary.home.cards.topTalent.label}
+          text={dictionary.home.cards.topTalent.fallback}
+        />
+      )}
+
+      {topProject ? (
+        <HeroLiveCard
+          href={buildProjectPath(topProject.id, topProject.slug)}
+          label={dictionary.home.cards.topProject.label}
+          primary={topProject.title}
+          secondary={
+            topProject.ownerName || topProject.ownerUsername
+              ? `${dictionary.common.by} ${topProject.ownerName || topProject.ownerUsername}`
+              : undefined
+          }
+          meta={`${topProject.rating} ${dictionary.home.leaderboardScore}`}
+          cta={dictionary.home.cards.topProject.cta}
+        />
+      ) : (
+        <HeroFallbackCard
+          label={dictionary.home.cards.topProject.label}
+          text={dictionary.home.cards.topProject.fallback}
+        />
+      )}
+
+      {topArticle ? (
+        <HeroLiveCard
+          href={`/articles/${topArticle.slug}`}
+          label={dictionary.home.cards.freshArticle.label}
+          primary={topArticle.title}
+          secondary={
+            topArticle.author?.name || topArticle.author?.username || undefined
+          }
+          meta={formatArticleDate(
+            topArticle.publishedAt || topArticle.createdAt,
+            locale,
+          )}
+          cta={dictionary.home.cards.freshArticle.cta}
+        />
+      ) : (
+        <HeroFallbackCard
+          label={dictionary.home.cards.freshArticle.label}
+          text={dictionary.home.cards.freshArticle.fallback}
+        />
+      )}
+    </>
+  );
+}
+
+async function HomeBelowContent({ locale }: { locale: Locale }) {
+  const dictionary = getDictionary(locale);
+  const marketing = getMarketingContent(locale);
+  const [leaderboards, latestArticles] = await Promise.all([
+    getLeaderboards(),
+    getLatestArticles(4, locale),
+  ]);
+
+  return (
+    <>
       {/* Interest — навіщо це користувачу */}
       <section
         aria-labelledby="home-why-heading"
