@@ -19,6 +19,7 @@ export const SITEMAP_IDS = [
   "profiles",
   "projects",
   "articles",
+  "polls",
   "project-tags",
   "project-types",
   "talent-skills",
@@ -27,9 +28,20 @@ export const SITEMAP_IDS = [
 
 export type SitemapId = (typeof SITEMAP_IDS)[number];
 
+type ChangeFrequency =
+  | "always"
+  | "hourly"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "yearly"
+  | "never";
+
 export type SitemapEntry = {
   url: string;
   lastModified?: Date;
+  changeFrequency?: ChangeFrequency;
+  priority?: number;
   alternates: Array<{ locale: Locale | "x-default"; href: string }>;
 };
 
@@ -42,28 +54,39 @@ const MIN_PROJECT_TYPE_ITEMS_FOR_PAGE = 3;
 // actually changes (avoids signalling "updated" on every sitemap render).
 const STATIC_LASTMOD = new Date("2026-06-10T00:00:00.000Z");
 
-const staticRoutes = [
-  "/",
-  "/talents",
-  "/projects",
-  "/articles",
-  "/about",
-  "/rating-guide",
-  "/faq",
-  "/legal",
-  "/terms",
-  "/privacy",
-  "/cookies",
+const staticRoutes: Array<{
+  path: string;
+  changeFrequency: ChangeFrequency;
+  priority: number;
+}> = [
+  { path: "/", changeFrequency: "daily", priority: 1 },
+  { path: "/talents", changeFrequency: "daily", priority: 0.9 },
+  { path: "/projects", changeFrequency: "daily", priority: 0.9 },
+  { path: "/articles", changeFrequency: "daily", priority: 0.9 },
+  { path: "/polls", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/about", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/rating-guide", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/faq", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/legal", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/cookies", changeFrequency: "yearly", priority: 0.3 },
 ];
 
 function buildEntry(
   baseUrl: URL,
   route: string,
-  lastModified?: Date,
+  options: {
+    lastModified?: Date;
+    changeFrequency?: ChangeFrequency;
+    priority?: number;
+  } = {},
 ): SitemapEntry {
   return {
     url: new URL(createLocalePath(locales[0], route), baseUrl).toString(),
-    lastModified,
+    lastModified: options.lastModified,
+    changeFrequency: options.changeFrequency,
+    priority: options.priority,
     alternates: [
       ...locales.map((locale) => ({
         locale,
@@ -85,7 +108,11 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
 
   if (id === "static") {
     return staticRoutes.map((route) =>
-      buildEntry(baseUrl, route, STATIC_LASTMOD),
+      buildEntry(baseUrl, route.path, {
+        lastModified: STATIC_LASTMOD,
+        changeFrequency: route.changeFrequency,
+        priority: route.priority,
+      }),
     );
   }
 
@@ -93,7 +120,12 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     const items = await getTechnologyDirectory(200);
     return items
       .filter((item) => item.count >= MIN_ITEMS_FOR_PROGRAMMATIC_PAGE)
-      .map((item) => buildEntry(baseUrl, `/projects/tag/${item.slug}`));
+      .map((item) =>
+        buildEntry(baseUrl, `/projects/tag/${item.slug}`, {
+          changeFrequency: "weekly",
+          priority: 0.5,
+        }),
+      );
   }
 
   if (id === "project-types") {
@@ -104,21 +136,36 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
           normalizeProjectKind(item.kind) !== null &&
           item.count >= MIN_PROJECT_TYPE_ITEMS_FOR_PAGE,
       )
-      .map((item) => buildEntry(baseUrl, `/projects/type/${item.kind}`));
+      .map((item) =>
+        buildEntry(baseUrl, `/projects/type/${item.kind}`, {
+          changeFrequency: "weekly",
+          priority: 0.5,
+        }),
+      );
   }
 
   if (id === "talent-skills") {
     const items = await getTalentSkillDirectory();
     return items
       .filter((item) => item.count >= MIN_TALENT_ITEMS_FOR_PAGE)
-      .map((item) => buildEntry(baseUrl, `/talents/skill/${item.slug}`));
+      .map((item) =>
+        buildEntry(baseUrl, `/talents/skill/${item.slug}`, {
+          changeFrequency: "weekly",
+          priority: 0.5,
+        }),
+      );
   }
 
   if (id === "talent-roles") {
     const items = await getProfileCategoryDirectory();
     return items
       .filter((item) => item.count >= MIN_TALENT_ITEMS_FOR_PAGE)
-      .map((item) => buildEntry(baseUrl, `/talents/role/${item.slug}`));
+      .map((item) =>
+        buildEntry(baseUrl, `/talents/role/${item.slug}`, {
+          changeFrequency: "weekly",
+          priority: 0.5,
+        }),
+      );
   }
 
   const supabase = await createClient();
@@ -133,11 +180,11 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
       .limit(SITEMAP_PAGE_SIZE);
 
     return (data || []).map((profile) =>
-      buildEntry(
-        baseUrl,
-        `/u/${profile.username}`,
-        new Date(profile.updated_at),
-      ),
+      buildEntry(baseUrl, `/u/${profile.username}`, {
+        lastModified: new Date(profile.updated_at),
+        changeFrequency: "weekly",
+        priority: 0.7,
+      }),
     );
   }
 
@@ -152,11 +199,11 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
       .limit(SITEMAP_PAGE_SIZE);
 
     return (data || []).map((project) =>
-      buildEntry(
-        baseUrl,
-        `/projects/${project.slug}`,
-        new Date(project.updated_at),
-      ),
+      buildEntry(baseUrl, `/projects/${project.slug}`, {
+        lastModified: new Date(project.updated_at),
+        changeFrequency: "weekly",
+        priority: 0.8,
+      }),
     );
   }
 
@@ -170,11 +217,29 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
       .limit(SITEMAP_PAGE_SIZE);
 
     return (data || []).map((article) =>
-      buildEntry(
-        baseUrl,
-        `/articles/${article.slug}`,
-        new Date(article.updated_at),
-      ),
+      buildEntry(baseUrl, `/articles/${article.slug}`, {
+        lastModified: new Date(article.updated_at),
+        changeFrequency: "monthly",
+        priority: 0.7,
+      }),
+    );
+  }
+
+  if (id === "polls") {
+    const { data } = await supabase
+      .from("polls")
+      .select("slug, updated_at")
+      .eq("status", "published")
+      .eq("moderation_status", "approved")
+      .order("updated_at", { ascending: false })
+      .limit(SITEMAP_PAGE_SIZE);
+
+    return (data || []).map((poll) =>
+      buildEntry(baseUrl, `/polls/${poll.slug}`, {
+        lastModified: new Date(poll.updated_at),
+        changeFrequency: "weekly",
+        priority: 0.6,
+      }),
     );
   }
 

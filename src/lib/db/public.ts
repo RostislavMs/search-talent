@@ -11,6 +11,7 @@ import {
   type ProjectMediaItem,
 } from "@/lib/project-media";
 import { parseProjectPath } from "@/lib/projects";
+import type { PollFeedItem } from "@/lib/polls";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -875,6 +876,166 @@ export async function getUserArticlesPage(
       category: item.category_id ? categoryMap.get(item.category_id) || null : null,
       author,
     })),
+    totalCount,
+    currentPage,
+    totalPages,
+  };
+}
+
+export type UserPollsPageResult = {
+  profile: { name: string | null; username: string | null };
+  polls: PollFeedItem[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+};
+
+export async function getUserPollsPage(
+  username: string,
+  options: { page: number; perPage: number },
+): Promise<UserPollsPageResult | null> {
+  noStore();
+  const supabase = await createClient();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id, username, name, avatar_url, moderation_status")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (!profile) {
+    return null;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isOwner = user?.id === profile.user_id;
+
+  if (!isOwner && !isPublicModerationStatus(profile.moderation_status)) {
+    return null;
+  }
+
+  const { count } = await supabase
+    .from("polls")
+    .select("id", { count: "exact", head: true })
+    .eq("author_user_id", profile.user_id)
+    .eq("status", "published")
+    .eq("moderation_status", "approved");
+
+  const totalCount = count || 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / options.perPage));
+  const currentPage = Math.max(1, Math.min(options.page, totalPages));
+  const from = (currentPage - 1) * options.perPage;
+  const to = from + options.perPage - 1;
+
+  const { data: pollRows } = await supabase
+    .from("polls")
+    .select(
+      "id, slug, title, excerpt, cover_image_url, views_count, likes_count, comments_count, responses_count, published_at, created_at, closes_at, pinned_until, category_id",
+    )
+    .eq("author_user_id", profile.user_id)
+    .eq("status", "published")
+    .eq("moderation_status", "approved")
+    .order("published_at", { ascending: false })
+    .range(from, to);
+
+  const rows = (pollRows || []) as Array<{
+    id: string;
+    slug: string;
+    title: string;
+    excerpt: string | null;
+    cover_image_url: string | null;
+    views_count: number | null;
+    likes_count: number | null;
+    comments_count: number | null;
+    responses_count: number | null;
+    published_at: string | null;
+    created_at: string | null;
+    closes_at: string | null;
+    pinned_until: string | null;
+    category_id: number | null;
+  }>;
+
+  const categoryIds = Array.from(
+    new Set(
+      rows
+        .map((item) => item.category_id)
+        .filter((item): item is number => typeof item === "number"),
+    ),
+  );
+  const pollIds = rows.map((item) => item.id);
+
+  const [categoriesResponse, questionRowsResponse] = await Promise.all([
+    categoryIds.length > 0
+      ? supabase
+          .from("poll_categories")
+          .select("id, slug, name, name_uk, description, admin_only")
+          .in("id", categoryIds)
+      : Promise.resolve({ data: [] }),
+    pollIds.length > 0
+      ? supabase.from("poll_questions").select("poll_id").in("poll_id", pollIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const categoryRows = (categoriesResponse.data || []) as Array<{
+    id: number;
+    slug: string;
+    name: string;
+    name_uk: string | null;
+    description: string | null;
+    admin_only: boolean | null;
+  }>;
+  const categoryMap = new Map(
+    categoryRows.map((item) => [
+      item.id,
+      {
+        id: item.id,
+        slug: item.slug,
+        name: item.name,
+        nameUk: item.name_uk,
+        description: item.description,
+        adminOnly: Boolean(item.admin_only),
+      },
+    ]),
+  );
+
+  const questionCountByPoll = new Map<string, number>();
+  for (const row of (questionRowsResponse.data || []) as Array<{ poll_id: string }>) {
+    questionCountByPoll.set(row.poll_id, (questionCountByPoll.get(row.poll_id) ?? 0) + 1);
+  }
+
+  const author = {
+    userId: profile.user_id as string,
+    username: profile.username as string | null,
+    name: profile.name as string | null,
+    avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
+  };
+
+  return {
+    profile: { name: profile.name, username: profile.username },
+    polls: rows.map(
+      (item): PollFeedItem => ({
+        id: item.id,
+        slug: item.slug,
+        title: item.title,
+        excerpt: item.excerpt,
+        content: null,
+        coverImageUrl: item.cover_image_url,
+        publishedAt: item.published_at,
+        createdAt: item.created_at,
+        closesAt: item.closes_at,
+        viewsCount: item.views_count || 0,
+        likesCount: item.likes_count || 0,
+        commentsCount: item.comments_count || 0,
+        responsesCount: item.responses_count || 0,
+        questionCount: questionCountByPoll.get(item.id) ?? 0,
+        category: item.category_id ? categoryMap.get(item.category_id) || null : null,
+        author,
+        authorDeleted: false,
+        pinnedUntil: item.pinned_until,
+      }),
+    ),
     totalCount,
     currentPage,
     totalPages,

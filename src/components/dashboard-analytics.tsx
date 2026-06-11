@@ -497,6 +497,9 @@ export default function DashboardAnalytics({
         <ButtonLink href="/articles/new" variant="secondary" size="sm">
           {ui.writeArticle}
         </ButtonLink>
+        <ButtonLink href="/polls/new" variant="secondary" size="sm">
+          {ui.createPoll}
+        </ButtonLink>
         <ButtonLink href="/talents" variant="ghost" size="sm">
           {ui.openSearch}
         </ButtonLink>
@@ -518,7 +521,7 @@ export default function DashboardAnalytics({
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest app-soft">
           {dictionary.dashboard.myStats}
         </h2>
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
           <PersonalStatCard
             value={String(userStats.projectsCount)}
             label={dictionary.dashboard.myProjects}
@@ -530,6 +533,12 @@ export default function DashboardAnalytics({
             label={dictionary.dashboard.myArticles}
             href={userStats.username ? `/${locale}/u/${userStats.username}/articles` : `/${locale}/articles`}
             accent="bg-violet-500"
+          />
+          <PersonalStatCard
+            value={String(userStats.pollsCount)}
+            label={dictionary.dashboard.myPolls}
+            href={userStats.username ? `/${locale}/u/${userStats.username}/polls` : `/${locale}/polls`}
+            accent="bg-indigo-500"
           />
           <PersonalStatCard
             value={String(userStats.followersCount)}

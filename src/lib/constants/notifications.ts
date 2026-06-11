@@ -14,8 +14,10 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 export const NOTIFICATION_TARGET_TYPES = [
   "project_comment",
   "article_comment",
+  "poll_comment",
   "article",
   "project",
+  "poll",
   "profile",
   "badge",
 ] as const;
@@ -27,6 +29,7 @@ export type NotificationMetadata = {
   emoji?: string;
   excerpt?: string;
   articleSlug?: string;
+  pollSlug?: string;
   projectId?: string;
   actorName?: string;
   actorUsername?: string | null;

@@ -24,8 +24,11 @@ export const dictionaries = {
       projects: "Projects",
       search: "Search",
       dashboard: "Dashboard",
+      community: "Community",
+      polls: "Polls",
       myProjects: "My projects",
       myArticles: "My articles",
+      myPolls: "My polls",
       profile: "Profile",
       publicProfile: "Public profile",
       login: "Log in",
@@ -160,6 +163,7 @@ export const dictionaries = {
       contentNav: {
         articles: "Articles",
         projects: "Projects",
+        polls: "Polls",
         comments: "Comments",
       },
       feedback: {
@@ -710,6 +714,7 @@ export const dictionaries = {
         newBadge: "earned the {badge} badge",
         newArticle: "published a new article: {title}",
         newProject: "published a new project: {title}",
+        newPoll: "published a new poll: {title}",
         moderation: {
           removed: {
             article: "removed your article",
@@ -1025,6 +1030,7 @@ export const dictionaries = {
       myStats: "Your activity",
       myProjects: "My projects",
       myArticles: "My articles",
+      myPolls: "My polls",
       followers: "Followers",
       following: "Following",
       bookmarks: "Saved",
@@ -2098,8 +2104,11 @@ export const dictionaries = {
       projects: "Проєкти",
       search: "Пошук",
       dashboard: "Дашборд",
+      community: "Спільнота",
+      polls: "Опитування",
       myProjects: "Мої проєкти",
       myArticles: "Мої статті",
+      myPolls: "Мої опитування",
       profile: "Профіль",
       publicProfile: "Публічний профіль",
       login: "Увійти",
@@ -2234,6 +2243,7 @@ export const dictionaries = {
       contentNav: {
         articles: "Статті",
         projects: "Проєкти",
+        polls: "Опитування",
         comments: "Коментарі",
       },
       feedback: {
@@ -2754,6 +2764,7 @@ export const dictionaries = {
         newBadge: "отримав(-ла) бейдж {badge}",
         newArticle: "опублікував(ла) нову статтю: {title}",
         newProject: "опублікував(ла) новий проєкт: {title}",
+        newPoll: "опублікував(ла) нове опитування: {title}",
         moderation: {
           removed: {
             article: "прибрала вашу статтю",
@@ -3070,6 +3081,7 @@ export const dictionaries = {
       myStats: "Ваша активність",
       myProjects: "Мої проєкти",
       myArticles: "Мої статті",
+      myPolls: "Мої опитування",
       followers: "Підписники",
       following: "Підписки",
       bookmarks: "Збережене",

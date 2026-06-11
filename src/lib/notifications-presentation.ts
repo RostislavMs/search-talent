@@ -48,7 +48,9 @@ export function describeNotification(
       const template =
         item.targetType === "project"
           ? dict.actions.newProject
-          : dict.actions.newArticle;
+          : item.targetType === "poll"
+            ? dict.actions.newPoll
+            : dict.actions.newArticle;
       return template.replace("{title}", title);
     }
     default:
@@ -83,6 +85,16 @@ export function buildNotificationHref(
         return `${base}/projects/${item.metadata.projectId}`;
       }
       return `${base}/projects`;
+    case "poll":
+      if (item.metadata.pollSlug) {
+        return `${base}/polls/${item.metadata.pollSlug}`;
+      }
+      return `${base}/polls`;
+    case "poll_comment":
+      if (item.metadata.pollSlug) {
+        return `${base}/polls/${item.metadata.pollSlug}#comment-${item.targetId ?? ""}`;
+      }
+      return `${base}/polls`;
     case "project_comment":
       if (item.metadata.projectId) {
         return `${base}/projects/${item.metadata.projectId}#comment-${item.targetId ?? ""}`;
