@@ -38,7 +38,12 @@ export async function compressImageFile(
     const compressed = await imageCompression(file, {
       maxSizeMB,
       maxWidthOrHeight,
-      useWebWorker: true,
+      // Run on the main thread. With `useWebWorker: true` the library spawns
+      // a worker that `importScripts()` itself from cdn.jsdelivr.net, which
+      // our CSP `script-src` blocks in production — compression then silently
+      // falls back to the uncompressed original. Main-thread compression
+      // needs no external script and works under the existing CSP.
+      useWebWorker: false,
       fileType: "image/webp",
       initialQuality,
     });
