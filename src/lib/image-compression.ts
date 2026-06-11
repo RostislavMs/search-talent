@@ -1,5 +1,3 @@
-import imageCompression from "browser-image-compression";
-
 export type CompressionPreset = "avatar" | "cover" | "inline" | "photo";
 
 type PresetConfig = {
@@ -35,6 +33,11 @@ export async function compressImageFile(
   const { maxSizeMB, maxWidthOrHeight, initialQuality } = PRESETS[preset];
 
   try {
+    // Loaded on demand so the ~50 KiB library only ships to the client when a
+    // user actually compresses an image, instead of bloating every form bundle.
+    const { default: imageCompression } = await import(
+      "browser-image-compression"
+    );
     const compressed = await imageCompression(file, {
       maxSizeMB,
       maxWidthOrHeight,

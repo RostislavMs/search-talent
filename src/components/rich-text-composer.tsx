@@ -10,9 +10,6 @@ import {
   type ReactNode,
 } from "react";
 import dynamic from "next/dynamic";
-import emojiData from "@emoji-mart/data";
-import emojiI18nEn from "@emoji-mart/data/i18n/en.json";
-import emojiI18nUk from "@emoji-mart/data/i18n/uk.json";
 import {
   extractPlainTextFromRichText,
   extractYouTubeVideoId,
@@ -20,6 +17,19 @@ import {
 } from "@/lib/rich-text";
 
 const EmojiPicker = dynamic(() => import("@emoji-mart/react").then((m) => m.default), { ssr: false });
+
+// The emoji dataset (~1.5 MB of JSON) and its locale strings are loaded on
+// demand the first time the picker opens, so they never ship in the editor's
+// initial chunk on article/profile pages.
+async function loadEmojiAssets() {
+  const [data, i18nEn, i18nUk] = await Promise.all([
+    import("@emoji-mart/data").then((m) => m.default),
+    import("@emoji-mart/data/i18n/en.json").then((m) => m.default),
+    import("@emoji-mart/data/i18n/uk.json").then((m) => m.default),
+  ]);
+  return { data, i18nEn, i18nUk };
+}
+type EmojiAssets = Awaited<ReturnType<typeof loadEmojiAssets>>;
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -199,6 +209,7 @@ export default function RichTextComposer({
   const [uploadingImage, setUploadingImage] = useState(false);
   const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false });
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [emojiAssets, setEmojiAssets] = useState<EmojiAssets | null>(null);
   const emojiRef = useRef<HTMLDivElement | null>(null);
 
   const isUk = locale === "uk";
@@ -500,6 +511,18 @@ export default function RichTextComposer({
     return () => document.removeEventListener("mousedown", handler);
   }, [emojiOpen]);
 
+  // Lazy-load the emoji dataset the first time the picker is opened.
+  useEffect(() => {
+    if (!emojiOpen || emojiAssets) return;
+    let cancelled = false;
+    void loadEmojiAssets().then((assets) => {
+      if (!cancelled) setEmojiAssets(assets);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [emojiOpen, emojiAssets]);
+
   /* ---- selection tracking ---- */
   const trackSelection = useCallback(() => {
     savedRangeRef.current = saveSelection();
@@ -626,11 +649,11 @@ export default function RichTextComposer({
               <button type="button" className={cls(btnBase, emojiOpen ? btnActive : btnIdle)} onMouseDown={pd} onClick={() => { savedRangeRef.current = saveSelection(); setEmojiOpen((v) => !v); }} title={ui.emoji}>
                 <span className="text-sm">😊</span>
               </button>
-              {emojiOpen && (
+              {emojiOpen && emojiAssets && (
                 <div className="absolute left-0 top-[calc(100%+0.5rem)] z-30">
                   <EmojiPicker
-                    data={emojiData}
-                    i18n={isUk ? emojiI18nUk : emojiI18nEn}
+                    data={emojiAssets.data}
+                    i18n={isUk ? emojiAssets.i18nUk : emojiAssets.i18nEn}
                     locale={isUk ? "uk" : "en"}
                     theme="dark"
                     previewPosition="none"

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import RichTextComposer from "@/components/rich-text-composer";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import FormSelect from "@/components/ui/form-select";
@@ -18,6 +18,22 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { compressImageFile } from "@/lib/image-compression";
 import { extractPlainTextFromRichText } from "@/lib/rich-text";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
+
+// The rich-text editor (with its lazy-loaded emoji dataset) is a heavy,
+// client-only chunk. Splitting it out lets the rest of the article form
+// hydrate and become interactive before the editor bundle arrives.
+const RichTextComposer = dynamic(
+  () => import("@/components/rich-text-composer"),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden="true"
+        className="min-h-[520px] animate-pulse rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-muted)]"
+      />
+    ),
+  },
+);
 
 function inferAssetKind(file: File) {
   return file.type.startsWith("video/") ? "video" : "image";

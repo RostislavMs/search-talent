@@ -66,7 +66,7 @@ import ChangePasswordSection from "@/components/change-password-section";
 import OptimizedImage from "@/components/ui/optimized-image";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
-import RichTextComposer from "@/components/rich-text-composer";
+import dynamic from "next/dynamic";
 import TagSelect from "./ui/tag-select";
 import SearchSelect from "./ui/search-select";
 import {
@@ -82,6 +82,22 @@ import {
   getVisibilityLabel,
   getWorkFormatLabel,
 } from "@/components/profile-form/labels";
+
+// Client-only, code-split: the rich-text editor (with its on-demand emoji
+// dataset) loads as a separate chunk so the rest of the profile form is
+// interactive without waiting for it.
+const RichTextComposer = dynamic(
+  () => import("@/components/rich-text-composer"),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden="true"
+        className="min-h-[280px] animate-pulse rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-muted)]"
+      />
+    ),
+  },
+);
 
 type MetaOption = {
   id: number;
