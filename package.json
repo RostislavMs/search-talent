@@ -2,6 +2,14 @@
   "name": "search-talent",
   "version": "0.1.0",
   "private": true,
+  "browserslist": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 111",
+    "safari >= 16.1",
+    "ios_saf >= 16.1",
+    "not dead"
+  ],
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=\"--dns-result-order=ipv4first\" next dev",
     "build": "next build",

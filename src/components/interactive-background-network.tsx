@@ -419,7 +419,21 @@ export default function InteractiveBackgroundNetwork() {
       rafId = requestAnimationFrame(draw);
     };
 
-    rafId = requestAnimationFrame(draw);
+    // Defer the first frame until the browser is idle so the decorative
+    // animation doesn't compete with hydration and the LCP paint during the
+    // critical loading window.
+    let idleId = 0;
+    const start = () => {
+      if (!document.hidden && !rafId) {
+        rafId = requestAnimationFrame(draw);
+      }
+    };
+    const ric = window.requestIdleCallback;
+    if (typeof ric === "function") {
+      idleId = ric(start, { timeout: 2000 });
+    } else {
+      idleId = window.setTimeout(start, 1200);
+    }
 
     // Pause the loop while the tab is hidden — no point burning frames the
     // user can't see.
@@ -435,6 +449,11 @@ export default function InteractiveBackgroundNetwork() {
 
     return () => {
       cancelAnimationFrame(rafId);
+      if (typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleId);
+      } else {
+        window.clearTimeout(idleId);
+      }
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onPointerDown);
