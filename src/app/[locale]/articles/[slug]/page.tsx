@@ -16,7 +16,7 @@ import {
 import { getArticleDetail } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
 import { isPublicModerationStatus, normalizeModerationStatus } from "@/lib/moderation";
-import { extractPlainTextFromRichText } from "@/lib/rich-text";
+import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 import {
   buildArticlePageMetadata,
   buildArticleSchema,

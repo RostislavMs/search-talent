@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  buildSanitizedTranslations,
-  ensureUniqueArticleSlug,
-} from "@/lib/db/articles";
+import { buildSanitizedTranslations } from "@/lib/article-translations";
+import { ensureUniqueArticleSlug } from "@/lib/db/articles";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { articlePayloadSchema } from "@/lib/validation/articles";
