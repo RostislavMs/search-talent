@@ -8,13 +8,13 @@ import { HeroLiveCardSkeleton } from "@/components/skeletons/hero-skeletons";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
+import RotatingWord from "@/components/ui/rotating-word";
 import { formatArticleDate } from "@/lib/articles";
 import { getLatestArticles } from "@/lib/db/marketing";
 import { getLeaderboards } from "@/lib/db/leaderboards";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
-import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { buildProjectPath } from "@/lib/projects";
 import {
   buildMetadata,
@@ -159,23 +159,36 @@ export default async function LocalizedHomePage({
         The hero headline is static (locale dictionary only — no DB), so it
         renders in the initial HTML and paints as the LCP element immediately,
         instead of waiting behind a Suspense boundary for leaderboard/article
-        queries. Only the data-dependent pieces (live cards, auth CTA, and the
+        queries. Only the data-dependent pieces (the live cards and the
         sections below the hero) stream in behind Suspense.
       */}
       <section className="bg-brand-hero overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:rounded-hero sm:p-8 md:p-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:gap-8">
-          <div>
+          <div className="flex flex-col">
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
               {dictionary.home.eyebrow}
             </p>
             <h1 className="font-display mt-3 max-w-3xl text-3xl font-medium leading-[1.05] tracking-tight sm:mt-4 sm:text-4xl md:text-5xl lg:text-6xl">
-              {dictionary.home.title}
+              {dictionary.home.titleLead}{" "}
+              <RotatingWord words={dictionary.home.titleWords} />
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-white/80 sm:mt-4 sm:text-base sm:leading-8">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:mt-4 sm:text-base sm:leading-8">
               {dictionary.home.description}
             </p>
+            <ul className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs font-medium text-white/70 sm:mt-4 sm:text-sm">
+              {dictionary.home.descriptionHighlights.map((item, index) => (
+                <li key={item} className="flex items-center gap-2.5">
+                  {index > 0 ? (
+                    <span aria-hidden="true" className="text-white/30">
+                      ·
+                    </span>
+                  ) : null}
+                  {item}
+                </li>
+              ))}
+            </ul>
 
-            <div className="mt-6 flex flex-col gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-3">
+            <div className="mt-6 flex flex-col gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-3 lg:mt-auto lg:pt-8">
               <ButtonLink href="/talents" size="lg" className="w-full sm:w-auto">
                 {dictionary.home.searchCreators}
               </ButtonLink>
@@ -187,9 +200,6 @@ export default async function LocalizedHomePage({
               >
                 {dictionary.home.browseProjects}
               </ButtonLink>
-              <Suspense fallback={<HeroAuthCta dictionary={dictionary} />}>
-                <HeroAuthCtaResolved dictionary={dictionary} />
-              </Suspense>
             </div>
           </div>
 
@@ -216,44 +226,6 @@ export default async function LocalizedHomePage({
         <HomeBelowContent locale={locale} />
       </Suspense>
     </main>
-  );
-}
-
-/**
- * Auth-dependent hero CTA. Defaults to the "create account" button (which is
- * what anonymous visitors — the bulk of home traffic — see anyway), so the
- * Suspense fallback is identical to the final render for them: zero shift.
- * Signed-in viewers see the same-sized button swap to "open dashboard".
- */
-function HeroAuthCta({ dictionary }: { dictionary: Dictionary }) {
-  return (
-    <ButtonLink
-      href="/signup"
-      variant="ghost"
-      size="lg"
-      className="w-full border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white sm:w-auto"
-    >
-      {dictionary.home.createAccount}
-    </ButtonLink>
-  );
-}
-
-async function HeroAuthCtaResolved({ dictionary }: { dictionary: Dictionary }) {
-  const viewer = await getCurrentViewerRole();
-
-  if (!viewer.user) {
-    return <HeroAuthCta dictionary={dictionary} />;
-  }
-
-  return (
-    <ButtonLink
-      href="/dashboard"
-      variant="ghost"
-      size="lg"
-      className="w-full border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white sm:w-auto"
-    >
-      {dictionary.home.openDashboard}
-    </ButtonLink>
   );
 }
 

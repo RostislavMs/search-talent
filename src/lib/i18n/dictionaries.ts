@@ -346,7 +346,7 @@ export const dictionaries = {
     },
     metadata: {
       home: {
-        title: "Discover IT Talent & Real Project Portfolios",
+        title: "Discover IT Talent — Projects, Portfolios & Code",
         description:
           "Community platform where developers, designers, and IT specialists publish real projects with tech stacks and code samples — not just resumes.",
       },
@@ -438,16 +438,19 @@ export const dictionaries = {
     },
     home: {
       eyebrow: "Talent platform & creative portfolios",
-      title:
-        "Discover IT Talent & Real Project Portfolios",
+      titleLead: "Discover IT talent by their",
+      titleWords: ["projects", "portfolios", "skills", "code"],
       description:
-        "SearchTalent is a community platform where developers, designers, and IT professionals showcase real projects with technology stacks, code samples, and work samples — not just resumes. Browse portfolios, read technical articles, and discover creators by their actual skills.",
+        "Developers, designers, and IT pros showing real work — not just resumes.",
+      descriptionHighlights: [
+        "Projects with stacks",
+        "Code samples",
+        "Community rating",
+      ],
       browseProjects: "Browse portfolios",
       searchCreators: "Discover talent",
       topProjectsCta: "Open top projects",
       topCreatorsCta: "Open top talents",
-      openDashboard: "Open dashboard",
-      createAccount: "Create account",
       cards: {
         eyebrow: "Live now",
         topTalent: {
@@ -2426,7 +2429,7 @@ export const dictionaries = {
     },
     metadata: {
       home: {
-        title: "Відкривайте IT-таланти з реальними портфоліо проєктів",
+        title: "Знаходьте IT-таланти — проєкти, портфоліо та код",
         description:
           "SearchTalent — платформа-спільнота, де IT-фахівці показують реальні проєкти зі стеком технологій і кодом, а не просто резюме.",
       },
@@ -2518,15 +2521,19 @@ export const dictionaries = {
     },
     home: {
       eyebrow: "Платформа талантів та креативних портфоліо",
-      title: "Відкривайте IT-таланти з реальними портфоліо проєктів",
+      titleLead: "Знаходьте IT-таланти за",
+      titleWords: ["проєктами", "портфоліо", "навичками", "кодом"],
       description:
-        "SearchTalent — платформа-спільнота, де розробники, дизайнери та IT-фахівці показують реальні проєкти з технологічним стеком і зразками робіт, а не просто резюме. Переглядайте портфоліо, читайте технічні статті та знаходьте авторів за реальними навичками.",
+        "Розробники, дизайнери та IT-фахівці — реальна робота, а не лише резюме.",
+      descriptionHighlights: [
+        "Проєкти зі стеком",
+        "Зразки коду",
+        "Рейтинг спільноти",
+      ],
       browseProjects: "Переглянути портфоліо",
       searchCreators: "Відкрити таланти",
       topProjectsCta: "Відкрити топ проєктів",
       topCreatorsCta: "Відкрити топ талантів",
-      openDashboard: "Відкрити дашборд",
-      createAccount: "Створити акаунт",
       cards: {
         eyebrow: "Зараз у спільноті",
         topTalent: {

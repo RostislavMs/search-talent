@@ -193,13 +193,18 @@ export default function SiteHeader({
   )
     .slice(0, 1)
     .toUpperCase();
+  // Active dropdown triggers use the same white/black (foreground) highlight as
+  // every other selected state in the header (nav pills, language/theme
+  // toggles, dropdown links) — orange stays reserved for the signup CTA only.
+  // A transparent border on the active state keeps the box the same size as the
+  // bordered inactive state (no 1px shift on toggle).
   const menuTriggerClasses = (active: boolean) =>
-    buttonStyles({
-      size: "sm",
-      variant: active ? "primary" : "secondary",
-      className:
-        "gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden",
-    });
+    [
+      "inline-flex cursor-pointer list-none items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-colors duration-200 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
+      active
+        ? "border-transparent bg-[color:var(--foreground)] text-[color:var(--background)]"
+        : "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",
+    ].join(" ");
   const menuLinkClasses = (active: boolean) =>
     [
       "flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
