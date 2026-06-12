@@ -677,6 +677,8 @@ export default async function PublicProjectPage({
           <ProjectComments
             projectId={project.id}
             isAuthenticated={isAuthenticated}
+            viewerUserId={viewer.user?.id ?? null}
+            ownerUserId={project.owner_id}
           />
         </div>
 

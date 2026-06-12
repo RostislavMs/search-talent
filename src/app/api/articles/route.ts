@@ -10,6 +10,7 @@ import {
   collectArticleModerationText,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
+import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 
 export async function POST(request: Request) {
   const context = await getCurrentViewerRole();
@@ -42,9 +43,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // Auto-moderation runs only on publish. A flagged article is saved but held
-  // in `under_review` (hidden by RLS) for an admin to action; clean content
-  // keeps the previous auto-approve behaviour.
+  // Auto-moderation runs only on publish. A flagged article is auto-removed
+  // (hidden by RLS) right after insert and the author is notified; clean
+  // content keeps the previous auto-approve behaviour.
   const screen =
     payload.status === "published"
       ? screenContentForModeration(collectArticleModerationText(payload))
@@ -71,8 +72,7 @@ export async function POST(request: Request) {
         payload.content_locale,
       ),
       status: payload.status,
-      moderation_status: screen.flagged ? "under_review" : "approved",
-      moderation_note: screen.flagged ? screen.note : null,
+      moderation_status: "approved",
       published_at: payload.status === "published" ? now : null,
     })
     .select("id, slug")
@@ -85,8 +85,12 @@ export async function POST(request: Request) {
     );
   }
 
+  if (screen.flagged) {
+    await autoRemoveContent({ table: "articles", id: data.id, note: screen.note });
+  }
+
   // Notify followers only when the article is actually public (published AND
-  // not held for review). A flagged article is not visible yet.
+  // not auto-removed). A flagged article is not visible yet.
   if (payload.status === "published" && !screen.flagged) {
     void dispatchPublishSideEffects({
       contentType: "article",
@@ -97,5 +101,5 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json({ article: data, pendingReview: screen.flagged });
+  return NextResponse.json({ article: data, autoRemoved: screen.flagged });
 }

@@ -233,6 +233,8 @@ export default async function PollDetailPage({
             initialLiked={poll.currentUserLiked}
             comments={poll.comments}
             isAuthenticated={Boolean(viewerUserId)}
+            viewerUserId={viewerUserId ?? null}
+            ownerUserId={poll.author?.userId ?? null}
           />
         </div>
       </div>

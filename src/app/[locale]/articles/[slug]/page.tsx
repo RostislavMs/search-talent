@@ -312,6 +312,8 @@ export default async function ArticleDetailPage({
             initialReactions={article.reactions}
             comments={article.comments}
             isAuthenticated={Boolean(viewerUserId)}
+            viewerUserId={viewerUserId ?? null}
+            ownerUserId={article.author?.userId ?? null}
           />
         </div>
       </div>

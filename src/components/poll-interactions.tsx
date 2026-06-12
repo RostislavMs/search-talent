@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import CommentDeleteButton from "@/components/comment-delete-button";
 import FormTextarea from "@/components/ui/form-textarea";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { apiFetch } from "@/lib/api-client";
@@ -56,6 +57,10 @@ function CommentNode({
   setReplyDrafts,
   submittingFor,
   submitReply,
+  pollId,
+  viewerUserId,
+  ownerUserId,
+  onDeleted,
 }: {
   comment: PollComment;
   depth: number;
@@ -70,10 +75,17 @@ function CommentNode({
   setReplyDrafts: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   submittingFor: string | null;
   submitReply: (parentId: string) => void;
+  pollId: string;
+  viewerUserId: string | null;
+  ownerUserId: string | null;
+  onDeleted: () => void;
 }) {
   const [repliesOpen, setRepliesOpen] = useState(false);
   const replyCount = comment.replies.length;
   const showIndent = depth < MAX_INDENT_DEPTH;
+  const canDelete =
+    Boolean(viewerUserId) &&
+    (comment.authorUserId === viewerUserId || viewerUserId === ownerUserId);
   const authorName = comment.authorDeleted
     ? locale === "uk"
       ? "Видалений користувач"
@@ -108,15 +120,24 @@ function CommentNode({
           {comment.body}
         </p>
 
-        {canComment ? (
+        {canComment || canDelete ? (
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mt-2.5">
-            <button
-              type="button"
-              className="cursor-pointer text-xs font-medium app-soft transition-colors hover:text-[color:var(--foreground)]"
-              onClick={() => setReplyingTo((prev) => (prev === comment.id ? null : comment.id))}
-            >
-              {replyLabel}
-            </button>
+            {canComment ? (
+              <button
+                type="button"
+                className="cursor-pointer text-xs font-medium app-soft transition-colors hover:text-[color:var(--foreground)]"
+                onClick={() => setReplyingTo((prev) => (prev === comment.id ? null : comment.id))}
+              >
+                {replyLabel}
+              </button>
+            ) : null}
+            {canDelete ? (
+              <CommentDeleteButton
+                endpoint={`/api/polls/${pollId}/comments/${comment.id}`}
+                locale={locale}
+                onDeleted={onDeleted}
+              />
+            ) : null}
           </div>
         ) : null}
 
@@ -191,6 +212,10 @@ function CommentNode({
                     setReplyDrafts={setReplyDrafts}
                     submittingFor={submittingFor}
                     submitReply={submitReply}
+                    pollId={pollId}
+                    viewerUserId={viewerUserId}
+                    ownerUserId={ownerUserId}
+                    onDeleted={onDeleted}
                   />
                 ))}
               </div>
@@ -210,6 +235,8 @@ export default function PollInteractions({
   initialLiked,
   comments,
   isAuthenticated,
+  viewerUserId,
+  ownerUserId,
 }: {
   locale: string;
   pollId: string;
@@ -218,6 +245,8 @@ export default function PollInteractions({
   initialLiked: boolean;
   comments: PollComment[];
   isAuthenticated: boolean;
+  viewerUserId: string | null;
+  ownerUserId: string | null;
 }) {
   const router = useRouter();
   const loginPath = createLocalePath(locale === "uk" ? "uk" : "en", "/login");
@@ -348,6 +377,10 @@ export default function PollInteractions({
                 setReplyDrafts={setReplyDrafts}
                 submittingFor={submittingFor}
                 submitReply={(id) => void submitReply(id)}
+                pollId={pollId}
+                viewerUserId={viewerUserId}
+                ownerUserId={ownerUserId}
+                onDeleted={() => router.refresh()}
               />
             ))}
           </div>

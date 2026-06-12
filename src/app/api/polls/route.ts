@@ -11,7 +11,7 @@ import {
   collectPollModerationText,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
-import { flagContentForReview } from "@/lib/auto-moderation-apply";
+import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 
 export async function POST(request: Request) {
   const context = await getCurrentViewerRole();
@@ -45,8 +45,8 @@ export async function POST(request: Request) {
   }
 
   // Auto-moderation runs only on publish. `save_poll` always inserts as
-  // 'approved'; a flagged poll is moved to `under_review` right after via the
-  // service-role client (the guard trigger blocks the author from doing it).
+  // 'approved'; a flagged poll is auto-removed right after via the service-role
+  // client (the guard trigger blocks the author from changing moderation cols).
   const screen =
     payload.status === "published"
       ? screenContentForModeration(collectPollModerationText(payload))
@@ -77,11 +77,11 @@ export async function POST(request: Request) {
   const result = data as { id: string; slug: string };
 
   if (screen.flagged) {
-    await flagContentForReview({ table: "polls", id: result.id, note: screen.note });
+    await autoRemoveContent({ table: "polls", id: result.id, note: screen.note });
   }
 
   // Notify followers only when the poll is actually public (published AND not
-  // held for review).
+  // auto-removed).
   if (payload.status === "published" && !screen.flagged) {
     void dispatchPublishSideEffects({
       contentType: "poll",
@@ -92,5 +92,5 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json({ poll: result, pendingReview: screen.flagged });
+  return NextResponse.json({ poll: result, autoRemoved: screen.flagged });
 }

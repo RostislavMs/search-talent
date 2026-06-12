@@ -256,6 +256,8 @@ export default function ArticleComposer({
         publishNow: "Опублікувати",
         remove: "Прибрати",
         error: "Не вдалося зберегти статтю.",
+        autoModerationRemoved:
+          "Статтю автоматично приховано: вміст не пройшов перевірку (нецензурна лексика, образи або спам). Відредагуйте текст і спробуйте ще раз.",
         placeholder:
           "Почніть писати, додайте заголовки, цитати, списки й вставляйте медіа прямо в полотно.",
       }
@@ -289,6 +291,8 @@ export default function ArticleComposer({
         publishNow: "Publish now",
         remove: "Remove",
         error: "Could not save the article.",
+        autoModerationRemoved:
+          "This article was automatically hidden: the content did not pass the check (profanity, slurs, or spam). Edit the text and try again.",
         placeholder:
           "Start writing, add headings, quotes, lists, and drop media right into the canvas.",
       };
@@ -427,7 +431,10 @@ export default function ArticleComposer({
     const url = isEditing ? `/api/articles/${editArticle!.id}` : "/api/articles";
     const method = isEditing ? "PUT" : "POST";
 
-    const result = await apiFetch<{ article?: { slug?: string } }>(url, {
+    const result = await apiFetch<{
+      article?: { slug?: string };
+      autoRemoved?: boolean;
+    }>(url, {
       method,
       body: {
         ...toPayload(versions[primaryLocale]),
@@ -442,6 +449,12 @@ export default function ArticleComposer({
 
     if (!result.ok) {
       setErrorMessage(result.error || ui.error);
+      return;
+    }
+
+    // Auto-moderation removed the just-saved article; keep the draft on screen.
+    if (result.data.autoRemoved) {
+      setErrorMessage(ui.autoModerationRemoved);
       return;
     }
 

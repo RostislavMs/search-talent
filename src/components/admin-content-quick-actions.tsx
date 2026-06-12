@@ -117,7 +117,10 @@ export default function AdminContentQuickActions({
 
   const normalized: ModerationStatus =
     normalizeModerationStatus(currentStatus) || "approved";
-  const isHidden = normalized === "removed" || normalized === "restricted";
+  // Anything that is not "approved" is not publicly visible — including
+  // "under_review" — so the primary action becomes "Show" (→ approved). This
+  // gives an approve path for content awaiting / auto-flagged for review.
+  const isHidden = normalized !== "approved";
 
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

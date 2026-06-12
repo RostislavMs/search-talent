@@ -73,6 +73,7 @@ export type PollFeedItem = {
 export type PollComment = {
   id: string;
   parentId: string | null;
+  authorUserId: string | null;
   body: string;
   createdAt: string | null;
   author: PollAuthor | null;

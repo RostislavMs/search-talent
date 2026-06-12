@@ -42,6 +42,7 @@ export type ArticleFeedItem = {
 export type ArticleComment = {
   id: string;
   parentId: string | null;
+  authorUserId: string | null;
   body: string;
   createdAt: string | null;
   author: ArticleAuthor | null;
