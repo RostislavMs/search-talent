@@ -47,7 +47,7 @@ export type NotificationMetadata = {
   /** Moderation notifications: the decision applied to the recipient's content. */
   moderationStatus?: "removed" | "restricted";
   /** Moderation notifications: which kind of content was actioned. */
-  contentKind?: "article" | "project" | "profile";
+  contentKind?: "article" | "project" | "profile" | "poll";
   /** Moderation notifications: human-readable title of the actioned content. */
   contentTitle?: string;
 };

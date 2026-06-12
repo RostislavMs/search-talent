@@ -13,6 +13,7 @@ import {
   collectProjectModerationText,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
+import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -35,9 +36,9 @@ export async function POST(request: Request) {
 
   const uniqueSlug = await generateUniqueProjectSlug(supabase, payload.slug);
 
-  // Auto-moderation runs only on publish. A flagged project is saved but held
-  // in `under_review` (hidden by RLS) for an admin to action; clean content
-  // keeps the previous auto-approve behaviour.
+  // Auto-moderation runs only on publish. A flagged project is auto-removed
+  // (hidden by RLS) right after insert and the author is notified; clean
+  // content keeps the previous auto-approve behaviour.
   const screen =
     payload.status === "published"
       ? screenContentForModeration(collectProjectModerationText(payload))
@@ -102,8 +103,6 @@ export async function POST(request: Request) {
       github_auto_sync: payload.githubAutoSync,
       allow_downloads: payload.allowDownloads,
       ...githubColumns,
-      moderation_status: screen.flagged ? "under_review" : "approved",
-      moderation_note: screen.flagged ? screen.note : null,
     })
     .select("id, slug, status")
     .single();
@@ -113,6 +112,10 @@ export async function POST(request: Request) {
       { error: error?.message || "Could not create project" },
       { status: 400 },
     );
+  }
+
+  if (screen.flagged) {
+    await autoRemoveContent({ table: "projects", id: project.id, note: screen.note });
   }
 
   if (payload.skillIds.length > 0) {
@@ -134,7 +137,7 @@ export async function POST(request: Request) {
   }
 
   // Notify followers only when the project is actually public (published AND
-  // not held for review). A flagged project is not visible yet.
+  // not auto-removed). A flagged project is not visible yet.
   if (project.status === "published" && !screen.flagged) {
     void dispatchPublishSideEffects({
       contentType: "project",
@@ -149,6 +152,6 @@ export async function POST(request: Request) {
     projectId: project.id,
     slug: project.slug,
     status: project.status,
-    pendingReview: screen.flagged,
+    autoRemoved: screen.flagged,
   });
 }

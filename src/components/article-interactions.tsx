@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import CommentDeleteButton from "@/components/comment-delete-button";
 import MentionText from "@/components/ui/mention-text";
 import MentionTextarea from "@/components/ui/mention-textarea";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -71,6 +72,10 @@ function CommentNode({
   setReplyDrafts,
   submittingFor,
   submitReply,
+  articleId,
+  viewerUserId,
+  ownerUserId,
+  onDeleted,
 }: {
   comment: ArticleComment;
   depth: number;
@@ -85,10 +90,17 @@ function CommentNode({
   setReplyDrafts: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   submittingFor: string | null;
   submitReply: (parentId: string) => void;
+  articleId: string;
+  viewerUserId: string | null;
+  ownerUserId: string | null;
+  onDeleted: () => void;
 }) {
   const [repliesOpen, setRepliesOpen] = useState(false);
   const replyCount = comment.replies.length;
   const showIndent = depth < MAX_INDENT_DEPTH;
+  const canDelete =
+    Boolean(viewerUserId) &&
+    (comment.authorUserId === viewerUserId || viewerUserId === ownerUserId);
   const authorName = comment.authorDeleted
     ? locale === "uk"
       ? "Видалений користувач"
@@ -149,6 +161,14 @@ function CommentNode({
             >
               {replyLabel}
             </button>
+          ) : null}
+
+          {canDelete ? (
+            <CommentDeleteButton
+              endpoint={`/api/articles/${articleId}/comments/${comment.id}`}
+              locale={locale}
+              onDeleted={onDeleted}
+            />
           ) : null}
         </div>
 
@@ -223,6 +243,10 @@ function CommentNode({
                     setReplyDrafts={setReplyDrafts}
                     submittingFor={submittingFor}
                     submitReply={submitReply}
+                    articleId={articleId}
+                    viewerUserId={viewerUserId}
+                    ownerUserId={ownerUserId}
+                    onDeleted={onDeleted}
                   />
                 ))}
               </div>
@@ -240,12 +264,16 @@ function CommentThread({
   canComment,
   articleId,
   onCommentPosted,
+  viewerUserId,
+  ownerUserId,
 }: {
   comments: ArticleComment[];
   locale: string;
   canComment: boolean;
   articleId: string;
   onCommentPosted: () => void;
+  viewerUserId: string | null;
+  ownerUserId: string | null;
 }) {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
@@ -293,6 +321,10 @@ function CommentThread({
           setReplyDrafts={setReplyDrafts}
           submittingFor={submittingFor}
           submitReply={(id) => void submitReply(id)}
+          articleId={articleId}
+          viewerUserId={viewerUserId}
+          ownerUserId={ownerUserId}
+          onDeleted={onCommentPosted}
         />
       ))}
     </div>
@@ -308,6 +340,8 @@ export default function ArticleInteractions({
   initialReactions,
   comments,
   isAuthenticated,
+  viewerUserId,
+  ownerUserId,
 }: {
   locale: string;
   articleId: string;
@@ -317,6 +351,8 @@ export default function ArticleInteractions({
   initialReactions?: ReactionSummary[];
   comments: ArticleComment[];
   isAuthenticated: boolean;
+  viewerUserId: string | null;
+  ownerUserId: string | null;
 }) {
   const router = useRouter();
   const loginPath = createLocalePath(locale === "uk" ? "uk" : "en", "/login");
@@ -464,6 +500,8 @@ export default function ArticleInteractions({
             canComment={isAuthenticated}
             articleId={articleId}
             onCommentPosted={() => router.refresh()}
+            viewerUserId={viewerUserId}
+            ownerUserId={ownerUserId}
           />
         ) : (
           <p className="rounded-3xl app-panel-dashed p-5 text-sm app-muted">

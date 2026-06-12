@@ -723,11 +723,13 @@ export const dictionaries = {
             article: "removed your article",
             project: "removed your project",
             profile: "removed your profile",
+            poll: "removed your poll",
           },
           restricted: {
             article: "restricted your article",
             project: "restricted your project",
             profile: "restricted your profile",
+            poll: "restricted your poll",
           },
         },
       },
@@ -1887,6 +1889,8 @@ export const dictionaries = {
       draftBadge: "Draft",
       errorCreatingProject: "Error creating project",
       errorUpdatingProject: "Error updating project",
+      autoModerationRemoved:
+        "This project was automatically hidden: the content did not pass the check (profanity, slurs, or spam). Edit the text and try again.",
       invalidProjectDateRange:
         "The completion date cannot be earlier than the start date.",
       invalidUrl:
@@ -2777,11 +2781,13 @@ export const dictionaries = {
             article: "прибрала вашу статтю",
             project: "прибрала ваш проєкт",
             profile: "прибрала ваш профіль",
+            poll: "прибрала ваше опитування",
           },
           restricted: {
             article: "обмежила вашу статтю",
             project: "обмежила ваш проєкт",
             profile: "обмежила ваш профіль",
+            poll: "обмежила ваше опитування",
           },
         },
       },
@@ -3944,6 +3950,8 @@ export const dictionaries = {
       draftBadge: "Чернетка",
       errorCreatingProject: "Помилка під час створення проєкту",
       errorUpdatingProject: "Помилка під час оновлення проєкту",
+      autoModerationRemoved:
+        "Проєкт автоматично приховано: вміст не пройшов перевірку (нецензурна лексика, образи або спам). Відредагуйте текст і спробуйте ще раз.",
       invalidProjectDateRange:
         "Дата завершення не може бути раніше за дату старту.",
       invalidUrl:

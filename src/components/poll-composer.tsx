@@ -215,6 +215,8 @@ export default function PollComposer({
         publishNow: "Опублікувати",
         remove: "Прибрати",
         error: "Не вдалося зберегти опитування.",
+        autoModerationRemoved:
+          "Опитування автоматично приховано: вміст не пройшов перевірку (нецензурна лексика, образи або спам). Відредагуйте текст і спробуйте ще раз.",
         placeholder: "Додайте опис до опитування...",
       }
     : {
@@ -241,6 +243,8 @@ export default function PollComposer({
         publishNow: "Publish now",
         remove: "Remove",
         error: "Could not save the poll.",
+        autoModerationRemoved:
+          "This poll was automatically hidden: the content did not pass the check (profanity, slurs, or spam). Edit the text and try again.",
         placeholder: "Add a description to your poll...",
       };
 
@@ -358,7 +362,10 @@ export default function PollComposer({
     const url = isEditing ? `/api/polls/${editPoll!.id}` : "/api/polls";
     const method = isEditing ? "PUT" : "POST";
 
-    const result = await apiFetch<{ poll?: { slug?: string } }>(url, {
+    const result = await apiFetch<{
+      poll?: { slug?: string };
+      autoRemoved?: boolean;
+    }>(url, {
       method,
       body: {
         ...toPayload(versions[primaryLocale]),
@@ -375,6 +382,12 @@ export default function PollComposer({
 
     if (!result.ok) {
       setErrorMessage(result.error || ui.error);
+      return;
+    }
+
+    // Auto-moderation removed the just-saved poll; keep the draft on screen.
+    if (result.data.autoRemoved) {
+      setErrorMessage(ui.autoModerationRemoved);
       return;
     }
 

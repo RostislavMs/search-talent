@@ -13,7 +13,7 @@ import {
   collectArticleModerationText,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
-import { flagContentForReview } from "@/lib/auto-moderation-apply";
+import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { z } from "zod";
 
 const pinSchema = z.object({
@@ -72,14 +72,14 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Auto-moderation runs only on publish, and may only move a currently
-  // approved item down to `under_review` — it never re-approves content an
-  // admin already restricted/removed or that is awaiting review.
+  // Auto-moderation runs only on publish, and only auto-removes a currently
+  // approved item — it never touches content an admin already
+  // restricted/removed or that is awaiting review.
   const screen =
     payload.status === "published"
       ? screenContentForModeration(collectArticleModerationText(payload))
       : { flagged: false as const, categories: [], note: null };
-  const willFlag = screen.flagged && existing.moderation_status === "approved";
+  const willRemove = screen.flagged && existing.moderation_status === "approved";
 
   const slug = await ensureUniqueArticleSlug(payload.title, id);
   const now = new Date().toISOString();
@@ -112,17 +112,17 @@ export async function PUT(
     return NextResponse.json({ error: error?.message || "Could not update article" }, { status: 400 });
   }
 
-  if (willFlag) {
-    await flagContentForReview({ table: "articles", id, note: screen.note });
+  if (willRemove) {
+    await autoRemoveContent({ table: "articles", id, note: screen.note });
   }
 
   // First publish (draft -> published) notifies the author's followers. The
   // actor is the author, not the (possibly admin) editor. The
   // followers_notified_at guard keeps re-publishes and later edits silent.
-  // A freshly auto-flagged edit is not public, so it must not notify.
+  // A freshly auto-removed edit is not public, so it must not notify.
   if (
     payload.status === "published" &&
-    !willFlag &&
+    !willRemove &&
     !existing.followers_notified_at &&
     isPublicModerationStatus(existing.moderation_status)
   ) {
@@ -135,7 +135,7 @@ export async function PUT(
     });
   }
 
-  return NextResponse.json({ article: data, pendingReview: willFlag });
+  return NextResponse.json({ article: data, autoRemoved: willRemove });
 }
 
 export async function PATCH(

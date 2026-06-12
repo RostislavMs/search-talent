@@ -1117,6 +1117,7 @@ export default function CreateProjectForm({
         const projectResult = await apiFetch<{
           projectId?: string;
           slug?: string;
+          autoRemoved?: boolean;
         }>(endpoint, {
           method,
           body: parsedPayload.data,
@@ -1138,6 +1139,13 @@ export default function CreateProjectForm({
 
         if (!projectId) {
           setErrorMessage(dictionary.forms.errorCreatingProject);
+          return;
+        }
+
+        // Auto-moderation removed the just-saved project; keep the form on
+        // screen with an explanation instead of navigating to a hidden page.
+        if (projectResult.data.autoRemoved) {
+          setErrorMessage(dictionary.forms.autoModerationRemoved);
           return;
         }
 
@@ -1235,6 +1243,7 @@ export default function CreateProjectForm({
     [
       buildPayload,
       dictionary.dashboardProjects.uploadFailed,
+      dictionary.forms.autoModerationRemoved,
       dictionary.forms.errorCreatingProject,
       dictionary.forms.errorUpdatingProject,
       dictionary.forms.invalidProjectDateRange,
@@ -1314,6 +1323,7 @@ export default function CreateProjectForm({
         current={step}
         onSelect={goToStep}
         dictionary={dictionary}
+        unlockAll={isEditMode}
       />
 
       <div className="space-y-2">
@@ -1514,11 +1524,15 @@ function StepHeader({
   current,
   onSelect,
   dictionary,
+  unlockAll = false,
 }: {
   descriptors: StepDescriptor[];
   current: number;
   onSelect: (target: number) => void;
   dictionary: Dictionary;
+  // When true (edit mode), every step is directly clickable — the project
+  // already has data, so there is no need to walk through with "Next".
+  unlockAll?: boolean;
 }) {
   const total = descriptors.length;
   return (
@@ -1531,7 +1545,7 @@ function StepHeader({
       {descriptors.map((descriptor) => {
         const isActive = current === descriptor.index;
         const isCompleted = current > descriptor.index;
-        const isClickable = descriptor.index <= current || isCompleted;
+        const isClickable = unlockAll || descriptor.index <= current;
 
         return (
           <li key={descriptor.index} className="contents">

@@ -204,6 +204,7 @@ function buildCommentTree(
     commentMap.set(row.id, {
       id: row.id,
       parentId: row.parent_id,
+      authorUserId: row.author_user_id,
       body: row.body || "",
       createdAt: row.created_at,
       author: row.author_user_id ? authorMap.get(row.author_user_id) || null : null,

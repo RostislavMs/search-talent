@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import CommentDeleteButton from "@/components/comment-delete-button";
 import MentionText from "@/components/ui/mention-text";
 import MentionTextarea from "@/components/ui/mention-textarea";
 import ReactionPicker from "@/components/ui/reaction-picker";
@@ -29,6 +30,8 @@ type Comment = {
 type ProjectCommentsProps = {
   projectId: string;
   isAuthenticated: boolean;
+  viewerUserId: string | null;
+  ownerUserId: string | null;
 };
 
 function formatRelativeTime(isoDate: string, locale: string) {
@@ -112,6 +115,10 @@ function CommentItem({
   onSubmitReply,
   submitting,
   dictionary,
+  projectId,
+  viewerUserId,
+  ownerUserId,
+  onDeleted,
 }: {
   comment: Comment;
   childrenMap: Map<string, Comment[]>;
@@ -125,7 +132,14 @@ function CommentItem({
   onSubmitReply: () => void;
   submitting: boolean;
   dictionary: ReturnType<typeof useDictionary>;
+  projectId: string;
+  viewerUserId: string | null;
+  ownerUserId: string | null;
+  onDeleted: () => void;
 }) {
+  const canDelete =
+    Boolean(viewerUserId) &&
+    (comment.author_user_id === viewerUserId || viewerUserId === ownerUserId);
   const [repliesOpen, setRepliesOpen] = useState(false);
 
   const authorName = comment.author_deleted
@@ -189,6 +203,14 @@ function CommentItem({
             >
               {dictionary.projectComments.reply}
             </button>
+          )}
+
+          {canDelete && (
+            <CommentDeleteButton
+              endpoint={`/api/projects/${projectId}/comments/${comment.id}`}
+              locale={locale}
+              onDeleted={onDeleted}
+            />
           )}
         </div>
 
@@ -272,6 +294,10 @@ function CommentItem({
                     onSubmitReply={onSubmitReply}
                     submitting={submitting}
                     dictionary={dictionary}
+                    projectId={projectId}
+                    viewerUserId={viewerUserId}
+                    ownerUserId={ownerUserId}
+                    onDeleted={onDeleted}
                   />
                 ))}
               </div>
@@ -286,6 +312,8 @@ function CommentItem({
 export default function ProjectComments({
   projectId,
   isAuthenticated,
+  viewerUserId,
+  ownerUserId,
 }: ProjectCommentsProps) {
   const dictionary = useDictionary();
   const router = useLocalizedRouter();
@@ -299,22 +327,26 @@ export default function ProjectComments({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      const result = await apiFetch<{ comments?: Comment[] }>(
-        `/api/projects/${projectId}/comments`,
-      );
+  const loadComments = useCallback(async () => {
+    const result = await apiFetch<{ comments?: Comment[] }>(
+      `/api/projects/${projectId}/comments`,
+    );
 
-      if (!result.ok) {
-        setError(dictionary.projectComments.loadError);
-      } else {
-        setComments(result.data.comments || []);
-      }
+    if (!result.ok) {
+      setError(dictionary.projectComments.loadError);
+    } else {
+      setComments(result.data.comments || []);
+    }
+  }, [projectId, dictionary.projectComments.loadError]);
+
+  useEffect(() => {
+    async function loadInitial() {
+      await loadComments();
       setLoading(false);
     }
 
-    void load();
-  }, [projectId, dictionary.projectComments.loadError]);
+    void loadInitial();
+  }, [loadComments]);
 
   const submitComment = async (parentId: string | null = null) => {
     const text = parentId ? replyBody : body;
@@ -426,6 +458,10 @@ export default function ProjectComments({
               onSubmitReply={() => submitComment(replyingTo)}
               submitting={submitting}
               dictionary={dictionary}
+              projectId={projectId}
+              viewerUserId={viewerUserId}
+              ownerUserId={ownerUserId}
+              onDeleted={() => void loadComments()}
             />
           ))}
         </div>
