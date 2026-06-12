@@ -53,13 +53,12 @@ export function HomeHeroSkeleton() {
             <HeroBar className="h-9 w-4/5 max-w-2xl sm:h-12" />
           </div>
           <div className="mt-4 space-y-2">
-            <HeroBar className="h-4 w-full max-w-2xl" />
             <HeroBar className="h-4 w-3/4 max-w-xl" />
           </div>
+          <HeroBar className="mt-4 h-3 w-2/3 max-w-md rounded-full" />
           <div className="mt-6 flex flex-wrap gap-2 sm:mt-8 sm:gap-3">
             <HeroBar className="h-11 w-40 rounded-full" />
             <HeroBar className="h-11 w-40 rounded-full" />
-            <HeroBar className="h-11 w-36 rounded-full" />
           </div>
         </div>
 
