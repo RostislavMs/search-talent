@@ -9,6 +9,10 @@ import { fetchRepoFullDetail } from "@/lib/integrations/github";
 import { mapRepoToProjectColumns } from "@/lib/db/github-sync";
 import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
+import {
+  collectProjectModerationText,
+  screenContentForModeration,
+} from "@/lib/auto-moderation";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -30,6 +34,14 @@ export async function POST(request: Request) {
   const payload = parsed.data;
 
   const uniqueSlug = await generateUniqueProjectSlug(supabase, payload.slug);
+
+  // Auto-moderation runs only on publish. A flagged project is saved but held
+  // in `under_review` (hidden by RLS) for an admin to action; clean content
+  // keeps the previous auto-approve behaviour.
+  const screen =
+    payload.status === "published"
+      ? screenContentForModeration(collectProjectModerationText(payload))
+      : { flagged: false as const, categories: [], note: null };
 
   // If the form supplied a GitHub repo, snapshot it server-side so the
   // denormalized columns (stats, languages, sync timestamp) are filled
@@ -90,6 +102,8 @@ export async function POST(request: Request) {
       github_auto_sync: payload.githubAutoSync,
       allow_downloads: payload.allowDownloads,
       ...githubColumns,
+      moderation_status: screen.flagged ? "under_review" : "approved",
+      moderation_note: screen.flagged ? screen.note : null,
     })
     .select("id, slug, status")
     .single();
@@ -119,9 +133,9 @@ export async function POST(request: Request) {
     }
   }
 
-  // Notify followers about the new project. Fresh projects default to
-  // moderation_status 'approved', so a published one is publicly visible.
-  if (project.status === "published") {
+  // Notify followers only when the project is actually public (published AND
+  // not held for review). A flagged project is not visible yet.
+  if (project.status === "published" && !screen.flagged) {
     void dispatchPublishSideEffects({
       contentType: "project",
       contentId: project.id,
@@ -135,5 +149,6 @@ export async function POST(request: Request) {
     projectId: project.id,
     slug: project.slug,
     status: project.status,
+    pendingReview: screen.flagged,
   });
 }

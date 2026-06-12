@@ -11,6 +11,11 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildSavePollPayload } from "@/lib/db/save-poll-payload";
+import {
+  collectPollModerationText,
+  screenContentForModeration,
+} from "@/lib/auto-moderation";
+import { flagContentForReview } from "@/lib/auto-moderation-apply";
 
 const pinSchema = z.object({
   pinned_until: z.string().nullable(),
@@ -68,6 +73,15 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Auto-moderation runs only on publish, and may only move a currently
+  // approved item down to `under_review` — it never re-approves content an
+  // admin already restricted/removed or that is awaiting review.
+  const screen =
+    payload.status === "published"
+      ? screenContentForModeration(collectPollModerationText(payload))
+      : { flagged: false as const, categories: [], note: null };
+  const willFlag = screen.flagged && existing.moderation_status === "approved";
+
   const slug = await ensureUniquePollSlug(payload.title, id);
 
   const { data, error } = await context.supabase.rpc("save_poll", {
@@ -92,9 +106,15 @@ export async function PUT(
 
   const result = data as { id: string; slug: string };
 
-  // First publish notifies the author's followers exactly once.
+  if (willFlag) {
+    await flagContentForReview({ table: "polls", id, note: screen.note });
+  }
+
+  // First publish notifies the author's followers exactly once. A freshly
+  // auto-flagged edit is not public, so it must not notify.
   if (
     payload.status === "published" &&
+    !willFlag &&
     !existing.followers_notified_at &&
     isPublicModerationStatus(existing.moderation_status)
   ) {
@@ -107,7 +127,7 @@ export async function PUT(
     });
   }
 
-  return NextResponse.json({ poll: result });
+  return NextResponse.json({ poll: result, pendingReview: willFlag });
 }
 
 export async function PATCH(

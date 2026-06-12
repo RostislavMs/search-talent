@@ -7,6 +7,11 @@ import { pollPayloadSchema } from "@/lib/validation/polls";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildSavePollPayload } from "@/lib/db/save-poll-payload";
+import {
+  collectPollModerationText,
+  screenContentForModeration,
+} from "@/lib/auto-moderation";
+import { flagContentForReview } from "@/lib/auto-moderation-apply";
 
 export async function POST(request: Request) {
   const context = await getCurrentViewerRole();
@@ -39,6 +44,14 @@ export async function POST(request: Request) {
     );
   }
 
+  // Auto-moderation runs only on publish. `save_poll` always inserts as
+  // 'approved'; a flagged poll is moved to `under_review` right after via the
+  // service-role client (the guard trigger blocks the author from doing it).
+  const screen =
+    payload.status === "published"
+      ? screenContentForModeration(collectPollModerationText(payload))
+      : { flagged: false as const, categories: [], note: null };
+
   const slug = await ensureUniquePollSlug(payload.title);
 
   const { data, error } = await context.supabase.rpc("save_poll", {
@@ -63,7 +76,13 @@ export async function POST(request: Request) {
 
   const result = data as { id: string; slug: string };
 
-  if (payload.status === "published") {
+  if (screen.flagged) {
+    await flagContentForReview({ table: "polls", id: result.id, note: screen.note });
+  }
+
+  // Notify followers only when the poll is actually public (published AND not
+  // held for review).
+  if (payload.status === "published" && !screen.flagged) {
     void dispatchPublishSideEffects({
       contentType: "poll",
       contentId: result.id,
@@ -73,5 +92,5 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json({ poll: result });
+  return NextResponse.json({ poll: result, pendingReview: screen.flagged });
 }
