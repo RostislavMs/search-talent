@@ -6,6 +6,10 @@ import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { articlePayloadSchema } from "@/lib/validation/articles";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
+import {
+  collectArticleModerationText,
+  screenContentForModeration,
+} from "@/lib/auto-moderation";
 
 export async function POST(request: Request) {
   const context = await getCurrentViewerRole();
@@ -38,6 +42,14 @@ export async function POST(request: Request) {
     );
   }
 
+  // Auto-moderation runs only on publish. A flagged article is saved but held
+  // in `under_review` (hidden by RLS) for an admin to action; clean content
+  // keeps the previous auto-approve behaviour.
+  const screen =
+    payload.status === "published"
+      ? screenContentForModeration(collectArticleModerationText(payload))
+      : { flagged: false as const, categories: [], note: null };
+
   const slug = await ensureUniqueArticleSlug(payload.title);
   const now = new Date().toISOString();
   const { data, error } = await context.supabase
@@ -59,7 +71,8 @@ export async function POST(request: Request) {
         payload.content_locale,
       ),
       status: payload.status,
-      moderation_status: "approved",
+      moderation_status: screen.flagged ? "under_review" : "approved",
+      moderation_note: screen.flagged ? screen.note : null,
       published_at: payload.status === "published" ? now : null,
     })
     .select("id, slug")
@@ -72,9 +85,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // Notify followers about the new article. New articles are created with
-  // moderation_status 'approved', so a published one is publicly visible.
-  if (payload.status === "published") {
+  // Notify followers only when the article is actually public (published AND
+  // not held for review). A flagged article is not visible yet.
+  if (payload.status === "published" && !screen.flagged) {
     void dispatchPublishSideEffects({
       contentType: "article",
       contentId: data.id,
@@ -84,5 +97,5 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json({ article: data });
+  return NextResponse.json({ article: data, pendingReview: screen.flagged });
 }

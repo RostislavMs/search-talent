@@ -8,6 +8,10 @@ import {
 import { parseJsonRequest } from "@/lib/validation/request";
 import { dispatchCommentSideEffects } from "@/lib/db/comment-events";
 import { getReactionsForTargets } from "@/lib/db/reactions";
+import {
+  AUTO_MODERATION_BLOCKED_MESSAGE,
+  screenContentForModeration,
+} from "@/lib/auto-moderation";
 
 export async function GET(
   _request: Request,
@@ -131,6 +135,14 @@ export async function POST(
 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  // Comments have no review pipeline, so a flagged comment is rejected outright.
+  if (screenContentForModeration([parsed.data.body]).flagged) {
+    return NextResponse.json(
+      { error: AUTO_MODERATION_BLOCKED_MESSAGE, code: "moderation_blocked" },
+      { status: 400 },
+    );
   }
 
   const { data: project } = await supabase
