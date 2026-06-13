@@ -244,74 +244,63 @@ export default function CookieConsentBanner({
       )}
 
       {showBanner && (
-        <div className="fixed inset-x-0 bottom-0 z-[60] px-4 pb-4 sm:px-6">
-          <section className="mx-auto max-w-[90rem] rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-                  {dictionary.cookieConsent.badge}
-                </p>
-                <h2 className="font-display mt-3 text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
-                  {dictionary.cookieConsent.title}
-                </h2>
-                <p className="mt-3 text-sm leading-7 app-muted sm:text-base">
-                  {dictionary.cookieConsent.description}
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-                  <span className="rounded-full border border-[color:var(--border)] px-3 py-1.5 app-soft">
-                    {dictionary.cookieConsent.essentialSummary}
-                  </span>
-                  <LocalizedLink
-                    href="/cookies"
-                    className="font-medium text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
-                  >
-                    {dictionary.cookieConsent.learnMore}
-                  </LocalizedLink>
-                </div>
-              </div>
+        <div className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-6 sm:pb-4">
+          <section className="mx-auto flex max-h-[calc(100dvh-1.5rem)] max-w-3xl flex-col gap-3 overflow-y-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-2xl sm:flex-row sm:items-center sm:gap-4">
+            <p className="min-w-0 flex-1 text-sm leading-6 app-muted">
+              {dictionary.cookieConsent.title}{" "}
+              <LocalizedLink
+                href="/cookies"
+                className="font-medium text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
+              >
+                {dictionary.cookieConsent.learnMore}
+              </LocalizedLink>
+            </p>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[26rem] xl:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => applyConsent(buildEssentialOnlyConsent())}
-                  className={buttonStyles({
-                    variant: "secondary",
-                    className: "justify-center",
-                  })}
-                >
-                  {dictionary.cookieConsent.rejectOptional}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyConsent(buildLimitedConsent())}
-                  className={buttonStyles({
-                    variant: "secondary",
-                    className: "justify-center",
-                  })}
-                >
-                  {dictionary.cookieConsent.limitedUse}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsPreferencesOpen(true)}
-                  className={buttonStyles({
-                    variant: "secondary",
-                    className: "justify-center",
-                  })}
-                >
-                  {dictionary.cookieConsent.customize}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyConsent(buildAllowAllConsent())}
-                  className={buttonStyles({
-                    variant: "secondary",
-                    className: "justify-center",
-                  })}
-                >
-                  {dictionary.cookieConsent.allowAll}
-                </button>
-              </div>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+              <button
+                type="button"
+                onClick={() => applyConsent(buildEssentialOnlyConsent())}
+                className={buttonStyles({
+                  variant: "secondary",
+                  size: "sm",
+                  className: "justify-center",
+                })}
+              >
+                {dictionary.cookieConsent.rejectOptional}
+              </button>
+              <button
+                type="button"
+                onClick={() => applyConsent(buildLimitedConsent())}
+                className={buttonStyles({
+                  variant: "secondary",
+                  size: "sm",
+                  className: "justify-center",
+                })}
+              >
+                {dictionary.cookieConsent.limitedUse}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPreferencesOpen(true)}
+                className={buttonStyles({
+                  variant: "secondary",
+                  size: "sm",
+                  className: "justify-center",
+                })}
+              >
+                {dictionary.cookieConsent.customize}
+              </button>
+              <button
+                type="button"
+                onClick={() => applyConsent(buildAllowAllConsent())}
+                className={buttonStyles({
+                  variant: "secondary",
+                  size: "sm",
+                  className: "justify-center",
+                })}
+              >
+                {dictionary.cookieConsent.allowAll}
+              </button>
             </div>
           </section>
         </div>

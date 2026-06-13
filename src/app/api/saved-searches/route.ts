@@ -19,8 +19,12 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Anonymous visitors simply have no saved searches. Return an empty list
+  // (200) instead of 401 so the discovery pages' background load doesn't log a
+  // console error on every public/SEO visit. Mutations (POST/DELETE) below
+  // still require auth.
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ searches: [] });
   }
 
   const { data, error } = await supabase
