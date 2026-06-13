@@ -110,12 +110,17 @@ function ToastItem({
   );
 }
 
+// Stable no-op used when no provider is reachable. Toasts are interaction-only
+// feedback, so a consumer that renders without the provider in a given pass
+// (e.g. an isolated server/dynamic SSR render where the context isn't wired up)
+// should degrade silently rather than crash the whole render. In the normal
+// tree the real provider value is returned, so behaviour is unchanged.
+const NOOP_TOAST: ToastContextValue = {
+  show: () => {},
+  success: () => {},
+  error: () => {},
+};
+
 export function useToast() {
-  const context = useContext(ToastContext);
-
-  if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
-
-  return context;
+  return useContext(ToastContext) ?? NOOP_TOAST;
 }
