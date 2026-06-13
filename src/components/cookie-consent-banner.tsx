@@ -127,10 +127,10 @@ export default function CookieConsentBanner({
             role="dialog"
             aria-modal="true"
             aria-labelledby="cookie-settings-title"
-            className="mx-auto w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8"
+            className="mx-auto w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-2xl sm:p-8"
           >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="max-w-2xl">
+            <div className="relative">
+              <div className="max-w-2xl pr-11 sm:pr-12">
                 <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
                   {dictionary.cookieConsent.badge}
                 </p>
@@ -148,16 +148,27 @@ export default function CookieConsentBanner({
               <button
                 type="button"
                 onClick={() => setIsPreferencesOpen(false)}
-                className={buttonStyles({
-                  variant: "ghost",
-                  size: "sm",
-                })}
+                aria-label={dictionary.cookieConsent.close}
+                className="absolute right-0 top-0 inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border app-border bg-[color:var(--surface)] text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
               >
-                {dictionary.cookieConsent.close}
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6 6l12 12M18 6L6 18"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </button>
             </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-5 space-y-3 sm:mt-6 sm:space-y-4">
               {categories.map((category) => (
                 <label
                   key={category.key}
@@ -196,7 +207,7 @@ export default function CookieConsentBanner({
               ))}
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => applyConsent(buildEssentialOnlyConsent())}

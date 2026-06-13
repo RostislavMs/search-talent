@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CreatorCard from "@/components/creator-card";
 import ProjectCard from "@/components/project-card";
 import {
@@ -580,9 +580,15 @@ export default function DiscoveryPage({
   const [loading, setLoading] = useState(false);
   // When the server seeds the first page of results (initialTotals present),
   // skip the initial skeleton so the seeded cards are the first paint and the
-  // client hydrates against identical markup. The mount effect below still
-  // re-fetches the same default query to keep the data fresh.
+  // client hydrates against identical markup.
   const [initialLoading, setInitialLoading] = useState(!initialTotals);
+  // Tracks whether the server already seeded the default query. The search
+  // effect uses this to skip its very first (mount) fetch: that fetch hits the
+  // robots-blocked /api/search, which fails for Googlebot and would otherwise
+  // wipe the seeded cards on its error path — re-introducing the Soft 404 in
+  // the rendered DOM. The seed IS the initial state; only user-driven filter /
+  // query / page changes trigger a live fetch.
+  const skipNextFetchRef = useRef(Boolean(initialTotals));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedSearches, setSavedSearches] = useState<
     Array<{
@@ -758,6 +764,14 @@ export default function DiscoveryPage({
   ]);
 
   useEffect(() => {
+    // First run on a server-seeded page: the current state already matches the
+    // seed, so there is nothing to fetch. Skip it (see skipNextFetchRef) to
+    // avoid the blocked /api/search call wiping the seeded results for crawlers.
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false;
+      return;
+    }
+
     const timeoutId = window.setTimeout(async () => {
       setLoading(true);
       setErrorMessage(null);
