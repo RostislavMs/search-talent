@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getPublicProjectPageData } from "@/lib/db/public";
 import { isLocale } from "@/lib/i18n/config";
+import { ogLogoDataUri } from "@/lib/og-logo";
 
 export const runtime = "nodejs";
 export const alt = "SearchTalent project";
@@ -54,16 +55,16 @@ export default async function Image({
               width: 44,
               height: 44,
               borderRadius: 12,
-              background: "#f59e0b",
-              color: "#0f172a",
+              background: "#ffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 24,
-              fontWeight: 800,
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
             }}
           >
-            S
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={ogLogoDataUri} width={30} height={30} alt="SearchTalent" />
           </div>
           <span>SearchTalent</span>
         </div>

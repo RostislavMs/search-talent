@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { isLocale } from "@/lib/i18n/config";
+import { ogLogoDataUri } from "@/lib/og-logo";
 
 export const runtime = "nodejs";
 export const alt = "SearchTalent";
@@ -50,16 +51,16 @@ export default async function Image({
               width: 56,
               height: 56,
               borderRadius: 16,
-              background: "#f59e0b",
-              color: "#0f172a",
+              background: "#ffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 32,
-              fontWeight: 800,
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
             }}
           >
-            S
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={ogLogoDataUri} width={40} height={40} alt="SearchTalent" />
           </div>
           <span>SearchTalent</span>
         </div>
