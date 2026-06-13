@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getArticleDetail } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
+import { ogLogoDataUri } from "@/lib/og-logo";
 
 export const runtime = "nodejs";
 export const alt = "SearchTalent article";
@@ -57,16 +58,23 @@ export default async function Image({
               width: 44,
               height: 44,
               borderRadius: 12,
-              background: "#0f172a",
-              color: "#f8fafc",
+              background: "#ffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 24,
-              fontWeight: 800,
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              boxShadow: "0 4px 12px rgba(15, 23, 42, 0.12)",
             }}
           >
-            S
+            <div
+              style={{
+                width: 30,
+                height: 30,
+                backgroundImage: `url(${ogLogoDataUri})`,
+                backgroundSize: "30px 30px",
+                backgroundRepeat: "no-repeat",
+              }}
+            />
           </div>
           <span>SearchTalent</span>
         </div>
