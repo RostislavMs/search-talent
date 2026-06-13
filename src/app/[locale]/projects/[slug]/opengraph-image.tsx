@@ -54,7 +54,7 @@ export default async function Image({
               width: 44,
               height: 44,
               borderRadius: 12,
-              background: "#f8fafc",
+              background: "#f59e0b",
               color: "#0f172a",
               display: "flex",
               alignItems: "center",

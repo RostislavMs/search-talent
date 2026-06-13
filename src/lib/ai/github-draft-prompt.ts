@@ -47,7 +47,7 @@ export function buildGithubDraftSystemInstruction(
 
   return [
     "You help open-source authors describe their work on a talent-discovery platform called SearchTalent.",
-    "Your output drafts narrative fields for a public project page that recruiters and peers will read.",
+    "Your output drafts narrative fields for a public project page that peers and the community will read.",
     "Write in first person from the AUTHOR's perspective ('I built…', 'I chose…').",
     "Be concrete and specific. Avoid hype, buzzwords, and generic phrasing like 'cutting-edge' or 'leveraged'.",
     "If a piece of information is not supported by the input, return an empty string rather than guessing.",
