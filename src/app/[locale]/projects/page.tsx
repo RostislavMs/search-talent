@@ -7,6 +7,7 @@ import {
   getProjectKindDirectory,
   getTechnologyDirectory,
 } from "@/lib/db/marketing";
+import { getInitialDiscoveryResults } from "@/lib/db/search";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
@@ -62,9 +63,15 @@ export default async function LocalizedProjectsPage({
   const marketing = getMarketingContent(locale);
   const dictionary = getDictionary(locale);
 
-  const [technologies, kindCounts] = await Promise.all([
+  const [technologies, kindCounts, initial] = await Promise.all([
     getTechnologyDirectory(200),
     getProjectKindDirectory(),
+    getInitialDiscoveryResults({
+      scope: "projects",
+      sort: "relevance",
+      page: 1,
+      perPage: 10,
+    }),
   ]);
 
   const techItems = technologies
@@ -88,7 +95,12 @@ export default async function LocalizedProjectsPage({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <DiscoveryPage mode="projects" />
+      <DiscoveryPage
+        mode="projects"
+        initialUsers={initial?.users}
+        initialProjects={initial?.projects}
+        initialTotals={initial?.totals}
+      />
 
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
         <BrowseFacets

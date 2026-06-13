@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import { getTechnologyBySlug } from "@/lib/db/marketing";
+import { getInitialDiscoveryResults } from "@/lib/db/search";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { buildProjectsTagMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
@@ -66,6 +67,14 @@ export default async function ProjectsByTagPage({
     notFound();
   }
 
+  const initial = await getInitialDiscoveryResults({
+    scope: "projects",
+    sort: "relevance",
+    page: 1,
+    perPage: 10,
+    skillIds: [technology.id],
+  });
+
   const hero = {
     eyebrow: locale === "uk" ? "Стек" : "Stack",
     title:
@@ -84,6 +93,9 @@ export default async function ProjectsByTagPage({
         mode="projects"
         lockedFilter={{ label: technology.name, skillId: technology.id }}
         hero={hero}
+        initialUsers={initial?.users}
+        initialProjects={initial?.projects}
+        initialTotals={initial?.totals}
       />
     </main>
   );

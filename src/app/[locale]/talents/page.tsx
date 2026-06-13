@@ -7,6 +7,7 @@ import {
   getProfileCategoryDirectory,
   getTalentSkillDirectory,
 } from "@/lib/db/marketing";
+import { getInitialDiscoveryResults } from "@/lib/db/search";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
@@ -58,9 +59,15 @@ export default async function LocalizedTalentsPage({
   const locale = (await getLocaleValue(params)) as Locale;
   const marketing = getMarketingContent(locale);
 
-  const [roles, skills] = await Promise.all([
+  const [roles, skills, initial] = await Promise.all([
     getProfileCategoryDirectory(),
     getTalentSkillDirectory(),
+    getInitialDiscoveryResults({
+      scope: "creators",
+      sort: "relevance",
+      page: 1,
+      perPage: 10,
+    }),
   ]);
 
   const roleItems = roles
@@ -84,7 +91,12 @@ export default async function LocalizedTalentsPage({
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <DiscoveryPage mode="creators" />
+      <DiscoveryPage
+        mode="creators"
+        initialUsers={initial?.users}
+        initialProjects={initial?.projects}
+        initialTotals={initial?.totals}
+      />
 
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
         <BrowseFacets
