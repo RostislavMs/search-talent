@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { JetBrains_Mono, Literata, Manrope } from "next/font/google";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
+import ConsentedAnalytics from "@/components/consented-analytics";
 import HydrationCleanupScript from "@/components/hydration-cleanup-script";
 import InteractiveBackground from "@/components/interactive-background";
 import ThemeScript from "@/components/theme-script";
@@ -101,8 +100,9 @@ export default async function RootLayout({
       <body className="min-h-screen" suppressHydrationWarning>
         <InteractiveBackground />
         <div className="relative flex min-h-screen flex-col">{children}</div>
-        <SpeedInsights />
-        <Analytics />
+        <ConsentedAnalytics
+          initialAllowed={allowsCookieCategory(consent, "analytics")}
+        />
       </body>
     </html>
   );

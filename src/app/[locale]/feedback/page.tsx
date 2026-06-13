@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
+import LocalizedLink from "@/components/ui/localized-link";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
 import { apiFetch } from "@/lib/api-client";
@@ -57,25 +58,17 @@ export default function FeedbackPage() {
   };
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.feedbackPage.eyebrow}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
-              {dictionary.feedbackPage.title}
-            </h1>
-            <p className="mt-4 max-w-xl text-base leading-8 app-muted">
-              {dictionary.feedbackPage.description}
-            </p>
-          </div>
-
-          <ButtonLink href="/" variant="ghost" size="sm">
-            {dictionary.feedbackPage.backToHome}
-          </ButtonLink>
-        </div>
+    <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      <section className="rounded-hero app-card p-6 sm:p-10">
+        <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
+          {dictionary.feedbackPage.eyebrow}
+        </p>
+        <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+          {dictionary.feedbackPage.title}
+        </h1>
+        <p className="mt-4 max-w-xl text-base leading-8 app-muted">
+          {dictionary.feedbackPage.description}
+        </p>
 
         {sent ? (
           <div className="mt-8 rounded-panel app-panel p-6 text-center">
@@ -180,6 +173,13 @@ export default function FeedbackPage() {
           </form>
         )}
       </section>
+
+      <LocalizedLink
+        href="/"
+        className="mt-8 inline-block text-sm app-soft transition-colors hover:text-[color:var(--foreground)]"
+      >
+        ← {dictionary.feedbackPage.backToHome}
+      </LocalizedLink>
     </main>
   );
 }

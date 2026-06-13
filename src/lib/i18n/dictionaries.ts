@@ -435,6 +435,11 @@ export const dictionaries = {
         description:
           "Share ideas, report bugs, or send feedback to help improve SearchTalent for the community.",
       },
+      contacts: {
+        title: "Contacts — Get in Touch",
+        description:
+          "Reach the SearchTalent team by email, GitHub, or Telegram, or send structured feedback through our form.",
+      },
     },
     home: {
       eyebrow: "Talent platform & creative portfolios",
@@ -2087,6 +2092,23 @@ export const dictionaries = {
         "Your feedback has been received. We review every submission and will reach out if we need more details.",
       sendAnother: "Send another",
     },
+    contactsPage: {
+      eyebrow: "Get in touch",
+      title: "Contacts",
+      description:
+        "Have a question, found a bug, or want to collaborate? Here is how to reach the SearchTalent team.",
+      backToHome: "Back to home",
+      emailTitle: "Email",
+      emailText:
+        "General questions, partnerships, press, or appeals about moderation decisions.",
+      githubTitle: "GitHub",
+      githubText:
+        "Report bugs, open issues, or contribute — SearchTalent is open source.",
+      telegramTitle: "Telegram",
+      telegramText: "Follow updates and reach the team with quick questions.",
+      feedbackText: "Have a specific idea, bug report, or complaint?",
+      feedbackCta: "Use the feedback form",
+    },
   },
   uk: {
     localeName: "Українська",
@@ -2521,6 +2543,11 @@ export const dictionaries = {
         title: "Зворотний зв'язок та пропозиції",
         description:
           "Поділіться ідеями, повідомте про помилку або надішліть відгук, щоб допомогти покращити SearchTalent.",
+      },
+      contacts: {
+        title: "Контакти — зв'яжіться з нами",
+        description:
+          "Зв'яжіться з командою SearchTalent через email, GitHub чи Telegram або надішліть відгук через форму.",
       },
     },
     home: {
@@ -4147,6 +4174,24 @@ export const dictionaries = {
       successDescription:
         "Ваш відгук отримано. Ми розглядаємо кожне звернення і зв'яжемося, якщо знадобляться деталі.",
       sendAnother: "Надіслати ще",
+    },
+    contactsPage: {
+      eyebrow: "Зв'яжіться з нами",
+      title: "Контакти",
+      description:
+        "Маєте питання, знайшли помилку чи хочете співпрацювати? Ось як зв'язатися з командою SearchTalent.",
+      backToHome: "На головну",
+      emailTitle: "Email",
+      emailText:
+        "Загальні питання, партнерства, преса або оскарження рішень модерації.",
+      githubTitle: "GitHub",
+      githubText:
+        "Повідомляйте про помилки, відкривайте issues або долучайтеся — SearchTalent з відкритим кодом.",
+      telegramTitle: "Telegram",
+      telegramText:
+        "Стежте за оновленнями та звертайтеся до команди з короткими питаннями.",
+      feedbackText: "Маєте конкретну ідею, звіт про помилку чи скаргу?",
+      feedbackCta: "Скористайтеся формою зворотного зв'язку",
     },
   },
 } as const;
