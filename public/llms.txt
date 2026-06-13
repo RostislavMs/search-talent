@@ -1,18 +1,19 @@
 # SearchTalent
 
-> Bilingual (English/Ukrainian) freelance and talent marketplace where companies hire developers, designers, and other specialists, and where freelancers publish portfolios, projects, and articles to showcase their work.
+> Bilingual (English/Ukrainian) community and portfolio platform for IT specialists. Developers, designers, and other professionals publish public profiles, project portfolios, and technical articles; visitors discover, follow, and react to that work. SearchTalent is **not** a recruiting or hiring marketplace — it is built around creator portfolios, community rating, and interaction.
 
-SearchTalent helps companies discover IT specialists and review their case-study portfolios, while professionals build a public profile with work experience, skills, education, certificates, and published projects. The platform also hosts an editorial section for community articles on engineering, design, and freelancing.
+SearchTalent gives every IT specialist a public profile with work experience, skills, education, certificates, and published projects, plus an editorial section for community articles and polls on engineering, design, and the craft. Discovery is driven by a transparent community rating rather than job listings.
 
 Content is available in two locales: `/en/*` (English) and `/uk/*` (Ukrainian). Both versions of every public page are linked via `<link rel="alternate" hreflang>` and listed in `sitemap.xml`.
 
 ## Core pages
 
 - [Home](/en): platform overview and entry point
-- [Talents](/en/talents): browse freelancer portfolios with filters
+- [Talents](/en/talents): browse creator profiles and portfolios with filters
 - [Projects](/en/projects): browse user-published project case studies
 - [Articles](/en/articles): editorial content from the community
-- [Hire by role](/en/hire): landing pages grouped by professional role
+- [Polls](/en/polls): community polls and discussions
+- [Rating guide](/en/rating-guide): how the community rating is calculated
 - [About](/en/about): mission and platform description
 - [FAQ](/en/faq): structured answers about how the platform works
 
@@ -31,6 +32,7 @@ The following sections are private or non-content and should not be cited:
 - `/login`, `/signup`, `/verify`, `/forgot-password`, `/reset-password` — auth flows
 - `/*/projects/new`, `/*/projects/edit/*` — content creation forms
 - `/*/articles/new`, `/*/articles/edit/*` — content creation (moderation lives in `/admin/content/articles`)
+- `/*/polls/new`, `/*/polls/edit/*` — content creation forms
 - `/*?filter=*`, `/*?sort=*`, `/*?page=*`, `/*?query=*`, `/*?tag=*` — filter/pagination variants of indexable pages
 - `/search` — internal search results
 

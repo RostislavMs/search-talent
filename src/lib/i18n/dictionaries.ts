@@ -346,9 +346,9 @@ export const dictionaries = {
     },
     metadata: {
       home: {
-        title: "Discover IT Talent — Projects, Portfolios & Code",
+        title: "Discover IT Talent — Projects, Portfolios & Articles",
         description:
-          "Community platform where developers, designers, and IT specialists publish real projects with tech stacks and code samples — not just resumes.",
+          "Community platform where developers, designers, and IT specialists publish portfolios, projects, and articles — and grow through community ratings.",
       },
       search: {
         title: "Search Talent & IT Projects by Skills",
@@ -439,12 +439,12 @@ export const dictionaries = {
     home: {
       eyebrow: "Talent platform & creative portfolios",
       titleLead: "Discover IT talent by their",
-      titleWords: ["projects", "portfolios", "skills", "code"],
+      titleWords: ["projects", "portfolios", "skills", "articles"],
       description:
         "Developers, designers, and IT pros showing real work — not just resumes.",
       descriptionHighlights: [
         "Projects with stacks",
-        "Code samples",
+        "Author articles",
         "Community rating",
       ],
       browseProjects: "Browse portfolios",
@@ -802,7 +802,7 @@ export const dictionaries = {
       learningsHint:
         "Skills sharpened, mistakes made, lessons that would help others.",
       learningsPlaceholder:
-        "Concrete takeaways a recruiter or peer would find interesting.",
+        "Concrete takeaways a peer or reader would find interesting.",
       showcaseLabel: "What this project demonstrates",
       showcaseHint:
         "Which of your skills or strengths does this project show off?",
@@ -2005,7 +2005,7 @@ export const dictionaries = {
       eyebrow: "About the platform",
       title: "About SearchTalent",
       description:
-        "SearchTalent is an open platform for IT specialists to showcase their work, build public portfolios, and connect with teams looking for talent.",
+        "SearchTalent is an open platform for IT specialists to showcase their work, build public portfolios, and connect with the IT community.",
       missionTitle: "Our mission",
       missionText:
         "We believe every developer, designer, and specialist deserves a clean, fast way to present their skills and projects to the world. SearchTalent gives you a public profile, a project portfolio, community feedback, and discovery tools — all in one place.",
@@ -2433,9 +2433,9 @@ export const dictionaries = {
     },
     metadata: {
       home: {
-        title: "Знаходьте IT-таланти — проєкти, портфоліо та код",
+        title: "Знаходьте IT-таланти — проєкти, портфоліо та статті",
         description:
-          "SearchTalent — платформа-спільнота, де IT-фахівці показують реальні проєкти зі стеком технологій і кодом, а не просто резюме.",
+          "SearchTalent — платформа-спільнота, де IT-фахівці публікують портфоліо, проєкти та статті й зростають у рейтингу спільноти.",
       },
       search: {
         title: "Пошук талантів та IT-проєктів за навичками",
@@ -2526,12 +2526,12 @@ export const dictionaries = {
     home: {
       eyebrow: "Платформа талантів та креативних портфоліо",
       titleLead: "Знаходьте IT-таланти за",
-      titleWords: ["проєктами", "портфоліо", "навичками", "кодом"],
+      titleWords: ["проєктами", "портфоліо", "навичками", "статтями"],
       description:
         "Розробники, дизайнери та IT-фахівці — реальна робота, а не лише резюме.",
       descriptionHighlights: [
         "Проєкти зі стеком",
-        "Зразки коду",
+        "Авторські статті",
         "Рейтинг спільноти",
       ],
       browseProjects: "Переглянути портфоліо",
@@ -2860,7 +2860,7 @@ export const dictionaries = {
       learningsHint:
         "Поліровані навички, помилки, уроки, які стануть у пригоді іншим.",
       learningsPlaceholder:
-        "Конкретні висновки, які зацікавлять рекрутера чи колегу.",
+        "Конкретні висновки, які зацікавлять колег чи читачів.",
       showcaseLabel: "Що демонструє цей проєкт",
       showcaseHint:
         "Які саме ваші навички або сильні сторони показує цей проєкт?",
@@ -4066,7 +4066,7 @@ export const dictionaries = {
       eyebrow: "Про платформу",
       title: "Про SearchTalent",
       description:
-        "SearchTalent — відкрита платформа для IT-фахівців, де можна демонструвати свої роботи, створювати публічні портфоліо та знаходити команди, які шукають таланти.",
+        "SearchTalent — відкрита платформа для IT-фахівців, де можна демонструвати свої роботи, створювати публічні портфоліо та спілкуватися зі спільнотою IT.",
       missionTitle: "Наша місія",
       missionText:
         "Ми віримо, що кожен розробник, дизайнер та фахівець заслуговує на зручний і швидкий спосіб представити свої навички та проєкти світу. SearchTalent дає вам публічний профіль, портфоліо проєктів, зворотний зв'язок від спільноти та інструменти пошуку — все в одному місці.",

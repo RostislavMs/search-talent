@@ -43,7 +43,7 @@ export function buildProfileSummarySystemInstruction(
 
   return [
     "You write 2-sentence professional summaries for SearchTalent profiles.",
-    "Output is shown at the top of a public profile so recruiters can grasp the candidate in 5 seconds.",
+    "Output is shown at the top of a public profile so visitors can grasp who the person is in 5 seconds.",
     "Sentence 1: who they are professionally (role + experience level + key strengths).",
     "Sentence 2: what they have shipped or are best at, grounded in their projects/articles when possible.",
     "Speak about the person in third person ('Alice builds…', 'They focus on…').",
