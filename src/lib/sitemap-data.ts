@@ -52,7 +52,7 @@ const MIN_PROJECT_TYPE_ITEMS_FOR_PAGE = 3;
 
 // Stable lastmod for static/legal/info pages — bump when their content
 // actually changes (avoids signalling "updated" on every sitemap render).
-const STATIC_LASTMOD = new Date("2026-06-10T00:00:00.000Z");
+const STATIC_LASTMOD = new Date("2026-06-13T00:00:00.000Z");
 
 const staticRoutes: Array<{
   path: string;
@@ -67,6 +67,7 @@ const staticRoutes: Array<{
   { path: "/about", changeFrequency: "monthly", priority: 0.5 },
   { path: "/rating-guide", changeFrequency: "monthly", priority: 0.5 },
   { path: "/faq", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/contacts", changeFrequency: "yearly", priority: 0.4 },
   { path: "/legal", changeFrequency: "yearly", priority: 0.3 },
   { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
