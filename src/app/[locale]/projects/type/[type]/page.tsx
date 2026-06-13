@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import { getProjectKindDirectory } from "@/lib/db/marketing";
+import { getInitialDiscoveryResults } from "@/lib/db/search";
 import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import {
@@ -90,6 +91,14 @@ export default async function ProjectsByTypePage({
   const dictionary = getDictionary(locale);
   const label = getProjectKindLabel(kind, dictionary);
 
+  const initial = await getInitialDiscoveryResults({
+    scope: "projects",
+    sort: "relevance",
+    page: 1,
+    perPage: 10,
+    projectKind: kind,
+  });
+
   const hero = {
     eyebrow: locale === "uk" ? "Тип проєкту" : "Project type",
     title:
@@ -108,6 +117,9 @@ export default async function ProjectsByTypePage({
         mode="projects"
         lockedFilter={{ label, kind }}
         hero={hero}
+        initialUsers={initial?.users}
+        initialProjects={initial?.projects}
+        initialTotals={initial?.totals}
       />
     </main>
   );

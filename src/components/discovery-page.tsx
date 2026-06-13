@@ -117,6 +117,18 @@ type DiscoveryPageProps = {
    * compact, SEO-focused heading instead of the full hero.
    */
   hero?: DiscoveryHero;
+  /**
+   * Server-rendered first page of results for the page's default query
+   * (no user filters, page 1, relevance), matching the locked facet if any.
+   * Seeding the state from these props puts real result cards in the SSR
+   * HTML — without them the page renders only loading skeletons, which Google
+   * reads as an empty page and flags as a Soft 404. The client still re-fetches
+   * on mount/filter change; the seed only governs the first paint (and so must
+   * match what that first fetch returns, for a clean hydration).
+   */
+  initialUsers?: SearchUser[];
+  initialProjects?: SearchProject[];
+  initialTotals?: { projects: number; users: number };
 };
 
 type DiscoveryCopy = {
@@ -515,6 +527,9 @@ export default function DiscoveryPage({
   initialSkillIds = [],
   hero,
   lockedFilter,
+  initialUsers,
+  initialProjects,
+  initialTotals,
 }: DiscoveryPageProps) {
   const dictionary = useDictionary();
   const toast = useToast();
@@ -563,7 +578,11 @@ export default function DiscoveryPage({
   const [minScore, setMinScore] = useState<number | null>(null);
   const [maxScore, setMaxScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  // When the server seeds the first page of results (initialTotals present),
+  // skip the initial skeleton so the seeded cards are the first paint and the
+  // client hydrates against identical markup. The mount effect below still
+  // re-fetches the same default query to keep the data fresh.
+  const [initialLoading, setInitialLoading] = useState(!initialTotals);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedSearches, setSavedSearches] = useState<
     Array<{
@@ -577,12 +596,16 @@ export default function DiscoveryPage({
   const [saveSearchName, setSaveSearchName] = useState("");
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [savingSearch, setSavingSearch] = useState(false);
-  const [projects, setProjects] = useState<SearchProject[]>([]);
-  const [users, setUsers] = useState<SearchUser[]>([]);
-  const [totals, setTotals] = useState({
-    projects: 0,
-    users: 0,
-  });
+  const [projects, setProjects] = useState<SearchProject[]>(
+    initialProjects ?? [],
+  );
+  const [users, setUsers] = useState<SearchUser[]>(initialUsers ?? []);
+  const [totals, setTotals] = useState(
+    initialTotals ?? {
+      projects: 0,
+      users: 0,
+    },
+  );
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
