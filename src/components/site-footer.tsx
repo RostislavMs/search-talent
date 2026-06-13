@@ -33,6 +33,7 @@ export default function SiteFooter({
   const ratingGuideLabel = isEnglish ? "Rating guide" : "Гайд по рейтингу";
   const faqLabel = isEnglish ? "FAQ" : "FAQ";
   const feedbackLabel = isEnglish ? "Feedback" : "Зворотний зв'язок";
+  const contactsLabel = isEnglish ? "Contacts" : "Контакти";
 
   return (
     <footer className="border-t border-[color:var(--border)] bg-[color:var(--surface)]">
@@ -146,6 +147,12 @@ export default function SiteFooter({
                 className="hover:text-[color:var(--foreground)]"
               >
                 {feedbackLabel}
+              </LocalizedLink>
+              <LocalizedLink
+                href="/contacts"
+                className="hover:text-[color:var(--foreground)]"
+              >
+                {contactsLabel}
               </LocalizedLink>
             </nav>
           </div>
