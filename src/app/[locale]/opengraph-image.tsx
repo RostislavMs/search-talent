@@ -59,8 +59,15 @@ export default async function Image({
               boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ogLogoDataUri} width={40} height={40} alt="SearchTalent" />
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                backgroundImage: `url(${ogLogoDataUri})`,
+                backgroundSize: "40px 40px",
+                backgroundRepeat: "no-repeat",
+              }}
+            />
           </div>
           <span>SearchTalent</span>
         </div>
