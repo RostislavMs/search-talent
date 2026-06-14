@@ -1,6 +1,6 @@
 # SearchTalent
 
-A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, and technical articles; visitors discover, follow, and react to content. The product is **not** a recruiting/hiring marketplace — it is built around creator portfolios, rating, and community signal.
+A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is **not** a recruiting/hiring marketplace — it is built around creator portfolios, rating, and community signal.
 
 ---
 
@@ -40,8 +40,9 @@ search-talent/
 │   │   │   ├── talents/              Talent search & filters
 │   │   │   ├── projects/             Project catalogue + create/edit
 │   │   │   ├── articles/             Article feed + composer + edit
+│   │   │   ├── polls/                 Poll feed + composer + edit
 │   │   │   ├── search/               Global search results
-│   │   │   ├── u/[username]/         Public profile, /projects, /articles
+│   │   │   ├── u/[username]/         Public profile, /projects, /articles, /polls
 │   │   │   ├── profile/edit/         Profile editor (sections, presentation, GitHub link)
 │   │   │   ├── notifications/        Notifications inbox
 │   │   │   ├── dashboard/            Personal analytics
@@ -99,6 +100,20 @@ search-talent/
 - Likes, view counter, threaded comments, mentions, reactions.
 - Draft / published states; admins moderate from the admin console.
 
+### Polls
+
+- Single-choice, multiple-choice, and rating questions; voting requires sign-in.
+- Category, cover image, optional close date, threaded comments, likes, reactions, view & response counters.
+- Draft / published states; grouped with articles under the **Community** navigation.
+
+### Co-authorship
+
+- Invite other members as co-authors when creating or editing a project, article, or poll — search by name or `@username`, up to 4 co-authors (5 authors total).
+- Invitees confirm via an actionable in-app notification (Accept / Decline at `/notifications`). A work created for publication is held as a draft until every invitee responds, then auto-publishes — attributing only those who accepted.
+- All authors are shown as an avatar stack with a "+N" overflow on cards, on detail pages (project hero + sidebar, article/poll bylines), and in every co-author's profile collections.
+- Editing reconciles the set: newly added members are invited, removed ones lose attribution.
+- Rating & badges currently credit **only the original creator** — co-authored work does not inflate anyone else's score. Weighted credit-sharing is a planned later phase.
+
 ### Talents discovery
 
 - `/talents` filters by skills, experience, country, work format, salary range.
@@ -122,7 +137,7 @@ search-talent/
 ### Notifications
 
 - In-app inbox at `/notifications` plus a header bell with unread count.
-- Triggers: follows, comments, reactions, mentions, moderation decisions, badge awards.
+- Triggers: follows, comments, reactions, mentions, moderation decisions, badge awards, new content from followed authors, and co-author invites / responses (the invite is actionable — accept or decline in place).
 - Real-time-style polling via lightweight API; preferences respect cookie consent.
 
 ### Moderation & admin
@@ -149,8 +164,9 @@ search-talent/
 | `/talents` | Talent search with filters |
 | `/projects`, `/projects/[slug]` | Project catalogue and detail |
 | `/articles`, `/articles/[slug]` | Article feed and detail |
+| `/polls`, `/polls/[slug]` | Poll feed and detail |
 | `/u/[username]` | Public profile |
-| `/u/[username]/projects`, `/u/[username]/articles` | Per-user collections |
+| `/u/[username]/projects`, `/u/[username]/articles`, `/u/[username]/polls` | Per-user collections (own + co-authored) |
 | `/search` | Global search |
 | `/rating-guide` | How the rating system works |
 | `/about`, `/faq`, `/feedback` | Marketing & support |
@@ -176,6 +192,7 @@ search-talent/
 | `/profile/edit` | Profile editor (sections, presentation, GitHub link, account) |
 | `/projects/new`, `/projects/edit/[id]` | Project composer |
 | `/articles/new`, `/articles/edit/[id]` | Article composer |
+| `/polls/new`, `/polls/edit/[id]` | Poll composer |
 
 ### Admin (gated by `platform_admins`)
 
@@ -184,6 +201,7 @@ search-talent/
 | `/admin` | Overview cards |
 | `/admin/content/articles` | Article moderation table |
 | `/admin/content/projects` | Project moderation table |
+| `/admin/content/polls` | Poll moderation table |
 | `/admin/content/comments` | Comment moderation |
 | `/admin/moderation` | Reports queue |
 | `/admin/users` | User management |
@@ -235,6 +253,26 @@ search-talent/
 | POST | `/api/articles/[id]/like` | Toggle like |
 | POST | `/api/articles/[id]/view` | Increment view counter |
 | GET/POST | `/api/articles/[id]/comments` | Threaded comments |
+
+> `POST /api/projects`, `/api/articles`, `/api/polls` and their `PATCH`/`PUT` counterparts accept an optional `coAuthorUserIds` array (≤ 4, server-validated).
+
+### Polls
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET/POST | `/api/polls` | List & create |
+| GET/PUT/DELETE | `/api/polls/[id]` | Single poll ops |
+| POST | `/api/polls/[id]/vote` | Cast a vote |
+| POST | `/api/polls/[id]/like` | Toggle like |
+| POST | `/api/polls/[id]/view` | Increment view counter |
+| GET/POST | `/api/polls/[id]/comments` | Threaded comments |
+
+### Co-author invitations
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/co-author-invitations` | Pending invitations for the current user |
+| PATCH | `/api/co-author-invitations/[id]` | Accept / decline an invitation |
 
 ### Discovery & content
 
@@ -398,7 +436,7 @@ pnpm dev                         # http://localhost:3000
 
 ## Testing
 
-Unit tests live under `tests/unit/` and cover validation, rating math, moderation, AI prompts, GitHub sync, notifications presentation, mentions, rich-text sanitisation, and SEO helpers. Run them with `pnpm test:run`.
+Unit tests live under `tests/unit/` and cover validation, rating math, moderation, AI prompts, GitHub sync, notifications presentation, mentions (incl. Unicode/Cyrillic search sanitisation), co-authorship (invite/accept/decline & publish-on-confirm logic, via a mocked Supabase client), rich-text sanitisation, and SEO helpers. Run them with `pnpm test:run`.
 
 ---
 
