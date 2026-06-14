@@ -22,6 +22,7 @@ import {
   type LeaderboardTimeframe,
 } from "@/lib/leaderboards";
 import { getBadgeBonusPoints } from "@/lib/db/badges";
+import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
 import { createAdminClient, createPublicReadOnlyClient } from "@/lib/supabase/admin";
 
 // ---- row types ------------------------------------------------------------
@@ -122,6 +123,8 @@ export type RankedProject = {
   monthlyDislikes: number;
   mediaCount: number;
   technologyCount: number;
+  /** Display names of accepted co-authors (excludes the owner). */
+  coAuthorNames: string[];
 };
 
 export type RankedCreator = {
@@ -341,6 +344,7 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
         monthlyDislikes: project.recent_dislikes,
         mediaCount,
         technologyCount: techCount,
+        coAuthorNames: [],
       });
     }
 
@@ -351,6 +355,26 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
           ? b.monthlyLikes - a.monthlyLikes
           : b.likes - a.likes),
     );
+  }
+
+  // Attach co-author display names (owner excluded) to ranked projects. One
+  // batch query over the displayed ids — does not touch the rating math above.
+  const rankedProjectIds = Array.from(
+    new Set(
+      [...rankedProjects.all, ...rankedProjects.month].map((p) => p.id),
+    ),
+  );
+  const projectCoAuthors = await loadAcceptedCoAuthorsMap(
+    supabase,
+    "project",
+    rankedProjectIds,
+  );
+  for (const tf of ["all", "month"] as const) {
+    for (const p of rankedProjects[tf]) {
+      p.coAuthorNames = (projectCoAuthors.get(p.id) ?? [])
+        .map((a) => a.name || a.username || "")
+        .filter(Boolean);
+    }
   }
 
   // ---- score all creators per timeframe -----------------------------------

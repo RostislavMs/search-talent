@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeMentionQuery } from "@/lib/constants/mentions";
 
 const MAX_SUGGESTIONS = 8;
 const MIN_QUERY_LENGTH = 1;
@@ -25,9 +26,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ suggestions: [] });
   }
 
-  // Escape characters that PostgREST treats as wildcards/specials in
-  // `ilike` patterns. We only allow safe characters in the query.
-  const sanitized = raw.replace(/[^A-Za-z0-9._-]/g, "");
+  // Strip PostgREST/ilike-structural characters but keep Unicode letters, so
+  // Cyrillic (and other non-Latin) names are searchable. See sanitizeMentionQuery.
+  const sanitized = sanitizeMentionQuery(raw);
   if (!sanitized) {
     return NextResponse.json({ suggestions: [] });
   }

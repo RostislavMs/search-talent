@@ -19,6 +19,9 @@ import GithubRepoImporter, {
 import TagSelect from "@/components/ui/tag-select";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
+import CoAuthorPicker, {
+  type CoAuthorOption,
+} from "@/components/co-author-picker";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
@@ -153,6 +156,7 @@ export type EditableProject = {
   github_display_options?: Partial<GithubDisplayOptions> | null;
   github_auto_sync?: boolean | null;
   allow_downloads?: boolean | null;
+  coAuthors?: CoAuthorOption[] | null;
 };
 
 type ProjectFormState = {
@@ -337,6 +341,9 @@ export default function CreateProjectForm({
   const [metaSkills, setMetaSkills] = useState<MetaOption[]>([]);
   const [skillIds, setSkillIds] = useState<number[]>(
     project?.technologies.map((technology) => technology.id) || [],
+  );
+  const [coAuthors, setCoAuthors] = useState<CoAuthorOption[]>(
+    project?.coAuthors ?? [],
   );
   const [step, setStep] = useState<number>(1);
   const [pendingSaveMode, setPendingSaveMode] = useState<SaveMode | null>(null);
@@ -964,6 +971,7 @@ export default function CreateProjectForm({
         solution: form.solution,
         results: form.results,
         skillIds,
+        coAuthorUserIds: coAuthors.map((option) => option.userId),
         githubFullName,
         githubRole: form.githubRole || null,
         githubContribution: form.githubContribution,
@@ -978,7 +986,7 @@ export default function CreateProjectForm({
         status,
       };
     },
-    [form, skillIds, githubFullName],
+    [form, skillIds, coAuthors, githubFullName],
   );
 
   const applyGithubImport = useCallback(
@@ -1353,6 +1361,22 @@ export default function CreateProjectForm({
             skillIds={skillIds}
             onSkillsChange={setSkillIds}
           />
+        )}
+
+        {currentStepKey === "basics" && (
+          <div className="rounded-2xl app-card p-5">
+            <h3 className="font-display text-base font-semibold text-[color:var(--foreground)]">
+              {dictionary.coAuthors.sectionTitle}
+            </h3>
+            <p className="mb-3 mt-1 text-sm app-muted">
+              {dictionary.coAuthors.formHint}
+            </p>
+            <CoAuthorPicker
+              value={coAuthors}
+              onChange={setCoAuthors}
+              locale={router.locale}
+            />
+          </div>
         )}
 
         {currentStepKey === "specifics" && (

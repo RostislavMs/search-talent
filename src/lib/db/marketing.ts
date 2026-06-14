@@ -1,5 +1,6 @@
 import { getArticleFeed } from "@/lib/db/articles";
 import { getLeaderboards } from "@/lib/db/leaderboards";
+import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
 import { slugifySegment } from "@/lib/marketing-content";
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -166,6 +167,7 @@ export type DirectoryProject = {
   score: number | null;
   ownerName: string | null;
   ownerUsername: string | null;
+  coAuthorNames: string[];
 };
 
 export async function getProjectsBySkillId(
@@ -185,7 +187,7 @@ export async function getProjectsBySkillId(
     .order("score", { ascending: false, nullsFirst: false })
     .limit(limit);
 
-  return ((data || []) as Array<{
+  const items = ((data || []) as Array<{
     id: string;
     owner_id: string;
     title: string;
@@ -206,7 +208,21 @@ export async function getProjectsBySkillId(
     kind: row.kind,
     ownerName: row.owner_name,
     ownerUsername: row.owner_username,
+    coAuthorNames: [] as string[],
   }));
+
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(
+    supabase,
+    "project",
+    items.map((item) => item.id),
+  );
+  for (const item of items) {
+    item.coAuthorNames = (coAuthorsMap.get(item.id) ?? [])
+      .map((author) => author.name || author.username || "")
+      .filter(Boolean);
+  }
+
+  return items;
 }
 
 /**

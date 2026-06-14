@@ -13,6 +13,7 @@ import {
   screenContentForModeration,
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { syncCoAuthors } from "@/lib/db/co-authors";
 
 export async function PATCH(
   request: Request,
@@ -149,6 +150,17 @@ export async function PATCH(
       );
     }
   }
+
+  // Reconcile co-authors: add newly invited (pending + notify), drop removed.
+  await syncCoAuthors({
+    supabase,
+    contentType: "project",
+    contentId: project.id,
+    contentTitle: payload.title,
+    contentSlug: updatedProject.slug,
+    creatorUserId: user.id,
+    desiredUserIds: payload.coAuthorUserIds,
+  });
 
   // First publish (draft -> published) notifies the owner's followers. The
   // followers_notified_at guard keeps re-publishes and later edits silent.

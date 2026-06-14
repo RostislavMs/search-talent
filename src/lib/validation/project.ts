@@ -55,6 +55,7 @@ import {
   GITHUB_PROJECT_ROLES,
 } from "@/lib/constants/github";
 import { isValidPublicUrl } from "@/lib/url-validation";
+import { MAX_CO_AUTHORS } from "@/lib/co-authors";
 
 function normalizeOptionalString(value: unknown) {
   if (typeof value !== "string") {
@@ -660,6 +661,11 @@ export const projectPayloadSchema = z
     solution: optionalText("Solution", 5000),
     results: optionalText("Results", 5000),
     skillIds: skillIdsSchema,
+    coAuthorUserIds: z
+      .array(z.string().uuid())
+      .max(MAX_CO_AUTHORS, "Too many co-authors")
+      .default([])
+      .transform((values) => [...new Set(values)]),
     githubFullName: z
       .union([
         z

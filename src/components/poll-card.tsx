@@ -1,5 +1,7 @@
 import OptimizedImage from "@/components/ui/optimized-image";
 import LocalizedLink from "@/components/ui/localized-link";
+import AuthorList from "@/components/author-list";
+import type { ContentAuthor } from "@/lib/co-authors";
 import { formatArticleDate, getCategoryDisplayName } from "@/lib/articles";
 import { isPollClosed, type PollFeedItem } from "@/lib/polls";
 
@@ -22,6 +24,19 @@ export default function PollCard({
     getCategoryDisplayName(poll.category, locale) || (isUkrainian ? "Опитування" : "Poll");
   const isPinned = poll.pinnedUntil && new Date(poll.pinnedUntil) > new Date();
   const closed = isPollClosed(poll.closesAt);
+  const coAuthors = poll.coAuthors ?? [];
+  const allAuthors: ContentAuthor[] = poll.author
+    ? [
+        {
+          userId: poll.author.userId,
+          username: poll.author.username,
+          name: poll.author.name,
+          avatarUrl: poll.author.avatarUrl,
+          isOwner: true,
+        },
+        ...coAuthors,
+      ]
+    : coAuthors;
 
   const questionLabel = isUkrainian
     ? `${poll.questionCount} ${poll.questionCount === 1 ? "питання" : "питань"}`
@@ -82,22 +97,32 @@ export default function PollCard({
         ) : null}
 
         <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-t app-border pt-4 text-xs app-muted">
-          <span className="flex items-center gap-2">
-            <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-[10px] font-semibold text-[color:var(--foreground)]">
-              {poll.author?.avatarUrl ? (
-                <OptimizedImage
-                  src={poll.author.avatarUrl}
-                  alt={authorLabel}
-                  fill
-                  sizes="28px"
-                  className="object-cover"
-                />
-              ) : (
-                <span>{authorInitial}</span>
-              )}
+          {coAuthors.length > 0 && !poll.authorDeleted ? (
+            <AuthorList
+              authors={allAuthors}
+              locale={locale}
+              maxVisible={2}
+              size="sm"
+              linkProfiles={false}
+            />
+          ) : (
+            <span className="flex items-center gap-2">
+              <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-[10px] font-semibold text-[color:var(--foreground)]">
+                {poll.author?.avatarUrl ? (
+                  <OptimizedImage
+                    src={poll.author.avatarUrl}
+                    alt={authorLabel}
+                    fill
+                    sizes="28px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <span>{authorInitial}</span>
+                )}
+              </span>
+              <span className="font-medium text-[color:var(--foreground)]">{authorLabel}</span>
             </span>
-            <span className="font-medium text-[color:var(--foreground)]">{authorLabel}</span>
-          </span>
+          )}
           <span aria-hidden="true">·</span>
           <span>{questionLabel}</span>
         </div>

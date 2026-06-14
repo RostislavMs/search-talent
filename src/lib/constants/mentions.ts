@@ -26,6 +26,23 @@ export const MENTION_TRIGGER_REGEX = new RegExp(
 );
 
 /**
+ * Sanitizes a free-form search query before it is interpolated into a
+ * PostgREST `.or()` ilike prefix match against username/name.
+ *
+ * Keeps Unicode letters/digits/marks — so Cyrillic and other non-Latin names
+ * are searchable — plus the apostrophes, spaces, dots, hyphens and underscores
+ * that appear in real names and usernames. Strips characters that are
+ * structural inside the or-filter or act as ilike wildcards (`, ( ) % * : \ "`),
+ * which prevents a query from injecting extra filters or wildcards.
+ *
+ * (The previous ASCII-only whitelist dropped Cyrillic entirely, so searching a
+ * Ukrainian name returned no results.)
+ */
+export function sanitizeMentionQuery(raw: string): string {
+  return raw.replace(/[^\p{L}\p{N}\p{M}'._\- ]/gu, "").trim();
+}
+
+/**
  * Extracts unique, lowercased @usernames from a body of text.
  * Returns them in the order of first occurrence (stable for tests and UX).
  */

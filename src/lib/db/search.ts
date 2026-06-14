@@ -8,6 +8,7 @@ import {
   isWithinTimeframe,
 } from "@/lib/leaderboards";
 import type { ProjectKind } from "@/lib/projects";
+import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
 
 type ProjectRow = {
@@ -546,6 +547,7 @@ export async function searchDiscovery(
         score: rating,
         ownerName: owner?.name ?? null,
         ownerUsername: owner?.username ?? null,
+        coAuthorNames: [] as string[],
         technologies,
         mediaCount,
         relevance: getProjectRelevanceScore(
@@ -575,6 +577,20 @@ export async function searchDiscovery(
 
       return true;
     });
+
+  // Co-author display names (owner excluded) for the project cards.
+  if (projects.length > 0) {
+    const projectCoAuthors = await loadAcceptedCoAuthorsMap(
+      supabase,
+      "project",
+      projects.map((project) => project.id),
+    );
+    for (const project of projects) {
+      project.coAuthorNames = (projectCoAuthors.get(project.id) ?? [])
+        .map((author) => author.name || author.username || "")
+        .filter(Boolean);
+    }
+  }
 
   let users = rawProfiles
     .map((profile) => {

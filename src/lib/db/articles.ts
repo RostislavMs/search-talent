@@ -14,6 +14,7 @@ import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { createClient } from "@/lib/supabase/server";
 import { getReactionsForTargets } from "@/lib/db/reactions";
+import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
 
 // Shape of a single language version, both as stored in the `translations`
 // jsonb column and as accepted from the API payload.
@@ -384,6 +385,15 @@ export async function getArticleFeed(params?: {
       );
     });
 
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(
+    supabase,
+    "article",
+    items.map((item) => item.id),
+  );
+  for (const item of items) {
+    item.coAuthors = coAuthorsMap.get(item.id) ?? [];
+  }
+
   return {
     items,
     categories,
@@ -482,8 +492,13 @@ export async function getArticleDetail(slug: string, locale?: string | null) {
   };
   annotateReactions(commentTree);
 
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(supabase, "article", [
+    article.id,
+  ]);
+
   const detail: ArticleDetail = {
     ...feedItem,
+    coAuthors: coAuthorsMap.get(article.id) ?? [],
     status,
     moderationStatus: article.moderation_status,
     moderationNote: article.moderation_note,

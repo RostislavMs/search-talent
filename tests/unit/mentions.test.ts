@@ -2,8 +2,37 @@ import { describe, expect, it } from "vitest";
 import {
   MENTION_TRIGGER_REGEX,
   extractMentionUsernames,
+  sanitizeMentionQuery,
   MENTION_MAX_PER_SOURCE,
 } from "@/lib/constants/mentions";
+
+describe("sanitizeMentionQuery", () => {
+  it("keeps a Cyrillic name intact (regression: Ukrainian search)", () => {
+    expect(sanitizeMentionQuery("Ростислав")).toBe("Ростислав");
+  });
+
+  it("keeps apostrophes and spaces common in Ukrainian names", () => {
+    expect(sanitizeMentionQuery("В'ячеслав")).toBe("В'ячеслав");
+    expect(sanitizeMentionQuery("Ім'я Прізвище")).toBe("Ім'я Прізвище");
+  });
+
+  it("keeps Latin username characters", () => {
+    expect(sanitizeMentionQuery("john_doe.1-2")).toBe("john_doe.1-2");
+  });
+
+  it("strips characters that are structural in a PostgREST or-filter", () => {
+    expect(sanitizeMentionQuery("a,b(c)%*")).toBe("abc");
+    expect(sanitizeMentionQuery('name"; drop')).toBe("name drop");
+  });
+
+  it("trims whitespace left after stripping", () => {
+    expect(sanitizeMentionQuery("( Рост")).toBe("Рост");
+  });
+
+  it("returns empty string for an all-stripped query", () => {
+    expect(sanitizeMentionQuery("(),%")).toBe("");
+  });
+});
 
 describe("extractMentionUsernames", () => {
   it("extracts a single @username", () => {

@@ -696,6 +696,27 @@ export const dictionaries = {
       loading: "Searching…",
       noResults: "No users found",
     },
+    coAuthors: {
+      sectionTitle: "Co-authors",
+      formHint:
+        "Add other platform members. New ones get an invite; the work publishes once everyone agrees.",
+      searchPlaceholder: "Search by name or @username…",
+      limitReached: "Limit reached ({max})",
+      pickerHint: "Invited co-authors confirm via notifications. Up to {max}.",
+      remove: "Remove co-author",
+      searching: "Searching…",
+      invitationsHeading: "Co-author invitations",
+      invitedYou: "invited you to co-author",
+      accept: "Accept",
+      decline: "Decline",
+      authorsHeading: "Authors",
+      bylineLabel: "Co-authors:",
+      authorFallback: "Author",
+      more: "+{n}",
+      typeProject: "Project",
+      typeArticle: "Article",
+      typePoll: "Poll",
+    },
     notifications: {
       title: "Notifications",
       pageTitle: "Notifications",
@@ -723,6 +744,10 @@ export const dictionaries = {
         newArticle: "published a new article: {title}",
         newProject: "published a new project: {title}",
         newPoll: "published a new poll: {title}",
+        coAuthorInvite: "invited you to co-author “{title}”",
+        coAuthorAccepted: "accepted your co-author invite for “{title}”",
+        coAuthorDeclined: "declined your co-author invite for “{title}”",
+        coAuthorPublished: "published your collaborative work “{title}”",
         moderation: {
           removed: {
             article: "removed your article",
@@ -2776,6 +2801,28 @@ export const dictionaries = {
       loading: "Пошук…",
       noResults: "Користувачів не знайдено",
     },
+    coAuthors: {
+      sectionTitle: "Співавтори",
+      formHint:
+        "Додайте інших учасників платформи. Нові отримають запрошення; роботу буде опубліковано після згоди всіх.",
+      searchPlaceholder: "Пошук за ім'ям або нікнеймом…",
+      limitReached: "Досягнуто ліміту ({max})",
+      pickerHint:
+        "Запрошені співавтори підтвердять участь у сповіщеннях. Максимум {max}.",
+      remove: "Прибрати співавтора",
+      searching: "Пошук…",
+      invitationsHeading: "Запрошення у співавтори",
+      invitedYou: "запросив(-ла) вас у співавтори",
+      accept: "Прийняти",
+      decline: "Відхилити",
+      authorsHeading: "Автори",
+      bylineLabel: "Співавтори:",
+      authorFallback: "Автор",
+      more: "та ще {n}",
+      typeProject: "Проєкт",
+      typeArticle: "Стаття",
+      typePoll: "Опитування",
+    },
     notifications: {
       title: "Сповіщення",
       pageTitle: "Сповіщення",
@@ -2803,6 +2850,10 @@ export const dictionaries = {
         newArticle: "опублікував(ла) нову статтю: {title}",
         newProject: "опублікував(ла) новий проєкт: {title}",
         newPoll: "опублікував(ла) нове опитування: {title}",
+        coAuthorInvite: "запросив(-ла) вас у співавтори: «{title}»",
+        coAuthorAccepted: "прийняв(-ла) запрошення у співавтори: «{title}»",
+        coAuthorDeclined: "відхилив(-ла) запрошення у співавтори: «{title}»",
+        coAuthorPublished: "опублікував(-ла) спільну роботу: «{title}»",
         moderation: {
           removed: {
             article: "прибрала вашу статтю",

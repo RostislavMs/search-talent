@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { pollStatuses, pollQuestionTypes } from "@/lib/polls";
 import { moderationStatuses } from "@/lib/moderation";
+import { MAX_CO_AUTHORS } from "@/lib/co-authors";
 
 const optionalUrl = z
   .string()
@@ -123,6 +124,11 @@ export const pollPayloadSchema = z.object({
     .array(pollQuestionSchema)
     .min(1, "Add at least one question")
     .max(20, "Too many questions"),
+  coAuthorUserIds: z
+    .array(z.string().uuid())
+    .max(MAX_CO_AUTHORS, "Too many co-authors")
+    .default([])
+    .transform((values) => [...new Set(values)]),
 });
 
 export const pollVotePayloadSchema = z.object({

@@ -53,6 +53,26 @@ export function describeNotification(
             : dict.actions.newArticle;
       return template.replace("{title}", title);
     }
+    case "co_author_invite":
+      return dict.actions.coAuthorInvite.replace(
+        "{title}",
+        item.metadata.coAuthorContentTitle ?? "",
+      );
+    case "co_author_accepted":
+      return dict.actions.coAuthorAccepted.replace(
+        "{title}",
+        item.metadata.coAuthorContentTitle ?? "",
+      );
+    case "co_author_declined":
+      return dict.actions.coAuthorDeclined.replace(
+        "{title}",
+        item.metadata.coAuthorContentTitle ?? "",
+      );
+    case "co_author_published":
+      return dict.actions.coAuthorPublished.replace(
+        "{title}",
+        item.metadata.coAuthorContentTitle ?? "",
+      );
     default:
       return "";
   }
@@ -68,6 +88,19 @@ export function buildNotificationHref(
   locale: Locale,
 ): string {
   const base = `/${locale}`;
+
+  // Co-author notifications carry the content type + slug in metadata.
+  if (item.metadata.coAuthorContentType && item.metadata.coAuthorContentSlug) {
+    const slug = item.metadata.coAuthorContentSlug;
+    switch (item.metadata.coAuthorContentType) {
+      case "project":
+        return `${base}/projects/${slug}`;
+      case "article":
+        return `${base}/articles/${slug}`;
+      case "poll":
+        return `${base}/polls/${slug}`;
+    }
+  }
 
   switch (item.targetType) {
     case "article":

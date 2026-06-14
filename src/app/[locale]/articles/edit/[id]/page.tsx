@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
 import { redirect, notFound } from "next/navigation";
 import { getArticleCategories } from "@/lib/db/articles";
+import { loadCoAuthorsForEditor } from "@/lib/db/co-authors";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { buildMetadata } from "@/lib/seo";
@@ -77,6 +78,7 @@ export default async function EditArticlePage({
   const categoryRow = article.category_id
     ? categories.find((c) => c.id === article.category_id)
     : null;
+  const coAuthors = await loadCoAuthorsForEditor(supabase, "article", article.id);
 
   type StoredVersion = {
     title?: string | null;
@@ -126,6 +128,7 @@ export default async function EditArticlePage({
           heroVideoStoragePath: article.hero_video_storage_path || null,
           contentLocale: article.content_locale === "en" ? "en" : "uk",
           translations,
+          coAuthors,
         }}
       />
     </main>

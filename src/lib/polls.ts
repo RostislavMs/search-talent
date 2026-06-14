@@ -68,6 +68,8 @@ export type PollFeedItem = {
   author: PollAuthor | null;
   authorDeleted: boolean;
   pinnedUntil: string | null;
+  /** Accepted co-authors (excludes the primary author). Empty/undefined for solo work. */
+  coAuthors?: import("@/lib/co-authors").ContentAuthor[];
 };
 
 export type PollComment = {

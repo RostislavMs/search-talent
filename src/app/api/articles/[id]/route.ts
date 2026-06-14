@@ -14,6 +14,7 @@ import {
   screenContentForModeration,
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { syncCoAuthors } from "@/lib/db/co-authors";
 import { z } from "zod";
 
 const pinSchema = z.object({
@@ -115,6 +116,17 @@ export async function PUT(
   if (willRemove) {
     await autoRemoveContent({ table: "articles", id, note: screen.note });
   }
+
+  // Reconcile co-authors: add newly invited (pending + notify), drop removed.
+  await syncCoAuthors({
+    supabase: context.supabase,
+    contentType: "article",
+    contentId: id,
+    contentTitle: payload.title,
+    contentSlug: data.slug,
+    creatorUserId: existing.author_user_id,
+    desiredUserIds: payload.coAuthorUserIds,
+  });
 
   // First publish (draft -> published) notifies the author's followers. The
   // actor is the author, not the (possibly admin) editor. The

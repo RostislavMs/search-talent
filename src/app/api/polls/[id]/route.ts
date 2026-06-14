@@ -11,6 +11,7 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildSavePollPayload } from "@/lib/db/save-poll-payload";
+import { syncCoAuthors } from "@/lib/db/co-authors";
 import {
   collectPollModerationText,
   screenContentForModeration,
@@ -109,6 +110,17 @@ export async function PUT(
   if (willRemove) {
     await autoRemoveContent({ table: "polls", id, note: screen.note });
   }
+
+  // Reconcile co-authors: add newly invited (pending + notify), drop removed.
+  await syncCoAuthors({
+    supabase: context.supabase,
+    contentType: "poll",
+    contentId: id,
+    contentTitle: payload.title,
+    contentSlug: result.slug,
+    creatorUserId: existing.author_user_id,
+    desiredUserIds: payload.coAuthorUserIds,
+  });
 
   // First publish notifies the author's followers exactly once. A freshly
   // auto-removed edit is not public, so it must not notify.

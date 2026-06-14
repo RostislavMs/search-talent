@@ -15,6 +15,8 @@ type ProjectCardData = {
   description?: string | null;
   ownerName?: string | null;
   ownerUsername?: string | null;
+  /** Display names of accepted co-authors (excludes the owner). */
+  coAuthorNames?: string[] | null;
   score?: number | null;
   cover_url?: string | null;
   is_pinned?: boolean | null;
@@ -41,6 +43,8 @@ export default function ProjectCard({
 }) {
   const ownerLabel = project.ownerName || project.ownerUsername;
   const showOwner = !hideOwner && Boolean(ownerLabel);
+  const coAuthorNames = (project.coAuthorNames ?? []).filter(Boolean);
+  const extraAuthors = coAuthorNames.length;
   const scoreLabel =
     typeof project.score === "number"
       ? `${project.score} ${dictionary.common.scoreSuffix}`
@@ -120,6 +124,12 @@ export default function ProjectCard({
               <p className="mt-1.5 truncate text-xs app-soft">
                 {dictionary.common.by}{" "}
                 <span className="font-medium app-muted">{ownerLabel}</span>
+                {extraAuthors > 0 && (
+                  <span className="font-medium app-muted">
+                    , {coAuthorNames[0]}
+                    {extraAuthors > 1 ? ` +${extraAuthors - 1}` : ""}
+                  </span>
+                )}
               </p>
             )}
           </div>
