@@ -212,6 +212,16 @@ export default function SiteHeader({
         ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
         : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
     ].join(" ");
+  // The desktop Community trigger lives inside HeaderNav's sliding indicator, so
+  // it is borderless and transparent like the nav pills — the indicator paints
+  // the active background and the text flips to the background colour.
+  const communityTriggerClasses = (active: boolean) =>
+    [
+      "relative z-10 inline-flex cursor-pointer list-none items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors duration-300 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
+      active
+        ? "text-[color:var(--background)]"
+        : "text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]",
+    ].join(" ");
 
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--border)] bg-[color:var(--surface)]/90 backdrop-blur">
@@ -230,47 +240,52 @@ export default function SiteHeader({
           />
         </LocalizedLink>
 
-        <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex">
-          <HeaderNav links={[...primaryLinks, ...headerExtraLinks]} />
-
-          <details ref={communityMenuRef} className="relative">
-            <summary className={menuTriggerClasses(communityActive)}>
-              <span>{dictionary.nav.community}</span>
-              <svg
-                aria-hidden="true"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="transition-transform"
-              >
-                <path
-                  d="M6 9l6 6 6-6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </summary>
-
-            <div className="absolute left-0 mt-3 w-60 rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-2 shadow-2xl">
-              {communityLinks.map((link) => {
-                const active =
-                  pathname === link.href || pathname.startsWith(`${link.href}/`);
-                return (
-                  <LocalizedLink
-                    key={link.href}
-                    href={link.href}
-                    onClick={closeCommunityMenu}
-                    className={menuLinkClasses(active)}
+        <nav className="hidden flex-1 items-center justify-center lg:flex">
+          <HeaderNav
+            links={[...primaryLinks, ...headerExtraLinks]}
+            trailingActive={communityActive}
+            trailing={
+              <details ref={communityMenuRef} className="relative">
+                <summary className={communityTriggerClasses(communityActive)}>
+                  <span>{dictionary.nav.community}</span>
+                  <svg
+                    aria-hidden="true"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="transition-transform"
                   >
-                    {link.label}
-                  </LocalizedLink>
-                );
-              })}
-            </div>
-          </details>
+                    <path
+                      d="M6 9l6 6 6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </summary>
+
+                <div className="absolute left-0 mt-3 w-60 rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-2 shadow-2xl">
+                  {communityLinks.map((link) => {
+                    const active =
+                      pathname === link.href ||
+                      pathname.startsWith(`${link.href}/`);
+                    return (
+                      <LocalizedLink
+                        key={link.href}
+                        href={link.href}
+                        onClick={closeCommunityMenu}
+                        className={menuLinkClasses(active)}
+                      >
+                        {link.label}
+                      </LocalizedLink>
+                    );
+                  })}
+                </div>
+              </details>
+            }
+          />
         </nav>
 
         <div className="ml-auto flex items-center lg:ml-0">

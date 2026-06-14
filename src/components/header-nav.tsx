@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
 import LocalizedLink from "@/components/ui/localized-link";
 import { stripLocaleFromPathname } from "@/lib/i18n/config";
 
@@ -12,6 +12,13 @@ type HeaderNavLink = {
 
 type HeaderNavProps = {
   links: HeaderNavLink[];
+  /**
+   * Optional element rendered after the links and included in the sliding
+   * indicator (e.g. the "Community" dropdown trigger). When `trailingActive`
+   * is true the pill slides onto it just like a regular link.
+   */
+  trailing?: ReactNode;
+  trailingActive?: boolean;
 };
 
 function isActivePath(pathname: string, href: string) {
@@ -22,16 +29,23 @@ function isActivePath(pathname: string, href: string) {
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-export default function HeaderNav({ links }: HeaderNavProps) {
+export default function HeaderNav({
+  links,
+  trailing,
+  trailingActive = false,
+}: HeaderNavProps) {
   const pathname = stripLocaleFromPathname(usePathname() || "/");
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
-  const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const linkRefs = useRef<Array<HTMLElement | null>>([]);
   const hasMountedRef = useRef(false);
 
-  const activeIndex = links.findIndex((link) =>
+  // The trailing item (e.g. the Community dropdown) occupies the slot right
+  // after the links, so the pill can slide onto it.
+  const linkActiveIndex = links.findIndex((link) =>
     isActivePath(pathname, link.href),
   );
+  const activeIndex = trailingActive ? links.length : linkActiveIndex;
 
   useIsomorphicLayoutEffect(() => {
     const container = containerRef.current;
@@ -131,6 +145,16 @@ export default function HeaderNav({ links }: HeaderNavProps) {
           </LocalizedLink>
         );
       })}
+      {trailing ? (
+        <div
+          ref={(el) => {
+            linkRefs.current[links.length] = el;
+          }}
+          className="relative z-10 inline-flex"
+        >
+          {trailing}
+        </div>
+      ) : null}
     </div>
   );
 }

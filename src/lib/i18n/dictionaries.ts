@@ -446,11 +446,14 @@ export const dictionaries = {
       titleLead: "Discover IT talent by their",
       titleWords: ["projects", "portfolios", "skills", "articles"],
       description:
-        "Developers, designers, and IT pros showing real work — not just resumes.",
+        "A community of IT creators — share projects, articles, and polls, and earn recognition for real contributions.",
       descriptionHighlights: [
+        "Portfolios",
         "Projects with stacks",
         "Author articles",
-        "Community rating",
+        "Polls",
+        "Co-authorship",
+        "Rating & badges",
       ],
       browseProjects: "Browse portfolios",
       searchCreators: "Discover talent",
@@ -2580,11 +2583,14 @@ export const dictionaries = {
       titleLead: "Знаходьте IT-таланти за",
       titleWords: ["проєктами", "портфоліо", "навичками", "статтями"],
       description:
-        "Розробники, дизайнери та IT-фахівці — реальна робота, а не лише резюме.",
+        "Спільнота IT-творців: діліться проєктами, статтями й опитуваннями — і здобувайте визнання за реальний внесок.",
       descriptionHighlights: [
+        "Портфоліо",
         "Проєкти зі стеком",
         "Авторські статті",
-        "Рейтинг спільноти",
+        "Опитування",
+        "Співавторство",
+        "Рейтинг і бейджі",
       ],
       browseProjects: "Переглянути портфоліо",
       searchCreators: "Відкрити таланти",
