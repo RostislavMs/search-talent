@@ -421,6 +421,7 @@ async function renderPublicView({
                   author: item.author,
                   authorDeleted: false,
                   pinnedUntil: item.pinned_until,
+                  coAuthors: item.coAuthors,
                 };
 
                 return (

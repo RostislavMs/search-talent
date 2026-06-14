@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import ArticleInteractions from "@/components/article-interactions";
+import AuthorList from "@/components/author-list";
 import ArticlePinButton from "@/components/article-pin-button";
 import ReportArticleButton from "@/components/report-article-button";
 import RichTextRenderer from "@/components/rich-text-renderer";
@@ -15,6 +16,7 @@ import {
 } from "@/lib/articles";
 import { getArticleDetail } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isPublicModerationStatus, normalizeModerationStatus } from "@/lib/moderation";
 import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 import {
@@ -261,6 +263,19 @@ export default async function ArticleDetailPage({
                   <span>{authorInitial}</span>
                 </span>
                 <span>{authorLabel}</span>
+              </span>
+            )}
+            {article.coAuthors && article.coAuthors.length > 0 && (
+              <span className="flex items-center gap-2">
+                <span className="app-soft">
+                  {getDictionary(safeLocale).coAuthors.bylineLabel}
+                </span>
+                <AuthorList
+                  authors={article.coAuthors}
+                  locale={safeLocale}
+                  maxVisible={3}
+                  size="sm"
+                />
               </span>
             )}
             <span>

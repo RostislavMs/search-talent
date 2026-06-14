@@ -11,6 +11,8 @@ import {
   screenContentForModeration,
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { inviteCoAuthors } from "@/lib/db/co-authors";
+import { sanitizeCoAuthorIds } from "@/lib/co-authors";
 
 export async function POST(request: Request) {
   const context = await getCurrentViewerRole();
@@ -26,6 +28,9 @@ export async function POST(request: Request) {
   }
 
   const payload = parsed.data;
+  const coAuthorIds = sanitizeCoAuthorIds(payload.coAuthorUserIds, context.user.id);
+  const holdForCoAuthors = payload.status === "published" && coAuthorIds.length > 0;
+
   const { data: category } = await context.supabase
     .from("article_categories")
     .select("id, admin_only")
@@ -71,9 +76,11 @@ export async function POST(request: Request) {
         payload.translations,
         payload.content_locale,
       ),
-      status: payload.status,
+      status: holdForCoAuthors ? "draft" : payload.status,
+      publish_on_confirm: holdForCoAuthors,
       moderation_status: "approved",
-      published_at: payload.status === "published" ? now : null,
+      published_at:
+        payload.status === "published" && !holdForCoAuthors ? now : null,
     })
     .select("id, slug")
     .maybeSingle();
@@ -89,9 +96,21 @@ export async function POST(request: Request) {
     await autoRemoveContent({ table: "articles", id: data.id, note: screen.note });
   }
 
+  if (coAuthorIds.length > 0 && !screen.flagged) {
+    await inviteCoAuthors({
+      supabase: context.supabase,
+      contentType: "article",
+      contentId: data.id,
+      contentTitle: payload.title,
+      contentSlug: data.slug,
+      creatorUserId: context.user.id,
+      coAuthorUserIds: coAuthorIds,
+    });
+  }
+
   // Notify followers only when the article is actually public (published AND
-  // not auto-removed). A flagged article is not visible yet.
-  if (payload.status === "published" && !screen.flagged) {
+  // not auto-removed). A draft held for co-authors notifies on auto-publish.
+  if (payload.status === "published" && !screen.flagged && !holdForCoAuthors) {
     void dispatchPublishSideEffects({
       contentType: "article",
       contentId: data.id,
@@ -101,5 +120,9 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json({ article: data, autoRemoved: screen.flagged });
+  return NextResponse.json({
+    article: data,
+    autoRemoved: screen.flagged,
+    awaitingCoAuthors: holdForCoAuthors,
+  });
 }

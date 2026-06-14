@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
+import CoAuthorPicker, {
+  type CoAuthorOption,
+} from "@/components/co-author-picker";
 import { apiFetch } from "@/lib/api-client";
 import {
   getCategoryDisplayName,
@@ -105,6 +108,7 @@ type EditableArticle = {
   heroVideoStoragePath: string | null;
   contentLocale?: "uk" | "en";
   translations?: Partial<Record<ArticleLocale, EditableTranslation>>;
+  coAuthors?: CoAuthorOption[];
 };
 
 export default function ArticleComposer({
@@ -186,6 +190,9 @@ export default function ArticleComposer({
   const [categorySlug, setCategorySlug] = useState(
     editArticle?.categorySlug || availableCategories[0]?.slug || "",
   );
+  const [coAuthors, setCoAuthors] = useState<CoAuthorOption[]>(
+    editArticle?.coAuthors ?? [],
+  );
   const [saving, setSaving] = useState<null | "draft" | "published">(null);
   const [uploadingAsset, setUploadingAsset] = useState<
     null | "cover" | "hero" | "inline"
@@ -214,6 +221,7 @@ export default function ArticleComposer({
   const isDirty = saving === null && currentSnapshot !== initialSnapshot;
 
   const dictionaryCommon = getDictionary(isLocale(locale) ? locale : "en").common;
+  const coAuthorsDict = getDictionary(isLocale(locale) ? locale : "en").coAuthors;
   const { isWarningOpen, confirmLeave, cancelLeave } =
     useUnsavedChangesGuard(isDirty);
 
@@ -442,6 +450,7 @@ export default function ArticleComposer({
         status: nextStatus,
         content_locale: primaryLocale,
         translations,
+        coAuthorUserIds: coAuthors.map((c) => c.userId),
       },
     });
 
@@ -603,6 +612,19 @@ export default function ArticleComposer({
                   label: getCategoryDisplayName(item, locale),
                 }))}
               />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-[color:var(--foreground)]">
+                {coAuthorsDict.sectionTitle}
+              </label>
+              <div className="mt-2">
+                <CoAuthorPicker
+                  value={coAuthors}
+                  onChange={setCoAuthors}
+                  locale={locale}
+                />
+              </div>
             </div>
 
             <div className="space-y-3 rounded-[1.4rem] border app-border bg-[color:var(--surface-muted)] p-4">

@@ -12,6 +12,7 @@ import GithubInsightsPanel from "@/components/github-insights-panel";
 import GithubAuthorNarrative from "@/components/github-author-narrative";
 import VoteButtons from "@/components/vote-buttons";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
+import AuthorList from "@/components/author-list";
 import { ButtonLink } from "@/components/ui/Button";
 import { getPublicProjectPageData } from "@/lib/db/public";
 import { syncProjectFromGitHub } from "@/lib/db/github-sync";
@@ -177,6 +178,7 @@ export default async function PublicProjectPage({
 
   const {
     owner,
+    coAuthors,
     project,
     technologies,
     media,
@@ -420,6 +422,14 @@ export default async function PublicProjectPage({
                     {owner.name || dictionary.projectPage.creatorFallback}
                   </span>
                 ))}
+              {coAuthors.length > 0 && (
+                <a
+                  href="#project-authors"
+                  className="inline-flex items-center rounded-full app-panel px-3 py-1 text-sm app-muted transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
+                >
+                  {dictionary.coAuthors.sectionTitle} +{coAuthors.length}
+                </a>
+              )}
               {project.github_full_name ? (
                 <a
                   href={`https://github.com/${project.github_full_name}`}
@@ -700,9 +710,14 @@ export default async function PublicProjectPage({
           />
 
           {owner && (
-            <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-5">
+            <section
+              id="project-authors"
+              className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-5"
+            >
               <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-                {dictionary.projectPage.createdBy}
+                {coAuthors.length > 0
+                  ? dictionary.coAuthors.authorsHeading
+                  : dictionary.projectPage.createdBy}
               </p>
               <div className="mt-4 flex items-center gap-3">
                 <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full app-panel text-lg font-semibold text-[color:var(--foreground)]">
@@ -745,6 +760,20 @@ export default async function PublicProjectPage({
                       ? `Портфоліо ${owner.name || owner.username}`
                       : `Portfolio of ${owner.name || owner.username}`}
                   </ButtonLink>
+                </div>
+              )}
+
+              {coAuthors.length > 0 && (
+                <div className="mt-5 border-t app-border pt-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-eyebrow app-soft">
+                    {dictionary.coAuthors.sectionTitle}
+                  </p>
+                  <AuthorList
+                    authors={coAuthors}
+                    locale={locale}
+                    maxVisible={coAuthors.length}
+                    size="md"
+                  />
                 </div>
               )}
             </section>

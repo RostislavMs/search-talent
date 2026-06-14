@@ -17,6 +17,7 @@ import {
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { createClient } from "@/lib/supabase/server";
+import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
 
 // Shape of one localized version of the poll body (title/excerpt/content/cover),
 // stored in the `translations` jsonb column and accepted from the API payload.
@@ -481,6 +482,15 @@ export async function getPollFeed(params?: {
       );
     });
 
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(
+    supabase,
+    "poll",
+    items.map((item) => item.id),
+  );
+  for (const item of items) {
+    item.coAuthors = coAuthorsMap.get(item.id) ?? [];
+  }
+
   return {
     items,
     categories,
@@ -555,8 +565,11 @@ export async function getPollDetail(slug: string, locale?: string | null) {
   const feedItem = toFeedItem(poll, categoryMap, authorMap, questions.length, locale);
   const localized = pickLocalizedBody(poll, locale);
 
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(supabase, "poll", [poll.id]);
+
   const detail: PollDetail = {
     ...feedItem,
+    coAuthors: coAuthorsMap.get(poll.id) ?? [],
     status,
     moderationStatus: poll.moderation_status,
     moderationNote: poll.moderation_note,

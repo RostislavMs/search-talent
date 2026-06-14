@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { articleStatuses } from "@/lib/articles";
 import { moderationStatuses } from "@/lib/moderation";
+import { MAX_CO_AUTHORS } from "@/lib/co-authors";
 
 const optionalUrl = z
   .string()
@@ -65,6 +66,11 @@ export const articlePayloadSchema = z.object({
   translations: z
     .record(z.string(), articleTranslationSchema)
     .default({}),
+  coAuthorUserIds: z
+    .array(z.string().uuid())
+    .max(MAX_CO_AUTHORS, "Too many co-authors")
+    .default([])
+    .transform((values) => [...new Set(values)]),
 });
 
 export const articleCommentPayloadSchema = z.object({

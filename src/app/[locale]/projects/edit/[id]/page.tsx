@@ -16,6 +16,7 @@ const CreateProjectForm = dynamic(
 );
 import { ButtonLink } from "@/components/ui/Button";
 import { getMyProjectById } from "@/lib/db/projects";
+import { loadCoAuthorsForEditor } from "@/lib/db/co-authors";
 import { buildProjectPath } from "@/lib/projects";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -86,6 +87,7 @@ export default async function ProjectEditPage({
     );
   }
 
+  const coAuthors = await loadCoAuthorsForEditor(supabase, "project", project.id);
   const publicHref = buildProjectPath(project.id, project.slug || undefined);
 
   // Get the owner's username to link back to their projects
@@ -127,7 +129,7 @@ export default async function ProjectEditPage({
       </section>
 
       <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
-        <CreateProjectForm project={project} />
+        <CreateProjectForm project={{ ...project, coAuthors }} />
       </section>
 
       <section className="mt-8 rounded-hero app-card p-6">

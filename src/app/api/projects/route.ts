@@ -14,6 +14,8 @@ import {
   screenContentForModeration,
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { inviteCoAuthors } from "@/lib/db/co-authors";
+import { sanitizeCoAuthorIds } from "@/lib/co-authors";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -33,6 +35,11 @@ export async function POST(request: Request) {
   }
 
   const payload = parsed.data;
+
+  // Co-authors invited at creation: the work is held as a draft until every
+  // invitee accepts, then auto-published (see respondToCoAuthorInvitation).
+  const coAuthorIds = sanitizeCoAuthorIds(payload.coAuthorUserIds, user.id);
+  const holdForCoAuthors = payload.status === "published" && coAuthorIds.length > 0;
 
   const uniqueSlug = await generateUniqueProjectSlug(supabase, payload.slug);
 
@@ -91,7 +98,6 @@ export async function POST(request: Request) {
       problem: payload.problem,
       solution: payload.solution,
       results: payload.results,
-      status: payload.status,
       github_role: payload.githubRole,
       github_contribution: payload.githubContribution,
       github_motivation: payload.githubMotivation,
@@ -102,6 +108,8 @@ export async function POST(request: Request) {
       github_display_options: payload.githubDisplayOptions ?? undefined,
       github_auto_sync: payload.githubAutoSync,
       allow_downloads: payload.allowDownloads,
+      status: holdForCoAuthors ? "draft" : payload.status,
+      publish_on_confirm: holdForCoAuthors,
       ...githubColumns,
     })
     .select("id, slug, status")
@@ -136,8 +144,22 @@ export async function POST(request: Request) {
     }
   }
 
+  // Invite co-authors (pending until they accept). Skip when the project was
+  // flagged and auto-removed — there is nothing to collaborate on yet.
+  if (coAuthorIds.length > 0 && !screen.flagged) {
+    await inviteCoAuthors({
+      supabase,
+      contentType: "project",
+      contentId: project.id,
+      contentTitle: payload.title,
+      contentSlug: project.slug,
+      creatorUserId: user.id,
+      coAuthorUserIds: coAuthorIds,
+    });
+  }
+
   // Notify followers only when the project is actually public (published AND
-  // not auto-removed). A flagged project is not visible yet.
+  // not auto-removed). A draft held for co-authors notifies on auto-publish.
   if (project.status === "published" && !screen.flagged) {
     void dispatchPublishSideEffects({
       contentType: "project",
@@ -153,5 +175,6 @@ export async function POST(request: Request) {
     slug: project.slug,
     status: project.status,
     autoRemoved: screen.flagged,
+    awaitingCoAuthors: holdForCoAuthors,
   });
 }

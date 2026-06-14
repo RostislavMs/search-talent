@@ -3,6 +3,7 @@ import nextDynamic from "next/dynamic";
 import { redirect, notFound } from "next/navigation";
 import type { QuestionDraft } from "@/components/poll-question-builder";
 import { getPollCategories } from "@/lib/db/polls";
+import { loadCoAuthorsForEditor } from "@/lib/db/co-authors";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { normalizePollQuestionType } from "@/lib/polls";
@@ -112,6 +113,7 @@ export default async function EditPollPage({
   const categoryRow = poll.category_id
     ? categories.find((c) => c.id === poll.category_id)
     : null;
+  const coAuthors = await loadCoAuthorsForEditor(supabase, "poll", poll.id);
 
   type StoredVersion = {
     title?: string | null;
@@ -155,6 +157,7 @@ export default async function EditPollPage({
           closesAt: poll.closes_at || null,
           questions,
           locked: (poll.responses_count ?? 0) > 0,
+          coAuthors,
         }}
       />
     </main>

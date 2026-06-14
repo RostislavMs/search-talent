@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import AuthorList from "@/components/author-list";
 import DeletePollButton from "@/components/delete-poll-button";
 import PollInteractions from "@/components/poll-interactions";
 import PollPinButton from "@/components/poll-pin-button";
@@ -12,6 +13,7 @@ import { formatArticleDate, getCategoryDisplayName } from "@/lib/articles";
 import { getPollClosesLabel } from "@/lib/polls";
 import { getPollDetail } from "@/lib/db/polls";
 import { isLocale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isPublicModerationStatus, normalizeModerationStatus } from "@/lib/moderation";
 import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 import { buildMetadata } from "@/lib/seo";
@@ -177,6 +179,19 @@ export default async function PollDetailPage({
                   <span>{authorInitial}</span>
                 </span>
                 <span>{authorLabel}</span>
+              </span>
+            )}
+            {poll.coAuthors && poll.coAuthors.length > 0 && (
+              <span className="flex items-center gap-2">
+                <span className="app-soft">
+                  {getDictionary(safeLocale).coAuthors.bylineLabel}
+                </span>
+                <AuthorList
+                  authors={poll.coAuthors}
+                  locale={safeLocale}
+                  maxVisible={3}
+                  size="sm"
+                />
               </span>
             )}
             <span>

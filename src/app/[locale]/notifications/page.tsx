@@ -10,6 +10,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 import NotificationsList from "@/components/notifications-list";
+import CoAuthorInvitations from "@/components/co-author-invitations";
 
 async function getLocaleValue(params: Promise<{ locale: string }>) {
   const { locale } = await params;
@@ -73,6 +74,8 @@ export default async function NotificationsPage({
           {dictionary.notifications.pageDescription}
         </p>
       </header>
+
+      <CoAuthorInvitations locale={locale} />
 
       <NotificationsList
         locale={locale}

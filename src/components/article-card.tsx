@@ -1,5 +1,7 @@
 import OptimizedImage from "@/components/ui/optimized-image";
 import LocalizedLink from "@/components/ui/localized-link";
+import AuthorList from "@/components/author-list";
+import type { ContentAuthor } from "@/lib/co-authors";
 import {
   formatArticleDate,
   getArticleReadingTime,
@@ -31,6 +33,19 @@ export default function ArticleCard({
   const readingTime = getArticleReadingTime(article.content || article.excerpt || "", locale);
   const categoryLabel = getCategoryDisplayName(article.category, locale) || (isUkrainian ? "Стаття" : "Article");
   const isPinned = article.pinnedUntil && new Date(article.pinnedUntil) > new Date();
+  const coAuthors = article.coAuthors ?? [];
+  const allAuthors: ContentAuthor[] = article.author
+    ? [
+        {
+          userId: article.author.userId,
+          username: article.author.username,
+          name: article.author.name,
+          avatarUrl: article.author.avatarUrl,
+          isOwner: true,
+        },
+        ...coAuthors,
+      ]
+    : coAuthors;
 
   return (
     <LocalizedLink
@@ -97,24 +112,34 @@ export default function ArticleCard({
             compact ? "mt-4 pt-3" : "mt-6 pt-4"
           }`}
         >
-          <span className="flex items-center gap-2">
-            <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-[10px] font-semibold text-[color:var(--foreground)]">
-              {article.author?.avatarUrl ? (
-                <OptimizedImage
-                  src={article.author.avatarUrl}
-                  alt={authorLabel}
-                  fill
-                  sizes="28px"
-                  className="object-cover"
-                />
-              ) : (
-                <span>{authorInitial}</span>
-              )}
+          {coAuthors.length > 0 && !article.authorDeleted ? (
+            <AuthorList
+              authors={allAuthors}
+              locale={locale}
+              maxVisible={2}
+              size="sm"
+              linkProfiles={false}
+            />
+          ) : (
+            <span className="flex items-center gap-2">
+              <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-[10px] font-semibold text-[color:var(--foreground)]">
+                {article.author?.avatarUrl ? (
+                  <OptimizedImage
+                    src={article.author.avatarUrl}
+                    alt={authorLabel}
+                    fill
+                    sizes="28px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <span>{authorInitial}</span>
+                )}
+              </span>
+              <span className="font-medium text-[color:var(--foreground)]">
+                {authorLabel}
+              </span>
             </span>
-            <span className="font-medium text-[color:var(--foreground)]">
-              {authorLabel}
-            </span>
-          </span>
+          )}
           <span aria-hidden="true">·</span>
           <span>{readingTime}</span>
         </div>

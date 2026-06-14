@@ -21,6 +21,11 @@ import {
 } from "@/lib/profile-sections";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  loadAcceptedCoAuthorsMap,
+  loadCoAuthoredContentIds,
+} from "@/lib/db/co-authors";
+import type { ContentAuthor } from "@/lib/co-authors";
 import { getProfileVoteSummary } from "@/lib/db/profile-votes";
 import { getProjectVoteSummary } from "@/lib/db/project-votes";
 import { getCreatorRatings, getProjectRatings } from "@/lib/db/leaderboards";
@@ -137,6 +142,8 @@ export type PublicProjectPageData = {
     city: string | null;
     countryName: string | null;
   } | null;
+  /** Accepted co-authors (excludes the owner). Empty for solo projects. */
+  coAuthors: ContentAuthor[];
   technologies: Array<{ id: number; name: string }>;
   media: ProjectMediaItem[];
   voteSummary: Awaited<ReturnType<typeof getProjectVoteSummary>>;
@@ -337,8 +344,13 @@ export async function getPublicProjectPageData(
   // leaderboard cache.
   const projectRatings = await getProjectRatings();
 
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(supabase, "project", [
+    typedProject.id,
+  ]);
+
   return {
     project: typedProject,
+    coAuthors: coAuthorsMap.get(typedProject.id) ?? [],
     owner: owner
       ? {
           id: owner.id,
@@ -731,6 +743,7 @@ export type UserArticlesPageResult = {
       name: string | null;
       avatarUrl: string | null;
     } | null;
+    coAuthors: ContentAuthor[];
   }>;
   totalCount: number;
   currentPage: number;
@@ -763,14 +776,26 @@ export async function getUserArticlesPage(
     return null;
   }
 
-  const baseFilter = supabase
+  // Own articles AND co-authored ones (accepted invites).
+  const coAuthoredIds = await loadCoAuthoredContentIds(
+    supabase,
+    "article",
+    profile.user_id,
+  );
+  const authorOrFilter =
+    coAuthoredIds.length > 0
+      ? `author_user_id.eq.${profile.user_id},id.in.(${coAuthoredIds.join(",")})`
+      : null;
+
+  let countQuery = supabase
     .from("articles")
     .select("id", { count: "exact", head: true })
-    .eq("author_user_id", profile.user_id)
     .eq("status", "published")
     .eq("moderation_status", "approved");
-
-  const { count } = await baseFilter;
+  countQuery = authorOrFilter
+    ? countQuery.or(authorOrFilter)
+    : countQuery.eq("author_user_id", profile.user_id);
+  const { count } = await countQuery;
 
   const totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / options.perPage));
@@ -778,19 +803,23 @@ export async function getUserArticlesPage(
   const from = (currentPage - 1) * options.perPage;
   const to = from + options.perPage - 1;
 
-  const { data: articles } = await supabase
+  let articlesQuery = supabase
     .from("articles")
     .select(
-      "id, slug, title, excerpt, content, cover_image_url, hero_video_url, views_count, likes_count, comments_count, published_at, created_at, pinned_until, category_id",
+      "id, author_user_id, slug, title, excerpt, content, cover_image_url, hero_video_url, views_count, likes_count, comments_count, published_at, created_at, pinned_until, category_id",
     )
-    .eq("author_user_id", profile.user_id)
     .eq("status", "published")
-    .eq("moderation_status", "approved")
+    .eq("moderation_status", "approved");
+  articlesQuery = authorOrFilter
+    ? articlesQuery.or(authorOrFilter)
+    : articlesQuery.eq("author_user_id", profile.user_id);
+  const { data: articles } = await articlesQuery
     .order("published_at", { ascending: false })
     .range(from, to);
 
   const rows = (articles || []) as Array<{
     id: string;
+    author_user_id: string | null;
     slug: string;
     title: string;
     excerpt: string | null;
@@ -847,12 +876,39 @@ export async function getUserArticlesPage(
     ]),
   );
 
-  const author = {
-    userId: profile.user_id as string,
-    username: profile.username as string | null,
-    name: profile.name as string | null,
-    avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
-  };
+  // Resolve the real primary author per row (a co-authored article's creator
+  // is someone other than this profile) plus the accepted co-authors.
+  const authorIds = Array.from(
+    new Set(rows.map((item) => item.author_user_id).filter(Boolean)),
+  ) as string[];
+  const { data: authorProfiles } =
+    authorIds.length > 0
+      ? await supabase
+          .from("profiles")
+          .select("user_id, username, name, avatar_url")
+          .in("user_id", authorIds)
+      : { data: [] };
+  const authorMap = new Map(
+    ((authorProfiles || []) as Array<{
+      user_id: string;
+      username: string | null;
+      name: string | null;
+      avatar_url: string | null;
+    }>).map((row) => [
+      row.user_id,
+      {
+        userId: row.user_id,
+        username: row.username,
+        name: row.name,
+        avatarUrl: row.avatar_url,
+      },
+    ]),
+  );
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(
+    supabase,
+    "article",
+    rows.map((item) => item.id),
+  );
 
   return {
     profile: {
@@ -874,7 +930,10 @@ export async function getUserArticlesPage(
       created_at: item.created_at,
       pinned_until: item.pinned_until,
       category: item.category_id ? categoryMap.get(item.category_id) || null : null,
-      author,
+      author: item.author_user_id
+        ? authorMap.get(item.author_user_id) || null
+        : null,
+      coAuthors: coAuthorsMap.get(item.id) ?? [],
     })),
     totalCount,
     currentPage,
@@ -916,12 +975,26 @@ export async function getUserPollsPage(
     return null;
   }
 
-  const { count } = await supabase
+  // Own polls AND co-authored ones (accepted invites).
+  const coAuthoredIds = await loadCoAuthoredContentIds(
+    supabase,
+    "poll",
+    profile.user_id,
+  );
+  const authorOrFilter =
+    coAuthoredIds.length > 0
+      ? `author_user_id.eq.${profile.user_id},id.in.(${coAuthoredIds.join(",")})`
+      : null;
+
+  let countQuery = supabase
     .from("polls")
     .select("id", { count: "exact", head: true })
-    .eq("author_user_id", profile.user_id)
     .eq("status", "published")
     .eq("moderation_status", "approved");
+  countQuery = authorOrFilter
+    ? countQuery.or(authorOrFilter)
+    : countQuery.eq("author_user_id", profile.user_id);
+  const { count } = await countQuery;
 
   const totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / options.perPage));
@@ -929,19 +1002,23 @@ export async function getUserPollsPage(
   const from = (currentPage - 1) * options.perPage;
   const to = from + options.perPage - 1;
 
-  const { data: pollRows } = await supabase
+  let pollsQuery = supabase
     .from("polls")
     .select(
-      "id, slug, title, excerpt, cover_image_url, views_count, likes_count, comments_count, responses_count, published_at, created_at, closes_at, pinned_until, category_id",
+      "id, author_user_id, slug, title, excerpt, cover_image_url, views_count, likes_count, comments_count, responses_count, published_at, created_at, closes_at, pinned_until, category_id",
     )
-    .eq("author_user_id", profile.user_id)
     .eq("status", "published")
-    .eq("moderation_status", "approved")
+    .eq("moderation_status", "approved");
+  pollsQuery = authorOrFilter
+    ? pollsQuery.or(authorOrFilter)
+    : pollsQuery.eq("author_user_id", profile.user_id);
+  const { data: pollRows } = await pollsQuery
     .order("published_at", { ascending: false })
     .range(from, to);
 
   const rows = (pollRows || []) as Array<{
     id: string;
+    author_user_id: string | null;
     slug: string;
     title: string;
     excerpt: string | null;
@@ -1005,12 +1082,39 @@ export async function getUserPollsPage(
     questionCountByPoll.set(row.poll_id, (questionCountByPoll.get(row.poll_id) ?? 0) + 1);
   }
 
-  const author = {
-    userId: profile.user_id as string,
-    username: profile.username as string | null,
-    name: profile.name as string | null,
-    avatarUrl: (profile as { avatar_url: string | null }).avatar_url,
-  };
+  // Resolve the real primary author per row plus accepted co-authors, so a
+  // co-authored poll shows its true creator on every author's profile.
+  const authorIds = Array.from(
+    new Set(rows.map((item) => item.author_user_id).filter(Boolean)),
+  ) as string[];
+  const { data: authorProfiles } =
+    authorIds.length > 0
+      ? await supabase
+          .from("profiles")
+          .select("user_id, username, name, avatar_url")
+          .in("user_id", authorIds)
+      : { data: [] };
+  const authorMap = new Map(
+    ((authorProfiles || []) as Array<{
+      user_id: string;
+      username: string | null;
+      name: string | null;
+      avatar_url: string | null;
+    }>).map((row) => [
+      row.user_id,
+      {
+        userId: row.user_id,
+        username: row.username,
+        name: row.name,
+        avatarUrl: row.avatar_url,
+      },
+    ]),
+  );
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(
+    supabase,
+    "poll",
+    rows.map((item) => item.id),
+  );
 
   return {
     profile: { name: profile.name, username: profile.username },
@@ -1031,7 +1135,10 @@ export async function getUserPollsPage(
         responsesCount: item.responses_count || 0,
         questionCount: questionCountByPoll.get(item.id) ?? 0,
         category: item.category_id ? categoryMap.get(item.category_id) || null : null,
-        author,
+        author: item.author_user_id
+          ? authorMap.get(item.author_user_id) || null
+          : null,
+        coAuthors: coAuthorsMap.get(item.id) ?? [],
         authorDeleted: false,
         pinnedUntil: item.pinned_until,
       }),
@@ -1068,12 +1175,27 @@ export async function getUserProjectsPage(
     return null;
   }
 
-  const { count } = await supabase
+  // A profile lists the user's own projects AND the ones they co-author
+  // (accepted invites), so collaborative work surfaces on every author's page.
+  const coAuthoredIds = await loadCoAuthoredContentIds(
+    supabase,
+    "project",
+    profile.user_id,
+  );
+  const authorOrFilter =
+    coAuthoredIds.length > 0
+      ? `owner_id.eq.${profile.user_id},id.in.(${coAuthoredIds.join(",")})`
+      : null;
+
+  let countQuery = supabase
     .from("projects")
     .select("id", { count: "exact", head: true })
-    .eq("owner_id", profile.user_id)
     .eq("moderation_status", "approved")
     .eq("status", "published");
+  countQuery = authorOrFilter
+    ? countQuery.or(authorOrFilter)
+    : countQuery.eq("owner_id", profile.user_id);
+  const { count } = await countQuery;
 
   const totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / options.perPage));
@@ -1081,12 +1203,15 @@ export async function getUserProjectsPage(
   const from = (currentPage - 1) * options.perPage;
   const to = from + options.perPage - 1;
 
-  const { data: projects } = await supabase
+  let projectsQuery = supabase
     .from("projects")
     .select("id, title, slug, description, score, cover_url, is_pinned, kind")
-    .eq("owner_id", profile.user_id)
     .eq("moderation_status", "approved")
-    .eq("status", "published")
+    .eq("status", "published");
+  projectsQuery = authorOrFilter
+    ? projectsQuery.or(authorOrFilter)
+    : projectsQuery.eq("owner_id", profile.user_id);
+  const { data: projects } = await projectsQuery
     .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);
@@ -1122,6 +1247,7 @@ export type RelatedProjectItem = {
   kind: string | null;
   ownerName: string | null;
   ownerUsername: string | null;
+  coAuthorNames: string[];
 };
 
 type RelatedProjectRow = {
@@ -1235,7 +1361,7 @@ export async function getRelatedProjects(
     limit,
   );
 
-  return ranked.map(({ row }) => {
+  const items = ranked.map(({ row }) => {
     const owner = ownerByUserId.get(row.owner_id);
     return {
       id: row.id,
@@ -1247,8 +1373,22 @@ export async function getRelatedProjects(
       kind: row.kind,
       ownerName: owner?.name ?? null,
       ownerUsername: owner?.username ?? null,
+      coAuthorNames: [] as string[],
     };
   });
+
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(
+    supabase,
+    "project",
+    items.map((item) => item.id),
+  );
+  for (const item of items) {
+    item.coAuthorNames = (coAuthorsMap.get(item.id) ?? [])
+      .map((author) => author.name || author.username || "")
+      .filter(Boolean);
+  }
+
+  return items;
 }
 
 export type RelatedCreatorItem = {

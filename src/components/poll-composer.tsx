@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
+import CoAuthorPicker, {
+  type CoAuthorOption,
+} from "@/components/co-author-picker";
 import PollQuestionBuilder, {
   emptyQuestion,
   serializeQuestions,
@@ -94,6 +97,7 @@ export type EditablePoll = {
   closesAt: string | null;
   questions: QuestionDraft[];
   locked: boolean;
+  coAuthors?: CoAuthorOption[];
 };
 
 export default function PollComposer({
@@ -150,6 +154,9 @@ export default function PollComposer({
   const [categorySlug, setCategorySlug] = useState(
     editPoll?.categorySlug || availableCategories[0]?.slug || "",
   );
+  const [coAuthors, setCoAuthors] = useState<CoAuthorOption[]>(
+    editPoll?.coAuthors ?? [],
+  );
   const [questions, setQuestions] = useState<QuestionDraft[]>(
     editPoll?.questions?.length ? editPoll.questions : [emptyQuestion()],
   );
@@ -183,6 +190,7 @@ export default function PollComposer({
   const isDirty = saving === null && currentSnapshot !== initialSnapshot;
 
   const dictionaryCommon = getDictionary(isLocale(locale) ? locale : "en").common;
+  const coAuthorsDict = getDictionary(isLocale(locale) ? locale : "en").coAuthors;
   const { isWarningOpen, confirmLeave, cancelLeave } = useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
@@ -375,6 +383,7 @@ export default function PollComposer({
         translations,
         closes_at: toIso(closesAtLocal),
         questions: serializeQuestions(questions),
+        coAuthorUserIds: coAuthors.map((c) => c.userId),
       },
     });
 
@@ -510,6 +519,17 @@ export default function PollComposer({
                   value: item.slug,
                   label: getCategoryDisplayName(item, locale),
                 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[color:var(--foreground)]">
+                {coAuthorsDict.sectionTitle}
+              </label>
+              <CoAuthorPicker
+                value={coAuthors}
+                onChange={setCoAuthors}
+                locale={locale}
               />
             </div>
 

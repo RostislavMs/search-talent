@@ -245,8 +245,8 @@ export default function CookieConsentBanner({
 
       {showBanner && (
         <div className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-6 sm:pb-4">
-          <section className="mx-auto flex max-h-[calc(100dvh-1.5rem)] max-w-3xl flex-col gap-3 overflow-y-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-2xl sm:flex-row sm:items-center sm:gap-4">
-            <p className="min-w-0 flex-1 text-sm leading-6 app-muted">
+          <section className="mx-auto flex max-h-[calc(100dvh-1.5rem)] max-w-3xl flex-col gap-3 overflow-y-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-2xl sm:gap-4">
+            <p className="text-sm leading-6 app-muted">
               {dictionary.cookieConsent.title}{" "}
               <LocalizedLink
                 href="/cookies"

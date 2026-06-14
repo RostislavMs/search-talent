@@ -7,6 +7,10 @@ export const NOTIFICATION_TYPES = [
   "new_badge",
   "moderation_decision",
   "new_content",
+  "co_author_invite",
+  "co_author_accepted",
+  "co_author_declined",
+  "co_author_published",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -50,6 +54,14 @@ export type NotificationMetadata = {
   contentKind?: "article" | "project" | "profile" | "poll";
   /** Moderation notifications: human-readable title of the actioned content. */
   contentTitle?: string;
+  /** Co-author notifications: the invitation (junction row) id to accept/decline. */
+  invitationId?: string;
+  /** Co-author notifications: which content type the invitation targets. */
+  coAuthorContentType?: "project" | "article" | "poll";
+  /** Co-author notifications: slug used to deep-link to the content. */
+  coAuthorContentSlug?: string;
+  /** Co-author notifications: title of the shared work. */
+  coAuthorContentTitle?: string;
 };
 
 export type NotificationItem = {

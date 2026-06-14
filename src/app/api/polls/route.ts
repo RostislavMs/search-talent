@@ -12,6 +12,8 @@ import {
   screenContentForModeration,
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { inviteCoAuthors } from "@/lib/db/co-authors";
+import { sanitizeCoAuthorIds } from "@/lib/co-authors";
 
 export async function POST(request: Request) {
   const context = await getCurrentViewerRole();
@@ -27,6 +29,9 @@ export async function POST(request: Request) {
   }
 
   const payload = parsed.data;
+  const coAuthorIds = sanitizeCoAuthorIds(payload.coAuthorUserIds, context.user.id);
+  const holdForCoAuthors = payload.status === "published" && coAuthorIds.length > 0;
+
   const { data: category } = await context.supabase
     .from("poll_categories")
     .select("id, admin_only")
@@ -55,16 +60,21 @@ export async function POST(request: Request) {
   const slug = await ensureUniquePollSlug(payload.title);
 
   const { data, error } = await context.supabase.rpc("save_poll", {
-    p_payload: buildSavePollPayload(payload, {
-      id: null,
-      slug,
-      categoryId: category.id,
-      content: sanitizeRichTextHtml(payload.content),
-      translations: buildSanitizedPollTranslations(
-        payload.translations,
-        payload.content_locale,
-      ),
-    }),
+    p_payload: buildSavePollPayload(
+      // Held for co-authors: insert as a draft so it stays private until every
+      // invitee accepts, then auto-publishes.
+      holdForCoAuthors ? { ...payload, status: "draft" } : payload,
+      {
+        id: null,
+        slug,
+        categoryId: category.id,
+        content: sanitizeRichTextHtml(payload.content),
+        translations: buildSanitizedPollTranslations(
+          payload.translations,
+          payload.content_locale,
+        ),
+      },
+    ),
   });
 
   if (error || !data) {
@@ -80,9 +90,29 @@ export async function POST(request: Request) {
     await autoRemoveContent({ table: "polls", id: result.id, note: screen.note });
   }
 
+  if (holdForCoAuthors) {
+    // `save_poll` doesn't know about the publish-on-confirm guard column.
+    await context.supabase
+      .from("polls")
+      .update({ publish_on_confirm: true })
+      .eq("id", result.id);
+  }
+
+  if (coAuthorIds.length > 0 && !screen.flagged) {
+    await inviteCoAuthors({
+      supabase: context.supabase,
+      contentType: "poll",
+      contentId: result.id,
+      contentTitle: payload.title,
+      contentSlug: result.slug,
+      creatorUserId: context.user.id,
+      coAuthorUserIds: coAuthorIds,
+    });
+  }
+
   // Notify followers only when the poll is actually public (published AND not
-  // auto-removed).
-  if (payload.status === "published" && !screen.flagged) {
+  // auto-removed). A draft held for co-authors notifies on auto-publish.
+  if (payload.status === "published" && !screen.flagged && !holdForCoAuthors) {
     void dispatchPublishSideEffects({
       contentType: "poll",
       contentId: result.id,
@@ -92,5 +122,9 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json({ poll: result, autoRemoved: screen.flagged });
+  return NextResponse.json({
+    poll: result,
+    autoRemoved: screen.flagged,
+    awaitingCoAuthors: holdForCoAuthors,
+  });
 }
