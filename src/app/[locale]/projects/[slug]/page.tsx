@@ -142,9 +142,14 @@ export async function generateMetadata({
   const descriptionText = data ? getProjectNarrative(data.project) : "";
   const isThin = !data || !isProjectIndexable(data.project);
 
+  // Canonical always uses the resolved slug-only path, so a legacy
+  // `{id}-{slug}` request still points Google at the single canonical
+  // `/projects/{slug}` URL that the sitemap and internal links use.
+  const canonicalSlug = data?.project.slug || slug;
+
   return buildProjectPageMetadata({
     locale,
-    pathname: `/projects/${slug}`,
+    pathname: `/projects/${canonicalSlug}`,
     projectTitle: data?.project.title || null,
     topTechnologies: data?.technologies.map((technology) => technology.name) || [],
     authorName: data?.owner?.name || data?.owner?.username || null,

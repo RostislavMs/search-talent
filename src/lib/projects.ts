@@ -194,7 +194,12 @@ const projectRoutePattern =
   /^([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:-(.+))?$/i;
 
 export function buildProjectPath(projectId: string, slug?: string | null) {
-  return `/projects/${projectId}${slug ? `-${slug}` : ""}`;
+  // Prefer the clean slug-only path so every internal link matches the
+  // canonical URL and the sitemap entry (`/projects/{slug}`). Slugs are unique
+  // (see generateUniqueProjectSlug), so this resolves unambiguously. Without a
+  // slug we fall back to the id. parseProjectPath still accepts the legacy
+  // `{id}-{slug}` form, so any old/external links keep working.
+  return slug ? `/projects/${slug}` : `/projects/${projectId}`;
 }
 
 export function parseProjectPath(value: string) {
