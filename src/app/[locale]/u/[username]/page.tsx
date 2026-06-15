@@ -16,6 +16,7 @@ import {
   buildBreadcrumbSchema,
   buildProfilePageMetadata,
   getMetadataBase,
+  isProfileIndexable,
   safeJsonLd,
 } from "@/lib/seo";
 
@@ -56,8 +57,10 @@ export async function generateMetadata({
         workFormats: data.profile.work_formats,
       })
     : null;
-  const hasBio = Boolean(data?.profile.bio?.trim());
-  const isThin = !data || (projectCount === 0 && !hasBio);
+  // Thin-content (noindex) decision via the shared seo helper so this page and
+  // the sitemap stay in lockstep on which profiles are indexable.
+  const isThin =
+    !data || !isProfileIndexable({ projectCount, bio: data.profile.bio });
 
   return buildProfilePageMetadata({
     locale,
