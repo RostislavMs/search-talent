@@ -796,6 +796,57 @@ export function countWords(value: string | null | undefined) {
     .filter((word) => word.length > 0).length;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Indexability predicates — shared by page metadata AND the sitemap  */
+/*  so the two can never drift. A page that resolves to `noindex` must  */
+/*  never appear in the sitemap (Ahrefs/GSC flag that as an error).     */
+/* ------------------------------------------------------------------ */
+
+// A project page is too thin to index below this combined word count.
+// Tuned for a portfolio platform: a couple of descriptive sentences (~40 words)
+// is enough unique text for a real project page, which also carries non-prose
+// signal (tech stack, GitHub insights/README, cover/gallery) that Google sees
+// but this counter doesn't. A higher bar (e.g. 150) hid legitimate short-but-
+// real projects from search.
+export const PROJECT_MIN_CONTENT_WORDS = 40;
+
+/**
+ * The combined narrative used both for a project's meta description and for
+ * its thin-content (noindex) decision. Keep the field set in one place so the
+ * page and the sitemap agree on what "thin" means.
+ */
+export function getProjectNarrative(project: {
+  description?: string | null;
+  problem?: string | null;
+  solution?: string | null;
+  results?: string | null;
+}): string {
+  return [project.description, project.problem, project.solution, project.results]
+    .filter((value): value is string => Boolean(value))
+    .join(" ");
+}
+
+/** Whether a project has enough narrative to be indexed (and listed in sitemap). */
+export function isProjectIndexable(project: {
+  description?: string | null;
+  problem?: string | null;
+  solution?: string | null;
+  results?: string | null;
+}): boolean {
+  return countWords(getProjectNarrative(project)) >= PROJECT_MIN_CONTENT_WORDS;
+}
+
+/**
+ * A profile is too thin to index — and so must stay out of the sitemap — when
+ * it has no visible projects and no bio.
+ */
+export function isProfileIndexable(args: {
+  projectCount: number;
+  bio?: string | null;
+}): boolean {
+  return args.projectCount > 0 || Boolean(args.bio?.trim());
+}
+
 export function buildBreadcrumbSchema(
   items: Array<{ name: string; url: string }>,
 ) {

@@ -26,6 +26,8 @@ import {
   buildBreadcrumbSchema,
   buildProjectPageMetadata,
   getMetadataBase,
+  getProjectNarrative,
+  isProjectIndexable,
   safeJsonLd,
 } from "@/lib/seo";
 import { getProjectKindLabel, normalizeProjectKind } from "@/lib/projects";
@@ -135,18 +137,10 @@ export async function generateMetadata({
   const { locale, slug } = await getRouteParams(params);
   const data = await getPublicProjectPageData(slug);
 
-  const descriptionText = [
-    data?.project.description,
-    data?.project.problem,
-    data?.project.solution,
-    data?.project.results,
-  ]
-    .filter((value): value is string => Boolean(value))
-    .join(" ");
-  const wordCount = descriptionText
-    .split(/\s+/)
-    .filter((word) => word.length > 0).length;
-  const isThin = !data || wordCount < 150;
+  // Narrative + thin-content (noindex) decision go through the shared seo
+  // helpers so this page and the sitemap can never disagree on indexability.
+  const descriptionText = data ? getProjectNarrative(data.project) : "";
+  const isThin = !data || !isProjectIndexable(data.project);
 
   return buildProjectPageMetadata({
     locale,

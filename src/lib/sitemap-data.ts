@@ -11,7 +11,11 @@ import {
   locales,
   type Locale,
 } from "@/lib/i18n/config";
-import { getMetadataBase } from "@/lib/seo";
+import {
+  getMetadataBase,
+  isProfileIndexable,
+  isProjectIndexable,
+} from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 
 export const SITEMAP_IDS = [
@@ -174,38 +178,63 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
   if (id === "profiles") {
     const { data } = await supabase
       .from("profiles")
-      .select("username, updated_at")
+      .select("user_id, username, bio, updated_at")
       .eq("moderation_status", "approved")
       .not("username", "is", null)
       .order("updated_at", { ascending: false })
       .limit(SITEMAP_PAGE_SIZE);
 
-    return (data || []).map((profile) =>
-      buildEntry(baseUrl, `/u/${profile.username}`, {
-        lastModified: new Date(profile.updated_at),
-        changeFrequency: "weekly",
-        priority: 0.7,
-      }),
+    // A profile is noindex (and so must stay out of the sitemap) when it has no
+    // visible projects and no bio — mirror the page's thin-content rule. We only
+    // need to know which owners have at least one public project.
+    const { data: projectOwners } = await supabase
+      .from("projects")
+      .select("owner_id")
+      .eq("moderation_status", "approved")
+      .eq("status", "published");
+
+    const ownersWithProjects = new Set(
+      (projectOwners || []).map((row) => row.owner_id),
     );
+
+    return (data || [])
+      .filter((profile) =>
+        isProfileIndexable({
+          projectCount: ownersWithProjects.has(profile.user_id) ? 1 : 0,
+          bio: profile.bio,
+        }),
+      )
+      .map((profile) =>
+        buildEntry(baseUrl, `/u/${profile.username}`, {
+          lastModified: new Date(profile.updated_at),
+          changeFrequency: "weekly",
+          priority: 0.7,
+        }),
+      );
   }
 
   if (id === "projects") {
     const { data } = await supabase
       .from("projects")
-      .select("slug, updated_at")
+      .select("slug, updated_at, description, problem, solution, results")
       .eq("moderation_status", "approved")
       .eq("status", "published")
       .not("slug", "is", null)
       .order("updated_at", { ascending: false })
       .limit(SITEMAP_PAGE_SIZE);
 
-    return (data || []).map((project) =>
-      buildEntry(baseUrl, `/projects/${project.slug}`, {
-        lastModified: new Date(project.updated_at),
-        changeFrequency: "weekly",
-        priority: 0.8,
-      }),
-    );
+    // A project page is noindex when its combined narrative is under the word
+    // threshold — keep those thin projects out of the sitemap (same rule as the
+    // page metadata, via the shared predicate).
+    return (data || [])
+      .filter((project) => isProjectIndexable(project))
+      .map((project) =>
+        buildEntry(baseUrl, `/projects/${project.slug}`, {
+          lastModified: new Date(project.updated_at),
+          changeFrequency: "weekly",
+          priority: 0.8,
+        }),
+      );
   }
 
   if (id === "articles") {
