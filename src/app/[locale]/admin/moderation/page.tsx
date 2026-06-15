@@ -59,7 +59,7 @@ export default async function AdminModerationPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-hero app-card p-8">
+      <section className="rounded-hero app-card p-5 sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
           {copy.dashboard.eyebrow}
         </p>

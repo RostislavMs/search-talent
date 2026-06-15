@@ -147,8 +147,8 @@ export default async function AdminProjectsContentPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-hero app-card p-8">
-        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+      <section className="rounded-hero app-card p-5 sm:p-8">
+        <h2 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.projectsTitle}
         </h2>
         <p className="mt-2 max-w-3xl app-muted">{copy.projectsDescription}</p>

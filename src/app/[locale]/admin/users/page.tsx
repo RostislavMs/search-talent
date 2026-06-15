@@ -3,6 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import UserRowActions from "@/components/admin/user-row-actions";
 import UsersFilterBar from "@/components/admin/users-filter-bar";
+import {
+  AdminCard,
+  AdminCardActions,
+  AdminCardList,
+  AdminCardMeta,
+} from "@/components/admin/admin-mobile-cards";
 import { buttonStyles } from "@/components/ui/button-styles";
 import {
   getAdminUsersList,
@@ -123,8 +129,8 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-hero app-card p-8">
-        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+      <section className="rounded-hero app-card p-5 sm:p-8">
+        <h2 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.title}
         </h2>
         <p className="mt-2 max-w-3xl app-muted">{copy.description}</p>
@@ -167,7 +173,8 @@ export default async function AdminUsersPage({
             <p className="text-sm app-muted">{copy.empty}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left text-xs font-semibold uppercase tracking-eyebrow app-soft">
@@ -260,6 +267,69 @@ export default async function AdminUsersPage({
               </tbody>
             </table>
           </div>
+
+          <AdminCardList>
+            {result.items.map((user: AdminUserRow) => (
+              <AdminCard key={user.userId}>
+                <div className="min-w-0">
+                  <Link
+                    href={createLocalePath(locale, `/admin/users/${user.userId}`)}
+                    className="break-words font-medium text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
+                  >
+                    {user.displayName ||
+                      (user.username ? `@${user.username}` : user.email) ||
+                      user.userId}
+                  </Link>
+                  {user.username ? (
+                    <p className="text-xs app-soft">@{user.username}</p>
+                  ) : null}
+                </div>
+                <div className="space-y-1">
+                  <AdminCardMeta label={copy.columns.email}>
+                    <span className="break-all">{user.email || "—"}</span>
+                  </AdminCardMeta>
+                  <AdminCardMeta label={copy.columns.role}>
+                    <span
+                      className={[
+                        "inline-flex rounded-full px-3 py-0.5 text-xs font-semibold",
+                        user.isAdmin
+                          ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
+                          : "border border-[color:var(--border)] text-[color:var(--muted-foreground)]",
+                      ].join(" ")}
+                    >
+                      {user.isAdmin ? copy.role.admin : copy.role.user}
+                    </span>
+                  </AdminCardMeta>
+                  <AdminCardMeta label={copy.columns.status}>
+                    {user.moderationStatus
+                      ? moderationCopy.statusLabels[user.moderationStatus]
+                      : moderationCopy.statusLabels.approved}
+                  </AdminCardMeta>
+                  <AdminCardMeta label={copy.columns.joined}>
+                    {formatDate(user.createdAt, locale)}
+                  </AdminCardMeta>
+                </div>
+                <AdminCardActions>
+                  {user.username ? (
+                    <Link
+                      href={createLocalePath(locale, `/u/${user.username}`)}
+                      className="text-xs font-medium text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
+                    >
+                      {copy.actions.openProfile}
+                    </Link>
+                  ) : null}
+                  <UserRowActions
+                    userId={user.userId}
+                    profileId={user.profileId}
+                    isAdmin={user.isAdmin}
+                    isSelf={viewer.user?.id === user.userId}
+                    labels={copy.actions}
+                  />
+                </AdminCardActions>
+              </AdminCard>
+            ))}
+          </AdminCardList>
+          </>
         )}
 
         {pageCount > 1 ? (

@@ -115,7 +115,7 @@ export default function ContentBulkTable({
   return (
     <>
       {hasSelection ? (
-        <div className="sticky top-20 z-30 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-5 py-3 shadow-[0_12px_32px_rgba(2,6,23,0.18)]">
+        <div className="sticky top-20 z-30 mb-4 flex flex-col gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-3 shadow-[0_12px_32px_rgba(2,6,23,0.18)] sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:rounded-full sm:px-5">
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold text-[color:var(--foreground)]">
               {selected.size} {labels.selected}
