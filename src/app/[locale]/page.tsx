@@ -164,22 +164,22 @@ export default async function LocalizedHomePage({
       */}
       <section className="bg-brand-hero overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:rounded-hero sm:p-8 md:p-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:gap-8">
-          <div className="flex flex-col">
+          <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
               {dictionary.home.eyebrow}
             </p>
-            <h1 className="font-display mt-3 max-w-3xl text-3xl font-medium leading-[1.05] tracking-tight sm:mt-4 sm:text-4xl md:text-5xl lg:text-6xl">
+            <h1 className="font-display mt-3 max-w-3xl text-4xl font-medium leading-[1.05] tracking-tight sm:mt-4 md:text-5xl lg:text-6xl">
               {dictionary.home.titleLead}{" "}
               <RotatingWord words={dictionary.home.titleWords} />
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:mt-4 sm:text-base sm:leading-8">
               {dictionary.home.description}
             </p>
-            <ul className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs font-medium text-white/70 sm:mt-4 sm:text-sm">
+            <ul className="mt-3 grid w-full grid-cols-2 justify-items-center gap-x-3 gap-y-2 text-xs font-medium text-white/70 sm:mt-4 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-items-stretch sm:gap-x-2.5 sm:gap-y-1.5 sm:text-sm">
               {dictionary.home.descriptionHighlights.map((item, index) => (
                 <li key={item} className="flex items-center gap-2.5">
                   {index > 0 ? (
-                    <span aria-hidden="true" className="text-white/30">
+                    <span aria-hidden="true" className="hidden text-white/30 sm:inline">
                       ·
                     </span>
                   ) : null}
@@ -188,7 +188,7 @@ export default async function LocalizedHomePage({
               ))}
             </ul>
 
-            <div className="mt-6 flex flex-col gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-3 lg:mt-auto lg:pt-8">
+            <div className="mt-6 flex w-full flex-col gap-2 sm:mt-8 sm:w-auto sm:flex-row sm:flex-wrap sm:gap-3 lg:mt-auto lg:pt-8">
               <ButtonLink href="/talents" size="lg" className="w-full sm:w-auto">
                 {dictionary.home.searchCreators}
               </ButtonLink>

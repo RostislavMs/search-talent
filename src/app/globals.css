@@ -192,15 +192,20 @@ select {
  */
 .rotating-word {
   display: grid;
-  justify-items: start;
-  color: #fcd34d; /* amber-300 — highlight on the always-dark hero gradient */
+  justify-items: center;
+  color: #fcd34d;
+}
+
+@media (min-width: 640px) {
+  .rotating-word {
+    justify-items: start;
+  }
 }
 
 .rotating-word > span {
   grid-area: 1 / 1;
   opacity: 0;
   transform: translateY(0.22em);
-  /* Outgoing word: ease out a touch quicker, no delay. */
   transition:
     opacity 320ms ease,
     transform 320ms ease;

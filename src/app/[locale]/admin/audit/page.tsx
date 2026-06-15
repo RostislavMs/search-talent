@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AuditFilterBar from "@/components/admin/audit-filter-bar";
+import {
+  AdminCard,
+  AdminCardList,
+  AdminCardMeta,
+} from "@/components/admin/admin-mobile-cards";
 import { buttonStyles } from "@/components/ui/button-styles";
 import { getAdminAuditLog } from "@/lib/db/admin";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
@@ -114,8 +119,8 @@ export default async function AdminAuditPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-hero app-card p-8">
-        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+      <section className="rounded-hero app-card p-5 sm:p-8">
+        <h2 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.title}
         </h2>
         <p className="mt-2 max-w-3xl app-muted">{copy.description}</p>
@@ -138,7 +143,8 @@ export default async function AdminAuditPage({
             <p className="text-sm app-muted">{copy.empty}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left text-xs font-semibold uppercase tracking-eyebrow app-soft">
@@ -219,6 +225,63 @@ export default async function AdminAuditPage({
               </tbody>
             </table>
           </div>
+
+          <AdminCardList>
+            {result.items.map((entry) => {
+              const actionLabel =
+                (copy.actionLabels as Record<string, string>)[entry.actionType] ||
+                entry.actionType;
+              const previous = entry.previousStatus
+                ? moderationCopy.statusLabels[entry.previousStatus]
+                : null;
+              const next = entry.nextStatus
+                ? moderationCopy.statusLabels[entry.nextStatus]
+                : null;
+
+              return (
+                <AdminCard key={entry.id}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex rounded-full border border-[color:var(--border)] px-3 py-1 text-xs font-semibold">
+                      {actionLabel}
+                    </span>
+                    <span className="text-xs app-soft">
+                      {formatDateTime(entry.createdAt, locale)}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <AdminCardMeta label={copy.columns.actor}>
+                      {entry.actorLabel}
+                    </AdminCardMeta>
+                    <AdminCardMeta
+                      label={moderationCopy.targetLabels[entry.targetType]}
+                    >
+                      {entry.targetHref ? (
+                        <Link
+                          href={createLocalePath(locale, entry.targetHref)}
+                          className="text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
+                        >
+                          {entry.targetLabel}
+                        </Link>
+                      ) : (
+                        entry.targetLabel
+                      )}
+                    </AdminCardMeta>
+                    <AdminCardMeta label={copy.columns.statusChange}>
+                      {previous && next
+                        ? `${previous} → ${next}`
+                        : next || previous || "—"}
+                    </AdminCardMeta>
+                    {entry.note ? (
+                      <AdminCardMeta label={copy.columns.note}>
+                        <span className="whitespace-pre-wrap">{entry.note}</span>
+                      </AdminCardMeta>
+                    ) : null}
+                  </div>
+                </AdminCard>
+              );
+            })}
+          </AdminCardList>
+          </>
         )}
 
         {result.hasMore && result.items.length > 0 ? (

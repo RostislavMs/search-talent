@@ -70,7 +70,7 @@ export default function HomeTopRated({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <section className="bg-brand-hero rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.24)] sm:rounded-hero sm:p-7 md:p-8">
+      <section className="bg-brand-hero rounded-2xl border app-border p-5 text-center text-white shadow-[0_30px_80px_rgba(15,23,42,0.24)] sm:rounded-hero sm:p-7 sm:text-left md:p-8">
         <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
           {dictionary.home.topRatedEyebrow}
         </p>
@@ -99,7 +99,7 @@ export default function HomeTopRated({
           </LocalizedLink>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid gap-3 text-left sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
           {Object.values(dictionary.home.ratingSignals).map((item) => (
             <div
               key={item.title}

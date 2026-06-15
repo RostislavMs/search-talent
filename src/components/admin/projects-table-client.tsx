@@ -3,6 +3,12 @@
 import Link from "next/link";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import ContentBulkTable from "@/components/admin/content-bulk-table";
+import {
+  AdminCard,
+  AdminCardActions,
+  AdminCardList,
+  AdminCardMeta,
+} from "@/components/admin/admin-mobile-cards";
 import StatusBadge from "@/components/admin/status-badge";
 import type { ModerationStatus } from "@/lib/moderation";
 
@@ -64,7 +70,8 @@ export default function ProjectsTableClient({
   return (
     <ContentBulkTable targetType="project" ids={ids} labels={bulkLabels}>
       {({ selected, toggle, toggleAll, allSelected }) => (
-        <div className="overflow-x-auto">
+        <>
+          <div className="hidden overflow-x-auto md:block">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold uppercase tracking-eyebrow app-soft">
@@ -153,7 +160,68 @@ export default function ProjectsTableClient({
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+
+          <AdminCardList>
+            {items.map((item) => (
+              <AdminCard key={item.id}>
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={selected.has(item.id)}
+                    onChange={() => toggle(item.id)}
+                    aria-label={`Select ${item.title}`}
+                  />
+                  <Link
+                    href={item.href}
+                    className="min-w-0 flex-1 break-words font-medium text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
+                  >
+                    {item.title}
+                  </Link>
+                </div>
+                <div className="space-y-1">
+                  <AdminCardMeta label={columnLabels.author}>
+                    {item.authorHref ? (
+                      <Link
+                        href={item.authorHref}
+                        className="text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
+                      >
+                        {item.authorLabel}
+                      </Link>
+                    ) : (
+                      item.authorLabel
+                    )}
+                  </AdminCardMeta>
+                  <AdminCardMeta label={columnLabels.status}>
+                    <StatusBadge status={item.moderationStatus} labels={statusLabels} />
+                  </AdminCardMeta>
+                  <AdminCardMeta label={columnLabels.created}>
+                    {item.createdAtLabel}
+                  </AdminCardMeta>
+                  <AdminCardMeta label={columnLabels.engagement}>
+                    ▲ {item.likes} · ▼ {item.dislikes}
+                  </AdminCardMeta>
+                </div>
+                <AdminCardActions>
+                  <Link
+                    href={item.href}
+                    className="inline-flex items-center rounded-full border border-[color:var(--border)] px-3 py-1 text-xs font-medium text-[color:var(--foreground)]"
+                  >
+                    {openLabel}
+                  </Link>
+                  <AdminContentQuickActions
+                    targetType="project"
+                    targetId={item.id}
+                    currentStatus={item.moderationStatus}
+                    locale={locale}
+                    redirectAfterDelete={redirectAfterDelete}
+                  />
+                </AdminCardActions>
+              </AdminCard>
+            ))}
+          </AdminCardList>
+        </>
       )}
     </ContentBulkTable>
   );

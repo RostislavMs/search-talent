@@ -89,7 +89,7 @@ export default async function AdminUserDetailPage({
         </Link>
       </div>
 
-      <section className="rounded-hero app-card p-8">
+      <section className="rounded-hero app-card p-5 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-5">
             {detail.avatarUrl ? (

@@ -60,6 +60,17 @@ export default function ProfilePdfExport({
     return map[value] || value;
   };
 
+  const getPreferredContactLabel = (value: string) => {
+    const map: Record<string, string> = {
+      email: dictionary.creatorProfile.contactMethodEmail,
+      telegram: dictionary.creatorProfile.contactMethodTelegram,
+      phone: dictionary.creatorProfile.contactMethodPhone,
+      linkedin: dictionary.creatorProfile.contactMethodLinkedin,
+      website: dictionary.creatorProfile.contactMethodWebsite,
+    };
+    return map[value] || value;
+  };
+
   const getExperienceLabel = (value: string) => {
     const isUk = dictionary.creatorProfile.totalExperienceYears === "Досвід роботи, років";
     const map: Record<string, string> = {
@@ -117,6 +128,14 @@ export default function ProfilePdfExport({
         if (profile.website) contactItems.push({ icon: "&#127760;", label: "Web", value: escapeHtml(profile.website), href: escapeHtml(profile.website) });
         if (profile.linkedin) contactItems.push({ icon: "&#128279;", label: "LinkedIn", value: escapeHtml(profile.linkedin), href: escapeHtml(profile.linkedin) });
         if (profile.github) contactItems.push({ icon: "&#128187;", label: "GitHub", value: escapeHtml(profile.github), href: escapeHtml(profile.github) });
+        if (profile.twitter) contactItems.push({ icon: "&#128279;", label: "X / Twitter", value: escapeHtml(profile.twitter), href: escapeHtml(profile.twitter) });
+        if (profile.behance) contactItems.push({ icon: "&#128279;", label: "Behance", value: escapeHtml(profile.behance), href: escapeHtml(profile.behance) });
+        if (profile.dribbble) contactItems.push({ icon: "&#128279;", label: "Dribbble", value: escapeHtml(profile.dribbble), href: escapeHtml(profile.dribbble) });
+        if (profile.artstation) contactItems.push({ icon: "&#128279;", label: "ArtStation", value: escapeHtml(profile.artstation), href: escapeHtml(profile.artstation) });
+        if (profile.vimeo) contactItems.push({ icon: "&#128279;", label: "Vimeo", value: escapeHtml(profile.vimeo), href: escapeHtml(profile.vimeo) });
+        if (profile.youtube) contactItems.push({ icon: "&#128279;", label: "YouTube", value: escapeHtml(profile.youtube), href: escapeHtml(profile.youtube) });
+        if (profile.instagram) contactItems.push({ icon: "&#128279;", label: "Instagram", value: escapeHtml(profile.instagram), href: escapeHtml(profile.instagram) });
+        if (profile.preferred_contact_method) contactItems.push({ icon: "&#9733;", label: t.preferredContact, value: escapeHtml(getPreferredContactLabel(profile.preferred_contact_method)) });
 
         if (contactItems.length > 0) {
           sections.push(`
@@ -154,11 +173,16 @@ export default function ProfilePdfExport({
           profDetails.push(`<div class="detail-item"><span class="detail-label">${t.salary}</span><span class="detail-value">${escapeHtml(profile.salary_expectations)}${profile.salary_currency ? ` ${escapeHtml(profile.salary_currency.toUpperCase())}` : ""}</span></div>`);
         }
 
-        if (profDetails.length > 0) {
+        const additionalInfoHtml = profile.additional_info
+          ? `<div class="bio" style="margin-top:10px;">${escapeHtml(profile.additional_info).split("\n").filter((l) => l.trim()).map((line) => `<p>${line}</p>`).join("")}</div>`
+          : "";
+
+        if (profDetails.length > 0 || additionalInfoHtml) {
           sections.push(`
             <div class="section">
               <h2>${t.professionalDetails}</h2>
-              <div class="details-grid">${profDetails.join("")}</div>
+              ${profDetails.length > 0 ? `<div class="details-grid">${profDetails.join("")}</div>` : ""}
+              ${additionalInfoHtml}
             </div>
           `);
         }

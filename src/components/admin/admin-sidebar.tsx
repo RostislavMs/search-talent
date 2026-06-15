@@ -88,11 +88,17 @@ export default function AdminSidebar({
   }
 
   return (
-    <nav className="flex flex-col gap-4" aria-label="Admin navigation">
+    <nav
+      className="flex flex-wrap gap-2 lg:flex-col lg:flex-nowrap lg:gap-4"
+      aria-label="Admin navigation"
+    >
       {groups.map((group) => (
-        <div key={group.label || "root"} className="flex flex-col gap-1">
+        <div
+          key={group.label || "root"}
+          className="contents lg:flex lg:flex-col lg:gap-1"
+        >
           {group.label ? (
-            <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-eyebrow app-soft">
+            <p className="hidden px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-eyebrow app-soft lg:block">
               {group.label}
             </p>
           ) : null}
@@ -103,15 +109,15 @@ export default function AdminSidebar({
                 key={item.href}
                 href={createLocalePath(locale, item.href)}
                 className={[
-                  "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors lg:gap-3 lg:border-0 lg:px-4 lg:py-2.5",
                   active
-                    ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
-                    : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
+                    ? "border-transparent bg-[color:var(--foreground)] text-[color:var(--background)]"
+                    : "app-border text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
                 ].join(" ")}
               >
                 <span
                   aria-hidden
-                  className="inline-flex h-6 w-6 items-center justify-center text-sm"
+                  className="hidden h-6 w-6 items-center justify-center text-sm lg:inline-flex"
                 >
                   {item.icon}
                 </span>

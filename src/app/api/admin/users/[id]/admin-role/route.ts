@@ -64,7 +64,7 @@ export async function POST(
   const { error } = await adminClient
     .from("platform_admins")
     .upsert(
-      { user_id: targetUserId, added_by: context.user.id },
+      { user_id: targetUserId },
       { onConflict: "user_id" },
     );
 

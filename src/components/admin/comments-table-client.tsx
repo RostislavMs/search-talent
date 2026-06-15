@@ -3,6 +3,12 @@
 import Link from "next/link";
 import CommentDeleteButton from "@/components/admin/comment-delete-button";
 import CommentsBulkTable from "@/components/admin/comments-bulk-table";
+import {
+  AdminCard,
+  AdminCardActions,
+  AdminCardList,
+  AdminCardMeta,
+} from "@/components/admin/admin-mobile-cards";
 
 export type CommentTableItem = {
   id: string;
@@ -69,7 +75,8 @@ export default function CommentsTableClient({
       labels={bulkLabels}
     >
       {({ isSelected, toggle, toggleAll, allSelected }) => (
-        <div className="overflow-x-auto">
+        <>
+          <div className="hidden overflow-x-auto md:block">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold uppercase tracking-eyebrow app-soft">
@@ -151,7 +158,69 @@ export default function CommentsTableClient({
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+
+          <AdminCardList>
+            {items.map((row) => {
+              const item = { id: row.id, kind: row.kind };
+              return (
+                <AdminCard key={`${row.kind}-${row.id}`}>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      className="app-checkbox mt-1"
+                      aria-label={selectRowLabel}
+                      checked={isSelected(item)}
+                      onChange={() => toggle(item)}
+                    />
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="whitespace-pre-wrap break-words text-sm text-[color:var(--foreground)]">
+                        {row.body}
+                      </p>
+                      <p className="text-xs app-soft">{row.kindLabel}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <AdminCardMeta label={columnLabels.author}>
+                      {row.authorHref ? (
+                        <Link
+                          href={row.authorHref}
+                          className="text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
+                        >
+                          {row.authorLabel}
+                        </Link>
+                      ) : (
+                        row.authorLabel
+                      )}
+                    </AdminCardMeta>
+                    <AdminCardMeta label={columnLabels.target}>
+                      {row.targetHref ? (
+                        <Link
+                          href={row.targetHref}
+                          className="text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
+                        >
+                          {row.targetLabel}
+                        </Link>
+                      ) : (
+                        row.targetLabel
+                      )}
+                    </AdminCardMeta>
+                    <AdminCardMeta label={columnLabels.created}>
+                      {row.createdAtLabel}
+                    </AdminCardMeta>
+                  </div>
+                  <AdminCardActions>
+                    <CommentDeleteButton
+                      commentId={row.id}
+                      kind={row.kind}
+                      labels={rowDeleteLabels}
+                    />
+                  </AdminCardActions>
+                </AdminCard>
+              );
+            })}
+          </AdminCardList>
+        </>
       )}
     </CommentsBulkTable>
   );
