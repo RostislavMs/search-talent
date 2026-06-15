@@ -50,13 +50,11 @@ describe("normalizeProjectVisibilityStatus", () => {
 });
 
 describe("buildProjectPath", () => {
-  it("includes the slug when provided", () => {
-    expect(buildProjectPath(uuid, "my-project")).toBe(
-      `/projects/${uuid}-my-project`,
-    );
+  it("uses the slug-only path when a slug is provided (matches canonical + sitemap)", () => {
+    expect(buildProjectPath(uuid, "my-project")).toBe("/projects/my-project");
   });
 
-  it("omits the slug separator for empty/null slug", () => {
+  it("falls back to the id when slug is empty/null", () => {
     expect(buildProjectPath(uuid)).toBe(`/projects/${uuid}`);
     expect(buildProjectPath(uuid, null)).toBe(`/projects/${uuid}`);
     expect(buildProjectPath(uuid, "")).toBe(`/projects/${uuid}`);
