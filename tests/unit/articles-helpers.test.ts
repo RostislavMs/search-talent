@@ -56,8 +56,11 @@ describe("slugifyArticleTitle", () => {
     expect(slugifyArticleTitle("  Hello   --  World!  ")).toBe("hello-world");
   });
 
-  it("strips non-ASCII characters", () => {
-    expect(slugifyArticleTitle("Привіт World")).toBe("world");
+  it("transliterates Cyrillic to Latin", () => {
+    expect(slugifyArticleTitle("Привіт World")).toBe("pryvit-world");
+    expect(slugifyArticleTitle("Як зробити портфоліо")).toBe(
+      "yak-zrobyty-portfolio",
+    );
   });
 
   it("returns 'article' when title is empty after sanitation", () => {
