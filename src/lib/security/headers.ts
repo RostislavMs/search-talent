@@ -61,8 +61,6 @@ function buildContentSecurityPolicy(): string {
     (value): value is string => Boolean(value),
   );
   const r2ImgHosts = r2Public ? [r2Public] : [];
-  const devScriptSources =
-    process.env.NODE_ENV === "production" ? [] : ["blob:"];
 
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
@@ -73,9 +71,14 @@ function buildContentSecurityPolicy(): string {
       // not currently route a per-request nonce through the middleware.
       "'unsafe-inline'",
       "'unsafe-eval'",
-      ...devScriptSources,
+      // Ahrefs Web Analytics (analytics.js, consent-gated) bootstraps its
+      // tracker from a blob: URL, so blob: must be allowed for scripts here —
+      // worker-src already allows it for workers. Next.js dev also serves
+      // some blob: scripts.
+      "blob:",
       "https://va.vercel-scripts.com",
       "https://vitals.vercel-insights.com",
+      "https://analytics.ahrefs.com",
     ],
     "style-src": ["'self'", "'unsafe-inline'"],
     "img-src": [
@@ -91,6 +94,7 @@ function buildContentSecurityPolicy(): string {
       "'self'",
       "https://api.resend.com",
       "https://vitals.vercel-insights.com",
+      "https://analytics.ahrefs.com",
       ...supabaseHosts,
       ...supabaseWs,
       ...r2ConnectHosts,

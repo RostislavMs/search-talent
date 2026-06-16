@@ -11,6 +11,7 @@ import {
   type ProjectMediaItem,
 } from "@/lib/project-media";
 import { parseProjectPath } from "@/lib/projects";
+import { localizeArticleListFields } from "@/lib/articles";
 import type { PollFeedItem } from "@/lib/polls";
 import {
   type EmploymentType,
@@ -393,6 +394,7 @@ export async function getPublicProjectPageData(
 
 export async function getPublicProfilePageData(
   username: string,
+  locale?: string | null,
 ): Promise<PublicProfilePageData | null> {
   noStore();
   const supabase = await createClient();
@@ -505,7 +507,7 @@ export async function getPublicProfilePageData(
     supabase
       .from("articles")
       .select(
-        "id, slug, title, excerpt, cover_image_url, published_at, created_at",
+        "id, slug, title, excerpt, cover_image_url, translations, content_locale, published_at, created_at",
       )
       .eq("author_user_id", typedProfile.user_id)
       .eq("status", "published")
@@ -678,8 +680,37 @@ export async function getPublicProfilePageData(
         ...project,
         score: projectRatings[project.id] ?? project.score,
       })),
-    articles:
-      (articlesResponse.data || []) as PublicProfilePageData["articles"],
+    articles: (
+      (articlesResponse.data || []) as Array<
+        PublicProfilePageData["articles"][number] & {
+          content_locale: string | null;
+          translations:
+            | Record<
+                string,
+                {
+                  title?: string;
+                  excerpt?: string | null;
+                  content?: string;
+                  cover_image_url?: string | null;
+                } | null
+              >
+            | null;
+        }
+      >
+    ).map((article) => {
+      // Localize title/excerpt to the viewing locale and resolve the cover
+      // (a cover uploaded on only one language tab lives in `translations`).
+      const localized = localizeArticleListFields(article, locale);
+      return {
+        id: article.id,
+        slug: article.slug,
+        title: localized.title,
+        excerpt: localized.excerpt,
+        cover_image_url: localized.cover_image_url,
+        published_at: article.published_at,
+        created_at: article.created_at,
+      };
+    }),
     badges,
     completeness,
     voteSummary,
@@ -752,7 +783,7 @@ export type UserArticlesPageResult = {
 
 export async function getUserArticlesPage(
   username: string,
-  options: { page: number; perPage: number },
+  options: { page: number; perPage: number; locale?: string | null },
 ): Promise<UserArticlesPageResult | null> {
   noStore();
   const supabase = await createClient();
@@ -806,7 +837,7 @@ export async function getUserArticlesPage(
   let articlesQuery = supabase
     .from("articles")
     .select(
-      "id, author_user_id, slug, title, excerpt, content, cover_image_url, hero_video_url, views_count, likes_count, comments_count, published_at, created_at, pinned_until, category_id",
+      "id, author_user_id, slug, title, excerpt, content, cover_image_url, translations, content_locale, hero_video_url, views_count, likes_count, comments_count, published_at, created_at, pinned_until, category_id",
     )
     .eq("status", "published")
     .eq("moderation_status", "approved");
@@ -825,6 +856,18 @@ export async function getUserArticlesPage(
     excerpt: string | null;
     content: string | null;
     cover_image_url: string | null;
+    translations:
+      | Record<
+          string,
+          {
+            title?: string;
+            excerpt?: string | null;
+            content?: string;
+            cover_image_url?: string | null;
+          } | null
+        >
+      | null;
+    content_locale: string | null;
     hero_video_url: string | null;
     views_count: number | null;
     likes_count: number | null;
@@ -915,13 +958,15 @@ export async function getUserArticlesPage(
       name: profile.name,
       username: profile.username,
     },
-    articles: rows.map((item) => ({
+    articles: rows.map((item) => {
+      const localized = localizeArticleListFields(item, options.locale);
+      return {
       id: item.id,
       slug: item.slug,
-      title: item.title,
-      excerpt: item.excerpt,
+      title: localized.title,
+      excerpt: localized.excerpt,
       content: item.content,
-      cover_image_url: item.cover_image_url,
+      cover_image_url: localized.cover_image_url,
       hero_video_url: item.hero_video_url,
       views_count: item.views_count || 0,
       likes_count: item.likes_count || 0,
@@ -934,7 +979,8 @@ export async function getUserArticlesPage(
         ? authorMap.get(item.author_user_id) || null
         : null,
       coAuthors: coAuthorsMap.get(item.id) ?? [],
-    })),
+      };
+    }),
     totalCount,
     currentPage,
     totalPages,

@@ -217,8 +217,15 @@ export default function ArticleComposer({
     [initialVersions, editArticle, availableCategories],
   );
 
+  // Baseline the dirty check compares against. Starts at the loaded article
+  // (initialSnapshot) and, after a successful save, advances to the saved
+  // content — otherwise isDirty stays true once the form differs from the
+  // originally loaded state, and the unsaved-changes guard keeps firing its
+  // beforeunload warning even though everything is already saved.
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const currentSnapshot = JSON.stringify({ versions, categorySlug });
-  const isDirty = saving === null && currentSnapshot !== initialSnapshot;
+  const isDirty =
+    saving === null && currentSnapshot !== (savedSnapshot ?? initialSnapshot);
 
   const dictionaryCommon = getDictionary(isLocale(locale) ? locale : "en").common;
   const coAuthorsDict = getDictionary(isLocale(locale) ? locale : "en").coAuthors;
@@ -467,13 +474,19 @@ export default function ArticleComposer({
       return;
     }
 
+    // The content is now persisted server-side — advance the dirty baseline so
+    // isDirty goes false and the unsaved-changes guard doesn't warn during the
+    // refresh or on the next navigation.
     if (isEditing) {
+      setSavedSnapshot(JSON.stringify({ versions, categorySlug }));
       router.refresh();
       return;
     }
 
-    setVersions({ uk: emptyVersion(), en: emptyVersion() });
+    const cleared = { uk: emptyVersion(), en: emptyVersion() };
+    setVersions(cleared);
     setActiveLocale(siteLocale);
+    setSavedSnapshot(JSON.stringify({ versions: cleared, categorySlug }));
     router.refresh();
   };
 

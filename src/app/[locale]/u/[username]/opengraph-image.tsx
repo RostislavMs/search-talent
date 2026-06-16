@@ -16,7 +16,7 @@ export default async function Image({
   const { locale, username } = await params;
   const safeLocale = isLocale(locale) ? locale : "en";
   const isUk = safeLocale === "uk";
-  const data = await getPublicProfilePageData(username);
+  const data = await getPublicProfilePageData(username, safeLocale);
 
   const displayName =
     data?.profile.name || data?.profile.username || username;

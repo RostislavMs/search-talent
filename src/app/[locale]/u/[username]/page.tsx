@@ -44,7 +44,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string; username: string }>;
 }): Promise<Metadata> {
   const { locale, username } = await getRouteParams(params);
-  const data = await getPublicProfilePageData(username);
+  const data = await getPublicProfilePageData(username, locale);
   const displayName = data?.profile.name || data?.profile.username || null;
   const role = data?.profile.headline || data?.profile.categoryName || null;
   const projectCount = data?.projects.length ?? 0;
@@ -83,7 +83,7 @@ export default async function PublicProfilePage({
   const { locale, username } = await getRouteParams(params);
   const dictionary = getDictionary(locale);
   const [data, viewer] = await Promise.all([
-    getPublicProfilePageData(username),
+    getPublicProfilePageData(username, locale),
     getCurrentViewerRole(),
   ]);
 

@@ -331,6 +331,7 @@ async function renderPublicView({
   const result = await getUserArticlesPage(username, {
     page: Number.isFinite(page) ? page : 1,
     perPage: 12,
+    locale,
   });
 
   if (!result) {
