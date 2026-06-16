@@ -312,10 +312,14 @@ export default function RichTextComposer({
     (command: string, arg?: string) => {
       const el = editorRef.current;
       if (!el) return;
-      el.focus();
 
-      // Restore saved range if still valid inside editor
+      // Snapshot the saved range BEFORE focusing: re-focusing the editor (e.g.
+      // after the link popover stole focus) fires onFocus, which overwrites
+      // savedRangeRef with the collapsed selection. Reading first keeps the
+      // user's real selection so createLink wraps the selected text instead of
+      // landing at the start.
       const range = savedRangeRef.current;
+      el.focus();
       if (range && el.contains(range.startContainer)) {
         restoreSelection(range);
       }
@@ -762,17 +766,22 @@ export default function RichTextComposer({
               document.execCommand("defaultParagraphSeparator", false, "p");
             }}
             onBlur={() => {
-              savedRangeRef.current = saveSelection();
-              // Don't normalize DOM when a popover or upload is active —
-              // it would invalidate the saved cursor position
+              // When focus moves into a popover / emoji picker / upload control,
+              // the editor selection collapses. Don't overwrite the range those
+              // flows saved on open (openPopover) — a pending createLink would
+              // otherwise target the collapsed selection and land at the start
+              // instead of wrapping the selected text. Normalizing the DOM here
+              // would likewise invalidate the saved cursor position.
               if (
-                !popover &&
-                !uploadingImage &&
-                !emojiOpen &&
-                !pendingMediaInsertRef.current
+                popover ||
+                uploadingImage ||
+                emojiOpen ||
+                pendingMediaInsertRef.current
               ) {
-                normalizeEditorDom();
+                return;
               }
+              savedRangeRef.current = saveSelection();
+              normalizeEditorDom();
             }}
             onKeyDown={handleKeyDown}
             onKeyUp={trackSelection}

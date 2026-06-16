@@ -92,11 +92,29 @@ export function normalizeArticleSort(value: unknown): ArticleSortOption {
     : "recent";
 }
 
+// Cyrillic → Latin map for slugs. Ukrainian-first (BGN/PCGN-ish: я→ya, ю→yu,
+// є→ye, ї→yi, й→y) so Ukrainian titles produce readable Latin slugs instead of
+// collapsing to the "article" fallback. A few Russian-only letters are included
+// so mixed input still transliterates.
+const CYRILLIC_TO_LATIN: Record<string, string> = {
+  а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ye",
+  ж: "zh", з: "z", и: "y", і: "i", ї: "yi", й: "y", к: "k", л: "l",
+  м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u",
+  ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "shch", ь: "",
+  ю: "yu", я: "ya", ё: "e", ъ: "", ы: "y", э: "e",
+};
+
+function transliterateCyrillic(value: string) {
+  let out = "";
+  for (const char of value) {
+    out += CYRILLIC_TO_LATIN[char] ?? char;
+  }
+  return out;
+}
+
 export function slugifyArticleTitle(value: string) {
   return (
-    value
-      .trim()
-      .toLowerCase()
+    transliterateCyrillic(value.trim().toLowerCase())
       .normalize("NFKD")
       .replace(/[^a-z0-9\s-]+/g, "")
       .replace(/\s+/g, "-")
