@@ -123,6 +123,78 @@ export function slugifyArticleTitle(value: string) {
   );
 }
 
+/**
+ * Resolve the cover to display for an article in a listing: prefer the primary
+ * (top-level) cover, then fall back to any translation's cover. Lets a cover
+ * uploaded on only one language tab still appear in profile / article lists,
+ * which read the row directly instead of going through pickLocalizedVersion.
+ */
+export function resolveArticleListCover(
+  coverImageUrl: string | null,
+  translations:
+    | Record<string, { cover_image_url?: string | null } | null>
+    | null
+    | undefined,
+): string | null {
+  if (coverImageUrl) return coverImageUrl;
+  for (const version of Object.values(translations ?? {})) {
+    if (version?.cover_image_url) return version.cover_image_url;
+  }
+  return null;
+}
+
+type ArticleListLocalizable = {
+  title: string;
+  excerpt: string | null;
+  cover_image_url: string | null;
+  content_locale?: string | null;
+  translations?:
+    | Record<
+        string,
+        {
+          title?: string;
+          excerpt?: string | null;
+          content?: string;
+          cover_image_url?: string | null;
+        } | null
+      >
+    | null;
+};
+
+/**
+ * Localize an article's list-card fields (title, excerpt, cover) for a viewing
+ * locale, mirroring pickLocalizedVersion: use the locale's translation when it
+ * has real content, otherwise fall back to the primary fields. Used by profile
+ * / article listings that read article rows directly instead of going through
+ * pickLocalizedVersion. Cover priority: chosen version's own → primary → any
+ * translation, so a single uploaded image still shows.
+ */
+export function localizeArticleListFields(
+  row: ArticleListLocalizable,
+  locale?: string | null,
+): { title: string; excerpt: string | null; cover_image_url: string | null } {
+  let title = row.title;
+  let excerpt = row.excerpt;
+  let cover = row.cover_image_url;
+  const primaryLocale = row.content_locale || "uk";
+
+  if (locale && locale !== primaryLocale) {
+    const alt = row.translations?.[locale];
+    if (alt && (alt.title?.trim() || alt.content?.trim())) {
+      title = alt.title?.trim() ? alt.title : row.title;
+      excerpt = alt.excerpt ?? null;
+      cover = alt.cover_image_url ?? null;
+    }
+  }
+
+  return {
+    title,
+    excerpt,
+    cover_image_url:
+      cover ?? resolveArticleListCover(row.cover_image_url, row.translations),
+  };
+}
+
 export function formatArticleDate(value: string | null, locale: string) {
   if (!value) {
     return locale === "uk" ? "Без дати" : "No date";
