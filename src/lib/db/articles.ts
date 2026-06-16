@@ -195,6 +195,28 @@ async function getAuthorsMap(
 // Pick the language version a reader should see. Defaults to the primary
 // (top-level) version; if the reader's locale differs and a non-empty
 // translation exists, that one is returned. Otherwise we fall back to primary.
+// Find the first uploaded media (url + its storage path, kept as a pair) on the
+// article, scanning the primary (top-level) fields first, then any translation.
+// Lets a single uploaded cover/hero be reused across language versions that
+// didn't get their own.
+function firstArticleMedia(
+  row: ArticleRow,
+  urlKey: "cover_image_url" | "hero_video_url",
+  pathKey: "cover_image_storage_path" | "hero_video_storage_path",
+): { url: string | null; path: string | null } {
+  if (row[urlKey]) {
+    return { url: row[urlKey], path: row[pathKey] };
+  }
+
+  for (const version of Object.values(row.translations ?? {})) {
+    if (version[urlKey]) {
+      return { url: version[urlKey] ?? null, path: version[pathKey] ?? null };
+    }
+  }
+
+  return { url: null, path: null };
+}
+
 function pickLocalizedVersion(
   row: ArticleRow,
   locale?: string | null,
@@ -211,25 +233,55 @@ function pickLocalizedVersion(
 
   const primaryLocale = row.content_locale || "uk";
 
-  if (!locale || locale === primaryLocale) {
-    return primary;
+  let chosen = primary;
+
+  if (locale && locale !== primaryLocale) {
+    const alt = row.translations?.[locale];
+
+    if (alt && (alt.title?.trim() || alt.content?.trim())) {
+      chosen = {
+        title: alt.title?.trim() ? alt.title : primary.title,
+        excerpt: alt.excerpt ?? null,
+        content: alt.content?.trim() ? alt.content : primary.content,
+        cover_image_url: alt.cover_image_url ?? null,
+        cover_image_storage_path: alt.cover_image_storage_path ?? null,
+        hero_video_url: alt.hero_video_url ?? null,
+        hero_video_storage_path: alt.hero_video_storage_path ?? null,
+      };
+    }
   }
 
-  const alt = row.translations?.[locale];
-
-  if (alt && (alt.title?.trim() || alt.content?.trim())) {
-    return {
-      title: alt.title?.trim() ? alt.title : primary.title,
-      excerpt: alt.excerpt ?? null,
-      content: alt.content?.trim() ? alt.content : primary.content,
-      cover_image_url: alt.cover_image_url ?? null,
-      cover_image_storage_path: alt.cover_image_storage_path ?? null,
-      hero_video_url: alt.hero_video_url ?? null,
-      hero_video_storage_path: alt.hero_video_storage_path ?? null,
+  // Reuse a single uploaded cover/hero across both language versions: when the
+  // chosen version has none of its own, borrow whatever the article has
+  // elsewhere (the other language's upload). Works in both directions —
+  // upload on either tab shows on both.
+  if (!chosen.cover_image_url) {
+    const cover = firstArticleMedia(
+      row,
+      "cover_image_url",
+      "cover_image_storage_path",
+    );
+    chosen = {
+      ...chosen,
+      cover_image_url: cover.url,
+      cover_image_storage_path: cover.path,
     };
   }
 
-  return primary;
+  if (!chosen.hero_video_url) {
+    const hero = firstArticleMedia(
+      row,
+      "hero_video_url",
+      "hero_video_storage_path",
+    );
+    chosen = {
+      ...chosen,
+      hero_video_url: hero.url,
+      hero_video_storage_path: hero.path,
+    };
+  }
+
+  return chosen;
 }
 
 function toFeedItem(
