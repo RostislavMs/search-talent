@@ -5,6 +5,7 @@ import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import ArticleInteractions from "@/components/article-interactions";
 import AuthorList from "@/components/author-list";
 import ArticlePinButton from "@/components/article-pin-button";
+import ArticleTableOfContents from "@/components/article-table-of-contents";
 import ReportArticleButton from "@/components/report-article-button";
 import RichTextRenderer from "@/components/rich-text-renderer";
 import { ButtonLink } from "@/components/ui/Button";
@@ -105,6 +106,7 @@ export default async function ArticleDetailPage({
         draft: "Чернетка",
         category: "Категорія",
         noCategory: "Без категорії",
+        tableOfContents: "Зміст статті",
         moderatorNote: "Нотатка модератора",
         adminDelete: "Видалити як адмін",
         adminConfirmTitle: "Видалити статтю як адміністратор?",
@@ -124,6 +126,7 @@ export default async function ArticleDetailPage({
         draft: "Draft",
         category: "Category",
         noCategory: "No category",
+        tableOfContents: "In this article",
         moderatorNote: "Moderator note",
         adminDelete: "Delete as admin",
         adminConfirmTitle: "Delete article as administrator?",
@@ -135,6 +138,14 @@ export default async function ArticleDetailPage({
 
   const siteUrl = getMetadataBase().toString().replace(/\/$/, "");
   const articleUrl = `${siteUrl}/${safeLocale}/articles/${slug}`;
+
+  // Only surface the table of contents when the article actually has a few
+  // headings to jump between — otherwise it would reserve sidebar space for
+  // nothing and narrow the reading column.
+  const headingCount = article.content
+    ? (article.content.match(/<h3[\s>]/gi)?.length ?? 0)
+    : 0;
+  const showTableOfContents = headingCount >= 2;
 
   const articlePlainText = article.content
     ? extractPlainTextFromRichText(article.content)
@@ -177,7 +188,11 @@ export default async function ArticleDetailPage({
   ]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <main
+      className={`mx-auto px-4 py-10 sm:px-6 ${
+        showTableOfContents ? "max-w-7xl" : "max-w-6xl"
+      }`}
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }}
@@ -186,7 +201,14 @@ export default async function ArticleDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
-      <div className="rounded-hero app-card">
+      <div
+        className={
+          showTableOfContents
+            ? "lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-8"
+            : ""
+        }
+      >
+      <div className="rounded-hero app-card min-w-0">
         <div className="border-b app-border p-6 sm:p-8">
           <div className="flex flex-wrap gap-3">
             <ButtonLink href="/articles" variant="secondary">
@@ -314,7 +336,7 @@ export default async function ArticleDetailPage({
         ) : null}
 
         <div className="grid gap-8 p-6 sm:p-8">
-          <section className="space-y-6">
+          <section id="article-body" className="space-y-6">
             <RichTextRenderer content={article.content} accentColor="#f97316" />
           </section>
 
@@ -331,6 +353,15 @@ export default async function ArticleDetailPage({
             ownerUserId={article.author?.userId ?? null}
           />
         </div>
+      </div>
+        {showTableOfContents ? (
+          <aside className="mt-8 hidden lg:mt-0 lg:block">
+            <ArticleTableOfContents
+              targetId="article-body"
+              title={ui.tableOfContents}
+            />
+          </aside>
+        ) : null}
       </div>
     </main>
   );

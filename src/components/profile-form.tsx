@@ -34,6 +34,9 @@ import {
 import {
   createDefaultProfilePresentation,
   getProfileFontStack,
+  getProfileHeroBackground,
+  getProfileHeroOverlay,
+  getProfileSectionCardStyle,
   getProfileTextScale,
   normalizeProfilePresentation,
   normalizeProfileSettings,
@@ -42,14 +45,15 @@ import {
   profileCardStyles,
   profileFontPresets,
   profileHeroAlignments,
+  profileSectionBackgroundModes,
   profileSectionSizes,
   profileTextScales,
-  withAlpha,
   type ProfileBackgroundMode,
   type ProfileCardStyle,
   type ProfileFontPreset,
   type ProfileHeroAlignment,
   type ProfilePresentation,
+  type ProfileSectionBackgroundMode,
   type ProfileSectionId,
   type ProfileSectionSize,
   type ProfileSettings,
@@ -564,9 +568,16 @@ export default function ProfileForm({
             "\u041f\u0440\u0435\u0432'\u044e \u0441\u0442\u0438\u043b\u044e",
           modes: {
             gradient: "\u0413\u0440\u0430\u0434\u0456\u0454\u043d\u0442",
+            solid: "\u041a\u043e\u043b\u0456\u0440",
             image: "\u0424\u043e\u0442\u043e",
             video: "\u0412\u0456\u0434\u0435\u043e",
           },
+          gradientFrom:
+            "\u041a\u043e\u043b\u0456\u0440 \u0433\u0440\u0430\u0434\u0456\u0454\u043d\u0442\u0430 1",
+          gradientTo:
+            "\u041a\u043e\u043b\u0456\u0440 \u0433\u0440\u0430\u0434\u0456\u0454\u043d\u0442\u0430 2",
+          solidColor:
+            "\u041a\u043e\u043b\u0456\u0440 \u0444\u043e\u043d\u0443",
           fonts: {
             modern: "\u0421\u0443\u0447\u0430\u0441\u043d\u0438\u0439",
             editorial:
@@ -593,7 +604,8 @@ export default function ProfileForm({
           groups: {
             colors: "\u041a\u043e\u043b\u044c\u043e\u0440\u0438",
             typography: "\u0422\u0438\u043f\u043e\u0433\u0440\u0430\u0444\u0456\u043a\u0430",
-            background: "\u0424\u043e\u043d",
+            background: "\u0424\u043e\u043d hero",
+            sectionBackground: "\u0424\u043e\u043d \u0441\u0435\u043a\u0446\u0456\u0439",
             layout: "\u0420\u043e\u0437\u043a\u043b\u0430\u0434\u043a\u0430",
           },
         }
@@ -621,9 +633,13 @@ export default function ProfileForm({
           preview: "Style preview",
           modes: {
             gradient: "Gradient",
+            solid: "Solid color",
             image: "Photo",
             video: "Video",
           },
+          gradientFrom: "Gradient color 1",
+          gradientTo: "Gradient color 2",
+          solidColor: "Background color",
           fonts: {
             modern: "Modern",
             editorial: "Editorial",
@@ -649,7 +665,8 @@ export default function ProfileForm({
           groups: {
             colors: "Colors",
             typography: "Typography",
-            background: "Background",
+            background: "Hero background",
+            sectionBackground: "Sections background",
             layout: "Layout",
           },
         };
@@ -1633,22 +1650,6 @@ export default function ProfileForm({
 
   const previewScale = getProfileTextScale(presentation.textScale);
   const previewFontFamily = getProfileFontStack(presentation.fontPreset);
-  const previewPanelStyle =
-    presentation.cardStyle === "glass"
-      ? {
-          backgroundColor: "rgba(255,255,255,0.12)",
-          backdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.18)",
-        }
-      : presentation.cardStyle === "outline"
-        ? {
-            backgroundColor: "transparent",
-            border: `1px solid ${presentation.accentColor}`,
-          }
-        : {
-            backgroundColor: presentation.panelColor,
-            border: "1px solid rgba(255,255,255,0.08)",
-          };
   const getBuilderSpanClass = (size: ProfileSectionSize) => {
     switch (size) {
       case "compact":
@@ -1933,6 +1934,13 @@ export default function ProfileForm({
             triggerClassName="w-full"
             value={form.category_id ? String(form.category_id) : ""}
             placeholder={profileUi.categoryPlaceholder}
+            searchable
+            searchPlaceholder={
+              locale === "uk" ? "Пошук напрямку" : "Search direction"
+            }
+            noResultsLabel={
+              locale === "uk" ? "Нічого не знайдено" : "No results found"
+            }
             onChange={(value) =>
               update("category_id", value ? Number(value) : null)
             }
@@ -2084,11 +2092,7 @@ export default function ProfileForm({
         <div
           className="relative overflow-hidden rounded-panel border border-white/10 p-5"
           style={{
-            background:
-              presentation.backgroundMode === "gradient" ||
-              !presentation.backgroundUrl
-                ? `linear-gradient(135deg, ${presentation.surfaceColor} 0%, ${presentation.panelColor} 55%, ${presentation.accentColor} 100%)`
-                : presentation.surfaceColor,
+            background: getProfileHeroBackground(presentation),
             color: presentation.textColor,
             fontFamily: previewFontFamily,
           }}
@@ -2115,18 +2119,19 @@ export default function ProfileForm({
               />
             )}
           {presentation.backgroundUrl &&
-            presentation.backgroundMode !== "gradient" && (
+            (presentation.backgroundMode === "image" ||
+              presentation.backgroundMode === "video") && (
               <div
                 className="absolute inset-0"
                 style={{
-                  background: `linear-gradient(135deg, ${withAlpha(presentation.surfaceColor, Math.min(0.95, 0.55 + presentation.overlayStrength / 130))} 0%, ${withAlpha(presentation.panelColor, Math.min(0.92, 0.44 + presentation.overlayStrength / 150))} 60%, ${withAlpha(presentation.accentColor, 0.22)} 100%)`,
+                  background: getProfileHeroOverlay(presentation),
                 }}
               />
             )}
           <div
             className="relative rounded-3xl p-5"
             style={{
-              ...previewPanelStyle,
+              ...getProfileSectionCardStyle(presentation),
               textAlign: presentation.heroAlignment,
             }}
           >
@@ -2175,8 +2180,11 @@ export default function ProfileForm({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-          <ControlGroup title={customizationUi.groups.colors}>
-            <div className="grid gap-3 sm:grid-cols-2">
+          <ControlGroup
+            title={customizationUi.groups.colors}
+            className="lg:col-span-2"
+          >
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {(
                 [
                   ["accentColor", customizationUi.accentColor],
@@ -2317,7 +2325,10 @@ export default function ProfileForm({
             </div>
           </ControlGroup>
 
-          <ControlGroup title={customizationUi.groups.background}>
+          <ControlGroup
+            title={customizationUi.groups.background}
+            className="lg:col-span-2"
+          >
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {profileBackgroundModes.map((backgroundMode) => (
@@ -2341,69 +2352,181 @@ export default function ProfileForm({
                 ))}
               </div>
 
-              <div className="rounded-2xl border app-border bg-[color:var(--surface-muted)] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-sm app-muted">
-                    {presentation.backgroundUrl
-                      ? presentationExtrasUi.backgroundReady
-                      : customizationUi.backgroundHint}
-                  </span>
-                  {presentation.backgroundUrl && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => void clearBackgroundAsset()}
-                    >
-                      {presentationExtrasUi.removeBackground}
-                    </Button>
-                  )}
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <label className="inline-flex cursor-pointer items-center rounded-full border app-border bg-[color:var(--surface)] px-4 py-2 text-sm font-medium text-[color:var(--foreground)]">
-                    <span>
-                      {uploadingBackground
-                        ? presentationExtrasUi.backgroundUploading
-                        : presentation.backgroundUrl
-                          ? presentationExtrasUi.replaceBackground
-                          : presentationExtrasUi.uploadBackground}
-                    </span>
-                    <input
-                      type="file"
-                      accept={getBackgroundAcceptValue(
-                        presentation.backgroundMode,
-                      )}
-                      disabled={uploadingBackground}
-                      className="sr-only"
-                      onChange={(event) => void uploadBackgroundAsset(event)}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {presentation.backgroundMode !== "gradient" && (
-                <label className="block space-y-2">
-                  <span className="flex items-center justify-between text-sm font-medium text-[color:var(--foreground)]">
-                    <span>{customizationUi.overlay}</span>
-                    <span className="app-soft">
-                      {presentation.overlayStrength}%
-                    </span>
-                  </span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="85"
-                    step="1"
-                    value={presentation.overlayStrength}
-                    onChange={(event) =>
+              {presentation.backgroundMode === "gradient" && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ColorField
+                    label={customizationUi.gradientFrom}
+                    value={presentation.gradientFrom}
+                    onChange={(value) =>
                       updatePresentation(
-                        "overlayStrength",
-                        clampOverlayStrength(Number(event.target.value)),
+                        "gradientFrom",
+                        value as ProfilePresentation["gradientFrom"],
                       )
                     }
-                    className="w-full accent-[color:var(--brand)]"
                   />
-                </label>
+                  <ColorField
+                    label={customizationUi.gradientTo}
+                    value={presentation.gradientTo}
+                    onChange={(value) =>
+                      updatePresentation(
+                        "gradientTo",
+                        value as ProfilePresentation["gradientTo"],
+                      )
+                    }
+                  />
+                </div>
+              )}
+
+              {presentation.backgroundMode === "solid" && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ColorField
+                    label={customizationUi.solidColor}
+                    value={presentation.solidColor}
+                    onChange={(value) =>
+                      updatePresentation(
+                        "solidColor",
+                        value as ProfilePresentation["solidColor"],
+                      )
+                    }
+                  />
+                </div>
+              )}
+
+              {(presentation.backgroundMode === "image" ||
+                presentation.backgroundMode === "video") && (
+                <>
+                  <div className="rounded-2xl border app-border bg-[color:var(--surface-muted)] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="text-sm app-muted">
+                        {presentation.backgroundUrl
+                          ? presentationExtrasUi.backgroundReady
+                          : customizationUi.backgroundHint}
+                      </span>
+                      {presentation.backgroundUrl && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void clearBackgroundAsset()}
+                        >
+                          {presentationExtrasUi.removeBackground}
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <label className="inline-flex cursor-pointer items-center rounded-full border app-border bg-[color:var(--surface)] px-4 py-2 text-sm font-medium text-[color:var(--foreground)]">
+                        <span>
+                          {uploadingBackground
+                            ? presentationExtrasUi.backgroundUploading
+                            : presentation.backgroundUrl
+                              ? presentationExtrasUi.replaceBackground
+                              : presentationExtrasUi.uploadBackground}
+                        </span>
+                        <input
+                          type="file"
+                          accept={getBackgroundAcceptValue(
+                            presentation.backgroundMode,
+                          )}
+                          disabled={uploadingBackground}
+                          className="sr-only"
+                          onChange={(event) => void uploadBackgroundAsset(event)}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <label className="block space-y-2">
+                    <span className="flex items-center justify-between text-sm font-medium text-[color:var(--foreground)]">
+                      <span>{customizationUi.overlay}</span>
+                      <span className="app-soft">
+                        {presentation.overlayStrength}%
+                      </span>
+                    </span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="85"
+                      step="1"
+                      value={presentation.overlayStrength}
+                      onChange={(event) =>
+                        updatePresentation(
+                          "overlayStrength",
+                          clampOverlayStrength(Number(event.target.value)),
+                        )
+                      }
+                      className="w-full accent-[color:var(--brand)]"
+                    />
+                  </label>
+                </>
+              )}
+            </div>
+          </ControlGroup>
+
+          <ControlGroup
+            title={customizationUi.groups.sectionBackground}
+            className="lg:col-span-2"
+          >
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {profileSectionBackgroundModes.map((mode) => (
+                  <Button
+                    key={mode}
+                    variant={
+                      presentation.sectionBackgroundMode === mode
+                        ? "primary"
+                        : "secondary"
+                    }
+                    size="sm"
+                    onClick={() =>
+                      updatePresentation(
+                        "sectionBackgroundMode",
+                        mode as ProfileSectionBackgroundMode,
+                      )
+                    }
+                  >
+                    {customizationUi.modes[mode]}
+                  </Button>
+                ))}
+              </div>
+
+              {presentation.sectionBackgroundMode === "gradient" && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ColorField
+                    label={customizationUi.gradientFrom}
+                    value={presentation.sectionGradientFrom}
+                    onChange={(value) =>
+                      updatePresentation(
+                        "sectionGradientFrom",
+                        value as ProfilePresentation["sectionGradientFrom"],
+                      )
+                    }
+                  />
+                  <ColorField
+                    label={customizationUi.gradientTo}
+                    value={presentation.sectionGradientTo}
+                    onChange={(value) =>
+                      updatePresentation(
+                        "sectionGradientTo",
+                        value as ProfilePresentation["sectionGradientTo"],
+                      )
+                    }
+                  />
+                </div>
+              )}
+
+              {presentation.sectionBackgroundMode === "solid" && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ColorField
+                    label={customizationUi.solidColor}
+                    value={presentation.sectionSolidColor}
+                    onChange={(value) =>
+                      updatePresentation(
+                        "sectionSolidColor",
+                        value as ProfilePresentation["sectionSolidColor"],
+                      )
+                    }
+                  />
+                </div>
               )}
             </div>
           </ControlGroup>

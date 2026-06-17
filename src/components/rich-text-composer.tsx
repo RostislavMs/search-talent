@@ -87,6 +87,26 @@ function restoreSelection(range: Range | null) {
   sel.addRange(range);
 }
 
+// Walk up from a selection node to the nearest block whose tag is in `tags`,
+// stopping at (and never crossing) the editor root.
+function findEnclosingBlock(
+  node: Node | null,
+  root: HTMLElement,
+  tags: string[],
+): HTMLElement | null {
+  let current: Node | null = node;
+  while (current && current !== root) {
+    if (
+      current.nodeType === Node.ELEMENT_NODE &&
+      tags.includes((current as HTMLElement).tagName)
+    ) {
+      return current as HTMLElement;
+    }
+    current = current.parentNode;
+  }
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Inline popover for link / YouTube                                  */
 /* ------------------------------------------------------------------ */
@@ -473,9 +493,47 @@ export default function RichTextComposer({
     [onUploadInlineAsset, insertBlockNode],
   );
 
+  // A plain Enter inside a quote or heading should drop the caret into a normal
+  // paragraph instead of cloning the current block — execCommand("formatBlock")
+  // otherwise keeps producing blockquotes/headings line after line. Shift+Enter
+  // still inserts a soft <br> for a multi-line quote.
+  const exitBlockOnEnter = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== "Enter" || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) {
+        return false;
+      }
+      const el = editorRef.current;
+      if (!el) return false;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
+
+      const block = findEnclosingBlock(sel.anchorNode, el, [
+        "BLOCKQUOTE",
+        "H3",
+      ]);
+      if (!block) return false;
+
+      e.preventDefault();
+      const paragraph = document.createElement("p");
+      paragraph.appendChild(document.createElement("br"));
+      block.parentNode?.insertBefore(paragraph, block.nextSibling);
+
+      const range = document.createRange();
+      range.setStart(paragraph, 0);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      savedRangeRef.current = range.cloneRange();
+      emitChange();
+      return true;
+    },
+    [emitChange],
+  );
+
   /* ---- keyboard shortcuts ---- */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (exitBlockOnEnter(e)) return;
       if (!(e.ctrlKey || e.metaKey)) return;
       switch (e.key.toLowerCase()) {
         case "b":
@@ -492,7 +550,7 @@ export default function RichTextComposer({
           break;
       }
     },
-    [exec, openPopover],
+    [exec, openPopover, exitBlockOnEnter],
   );
 
   /* ---- emoji picker ---- */
@@ -546,8 +604,8 @@ export default function RichTextComposer({
     <div className="space-y-3">
       {/* Label / hint / counter */}
       {(label || hint || maxLength) && (
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             {label && (
               <p className="text-sm font-semibold text-[color:var(--foreground)]">
                 {label}
@@ -556,7 +614,7 @@ export default function RichTextComposer({
             {hint && <p className="mt-1 text-sm app-muted">{hint}</p>}
           </div>
           {typeof maxLength === "number" && (
-            <span className="text-xs app-soft">
+            <span className="shrink-0 whitespace-nowrap pt-0.5 text-xs tabular-nums app-soft">
               {editorPlainText.length} / {maxLength} {ui.chars}
             </span>
           )}

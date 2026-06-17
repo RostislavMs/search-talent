@@ -338,9 +338,9 @@ export default function SiteHeader({
                   </div>
 
                   <div className="mt-3 space-y-1">
-                    {dropdownLinks.map((link) => (
+                    {profileLinks.map((link) => (
                       <LocalizedLink
-                        key={link.href}
+                        key={`${link.href}-${link.label}`}
                         href={link.href}
                         onClick={closeProfileMenu}
                         className={menuLinkClasses(link.href === activeProfileMenuHref)}
@@ -348,9 +348,9 @@ export default function SiteHeader({
                         {link.label}
                       </LocalizedLink>
                     ))}
-                    {profileLinks.map((link) => (
+                    {dropdownLinks.map((link) => (
                       <LocalizedLink
-                        key={`${link.href}-${link.label}`}
+                        key={link.href}
                         href={link.href}
                         onClick={closeProfileMenu}
                         className={menuLinkClasses(link.href === activeProfileMenuHref)}
@@ -473,9 +473,9 @@ export default function SiteHeader({
                     {dictionary.nav.profile}
                   </p>
                   <div className="space-y-1">
-                    {mobileMenuLinks.map((link) => (
+                    {profileLinks.map((link) => (
                       <LocalizedLink
-                        key={link.href}
+                        key={`${link.href}-${link.label}`}
                         href={link.href}
                         onClick={closeMobileMenu}
                         className={menuLinkClasses(link.href === activeProfileMenuHref)}
@@ -483,9 +483,9 @@ export default function SiteHeader({
                         {link.label}
                       </LocalizedLink>
                     ))}
-                    {profileLinks.map((link) => (
+                    {mobileMenuLinks.map((link) => (
                       <LocalizedLink
-                        key={`${link.href}-${link.label}`}
+                        key={link.href}
                         href={link.href}
                         onClick={closeMobileMenu}
                         className={menuLinkClasses(link.href === activeProfileMenuHref)}

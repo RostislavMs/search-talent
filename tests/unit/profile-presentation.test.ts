@@ -3,6 +3,7 @@ import {
   createDefaultProfilePresentation,
   createDefaultProfileSettings,
   getProfileFontStack,
+  getProfileSectionCardStyle,
   getProfileTextScale,
   normalizeProfilePresentation,
   normalizeProfileSettings,
@@ -34,6 +35,13 @@ describe("createDefaultProfilePresentation", () => {
     expect(defaults.fontPreset).toBe("modern");
     expect(defaults.textScale).toBe("md");
     expect(defaults.backgroundMode).toBe("gradient");
+    expect(defaults.gradientFrom).toBe("#0f172a");
+    expect(defaults.gradientTo).toBe("#312e81");
+    expect(defaults.solidColor).toBe("#0f172a");
+    expect(defaults.sectionBackgroundMode).toBe("gradient");
+    expect(defaults.sectionGradientFrom).toBe("#111827");
+    expect(defaults.sectionGradientTo).toBe("#1e293b");
+    expect(defaults.sectionSolidColor).toBe("#111827");
     expect(defaults.backgroundUrl).toBeNull();
     expect(defaults.backgroundStoragePath).toBeNull();
     expect(defaults.overlayStrength).toBe(48);
@@ -107,6 +115,49 @@ describe("normalizeProfilePresentation", () => {
     expect(result.backgroundMode).toBe("image");
     expect(result.cardStyle).toBe("outline");
     expect(result.heroAlignment).toBe("center");
+  });
+
+  it("accepts the solid background mode", () => {
+    expect(
+      normalizeProfilePresentation({ backgroundMode: "solid" }).backgroundMode,
+    ).toBe("solid");
+  });
+
+  it("normalizes the dedicated background colors", () => {
+    const defaults = createDefaultProfilePresentation();
+    const result = normalizeProfilePresentation({
+      gradientFrom: "#ABCDEF",
+      gradientTo: "#123",
+      solidColor: "not-a-color",
+    });
+
+    expect(result.gradientFrom).toBe("#abcdef");
+    expect(result.gradientTo).toBe("#123");
+    expect(result.solidColor).toBe(defaults.solidColor);
+  });
+
+  it("normalizes the section background independently of the hero", () => {
+    const defaults = createDefaultProfilePresentation();
+    const result = normalizeProfilePresentation({
+      sectionBackgroundMode: "solid",
+      sectionGradientFrom: "#ABCDEF",
+      sectionGradientTo: "bad",
+      sectionSolidColor: "#222",
+    });
+
+    expect(result.sectionBackgroundMode).toBe("solid");
+    expect(result.sectionGradientFrom).toBe("#abcdef");
+    expect(result.sectionGradientTo).toBe(defaults.sectionGradientTo);
+    expect(result.sectionSolidColor).toBe("#222");
+  });
+
+  it("rejects photo/video for the section background mode", () => {
+    const defaults = createDefaultProfilePresentation();
+
+    expect(
+      normalizeProfilePresentation({ sectionBackgroundMode: "image" })
+        .sectionBackgroundMode,
+    ).toBe(defaults.sectionBackgroundMode);
   });
 
   it("falls back to default for invalid enum values", () => {
@@ -283,6 +334,41 @@ describe("getProfileFontStack", () => {
 
   it("returns default sans-serif stack for modern", () => {
     expect(getProfileFontStack("modern")).toContain("Segoe UI");
+  });
+});
+
+describe("getProfileSectionCardStyle", () => {
+  it("glass: translucent fill plus backdrop blur", () => {
+    const style = getProfileSectionCardStyle({
+      ...createDefaultProfilePresentation(),
+      cardStyle: "glass",
+    });
+
+    expect(style.backdropFilter).toContain("blur");
+    expect(String(style.background)).toContain("rgba");
+  });
+
+  it("outline: no fill, just a border", () => {
+    const style = getProfileSectionCardStyle({
+      ...createDefaultProfilePresentation(),
+      cardStyle: "outline",
+    });
+
+    expect(style.background).toBe("transparent");
+    expect(style.border).toBeDefined();
+    expect(style.backdropFilter).toBeUndefined();
+  });
+
+  it("soft: opaque fill with a shadow", () => {
+    const style = getProfileSectionCardStyle({
+      ...createDefaultProfilePresentation(),
+      cardStyle: "soft",
+      sectionBackgroundMode: "solid",
+      sectionSolidColor: "#123456",
+    });
+
+    expect(style.background).toBe("#123456");
+    expect(style.boxShadow).toBeDefined();
   });
 });
 
