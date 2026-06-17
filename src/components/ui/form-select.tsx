@@ -16,6 +16,9 @@ type FormSelectProps = {
   emptyLabel?: string;
   noResultsLabel?: string;
   disabled?: boolean;
+  /** Show a filter input at the top of the dropdown. */
+  searchable?: boolean;
+  searchPlaceholder?: string;
   className?: string;
   triggerClassName?: string;
   dropdownClassName?: string;
@@ -34,6 +37,8 @@ export default function FormSelect({
   emptyLabel = "No options available",
   noResultsLabel,
   disabled = false,
+  searchable = false,
+  searchPlaceholder,
   className,
   triggerClassName,
   dropdownClassName,
@@ -41,6 +46,7 @@ export default function FormSelect({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [internalValue, setInternalValue] = useState(value);
+  const [query, setQuery] = useState("");
   const listboxId = useId();
 
   useEffect(() => {
@@ -58,12 +64,14 @@ export default function FormSelect({
     function handlePointerDown(event: MouseEvent) {
       if (!wrapperRef.current?.contains(event.target as Node)) {
         setIsOpen(false);
+        setQuery("");
       }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsOpen(false);
+        setQuery("");
       }
     }
 
@@ -76,10 +84,20 @@ export default function FormSelect({
     };
   }, []);
 
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredOptions =
+    searchable && normalizedQuery
+      ? options.filter((option) =>
+          option.label.toLowerCase().includes(normalizedQuery),
+        )
+      : options;
+
+  // The placeholder ("clear") row stays pinned and is not affected by the
+  // text filter, so the user can always reset the selection.
   const visibleOptions =
     placeholder !== undefined
-      ? [{ label: placeholder, value: "" }, ...options]
-      : options;
+      ? [{ label: placeholder, value: "" }, ...filteredOptions]
+      : filteredOptions;
 
   const resolvedEmptyLabel = noResultsLabel || emptyLabel;
 
@@ -96,7 +114,10 @@ export default function FormSelect({
         data-open={isOpen}
         onClick={() => {
           if (!disabled) {
-            setIsOpen((current) => !current);
+            setIsOpen((current) => {
+              if (current) setQuery("");
+              return !current;
+            });
           }
         }}
         className={cx("app-select-trigger", triggerClassName)}
@@ -125,6 +146,19 @@ export default function FormSelect({
 
       {isOpen ? (
         <div className={cx("app-select-dropdown", dropdownClassName)}>
+          {searchable ? (
+            <div className="border-b app-border p-2">
+              <input
+                type="text"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={searchPlaceholder || placeholder || ""}
+                aria-label={searchPlaceholder || placeholder || "Search"}
+                className="w-full rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] outline-none focus-visible:border-[color:var(--ring)] focus-visible:ring-2 focus-visible:ring-[color:var(--border)]"
+                autoFocus
+              />
+            </div>
+          ) : null}
           <div
             id={listboxId}
             role="listbox"
@@ -148,6 +182,7 @@ export default function FormSelect({
                       setInternalValue(option.value);
                       onChange?.(option.value);
                       setIsOpen(false);
+                      setQuery("");
                     }}
                   >
                     <span>{option.label}</span>
@@ -173,6 +208,12 @@ export default function FormSelect({
             ) : (
               <p className="app-select-empty">{resolvedEmptyLabel}</p>
             )}
+            {searchable &&
+            normalizedQuery &&
+            filteredOptions.length === 0 &&
+            placeholder !== undefined ? (
+              <p className="app-select-empty">{resolvedEmptyLabel}</p>
+            ) : null}
           </div>
         </div>
       ) : null}

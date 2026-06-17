@@ -93,15 +93,6 @@ export default async function PublicProfilePage({
 
   const siteUrl = getMetadataBase().toString().replace(/\/$/, "");
   const profileUrl = `${siteUrl}/${locale}/u/${username}`;
-  const generatedSummary = !data.profile.bio?.trim()
-    ? buildAutoProfileSeoParagraph({
-        locale,
-        projectCount: data.projects.length,
-        topTechnologies: data.technologies.map((technology) => technology.name),
-        experienceYears: data.profile.experience_years,
-        workFormats: data.profile.work_formats,
-      })
-    : null;
 
   const currentPosition =
     data.workExperience.find((item) => item.is_current) ||
@@ -163,16 +154,6 @@ export default async function PublicProfilePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
-      {generatedSummary ? (
-        <section className="mx-auto mb-5 max-w-[90rem] px-4 sm:mb-6 sm:px-6">
-          <div className="rounded-panel app-card p-4 sm:p-5">
-            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
-              {locale === "uk" ? "Короткий огляд профілю" : "Profile overview"}
-            </h2>
-            <p className="mt-3 text-sm leading-7 app-muted">{generatedSummary}</p>
-          </div>
-        </section>
-      ) : null}
       <PublicProfileShowcase
         locale={locale}
         dictionary={dictionary}

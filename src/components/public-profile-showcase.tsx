@@ -21,6 +21,9 @@ import OptimizedImage from "@/components/ui/optimized-image";
 import type { PublicProfilePageData } from "@/lib/db/public";
 import {
   getProfileFontStack,
+  getProfileHeroBackground,
+  getProfileHeroOverlay,
+  getProfileSectionCardStyle,
   getProfileTextScale,
   withAlpha,
   type ProfilePresentation,
@@ -155,22 +158,18 @@ function getSectionSpan(size: ProfileSectionSize) {
 function SectionCard({
   title,
   accentColor,
-  surfaceColor,
-  panelColor,
+  cardStyle,
   children,
 }: {
   title: string;
   accentColor: string;
-  surfaceColor: string;
-  panelColor: string;
+  cardStyle: CSSProperties;
   children: ReactNode;
 }) {
   return (
     <section
-      className="relative overflow-hidden rounded-2xl app-card p-4 sm:rounded-panel sm:p-6"
-      style={{
-        backgroundImage: `linear-gradient(135deg, ${surfaceColor} 0%, ${panelColor} 55%, ${withAlpha(accentColor, 0.35)} 100%)`,
-      }}
+      className="relative overflow-hidden rounded-2xl p-4 sm:rounded-panel sm:p-6"
+      style={cardStyle}
     >
       <div className="mb-4 h-[3px] w-10 rounded-full" style={{ backgroundColor: accentColor }} />
       <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">{title}</h2>
@@ -180,6 +179,7 @@ function SectionCard({
 }
 
 function getThemeStyle(presentation: ProfilePresentation) {
+  const accent = presentation.accentColor;
   return {
     "--background": presentation.surfaceColor,
     "--foreground": presentation.textColor,
@@ -193,11 +193,22 @@ function getThemeStyle(presentation: ProfilePresentation) {
         : withAlpha(presentation.panelColor, 0.78),
     "--border":
       presentation.cardStyle === "outline"
-        ? withAlpha(presentation.accentColor, 0.8)
+        ? withAlpha(accent, 0.8)
         : withAlpha(presentation.textColor, 0.12),
     "--muted-foreground": presentation.mutedColor,
     "--soft-foreground": withAlpha(presentation.mutedColor, 0.84),
     "--shadow": `0 28px 90px ${withAlpha("#020617", 0.26)}`,
+    // Drive every accent-coloured control inside the profile (buttons, links,
+    // vote/follow actions, badges, sliders…) from the chosen accent instead of
+    // the site-wide brand colour, so the "Accent" picker actually applies.
+    "--brand": accent,
+    "--brand-strong": `color-mix(in srgb, ${accent} 85%, #000)`,
+    "--brand-soft": withAlpha(accent, 0.16),
+    "--brand-on-soft": accent,
+    "--brand-foreground": presentation.surfaceColor,
+    "--brand-ring": withAlpha(accent, 0.34),
+    "--ring": accent,
+    "--brand-hero": `linear-gradient(135deg, ${accent} 0%, color-mix(in srgb, ${accent} 70%, #000) 100%)`,
   } as CSSProperties & Record<`--${string}`, string>;
 }
 
@@ -311,6 +322,7 @@ export default function PublicProfileShowcase({
       return section && section.visible ? { id: sectionId, ...section } : null;
     })
     .filter(Boolean) as Array<{ id: ProfileSectionId; title: string; content: ReactNode }>;
+  const sectionCardStyle = getProfileSectionCardStyle(presentation);
 
   return (
     <main className="mx-auto max-w-[88rem] px-3 py-4 sm:px-6 sm:py-8">
@@ -343,7 +355,10 @@ export default function PublicProfileShowcase({
           </div>
         )}
         <div className="relative p-4 sm:p-6 lg:p-8">
-          <section className="relative overflow-hidden rounded-2xl app-card p-4 sm:p-6 lg:flex lg:min-h-[22rem] lg:flex-col lg:justify-center lg:p-8">
+          <section
+            className="relative overflow-hidden rounded-2xl app-card p-4 sm:p-6 lg:flex lg:min-h-[22rem] lg:flex-col lg:justify-center lg:p-8"
+            style={{ background: getProfileHeroBackground(presentation) }}
+          >
             {presentation.backgroundUrl && presentation.backgroundMode === "image" && (
               <div className="absolute inset-0 -z-0">
                 <OptimizedImage
@@ -369,14 +384,14 @@ export default function PublicProfileShowcase({
                 </video>
               </div>
             )}
-            {presentation.backgroundUrl && (
-              <div
-                className="absolute inset-0 -z-0"
-                style={{
-                  background: `linear-gradient(135deg, ${withAlpha(presentation.surfaceColor, Math.min(0.95, 0.55 + presentation.overlayStrength / 130))} 0%, ${withAlpha(presentation.panelColor, Math.min(0.92, 0.44 + presentation.overlayStrength / 150))} 60%, ${withAlpha(presentation.accentColor, 0.22)} 100%)`,
-                }}
-              />
-            )}
+            {presentation.backgroundUrl &&
+              (presentation.backgroundMode === "image" ||
+                presentation.backgroundMode === "video") && (
+                <div
+                  className="absolute inset-0 -z-0"
+                  style={{ background: getProfileHeroOverlay(presentation) }}
+                />
+              )}
             <div className="relative grid grid-cols-1 gap-6 sm:gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
               <div className={presentation.heroAlignment === "center" ? "text-center" : "text-left"}>
                 {!isOwner && isAdmin && (
@@ -471,8 +486,7 @@ export default function PublicProfileShowcase({
                 <SectionCard
                   title={section.title}
                   accentColor={presentation.accentColor}
-                  surfaceColor={presentation.surfaceColor}
-                  panelColor={presentation.panelColor}
+                  cardStyle={sectionCardStyle}
                 >
                   {section.content}
                 </SectionCard>

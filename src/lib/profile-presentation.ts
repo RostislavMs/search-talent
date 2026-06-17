@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   createDefaultProfileVisibility,
   profileVisibilityKeys,
@@ -14,7 +15,17 @@ export const profileFontPresets = [
 
 export const profileTextScales = ["sm", "md", "lg"] as const;
 
-export const profileBackgroundModes = ["gradient", "image", "video"] as const;
+export const profileBackgroundModes = [
+  "gradient",
+  "solid",
+  "image",
+  "video",
+] as const;
+
+// The section cards only support flat backgrounds (gradient/solid) — a photo or
+// video repeated inside every card would be unreadable, so those modes are
+// hero-only.
+export const profileSectionBackgroundModes = ["gradient", "solid"] as const;
 
 export const profileCardStyles = ["soft", "glass", "outline"] as const;
 
@@ -44,6 +55,8 @@ export const profileSectionIds = [
 export type ProfileFontPreset = (typeof profileFontPresets)[number];
 export type ProfileTextScale = (typeof profileTextScales)[number];
 export type ProfileBackgroundMode = (typeof profileBackgroundModes)[number];
+export type ProfileSectionBackgroundMode =
+  (typeof profileSectionBackgroundModes)[number];
 export type ProfileCardStyle = (typeof profileCardStyles)[number];
 export type ProfileHeroAlignment = (typeof profileHeroAlignments)[number];
 export type ProfileSectionSize = (typeof profileSectionSizes)[number];
@@ -55,6 +68,16 @@ export type ProfilePresentation = {
   panelColor: string;
   textColor: string;
   mutedColor: string;
+  // Dedicated background colours, kept separate from the role colours above so
+  // tuning the hero/card/accent palette never changes the backdrop and vice versa.
+  // The hero and the section cards each get their own independent backdrop.
+  gradientFrom: string;
+  gradientTo: string;
+  solidColor: string;
+  sectionBackgroundMode: ProfileSectionBackgroundMode;
+  sectionGradientFrom: string;
+  sectionGradientTo: string;
+  sectionSolidColor: string;
   fontPreset: ProfileFontPreset;
   textScale: ProfileTextScale;
   backgroundMode: ProfileBackgroundMode;
@@ -157,6 +180,13 @@ export function createDefaultProfilePresentation(): ProfilePresentation {
     panelColor: "#111827",
     textColor: "#f8fafc",
     mutedColor: "#cbd5e1",
+    gradientFrom: "#0f172a",
+    gradientTo: "#312e81",
+    solidColor: "#0f172a",
+    sectionBackgroundMode: "gradient",
+    sectionGradientFrom: "#111827",
+    sectionGradientTo: "#1e293b",
+    sectionSolidColor: "#111827",
     fontPreset: "modern",
     textScale: "md",
     backgroundMode: "gradient",
@@ -211,6 +241,26 @@ export function normalizeProfilePresentation(value: unknown): ProfilePresentatio
     panelColor: normalizeColor(value.panelColor, defaults.panelColor),
     textColor: normalizeColor(value.textColor, defaults.textColor),
     mutedColor: normalizeColor(value.mutedColor, defaults.mutedColor),
+    gradientFrom: normalizeColor(value.gradientFrom, defaults.gradientFrom),
+    gradientTo: normalizeColor(value.gradientTo, defaults.gradientTo),
+    solidColor: normalizeColor(value.solidColor, defaults.solidColor),
+    sectionBackgroundMode: normalizeEnumValue(
+      value.sectionBackgroundMode,
+      profileSectionBackgroundModes,
+      defaults.sectionBackgroundMode,
+    ),
+    sectionGradientFrom: normalizeColor(
+      value.sectionGradientFrom,
+      defaults.sectionGradientFrom,
+    ),
+    sectionGradientTo: normalizeColor(
+      value.sectionGradientTo,
+      defaults.sectionGradientTo,
+    ),
+    sectionSolidColor: normalizeColor(
+      value.sectionSolidColor,
+      defaults.sectionSolidColor,
+    ),
     fontPreset: normalizeEnumValue(value.fontPreset, profileFontPresets, defaults.fontPreset),
     textScale: normalizeEnumValue(value.textScale, profileTextScales, defaults.textScale),
     backgroundMode: normalizeEnumValue(
@@ -302,6 +352,106 @@ export function withAlpha(hex: string, alpha: number) {
   const b = Number.isNaN(parsed) ? 255 : parsed & 255;
 
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/**
+ * The hero "stage" background. The backdrop is controlled entirely by its own
+ * dedicated colours (gradient pair / solid colour), independent of the
+ * hero/card/accent role colours — so tuning the palette never disturbs the
+ * background. Shared by the live profile and the editor preview so what the
+ * user tunes is exactly what ships.
+ *  - solid: a single flat colour
+ *  - gradient (or any media mode without an uploaded URL): a two-colour gradient
+ *  - image/video with a URL: the solid colour as a base; the media sits on top
+ */
+export function getProfileHeroBackground(presentation: ProfilePresentation) {
+  if (presentation.backgroundMode === "solid") {
+    return presentation.solidColor;
+  }
+
+  if (
+    presentation.backgroundMode === "gradient" ||
+    !presentation.backgroundUrl
+  ) {
+    return `linear-gradient(150deg, ${presentation.gradientFrom} 0%, ${presentation.gradientTo} 100%)`;
+  }
+
+  return presentation.solidColor;
+}
+
+/**
+ * Translucent wash layered over a background image/video so hero text stays
+ * legible. It is tinted only with the hero (surface) colour — never the
+ * gradient pair — so choosing a photo doesn't drag in the gradient colours.
+ * Surface is the natural choice: the text colour is already picked to contrast
+ * with it, so the same contrast holds over the wash. Intensity follows the
+ * overlay-strength slider; at 0 the photo shows through almost untouched.
+ */
+export function getProfileHeroOverlay(presentation: ProfilePresentation) {
+  const strength = presentation.overlayStrength;
+  const near = Math.min(0.92, strength / 90);
+  const far = Math.min(0.55, strength / 170);
+  return `linear-gradient(135deg, ${withAlpha(presentation.surfaceColor, near)} 0%, ${withAlpha(presentation.surfaceColor, far)} 100%)`;
+}
+
+/**
+ * Backdrop fill for the section cards (everything below the hero), controlled by
+ * its own dedicated colours so it stays independent of the hero background.
+ * Either a two-colour gradient or a single flat colour. Pass an alpha to get a
+ * translucent variant (used by the glass card style).
+ */
+export function getProfileSectionBackground(
+  presentation: ProfilePresentation,
+  alpha?: number,
+) {
+  if (presentation.sectionBackgroundMode === "solid") {
+    return alpha === undefined
+      ? presentation.sectionSolidColor
+      : withAlpha(presentation.sectionSolidColor, alpha);
+  }
+
+  const from =
+    alpha === undefined
+      ? presentation.sectionGradientFrom
+      : withAlpha(presentation.sectionGradientFrom, alpha);
+  const to =
+    alpha === undefined
+      ? presentation.sectionGradientTo
+      : withAlpha(presentation.sectionGradientTo, alpha);
+  return `linear-gradient(135deg, ${from} 0%, ${to} 100%)`;
+}
+
+/**
+ * Full inline style for a section card. The card style is the *treatment* and
+ * the section colours are the *fill*, so the two compose instead of fighting:
+ *  - soft:    opaque fill + soft shadow + hairline border
+ *  - glass:   translucent fill + backdrop blur (page shows through, frosted)
+ *  - outline: no fill, just an accent border
+ */
+export function getProfileSectionCardStyle(
+  presentation: ProfilePresentation,
+): CSSProperties {
+  switch (presentation.cardStyle) {
+    case "glass":
+      return {
+        background: getProfileSectionBackground(presentation, 0.5),
+        backdropFilter: "blur(16px) saturate(140%)",
+        WebkitBackdropFilter: "blur(16px) saturate(140%)",
+        border: `1px solid ${withAlpha("#ffffff", 0.16)}`,
+      };
+    case "outline":
+      return {
+        background: "transparent",
+        border: `1px solid ${withAlpha(presentation.accentColor, 0.85)}`,
+      };
+    case "soft":
+    default:
+      return {
+        background: getProfileSectionBackground(presentation),
+        border: `1px solid ${withAlpha("#ffffff", 0.08)}`,
+        boxShadow: `0 24px 70px ${withAlpha("#020617", 0.22)}`,
+      };
+  }
 }
 
 export function getProfileTextScale(textScale: ProfileTextScale) {
