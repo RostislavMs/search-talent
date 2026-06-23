@@ -14,6 +14,7 @@ import VoteButtons from "@/components/vote-buttons";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import AuthorList from "@/components/author-list";
 import { ButtonLink } from "@/components/ui/Button";
+import ShareButton from "@/components/ui/share-button";
 import { getPublicProjectPageData } from "@/lib/db/public";
 import { syncProjectFromGitHub } from "@/lib/db/github-sync";
 import { GITHUB_AUTO_SYNC_INTERVAL_MS } from "@/lib/constants/github";
@@ -366,6 +367,7 @@ export default async function PublicProjectPage({
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="mr-1 h-3.5 w-3.5" aria-hidden="true"><path fillRule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
                 {dictionary.projectPage.backToProjects}
               </ButtonLink>
+              <ShareButton url={projectUrl} title={project.title} />
               {isOwner && (
                 <ButtonLink href={`/projects/edit/${project.id}`} size="sm">
                   {dictionary.projectPage.manageProject}

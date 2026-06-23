@@ -8,6 +8,7 @@ import ReportArticleButton from "@/components/report-article-button";
 import RichTextRenderer from "@/components/rich-text-renderer";
 import { ButtonLink } from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/optimized-image";
+import ShareButton from "@/components/ui/share-button";
 import {
   formatArticleDate,
   getArticleReadingTime,
@@ -201,6 +202,7 @@ export default function ArticleDetailView({
               <ButtonLink href={sectionHref} variant="secondary">
                 {ui.back}
               </ButtonLink>
+              <ShareButton url={articleUrl} title={article.title} />
               {!isOwner && viewerUserId && (
                 <ReportArticleButton articleId={article.id} locale={locale} />
               )}

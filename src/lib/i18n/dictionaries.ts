@@ -19,6 +19,15 @@ export const dictionaries = {
       uk: "Ukrainian",
       en: "English",
     },
+    share: {
+      label: "Share",
+      panelTitle: "Share",
+      copy: "Copy link",
+      copied: "Link copied to clipboard",
+      copyFailed: "Could not copy the link",
+      nativeShare: "Share via…",
+      close: "Close",
+    },
     nav: {
       home: "Home",
       projects: "Projects",
@@ -2169,6 +2178,15 @@ export const dictionaries = {
       switchLabel: "Мова",
       uk: "Українська",
       en: "Англійська",
+    },
+    share: {
+      label: "Поділитися",
+      panelTitle: "Поділитися",
+      copy: "Копіювати посилання",
+      copied: "Посилання скопійовано",
+      copyFailed: "Не вдалося скопіювати посилання",
+      nativeShare: "Поділитися через…",
+      close: "Закрити",
     },
     nav: {
       home: "Головна",

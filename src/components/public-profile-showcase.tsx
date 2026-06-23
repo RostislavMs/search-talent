@@ -15,6 +15,7 @@ const ProfilePdfExport = dynamic(
 import ProjectCard from "@/components/project-card";
 import VerifiedBadge from "@/components/verified-badge";
 import { ButtonLink } from "@/components/ui/Button";
+import ShareButton from "@/components/ui/share-button";
 import HorizontalCarousel from "@/components/ui/horizontal-carousel";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -31,6 +32,7 @@ import {
   type ProfileSectionSize,
 } from "@/lib/profile-presentation";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { getMetadataBase } from "@/lib/seo";
 
 function getExperienceLabel(value: string | null, locale: string) {
   if (!value) {
@@ -245,6 +247,9 @@ export default function PublicProfileShowcase({
   const presentation = profile.presentation;
   const typeScale = getProfileTextScale(presentation.textScale);
   const displayName = profile.name || profile.username || dictionary.common.creator;
+  const profileUrl = profile.username
+    ? `${getMetadataBase().toString().replace(/\/$/, "")}/${locale}/u/${profile.username}`
+    : null;
   const sectionMap = new Map<ProfileSectionId, { title: string; content: ReactNode; visible: boolean }>([
     ["about", { title: dictionary.creatorProfile.about, visible: profile.visibility.about && Boolean(profile.bio || profile.headline), content: <div className="space-y-4">{profile.headline && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.positionLabel}</p><p className="mt-2 leading-7 app-muted">{profile.headline}</p></div>}{profile.bio && <div style={{ fontSize: `${typeScale.body}rem` }}><ExpandableProfileBio content={profile.bio} locale={locale} accentColor={presentation.accentColor} /></div>}</div> }],
     ["professionalDetails", { title: dictionary.creatorProfile.professionalDetails, visible: profile.visibility.professionalDetails && Boolean(profile.experience_level || profile.salary_expectations || (profile.employment_types?.length || 0) > 0 || (profile.work_formats?.length || 0) > 0 || profile.additional_info), content: <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2">{profile.experience_level && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.totalExperienceYears}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{getExperienceLabel(profile.experience_level, locale)}</p></div>}{profile.salary_expectations && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.salaryExpectations}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{profile.salary_expectations}{profile.salary_currency ? ` ${profile.salary_currency.toUpperCase()}` : ""}</p></div>}</div>{(profile.employment_types?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.employmentTypes}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.employment_types || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getEmploymentLabel(item, dictionary)}</span>)}</div></div>}{(profile.work_formats?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.workFormats}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.work_formats || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getWorkFormatLabel(item, dictionary)}</span>)}</div></div>}{profile.additional_info && <p className="text-sm leading-8 app-muted" style={{ fontSize: `${typeScale.body}rem` }}>{profile.additional_info}</p>}</div> }],
@@ -459,6 +464,9 @@ export default function PublicProfileShowcase({
                     <BookmarkButton targetType="profile" targetId={profile.id} initialBookmarked={isBookmarked} isAuthenticated={isAuthenticated} />
                   )}
                   <ProfilePdfExport data={data} label="PDF" />
+                  {profileUrl ? (
+                    <ShareButton url={profileUrl} title={displayName} align="end" />
+                  ) : null}
                 </div>
               </div>
             </div>

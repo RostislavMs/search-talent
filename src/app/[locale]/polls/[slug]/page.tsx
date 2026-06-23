@@ -8,6 +8,7 @@ import PollPinButton from "@/components/poll-pin-button";
 import PollVoting from "@/components/poll-voting";
 import RichTextRenderer from "@/components/rich-text-renderer";
 import { ButtonLink } from "@/components/ui/Button";
+import ShareButton from "@/components/ui/share-button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { formatArticleDate, getCategoryDisplayName } from "@/lib/articles";
 import { getPollClosesLabel } from "@/lib/polls";
@@ -16,7 +17,7 @@ import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isPublicModerationStatus, normalizeModerationStatus } from "@/lib/moderation";
 import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, getMetadataBase } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -83,6 +84,9 @@ export default async function PollDetailPage({
     : poll.author?.name || poll.author?.username || "SearchTalent";
   const authorInitial = authorLabel.slice(0, 1).toUpperCase();
 
+  const siteUrl = getMetadataBase().toString().replace(/\/$/, "");
+  const pollUrl = `${siteUrl}/${safeLocale}/polls/${slug}`;
+
   const ui = isUk
     ? {
         back: "Усі опитування",
@@ -109,6 +113,7 @@ export default async function PollDetailPage({
             <ButtonLink href="/polls" variant="secondary">
               {ui.back}
             </ButtonLink>
+            <ShareButton url={pollUrl} title={poll.title} />
             {isOwner ? (
               <>
                 <ButtonLink href={`/polls/edit/${poll.id}`} variant="ghost">
