@@ -33,14 +33,14 @@ export async function generateMetadata({
 
   return buildArticlePageMetadata({
     locale: safeLocale,
-    pathname: `/articles/${slug}`,
+    pathname: `/news/${slug}`,
     title: data?.article.title || null,
     excerpt,
     noindex: isThin,
   });
 }
 
-export default async function ArticleDetailPage({
+export default async function NewsDetailPage({
   params,
 }: {
   params: Promise<{ locale: string; slug: string }>;
@@ -53,10 +53,10 @@ export default async function ArticleDetailPage({
     notFound();
   }
 
-  // News is its own section — keep a single canonical URL by redirecting news
-  // items to /news/[slug] (old /articles links stay valid via this 308).
-  if (data.article.category?.slug === NEWS_CATEGORY_SLUG) {
-    redirect(`/${safeLocale}/news/${slug}`);
+  // Only news items belong here; anything else is a community article — send it
+  // back to /articles/[slug] so each piece keeps a single canonical URL.
+  if (data.article.category?.slug !== NEWS_CATEGORY_SLUG) {
+    redirect(`/${safeLocale}/articles/${slug}`);
   }
 
   return (
@@ -64,7 +64,7 @@ export default async function ArticleDetailPage({
       data={data}
       locale={safeLocale}
       slug={slug}
-      section="articles"
+      section="news"
     />
   );
 }

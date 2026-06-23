@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import {
+  NEWS_CATEGORY_SLUG,
   normalizeArticleSort,
   normalizeArticleStatus,
   slugifyArticleTitle,
@@ -357,6 +358,20 @@ export async function getArticleFeed(params?: {
     }
 
     query = query.eq("category_id", category.id);
+  } else {
+    // Community feed: hide the admin-only News category — it has its own /news
+    // section. Uncategorised articles (null category) still show through.
+    const { data: newsCategory } = await supabase
+      .from("article_categories")
+      .select("id")
+      .eq("slug", NEWS_CATEGORY_SLUG)
+      .maybeSingle();
+
+    if (newsCategory) {
+      query = query.or(
+        `category_id.is.null,category_id.neq.${newsCategory.id}`,
+      );
+    }
   }
 
   const { data } = await query.order(

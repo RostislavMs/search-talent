@@ -19,6 +19,8 @@ export default function SiteFooter({
 
   const articlesLabel = isEnglish ? "Tech Articles" : "Статті";
 
+  const newsLabel = isEnglish ? "News" : "Новини";
+
   const projectsLabel = isEnglish
     ? "Creator Portfolios"
     : "Портфоліо авторів";
@@ -85,6 +87,12 @@ export default function SiteFooter({
                 className="hover:text-[color:var(--foreground)]"
               >
                 {articlesLabel}
+              </LocalizedLink>
+              <LocalizedLink
+                href="/news"
+                className="hover:text-[color:var(--foreground)]"
+              >
+                {newsLabel}
               </LocalizedLink>
             </nav>
           </div>
