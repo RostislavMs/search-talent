@@ -116,12 +116,17 @@ export default function ArticleComposer({
   categories,
   isAdmin,
   editArticle,
+  initialCategorySlug,
   showHeading = true,
 }: {
   locale: string;
   categories: ArticleCategory[];
   isAdmin: boolean;
   editArticle?: EditableArticle | null;
+  /** Pre-selected category for a brand-new article (e.g. arriving from /news
+   * with ?category=news). Ignored when editing, or when the slug is not in the
+   * viewer's available set. */
+  initialCategorySlug?: string | null;
   /** Render the page title inside the composer. The new-article page hides it
    * because its hero already shows the title. */
   showHeading?: boolean;
@@ -137,6 +142,14 @@ export default function ArticleComposer({
       ),
     [categories, isAdmin, locale],
   );
+
+  // Honour a ?category preset only when it resolves to a category the viewer
+  // can actually pick — otherwise fall back to the first available one.
+  const presetCategorySlug =
+    initialCategorySlug &&
+    availableCategories.some((item) => item.slug === initialCategorySlug)
+      ? initialCategorySlug
+      : null;
 
   // Reconstruct both language versions from the saved article. The primary
   // (top-level) fields belong to `contentLocale`; any secondary version lives
@@ -188,7 +201,10 @@ export default function ArticleComposer({
     editArticle?.contentLocale === "en" ? "en" : editArticle ? "uk" : siteLocale,
   );
   const [categorySlug, setCategorySlug] = useState(
-    editArticle?.categorySlug || availableCategories[0]?.slug || "",
+    editArticle?.categorySlug ||
+      presetCategorySlug ||
+      availableCategories[0]?.slug ||
+      "",
   );
   const [coAuthors, setCoAuthors] = useState<CoAuthorOption[]>(
     editArticle?.coAuthors ?? [],
@@ -212,9 +228,12 @@ export default function ArticleComposer({
       JSON.stringify({
         versions: initialVersions,
         categorySlug:
-          editArticle?.categorySlug || availableCategories[0]?.slug || "",
+          editArticle?.categorySlug ||
+          presetCategorySlug ||
+          availableCategories[0]?.slug ||
+          "",
       }),
-    [initialVersions, editArticle, availableCategories],
+    [initialVersions, editArticle, presetCategorySlug, availableCategories],
   );
 
   // Baseline the dirty check compares against. Starts at the loaded article

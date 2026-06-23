@@ -13,6 +13,7 @@ export default function ArticleCard({
   article,
   locale,
   compact = false,
+  section = "articles",
 }: {
   article: ArticleFeedItem;
   locale: string;
@@ -21,6 +22,11 @@ export default function ArticleCard({
    * multi-column row (e.g. 4-up on the homepage) so they don't tower.
    */
   compact?: boolean;
+  /**
+   * Section the card links into. News items render under /news, everything
+   * else (the default) under /articles.
+   */
+  section?: "articles" | "news";
 }) {
   const isUkrainian = locale === "uk";
   const authorLabel = article.authorDeleted
@@ -33,6 +39,9 @@ export default function ArticleCard({
   const readingTime = getArticleReadingTime(article.content || article.excerpt || "", locale);
   const categoryLabel = getCategoryDisplayName(article.category, locale) || (isUkrainian ? "Стаття" : "Article");
   const isPinned = article.pinnedUntil && new Date(article.pinnedUntil) > new Date();
+  // News cards speak for the platform: no per-author byline, no category chip
+  // (every item is "News"). Date + reading time stay.
+  const isNews = section === "news";
   const coAuthors = article.coAuthors ?? [];
   const allAuthors: ContentAuthor[] = article.author
     ? [
@@ -49,7 +58,7 @@ export default function ArticleCard({
 
   return (
     <LocalizedLink
-      href={`/articles/${article.slug}`}
+      href={`/${section}/${article.slug}`}
       className="group block overflow-hidden rounded-hero app-card transition hover:-translate-y-0.5 hover:shadow-xl"
     >
       {(article.coverImageUrl || article.heroVideoUrl) && (
@@ -90,8 +99,12 @@ export default function ArticleCard({
               <span>•</span>
             </>
           )}
-          <span>{categoryLabel}</span>
-          <span>•</span>
+          {!isNews && (
+            <>
+              <span>{categoryLabel}</span>
+              <span>•</span>
+            </>
+          )}
           <span>{publishedLabel}</span>
         </div>
 
@@ -112,35 +125,39 @@ export default function ArticleCard({
             compact ? "mt-4 pt-3" : "mt-6 pt-4"
           }`}
         >
-          {coAuthors.length > 0 && !article.authorDeleted ? (
-            <AuthorList
-              authors={allAuthors}
-              locale={locale}
-              maxVisible={2}
-              size="sm"
-              linkProfiles={false}
-            />
-          ) : (
-            <span className="flex items-center gap-2">
-              <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-[10px] font-semibold text-[color:var(--foreground)]">
-                {article.author?.avatarUrl ? (
-                  <OptimizedImage
-                    src={article.author.avatarUrl}
-                    alt={authorLabel}
-                    fill
-                    sizes="28px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <span>{authorInitial}</span>
-                )}
-              </span>
-              <span className="font-medium text-[color:var(--foreground)]">
-                {authorLabel}
-              </span>
-            </span>
+          {!isNews && (
+            <>
+              {coAuthors.length > 0 && !article.authorDeleted ? (
+                <AuthorList
+                  authors={allAuthors}
+                  locale={locale}
+                  maxVisible={2}
+                  size="sm"
+                  linkProfiles={false}
+                />
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-[10px] font-semibold text-[color:var(--foreground)]">
+                    {article.author?.avatarUrl ? (
+                      <OptimizedImage
+                        src={article.author.avatarUrl}
+                        alt={authorLabel}
+                        fill
+                        sizes="28px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <span>{authorInitial}</span>
+                    )}
+                  </span>
+                  <span className="font-medium text-[color:var(--foreground)]">
+                    {authorLabel}
+                  </span>
+                </span>
+              )}
+              <span aria-hidden="true">·</span>
+            </>
           )}
-          <span aria-hidden="true">·</span>
           <span>{readingTime}</span>
         </div>
 

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { NEWS_CATEGORY_SLUG } from "@/lib/articles";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
 
@@ -42,6 +43,8 @@ type FeedArticleRow = {
 export async function getArticlesForFeed(options?: {
   authorUserId?: string;
   limit?: number;
+  /** Drop the admin-only News category — it has its own /news feed surface. */
+  excludeNews?: boolean;
 }): Promise<FeedArticle[]> {
   const supabase = createPublicReadOnlyClient();
   if (!supabase) {
@@ -60,6 +63,20 @@ export async function getArticlesForFeed(options?: {
 
   if (options?.authorUserId) {
     query = query.eq("author_user_id", options.authorUserId);
+  }
+
+  if (options?.excludeNews) {
+    const { data: newsCategory } = await supabase
+      .from("article_categories")
+      .select("id")
+      .eq("slug", NEWS_CATEGORY_SLUG)
+      .maybeSingle();
+
+    if (newsCategory) {
+      query = query.or(
+        `category_id.is.null,category_id.neq.${newsCategory.id}`,
+      );
+    }
   }
 
   const { data } = await query;

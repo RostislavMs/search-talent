@@ -46,10 +46,13 @@ export async function generateMetadata({
 
 export default async function NewArticlePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ category?: string }>;
 }) {
   const { locale } = await params;
+  const { category } = await searchParams;
   const safeLocale = isLocale(locale) ? locale : "en";
   const [viewer, dashboard] = await Promise.all([
     getCurrentViewerRole(),
@@ -120,6 +123,7 @@ export default async function NewArticlePage({
           locale={safeLocale}
           categories={dashboard.categories}
           isAdmin={viewer.isAdmin}
+          initialCategorySlug={category || null}
           showHeading={false}
         />
       </section>

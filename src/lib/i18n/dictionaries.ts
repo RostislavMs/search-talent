@@ -368,7 +368,12 @@ export const dictionaries = {
       articles: {
         title: "Tech Articles, Guides & Case Studies",
         description:
-          "Platform news, case studies, technical guides, and industry insights from the SearchTalent community of developers and designers.",
+          "Case studies, technical guides, and industry insights from the SearchTalent community of developers and designers.",
+      },
+      news: {
+        title: "Platform News & Announcements",
+        description:
+          "Official updates, releases, and announcements from the SearchTalent team.",
       },
       dashboard: {
         title: "Dashboard",
@@ -595,7 +600,7 @@ export const dictionaries = {
       eyebrow: "Community knowledge hub",
       title: "Tech Articles, Guides & Case Studies",
       description:
-        "A dedicated space for platform news, technical guides, case studies, and industry insights. Read what is new, discover active writers, and jump into deeper discussions.",
+        "A dedicated space for technical guides, case studies, and industry insights. Read what is new, discover active writers, and jump into deeper discussions.",
       filterCategory: "Category",
       filterAuthor: "Author",
       filterSort: "Sort",
@@ -608,6 +613,14 @@ export const dictionaries = {
       reset: "Reset filters",
       createArticle: "Write an article",
       empty: "No articles match these filters yet.",
+    },
+    newsPage: {
+      eyebrow: "Platform news",
+      title: "News & Announcements",
+      description:
+        "Official updates, releases, and announcements from the SearchTalent team.",
+      empty: "No news yet — check back soon.",
+      createNews: "Create news",
     },
     projectsPage: {
       eyebrow: "Portfolio & project catalog",
@@ -2506,7 +2519,12 @@ export const dictionaries = {
       articles: {
         title: "Технічні статті, гайди та кейси спільноти",
         description:
-          "Новини платформи, кейси, технічні гайди та інсайти IT-індустрії від спільноти розробників і дизайнерів SearchTalent.",
+          "Кейси, технічні гайди та інсайти IT-індустрії від спільноти розробників і дизайнерів SearchTalent.",
+      },
+      news: {
+        title: "Новини та анонси платформи",
+        description:
+          "Офіційні оновлення, релізи та анонси від команди SearchTalent.",
       },
       dashboard: {
         title: "Дашборд",
@@ -2703,7 +2721,7 @@ export const dictionaries = {
       eyebrow: "База знань спільноти",
       title: "Технічні статті, гайди та кейси спільноти",
       description:
-        "Простір для новин платформи, технічних гайдів, кейсів та інсайтів індустрії. Читайте оновлення, відстежуйте активних авторів і переходьте до обговорень.",
+        "Простір для технічних гайдів, кейсів та інсайтів індустрії. Читайте оновлення, відстежуйте активних авторів і переходьте до обговорень.",
       filterCategory: "Категорія",
       filterAuthor: "Автор",
       filterSort: "Сортування",
@@ -2716,6 +2734,14 @@ export const dictionaries = {
       reset: "Скинути фільтри",
       createArticle: "Створити статтю",
       empty: "Поки що немає статей під ці фільтри.",
+    },
+    newsPage: {
+      eyebrow: "Новини платформи",
+      title: "Новини та анонси",
+      description:
+        "Офіційні оновлення, релізи та анонси від команди SearchTalent.",
+      empty: "Поки що новин немає — зазирніть пізніше.",
+      createNews: "Створити новину",
     },
     projectsPage: {
       eyebrow: "Каталог портфоліо та проєктів",

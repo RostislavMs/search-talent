@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import ArticleCard from "@/components/article-card";
 import { ButtonLink } from "@/components/ui/Button";
 import FormSelect from "@/components/ui/form-select";
-import { getCategoryDisplayName, sortArticleCategories } from "@/lib/articles";
+import {
+  getCategoryDisplayName,
+  isNewsCategorySlug,
+  sortArticleCategories,
+} from "@/lib/articles";
 import { getArticleFeed } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -59,7 +63,11 @@ export default async function ArticlesPage({
     sort: sort || null,
     locale: safeLocale,
   });
-  const sortedCategories = sortArticleCategories(feed.categories, safeLocale);
+  // News is its own /news section, so keep it out of the community filter.
+  const sortedCategories = sortArticleCategories(
+    feed.categories.filter((item) => !isNewsCategorySlug(item.slug)),
+    safeLocale,
+  );
   const ui = dictionary.articlesPage;
 
   return (

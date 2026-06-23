@@ -1,6 +1,17 @@
 export const articleStatuses = ["draft", "published"] as const;
 export const articleSortOptions = ["recent", "popular", "discussed"] as const;
 
+/**
+ * Slug of the admin-only editorial category. News lives in the same `articles`
+ * table but is surfaced as its own `/news` section, so it is excluded from the
+ * community Articles feed, its category filter, and the Articles RSS.
+ */
+export const NEWS_CATEGORY_SLUG = "news";
+
+export function isNewsCategorySlug(slug: string | null | undefined): boolean {
+  return slug === NEWS_CATEGORY_SLUG;
+}
+
 export type ArticleStatus = (typeof articleStatuses)[number];
 export type ArticleSortOption = (typeof articleSortOptions)[number];
 

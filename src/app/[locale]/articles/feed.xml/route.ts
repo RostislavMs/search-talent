@@ -23,7 +23,7 @@ export async function GET(
 
   const dictionary = getDictionary(locale);
   const base = getMetadataBase().toString().replace(/\/$/, "");
-  const articles = await getArticlesForFeed();
+  const articles = await getArticlesForFeed({ excludeNews: true });
 
   const items: FeedItem[] = articles.map((article) => {
     const link = `${base}/${locale}/articles/${article.slug}`;
