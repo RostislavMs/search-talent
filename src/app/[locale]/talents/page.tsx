@@ -70,24 +70,23 @@ export default async function LocalizedTalentsPage({
     }),
   ]);
 
-  const roleItems = roles
+  const visibleRoles = roles
     .filter((role) => role.count >= MIN_TALENTS_PER_FACET)
-    .sort((left, right) => right.count - left.count)
-    .slice(0, ROLE_LIMIT)
-    .map((role) => ({
-      label: role.name,
-      href: `/talents/role/${role.slug}`,
-      count: role.count,
-    }));
+    .sort((left, right) => right.count - left.count);
+  const roleItems = visibleRoles.slice(0, ROLE_LIMIT).map((role) => ({
+    label: role.name,
+    href: `/talents/role/${role.slug}`,
+    count: role.count,
+  }));
 
-  const skillItems = skills
-    .filter((skill) => skill.count >= MIN_TALENTS_PER_FACET)
-    .slice(0, SKILL_LIMIT)
-    .map((skill) => ({
-      label: skill.name,
-      href: `/talents/skill/${skill.slug}`,
-      count: skill.count,
-    }));
+  const visibleSkills = skills.filter(
+    (skill) => skill.count >= MIN_TALENTS_PER_FACET,
+  );
+  const skillItems = visibleSkills.slice(0, SKILL_LIMIT).map((skill) => ({
+    label: skill.name,
+    href: `/talents/skill/${skill.slug}`,
+    count: skill.count,
+  }));
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
@@ -107,11 +106,19 @@ export default async function LocalizedTalentsPage({
               : "Talent profiles grouped by their main direction."
           }
           items={roleItems}
+          viewAllHref={
+            visibleRoles.length > ROLE_LIMIT ? "/talents/role" : undefined
+          }
+          viewAllLabel={locale === "uk" ? "Усі напрямки" : "All directions"}
         />
         <BrowseFacets
           title={marketing.talents.popularTechnologiesTitle}
           description={marketing.talents.popularTechnologiesDescription}
           items={skillItems}
+          viewAllHref={
+            visibleSkills.length > SKILL_LIMIT ? "/talents/skill" : undefined
+          }
+          viewAllLabel={locale === "uk" ? "Усі навички" : "All skills"}
         />
         <SeoFaqSection title={marketing.talents.faqTitle} items={marketing.talents.faq} />
       </div>
