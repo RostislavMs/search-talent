@@ -67,6 +67,11 @@ const staticRoutes: Array<{
   { path: "/talents", changeFrequency: "daily", priority: 0.9 },
   { path: "/projects", changeFrequency: "daily", priority: 0.9 },
   { path: "/articles", changeFrequency: "daily", priority: 0.9 },
+  // Facet directory hubs — link the long-tail facet pages so they are not
+  // orphaned (reachable only via the sitemap). See /talents/skill etc.
+  { path: "/talents/skill", changeFrequency: "weekly", priority: 0.6 },
+  { path: "/talents/role", changeFrequency: "weekly", priority: 0.6 },
+  { path: "/projects/tag", changeFrequency: "weekly", priority: 0.6 },
   { path: "/polls", changeFrequency: "weekly", priority: 0.8 },
   { path: "/about", changeFrequency: "monthly", priority: 0.5 },
   { path: "/rating-guide", changeFrequency: "monthly", priority: 0.5 },

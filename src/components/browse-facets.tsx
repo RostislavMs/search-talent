@@ -11,34 +11,54 @@ export type BrowseFacetItem = {
  * tag). Mirrors the "Popular technologies" chip section so skill and role
  * navigation stays visually consistent across the discovery pages, and gives
  * crawlers internal links into the top facet pages.
+ *
+ * Omit `title`/`description` to render just the pill cloud (used by the facet
+ * directory hub pages, which carry their own `<h1>`). Pass `viewAllHref` to
+ * surface a link to the full directory hub when the parent page only shows the
+ * most popular facets — this is what keeps the long-tail facet pages from being
+ * orphaned (reachable only via the sitemap).
  */
 export default function BrowseFacets({
   title,
   description,
   items,
+  viewAllHref,
+  viewAllLabel,
 }: {
-  title: string;
+  title?: string;
   description?: string;
   items: BrowseFacetItem[];
+  viewAllHref?: string;
+  viewAllLabel?: string;
 }) {
   if (items.length === 0) {
     return null;
   }
 
+  const hasHeader = Boolean(title || description);
+
   return (
     <section className="rounded-hero app-card p-4 sm:p-7">
-      <div className="max-w-3xl">
-        <h2 className="font-display text-xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-2xl">
-          {title}
-        </h2>
-        {description ? (
-          <p className="mt-2 text-sm leading-7 app-muted sm:mt-3 sm:text-base">
-            {description}
-          </p>
-        ) : null}
-      </div>
+      {hasHeader ? (
+        <div className="max-w-3xl">
+          {title ? (
+            <h2 className="font-display text-xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-2xl">
+              {title}
+            </h2>
+          ) : null}
+          {description ? (
+            <p className="mt-2 text-sm leading-7 app-muted sm:mt-3 sm:text-base">
+              {description}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
-      <div className="mt-4 flex flex-wrap gap-1.5 sm:mt-5 sm:gap-2">
+      <div
+        className={`flex flex-wrap gap-1.5 sm:gap-2 ${
+          hasHeader ? "mt-4 sm:mt-5" : ""
+        }`}
+      >
         {items.map((item) => (
           <ButtonLink
             key={item.href}
@@ -56,6 +76,22 @@ export default function BrowseFacets({
           </ButtonLink>
         ))}
       </div>
+
+      {viewAllHref ? (
+        <div className="mt-4 sm:mt-5">
+          <ButtonLink
+            href={viewAllHref}
+            variant="ghost"
+            size="sm"
+            className="rounded-full"
+          >
+            <span className="text-xs sm:text-sm">{viewAllLabel}</span>
+            <span aria-hidden className="ml-1.5">
+              →
+            </span>
+          </ButtonLink>
+        </div>
+      ) : null}
     </section>
   );
 }

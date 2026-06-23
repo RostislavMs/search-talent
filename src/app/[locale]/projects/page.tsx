@@ -74,8 +74,10 @@ export default async function LocalizedProjectsPage({
     }),
   ]);
 
-  const techItems = technologies
-    .filter((technology) => technology.count >= MIN_PROJECTS_PER_TAG)
+  const visibleTechnologies = technologies.filter(
+    (technology) => technology.count >= MIN_PROJECTS_PER_TAG,
+  );
+  const techItems = visibleTechnologies
     .slice(0, TAG_LIMIT)
     .map((technology) => ({
       label: technology.name,
@@ -120,6 +122,10 @@ export default async function LocalizedProjectsPage({
               : "Public projects grouped by their technology stack."
           }
           items={techItems}
+          viewAllHref={
+            visibleTechnologies.length > TAG_LIMIT ? "/projects/tag" : undefined
+          }
+          viewAllLabel={locale === "uk" ? "Усі технології" : "All technologies"}
         />
         <SeoFaqSection title={marketing.projects.faqTitle} items={marketing.projects.faq} />
       </div>
