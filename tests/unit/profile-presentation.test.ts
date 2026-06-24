@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyViewerCustomizationPreference,
   createDefaultProfilePresentation,
   createDefaultProfileSettings,
+  createDefaultViewerPreferences,
   getProfileFontStack,
   getProfileSectionCardStyle,
   getProfileTextScale,
   normalizeProfilePresentation,
   normalizeProfileSettings,
   normalizeSectionOrder,
+  normalizeViewerPreferences,
   profileSectionIds,
   withAlpha,
 } from "@/lib/profile-presentation";
@@ -316,6 +319,106 @@ describe("normalizeProfileSettings", () => {
     });
 
     expect(result.presentation.fontPreset).toBe("editorial");
+  });
+
+  it("defaults viewer preferences to showing other customization", () => {
+    expect(
+      normalizeProfileSettings({}).viewerPreferences.showOthersCustomization,
+    ).toBe(true);
+  });
+
+  it("normalizes nested viewer preferences", () => {
+    const result = normalizeProfileSettings({
+      viewerPreferences: { showOthersCustomization: false },
+    });
+
+    expect(result.viewerPreferences.showOthersCustomization).toBe(false);
+  });
+});
+
+describe("normalizeViewerPreferences", () => {
+  it("defaults to true for non-object or missing input", () => {
+    expect(normalizeViewerPreferences(null).showOthersCustomization).toBe(true);
+    expect(normalizeViewerPreferences(undefined).showOthersCustomization).toBe(
+      true,
+    );
+    expect(normalizeViewerPreferences({}).showOthersCustomization).toBe(true);
+  });
+
+  it("ignores non-boolean values", () => {
+    expect(
+      normalizeViewerPreferences({ showOthersCustomization: "no" })
+        .showOthersCustomization,
+    ).toBe(true);
+  });
+
+  it("respects an explicit false", () => {
+    expect(
+      normalizeViewerPreferences({ showOthersCustomization: false })
+        .showOthersCustomization,
+    ).toBe(false);
+    expect(createDefaultViewerPreferences().showOthersCustomization).toBe(true);
+  });
+});
+
+describe("applyViewerCustomizationPreference", () => {
+  it("returns the owner presentation unchanged when customization is shown", () => {
+    const presentation = {
+      ...createDefaultProfilePresentation(),
+      accentColor: "#123456",
+      fontPreset: "editorial" as const,
+    };
+
+    expect(applyViewerCustomizationPreference(presentation, true)).toBe(
+      presentation,
+    );
+  });
+
+  it("falls back to defaults when customization is hidden and there is no hero media", () => {
+    const presentation = {
+      ...createDefaultProfilePresentation(),
+      accentColor: "#123456",
+      fontPreset: "editorial" as const,
+      backgroundMode: "gradient" as const,
+    };
+
+    expect(applyViewerCustomizationPreference(presentation, false)).toEqual(
+      createDefaultProfilePresentation(),
+    );
+  });
+
+  it("preserves the hero photo while resetting colours, fonts and layout", () => {
+    const presentation = {
+      ...createDefaultProfilePresentation(),
+      accentColor: "#123456",
+      fontPreset: "editorial" as const,
+      cardStyle: "outline" as const,
+      backgroundMode: "image" as const,
+      backgroundUrl: "https://example.com/hero.jpg",
+      backgroundStoragePath: "users/1/hero.jpg",
+    };
+
+    const result = applyViewerCustomizationPreference(presentation, false);
+    const defaults = createDefaultProfilePresentation();
+
+    expect(result.backgroundMode).toBe("image");
+    expect(result.backgroundUrl).toBe("https://example.com/hero.jpg");
+    expect(result.backgroundStoragePath).toBe("users/1/hero.jpg");
+    expect(result.accentColor).toBe(defaults.accentColor);
+    expect(result.fontPreset).toBe(defaults.fontPreset);
+    expect(result.cardStyle).toBe(defaults.cardStyle);
+  });
+
+  it("does not keep a media mode that has no url", () => {
+    const presentation = {
+      ...createDefaultProfilePresentation(),
+      backgroundMode: "image" as const,
+      backgroundUrl: null,
+    };
+
+    expect(applyViewerCustomizationPreference(presentation, false)).toEqual(
+      createDefaultProfilePresentation(),
+    );
   });
 });
 

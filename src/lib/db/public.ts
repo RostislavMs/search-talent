@@ -31,6 +31,7 @@ import { getProfileVoteSummary } from "@/lib/db/profile-votes";
 import { getProjectVoteSummary } from "@/lib/db/project-votes";
 import { getCreatorRatings, getProjectRatings } from "@/lib/db/leaderboards";
 import {
+  applyViewerCustomizationPreference,
   normalizeProfileSettings,
   type ProfilePresentation,
 } from "@/lib/profile-presentation";
@@ -448,6 +449,7 @@ export async function getPublicProfilePageData(
     bookmarkResponse,
     followResponse,
     badges,
+    viewerSettingsResponse,
   ] = await Promise.all([
     dataClient
       .from("profile_skills")
@@ -545,9 +547,28 @@ export async function getPublicProfilePageData(
           .maybeSingle()
       : Promise.resolve({ data: null }),
     listBadgesWithProgress(dataClient, typedProfile.user_id),
+    // The viewer's own preference for whether other people's profiles render
+    // with their custom theming. Only needed when browsing someone else.
+    user && !isOwner
+      ? supabase
+          .from("profiles")
+          .select("profile_visibility")
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const profileSettings = normalizeProfileSettings(typedProfile.profile_visibility);
+  const showOthersCustomization = isOwner
+    ? true
+    : normalizeProfileSettings(
+        (viewerSettingsResponse.data as { profile_visibility?: unknown } | null)
+          ?.profile_visibility,
+      ).viewerPreferences.showOthersCustomization;
+  const effectivePresentation = applyViewerCustomizationPreference(
+    profileSettings.presentation,
+    showOthersCustomization,
+  );
 
   const skillsCount = (skillsResponse.data || []).length;
   const languagesCount = (languagesResponse.data || []).length;
@@ -617,7 +638,7 @@ export async function getPublicProfilePageData(
         qa: profileSettings.qa,
         links: profileSettings.links,
       },
-      presentation: profileSettings.presentation,
+      presentation: effectivePresentation,
       countryName: countryResponse.data?.name || null,
       categoryName: categoryResponse.data?.name || null,
     },
