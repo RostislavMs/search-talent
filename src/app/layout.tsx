@@ -4,6 +4,7 @@ import { JetBrains_Mono, Literata, Manrope } from "next/font/google";
 import ConsentedAnalytics from "@/components/consented-analytics";
 import HydrationCleanupScript from "@/components/hydration-cleanup-script";
 import InteractiveBackground from "@/components/interactive-background";
+import PlerdyScript from "@/components/plerdy-script";
 import ThemeScript from "@/components/theme-script";
 
 const fontDisplay = Literata({
@@ -103,6 +104,7 @@ export default async function RootLayout({
         <ConsentedAnalytics
           initialAllowed={allowsCookieCategory(consent, "analytics")}
         />
+        <PlerdyScript />
       </body>
     </html>
   );
