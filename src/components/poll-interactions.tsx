@@ -57,6 +57,7 @@ function CommentNode({
   setReplyDrafts,
   submittingFor,
   submitReply,
+  replyError,
   pollId,
   viewerUserId,
   ownerUserId,
@@ -75,6 +76,7 @@ function CommentNode({
   setReplyDrafts: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   submittingFor: string | null;
   submitReply: (parentId: string) => void;
+  replyError: string | null;
   pollId: string;
   viewerUserId: string | null;
   ownerUserId: string | null;
@@ -158,6 +160,11 @@ function CommentNode({
             >
               {sendLabel}
             </Button>
+            {replyError ? (
+              <p className="text-sm text-rose-500" role="alert">
+                {replyError}
+              </p>
+            ) : null}
           </div>
         ) : null}
 
@@ -212,6 +219,7 @@ function CommentNode({
                     setReplyDrafts={setReplyDrafts}
                     submittingFor={submittingFor}
                     submitReply={submitReply}
+                    replyError={replyError}
                     pollId={pollId}
                     viewerUserId={viewerUserId}
                     ownerUserId={ownerUserId}
@@ -254,11 +262,13 @@ export default function PollInteractions({
   const [viewsCount, setViewsCount] = useState(initialViewsCount);
   const [liked, setLiked] = useState(initialLiked);
   const [commentBody, setCommentBody] = useState("");
+  const [commentError, setCommentError] = useState<string | null>(null);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [submittingLike, setSubmittingLike] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [submittingFor, setSubmittingFor] = useState<string | null>(null);
+  const [replyError, setReplyError] = useState<string | null>(null);
   const totalCommentCount = countComments(comments);
 
   useEffect(() => {
@@ -297,12 +307,21 @@ export default function PollInteractions({
       return;
     }
     setSubmittingComment(true);
+    setCommentError(null);
     const result = await apiFetch(`/api/polls/${pollId}/comments`, {
       method: "POST",
       body: { body, parent_id: null },
     });
     setSubmittingComment(false);
-    if (!result.ok) return;
+    if (!result.ok) {
+      setCommentError(
+        result.error ||
+          (locale === "uk"
+            ? "Не вдалося опублікувати коментар."
+            : "Could not post the comment."),
+      );
+      return;
+    }
     setCommentBody("");
     router.refresh();
   };
@@ -311,12 +330,21 @@ export default function PollInteractions({
     const body = replyDrafts[parentId]?.trim();
     if (!body) return;
     setSubmittingFor(parentId);
+    setReplyError(null);
     const result = await apiFetch(`/api/polls/${pollId}/comments`, {
       method: "POST",
       body: { body, parent_id: parentId },
     });
     setSubmittingFor(null);
-    if (!result.ok) return;
+    if (!result.ok) {
+      setReplyError(
+        result.error ||
+          (locale === "uk"
+            ? "Не вдалося опублікувати відповідь."
+            : "Could not post the reply."),
+      );
+      return;
+    }
     setReplyDrafts((prev) => ({ ...prev, [parentId]: "" }));
     setReplyingTo(null);
     router.refresh();
@@ -357,6 +385,11 @@ export default function PollInteractions({
               {isUk ? "Опублікувати коментар" : "Post comment"}
             </Button>
           </div>
+          {commentError ? (
+            <p className="mt-3 text-sm text-rose-500" role="alert">
+              {commentError}
+            </p>
+          ) : null}
         </div>
 
         {comments.length > 0 ? (
@@ -372,11 +405,15 @@ export default function PollInteractions({
                 replyPlaceholder={isUk ? "Напишіть відповідь..." : "Write a reply..."}
                 sendLabel={isUk ? "Надіслати" : "Send"}
                 replyingTo={replyingTo}
-                setReplyingTo={setReplyingTo}
+                setReplyingTo={(value) => {
+                  setReplyError(null);
+                  setReplyingTo(value);
+                }}
                 replyDrafts={replyDrafts}
                 setReplyDrafts={setReplyDrafts}
                 submittingFor={submittingFor}
                 submitReply={(id) => void submitReply(id)}
+                replyError={replyError}
                 pollId={pollId}
                 viewerUserId={viewerUserId}
                 ownerUserId={ownerUserId}

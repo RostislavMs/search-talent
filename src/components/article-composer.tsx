@@ -468,6 +468,7 @@ export default function ArticleComposer({
     const result = await apiFetch<{
       article?: { slug?: string };
       autoRemoved?: boolean;
+      moderationReason?: string | null;
     }>(url, {
       method,
       body: {
@@ -487,9 +488,10 @@ export default function ArticleComposer({
       return;
     }
 
-    // Auto-moderation removed the just-saved article; keep the draft on screen.
+    // Auto-moderation removed the just-saved article; keep the draft on screen
+    // and show the precise reason (which rule + example) returned by the API.
     if (result.data.autoRemoved) {
-      setErrorMessage(ui.autoModerationRemoved);
+      setErrorMessage(result.data.moderationReason || ui.autoModerationRemoved);
       return;
     }
 
@@ -502,11 +504,11 @@ export default function ArticleComposer({
       return;
     }
 
-    const cleared = { uk: emptyVersion(), en: emptyVersion() };
-    setVersions(cleared);
-    setActiveLocale(siteLocale);
-    setSavedSnapshot(JSON.stringify({ versions: cleared, categorySlug }));
-    router.refresh();
+    // New article saved — mark the form clean so the unsaved-changes guard
+    // stays quiet during the transition, then send the author to the articles
+    // list.
+    setSavedSnapshot(JSON.stringify({ versions, categorySlug }));
+    router.push(`/${siteLocale}/articles`);
   };
 
   return (

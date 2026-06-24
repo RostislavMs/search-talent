@@ -10,10 +10,13 @@ import { mapRepoToProjectColumns } from "@/lib/db/github-sync";
 import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import {
+  CLEAN_MODERATION_RESULT,
   collectProjectModerationText,
+  describeModerationResult,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { inviteCoAuthors } from "@/lib/db/co-authors";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
 
@@ -49,7 +52,7 @@ export async function POST(request: Request) {
   const screen =
     payload.status === "published"
       ? screenContentForModeration(collectProjectModerationText(payload))
-      : { flagged: false as const, categories: [], note: null };
+      : CLEAN_MODERATION_RESULT;
 
   // If the form supplied a GitHub repo, snapshot it server-side so the
   // denormalized columns (stats, languages, sync timestamp) are filled
@@ -175,6 +178,9 @@ export async function POST(request: Request) {
     slug: project.slug,
     status: project.status,
     autoRemoved: screen.flagged,
+    moderationReason: screen.flagged
+      ? describeModerationResult(screen, await getRequestLocale())
+      : null,
     awaitingCoAuthors: holdForCoAuthors,
   });
 }

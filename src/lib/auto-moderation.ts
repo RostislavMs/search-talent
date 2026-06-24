@@ -1,4 +1,5 @@
 import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
+import type { Locale } from "@/lib/i18n/config";
 import type { ProjectPayload } from "@/lib/validation/project";
 import type { PollPayload } from "@/lib/validation/polls";
 
@@ -36,14 +37,44 @@ export const autoModerationCategories = [
 
 export type AutoModerationCategory = (typeof autoModerationCategories)[number];
 
+/**
+ * Evidence for a single triggered rule, used to explain the decision to the
+ * author. Blocklist categories (profanity / hate / sexual) carry no example —
+ * we deliberately do not quote the offending word back. For spam, `detail` says
+ * which heuristic fired and `count` carries the measure (number of links).
+ */
+export type AutoModerationMatch = {
+  category: AutoModerationCategory;
+  detail?: "links" | "shouting";
+  count?: number;
+};
+
 export type AutoModerationResult = {
   flagged: boolean;
   categories: AutoModerationCategory[];
+  matches: AutoModerationMatch[];
   note: string | null;
 };
 
-/** A combined text with this many links or more reads as link spam. */
-export const AUTO_MODERATION_LINK_LIMIT = 8;
+/** The shared "nothing to screen / clean" result (e.g. drafts, missing key). */
+export const CLEAN_MODERATION_RESULT: AutoModerationResult = {
+  flagged: false,
+  categories: [],
+  matches: [],
+  note: null,
+};
+
+/**
+ * This many *distinct* links or more reads as link spam.
+ *
+ * Counting is by distinct URL, not by occurrence: the screened text concatenates
+ * every language version of a post, so a bilingual article that pastes the same
+ * references in both its EN and UK body would otherwise count each link twice and
+ * trip the limit at half the real number. Deduping by URL keeps the budget per
+ * article rather than per language, so the ceiling can be generous enough for a
+ * genuinely reference-heavy write-up without flagging honest bilingual posts.
+ */
+export const AUTO_MODERATION_LINK_LIMIT = 12;
 /** Shouting check only kicks in past this many letters (skip short titles). */
 const SHOUTING_MIN_LETTERS = 80;
 const SHOUTING_RATIO = 0.7;
@@ -324,9 +355,24 @@ const CATEGORY_NOTE_LABEL: Record<AutoModerationCategory, string> = {
   spam: "ознаки спаму",
 };
 
+/** Matches a whole bare URL (scheme- or www-prefixed) so we can dedupe by URL. */
+const URL_PATTERN = /\b(?:https?:\/\/|www\.)[^\s<>"')\]]+/gi;
+
+/**
+ * Count distinct links. URLs are lowercased and stripped of trailing punctuation
+ * before comparison so the same link repeated across language versions (or once
+ * with a trailing period/paren) counts a single time — see
+ * AUTO_MODERATION_LINK_LIMIT for why per-URL rather than per-occurrence.
+ */
 function countLinks(text: string): number {
-  const matches = text.match(/\bhttps?:\/\/|\bwww\./gi);
-  return matches ? matches.length : 0;
+  const matches = text.match(URL_PATTERN);
+  if (!matches) {
+    return 0;
+  }
+  const distinct = new Set(
+    matches.map((url) => url.toLowerCase().replace(/[.,;:!?)\]]+$/, "")),
+  );
+  return distinct.size;
 }
 
 function isShouting(text: string): boolean {
@@ -362,32 +408,108 @@ export function screenContentForModeration(
     .join(" \n ");
 
   if (!text.trim()) {
-    return { flagged: false, categories: [], note: null };
+    return CLEAN_MODERATION_RESULT;
   }
 
-  const found = new Set<AutoModerationCategory>();
+  const matches: AutoModerationMatch[] = [];
 
   const normalized = normalizeForMatch(text);
   const collapsed = collapseObfuscation(normalized);
   for (const { category, matcher } of CATEGORY_MATCHERS) {
     if (matcher.test(normalized) || matcher.test(collapsed)) {
-      found.add(category);
+      matches.push({ category });
     }
   }
 
-  if (countLinks(text) >= AUTO_MODERATION_LINK_LIMIT || isShouting(text)) {
-    found.add("spam");
+  const linkCount = countLinks(text);
+  if (linkCount >= AUTO_MODERATION_LINK_LIMIT) {
+    matches.push({ category: "spam", detail: "links", count: linkCount });
+  }
+  if (isShouting(text)) {
+    matches.push({ category: "spam", detail: "shouting" });
   }
 
   const categories = autoModerationCategories.filter((category) =>
-    found.has(category),
+    matches.some((match) => match.category === category),
   );
 
   return {
-    flagged: categories.length > 0,
+    flagged: matches.length > 0,
     categories,
+    matches,
     note: buildModerationNote(categories),
   };
+}
+
+const MODERATION_REASON_COPY = {
+  uk: {
+    intro: "Контент не пройшов автоматичну перевірку",
+    fix: "Відредагуйте текст і спробуйте ще раз.",
+    categories: {
+      profanity: "нецензурна лексика",
+      hate: "образливі вислови або мова ворожнечі",
+      sexual: "відвертий сексуальний контент",
+      spam: "ознаки спаму",
+    } satisfies Record<AutoModerationCategory, string>,
+    links: (count: number) =>
+      `забагато посилань: ${count} (максимум ${AUTO_MODERATION_LINK_LIMIT - 1} — приберіть зайві)`,
+    shouting: "майже суцільний текст великими літерами",
+  },
+  en: {
+    intro: "This content didn't pass the automatic check",
+    fix: "Edit the text and try again.",
+    categories: {
+      profanity: "profanity",
+      hate: "slurs or hate speech",
+      sexual: "explicit sexual content",
+      spam: "spam signals",
+    } satisfies Record<AutoModerationCategory, string>,
+    links: (count: number) =>
+      `too many links: ${count} (max ${AUTO_MODERATION_LINK_LIMIT - 1} — remove some)`,
+    shouting: "mostly all-caps text",
+  },
+} as const;
+
+/**
+ * Build a precise, localized, user-facing explanation of why content was held
+ * by auto-moderation: the triggered rule(s) plus a concrete example drawn from
+ * the user's own text where one exists. Pure (safe to import on the client) so
+ * a single string is rendered identically in every surface.
+ */
+export function describeModerationResult(
+  result: Pick<AutoModerationResult, "categories"> &
+    Partial<Pick<AutoModerationResult, "matches">>,
+  locale: Locale,
+): string {
+  const copy = locale === "uk" ? MODERATION_REASON_COPY.uk : MODERATION_REASON_COPY.en;
+  const matches = result.matches ?? [];
+  const reasons: string[] = [];
+
+  if (matches.length > 0) {
+    for (const match of matches) {
+      if (match.category === "spam") {
+        reasons.push(
+          match.detail === "links" && typeof match.count === "number"
+            ? copy.links(match.count)
+            : copy.shouting,
+        );
+        continue;
+      }
+      // Blocklist categories name the rule only — we never quote the word back.
+      reasons.push(copy.categories[match.category]);
+    }
+  } else {
+    // No per-match evidence (older payloads): fall back to bare category labels.
+    for (const category of result.categories) {
+      reasons.push(copy.categories[category]);
+    }
+  }
+
+  if (reasons.length === 0) {
+    return `${copy.intro}. ${copy.fix}`;
+  }
+
+  return `${copy.intro}: ${reasons.join("; ")}. ${copy.fix}`;
 }
 
 // --------------------------------------------------------------------------
