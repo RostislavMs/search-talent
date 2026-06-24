@@ -14,6 +14,19 @@ type ConsentedAnalyticsProps = {
   initialAllowed: boolean;
 };
 
+// Plerdy click/heatmap bootstrap. Sets the site globals, then appends the main
+// Plerdy script (removing any previous instance first). Loaded only with
+// analytics consent, alongside the other measurement tools below.
+const PLERDY_SNIPPET = `
+  var _protocol="https:"==document.location.protocol?"https://":"http://";
+  _site_hash_code = "44699a62bfe84558e64b152325ac1489",_suid=74681, plerdyScript=document.createElement("script");
+  plerdyScript.setAttribute("defer",""),plerdyScript.dataset.plerdymainscript="plerdymainscript",
+  plerdyScript.src="https://a.plerdy.com/public/js/click/main.js?v="+Math.random();
+  var plerdymainscript=document.querySelector("[data-plerdymainscript='plerdymainscript']");
+  plerdymainscript&&plerdymainscript.parentNode.removeChild(plerdymainscript);
+  try{document.head.appendChild(plerdyScript)}catch(t){console.log(t,"unable add script tag")}
+`;
+
 /**
  * Renders Vercel Web Analytics + Speed Insights and Ahrefs Web Analytics only
  * when the visitor has allowed the "analytics" cookie category. Reacts live to
@@ -53,6 +66,9 @@ export default function ConsentedAnalytics({
         data-key="SPXNhltKaN3KRW+jCF6zmw"
         strategy="afterInteractive"
       />
+      <Script id="plerdy-code" strategy="afterInteractive" data-plerdy_code="1">
+        {PLERDY_SNIPPET}
+      </Script>
     </>
   );
 }

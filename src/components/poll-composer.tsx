@@ -463,6 +463,7 @@ export default function PollComposer({
             minHeight={260}
             maxLength={50000}
             showYouTube
+            variant="compact"
             contentClassName="min-h-[16rem] text-[15px] leading-8"
             onUploadInlineAsset={uploadInline}
           />
