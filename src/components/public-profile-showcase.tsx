@@ -26,6 +26,7 @@ import {
   getProfileHeroOverlay,
   getProfileSectionCardStyle,
   getProfileTextScale,
+  isDefaultProfileTheme,
   withAlpha,
   type ProfilePresentation,
   type ProfileSectionId,
@@ -161,16 +162,18 @@ function SectionCard({
   title,
   accentColor,
   cardStyle,
+  className,
   children,
 }: {
   title: string;
   accentColor: string;
-  cardStyle: CSSProperties;
+  cardStyle?: CSSProperties;
+  className?: string;
   children: ReactNode;
 }) {
   return (
     <section
-      className="relative overflow-hidden rounded-2xl p-4 sm:rounded-panel sm:p-6"
+      className={`relative overflow-hidden rounded-2xl p-4 sm:rounded-panel sm:p-6 ${className ?? ""}`}
       style={cardStyle}
     >
       <div className="mb-4 h-[3px] w-10 rounded-full" style={{ backgroundColor: accentColor }} />
@@ -327,18 +330,59 @@ export default function PublicProfileShowcase({
       return section && section.visible ? { id: sectionId, ...section } : null;
     })
     .filter(Boolean) as Array<{ id: ProfileSectionId; title: string; content: ReactNode }>;
-  const sectionCardStyle = getProfileSectionCardStyle(presentation);
+  // A profile that hasn't been customised (or that the viewer has chosen to see
+  // without others' customization) follows the site's light/dark theme instead
+  // of the baked-in dark palette — so it reads white on the light theme. The
+  // hero keeps the site-standard dark brand gradient (as every other hero on
+  // the site does), so its own subtree is pinned to light-on-dark tokens while
+  // the container and sections below adopt the theme.
+  const followSiteTheme = isDefaultProfileTheme(presentation);
+  const sectionCardStyle = followSiteTheme
+    ? undefined
+    : getProfileSectionCardStyle(presentation);
+  const sectionCardClassName = followSiteTheme ? "app-card" : "";
+  const accentBarColor = followSiteTheme
+    ? "var(--brand)"
+    : presentation.accentColor;
+  const eyebrowColor = followSiteTheme
+    ? "var(--muted-foreground)"
+    : presentation.mutedColor;
+  // The hero sits on a dark backdrop (brand gradient or a photo with a dark
+  // overlay), so its whole subtree is pinned to light-on-dark. `color` is set
+  // explicitly — not just `--foreground` — because headings like the name
+  // inherit the `color` property rather than reading the variable, so without
+  // it they'd keep the container's themed (dark) colour and vanish on the photo.
+  const heroOnDarkVars = {
+    color: "#ffffff",
+    "--foreground": "#ffffff",
+    "--muted-foreground": "rgba(255, 255, 255, 0.82)",
+    "--soft-foreground": "rgba(255, 255, 255, 0.66)",
+    "--surface": "rgba(255, 255, 255, 0.12)",
+    "--surface-muted": "rgba(255, 255, 255, 0.1)",
+    "--border": "rgba(255, 255, 255, 0.18)",
+  } as CSSProperties & Record<`--${string}`, string>;
+  const containerStyle: CSSProperties = followSiteTheme
+    ? {
+        backgroundColor: "var(--background)",
+        color: "var(--foreground)",
+        borderColor: "var(--border)",
+        fontFamily: getProfileFontStack(presentation.fontPreset),
+      }
+    : {
+        ...getThemeStyle(presentation),
+        backgroundColor: presentation.surfaceColor,
+        color: presentation.textColor,
+        fontFamily: getProfileFontStack(presentation.fontPreset),
+      };
+  const coverFade = followSiteTheme
+    ? "linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--background) 70%, transparent) 100%)"
+    : `linear-gradient(180deg, transparent 0%, ${withAlpha(presentation.surfaceColor, 0.7)} 100%)`;
 
   return (
     <main className="mx-auto max-w-[88rem] px-3 py-4 sm:px-6 sm:py-8">
       <div
         className="relative overflow-hidden rounded-hero border"
-        style={{
-          ...getThemeStyle(presentation),
-          backgroundColor: presentation.surfaceColor,
-          color: presentation.textColor,
-          fontFamily: getProfileFontStack(presentation.fontPreset),
-        }}
+        style={containerStyle}
       >
         {profile.cover_url && (
           <div className="relative aspect-[16/5] w-full overflow-hidden">
@@ -352,17 +396,19 @@ export default function PublicProfileShowcase({
             />
             <div
               className="absolute inset-x-0 bottom-0 h-1/2"
-              style={{
-                background: `linear-gradient(180deg, transparent 0%, ${withAlpha(presentation.surfaceColor, 0.7)} 100%)`,
-              }}
+              style={{ background: coverFade }}
               aria-hidden="true"
             />
           </div>
         )}
         <div className="relative p-4 sm:p-6 lg:p-8">
           <section
-            className="relative overflow-hidden rounded-2xl app-card p-4 sm:p-6 lg:flex lg:min-h-[22rem] lg:flex-col lg:justify-center lg:p-8"
-            style={{ background: getProfileHeroBackground(presentation) }}
+            className={`relative overflow-hidden rounded-2xl p-4 sm:p-6 lg:flex lg:min-h-[22rem] lg:flex-col lg:justify-center lg:p-8 ${followSiteTheme ? "bg-brand-hero border app-border" : "app-card"}`}
+            style={
+              followSiteTheme
+                ? heroOnDarkVars
+                : { background: getProfileHeroBackground(presentation) }
+            }
           >
             {presentation.backgroundUrl && presentation.backgroundMode === "image" && (
               <div className="absolute inset-0 -z-0">
@@ -417,7 +463,7 @@ export default function PublicProfileShowcase({
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-eyebrow sm:text-xs" style={{ color: presentation.mutedColor }}>{profile.categoryName || dictionary.common.creator}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-eyebrow sm:text-xs" style={{ color: eyebrowColor }}>{profile.categoryName || dictionary.common.creator}</p>
                     <h1 className="font-display mt-1 font-semibold tracking-tight sm:mt-1.5" style={{ fontSize: `clamp(1.4rem, 3.6vw, ${2.2 * typeScale.heading}rem)`, lineHeight: 1.1 }}>{displayName}</h1>
                   </div>
                 </div>
@@ -493,8 +539,9 @@ export default function PublicProfileShowcase({
               >
                 <SectionCard
                   title={section.title}
-                  accentColor={presentation.accentColor}
+                  accentColor={accentBarColor}
                   cardStyle={sectionCardStyle}
+                  className={sectionCardClassName}
                 >
                   {section.content}
                 </SectionCard>

@@ -393,6 +393,42 @@ export function applyViewerCustomizationPreference(
   };
 }
 
+// The palette fields that decide whether a profile is still on the default
+// look. Background media (hero photo/video), typography, text scale, hero
+// alignment and section layout are intentionally excluded — they don't change
+// whether the colour palette is "default".
+const defaultThemePaletteFields = [
+  "accentColor",
+  "surfaceColor",
+  "panelColor",
+  "textColor",
+  "mutedColor",
+  "gradientFrom",
+  "gradientTo",
+  "solidColor",
+  "sectionBackgroundMode",
+  "sectionGradientFrom",
+  "sectionGradientTo",
+  "sectionSolidColor",
+  "cardStyle",
+] as const satisfies readonly (keyof ProfilePresentation)[];
+
+/**
+ * True when a profile's palette is still the platform default, i.e. the owner
+ * hasn't picked custom colours or a card style (also the case for a viewer who
+ * opted out of others' customization). Such profiles should follow the site's
+ * light/dark theme rather than the baked-in dark default, so a default profile
+ * reads light on the light theme and dark on the dark theme.
+ */
+export function isDefaultProfileTheme(
+  presentation: ProfilePresentation,
+): boolean {
+  const defaults = createDefaultProfilePresentation();
+  return defaultThemePaletteFields.every(
+    (field) => presentation[field] === defaults[field],
+  );
+}
+
 export function getProfileFontStack(fontPreset: ProfileFontPreset) {
   switch (fontPreset) {
     case "editorial":

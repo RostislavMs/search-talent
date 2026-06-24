@@ -7,6 +7,7 @@ import {
   getProfileFontStack,
   getProfileSectionCardStyle,
   getProfileTextScale,
+  isDefaultProfileTheme,
   normalizeProfilePresentation,
   normalizeProfileSettings,
   normalizeSectionOrder,
@@ -358,6 +359,53 @@ describe("normalizeViewerPreferences", () => {
         .showOthersCustomization,
     ).toBe(false);
     expect(createDefaultViewerPreferences().showOthersCustomization).toBe(true);
+  });
+});
+
+describe("isDefaultProfileTheme", () => {
+  it("treats the untouched default palette as default", () => {
+    expect(isDefaultProfileTheme(createDefaultProfilePresentation())).toBe(true);
+  });
+
+  it("ignores typography, layout and background media", () => {
+    expect(
+      isDefaultProfileTheme({
+        ...createDefaultProfilePresentation(),
+        fontPreset: "editorial",
+        textScale: "lg",
+        heroAlignment: "center",
+        backgroundMode: "image",
+        backgroundUrl: "https://example.com/hero.jpg",
+        sectionOrder: ["skills", "about"] as never,
+      }),
+    ).toBe(true);
+  });
+
+  it("detects a custom accent colour", () => {
+    expect(
+      isDefaultProfileTheme({
+        ...createDefaultProfilePresentation(),
+        accentColor: "#123456",
+      }),
+    ).toBe(false);
+  });
+
+  it("detects a custom card style", () => {
+    expect(
+      isDefaultProfileTheme({
+        ...createDefaultProfilePresentation(),
+        cardStyle: "outline",
+      }),
+    ).toBe(false);
+  });
+
+  it("detects a custom surface colour", () => {
+    expect(
+      isDefaultProfileTheme({
+        ...createDefaultProfilePresentation(),
+        surfaceColor: "#ffffff",
+      }),
+    ).toBe(false);
   });
 });
 
