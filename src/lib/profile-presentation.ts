@@ -90,8 +90,18 @@ export type ProfilePresentation = {
   sectionSizes: Record<ProfileSectionId, ProfileSectionSize>;
 };
 
+// Viewer-side preferences: how *this* user experiences the profiles they
+// browse, as opposed to how their own profile appears to others. Stored in the
+// same profile_visibility JSONB so no extra column/migration is needed.
+export type ViewerPreferences = {
+  // When false, other people's profiles render with the platform defaults
+  // (colours, fonts, card styles, layout) — only the hero photo/video is kept.
+  showOthersCustomization: boolean;
+};
+
 export type ProfileSettings = ProfileVisibility & {
   presentation: ProfilePresentation;
+  viewerPreferences: ViewerPreferences;
 };
 
 const defaultSectionOrder: ProfileSectionId[] = [...profileSectionIds];
@@ -296,10 +306,32 @@ export function normalizeProfilePresentation(value: unknown): ProfilePresentatio
   };
 }
 
+export function createDefaultViewerPreferences(): ViewerPreferences {
+  return {
+    showOthersCustomization: true,
+  };
+}
+
+export function normalizeViewerPreferences(value: unknown): ViewerPreferences {
+  const defaults = createDefaultViewerPreferences();
+
+  if (!isRecord(value)) {
+    return defaults;
+  }
+
+  return {
+    showOthersCustomization:
+      typeof value.showOthersCustomization === "boolean"
+        ? value.showOthersCustomization
+        : defaults.showOthersCustomization,
+  };
+}
+
 export function createDefaultProfileSettings(): ProfileSettings {
   return {
     ...createDefaultProfileVisibility(),
     presentation: createDefaultProfilePresentation(),
+    viewerPreferences: createDefaultViewerPreferences(),
   };
 }
 
@@ -319,8 +351,46 @@ export function normalizeProfileSettings(value: unknown): ProfileSettings {
   }
 
   settings.presentation = normalizeProfilePresentation(value.presentation);
+  settings.viewerPreferences = normalizeViewerPreferences(value.viewerPreferences);
 
   return settings;
+}
+
+/**
+ * Resolve the presentation a viewer should actually see for someone else's
+ * profile. When the viewer has opted out of other people's customization, the
+ * profile falls back to the platform defaults — colours, fonts, card style and
+ * layout all reset — but the hero photo/video is preserved, since that is
+ * content rather than styling. A hero that is only a gradient/solid colour
+ * counts as styling and resets too.
+ *
+ * Callers must only neutralize when viewing *other* people's profiles; an owner
+ * (and the editor preview) always sees their own customization in full.
+ */
+export function applyViewerCustomizationPreference(
+  presentation: ProfilePresentation,
+  showCustomization: boolean,
+): ProfilePresentation {
+  if (showCustomization) {
+    return presentation;
+  }
+
+  const defaults = createDefaultProfilePresentation();
+  const keepsHeroMedia =
+    (presentation.backgroundMode === "image" ||
+      presentation.backgroundMode === "video") &&
+    Boolean(presentation.backgroundUrl);
+
+  if (!keepsHeroMedia) {
+    return defaults;
+  }
+
+  return {
+    ...defaults,
+    backgroundMode: presentation.backgroundMode,
+    backgroundUrl: presentation.backgroundUrl,
+    backgroundStoragePath: presentation.backgroundStoragePath,
+  };
 }
 
 export function getProfileFontStack(fontPreset: ProfileFontPreset) {

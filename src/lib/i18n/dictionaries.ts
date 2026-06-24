@@ -2056,6 +2056,11 @@ export const dictionaries = {
         "Choose which sections will be shown on your public profile.",
       sectionVisible: "Visible",
       sectionHidden: "Hidden",
+      viewOthersCustomization: "Other profiles' appearance",
+      viewOthersCustomizationHint:
+        "When on, you see each profile with the colours, fonts and card styles its owner chose. When off, other profiles use the default look — only the hero photo is kept. Your own profile is unaffected.",
+      viewOthersCustomizationOn: "Show their style",
+      viewOthersCustomizationOff: "Default style",
       visibilityAbout: "About",
       visibilityProfessionalDetails: "Professional details",
       visibilityWorkExperience: "Work experience",
@@ -4209,6 +4214,11 @@ export const dictionaries = {
         "Оберіть, які секції будуть показані у публічному профілі.",
       sectionVisible: "Видимо",
       sectionHidden: "Приховано",
+      viewOthersCustomization: "Оформлення інших профілів",
+      viewOthersCustomizationHint:
+        "Коли увімкнено, ви бачите кожен профіль із кольорами, шрифтами та стилем карток, які обрав його власник. Коли вимкнено, інші профілі показуються в дефолтному оформленні — зберігається лише фото hero-секції. На ваш власний профіль це не впливає.",
+      viewOthersCustomizationOn: "Показувати їхній стиль",
+      viewOthersCustomizationOff: "Дефолтне оформлення",
       visibilityAbout: "Про себе",
       visibilityProfessionalDetails: "Професійна інформація",
       visibilityWorkExperience: "Досвід роботи",

@@ -33,6 +33,7 @@ import {
 } from "@/lib/profile-sections";
 import {
   createDefaultProfilePresentation,
+  createDefaultViewerPreferences,
   getProfileFontStack,
   getProfileHeroBackground,
   getProfileHeroOverlay,
@@ -58,6 +59,7 @@ import {
   type ProfileSectionSize,
   type ProfileSettings,
   type ProfileTextScale,
+  type ViewerPreferences,
 } from "@/lib/profile-presentation";
 import { apiFetch } from "@/lib/api-client";
 import { profilePayloadSchema } from "@/lib/validation/profile";
@@ -293,6 +295,7 @@ function serializeProfileDraft({
   selectedWorkFormats,
   visibility,
   presentation,
+  viewerPreferences,
   languages,
   education,
   certificates,
@@ -305,6 +308,7 @@ function serializeProfileDraft({
   selectedWorkFormats: WorkFormat[];
   visibility: ProfileVisibility;
   presentation: ProfilePresentation;
+  viewerPreferences: ViewerPreferences;
   languages: ProfileLanguageEntry[];
   education: ProfileEducationEntry[];
   certificates: ProfileCertificateEntry[];
@@ -351,6 +355,10 @@ function serializeProfileDraft({
       ...visibility,
     },
     presentation: normalizeProfilePresentation(presentation),
+    viewerPreferences: {
+      ...createDefaultViewerPreferences(),
+      ...viewerPreferences,
+    },
     languages: languages
       .filter((item) => item.language_id !== null)
       .map((item) => ({
@@ -860,6 +868,9 @@ export default function ProfileForm({
   const [presentation, setPresentation] = useState<ProfilePresentation>(
     profileSettings.presentation || createDefaultProfilePresentation(),
   );
+  const [viewerPreferences, setViewerPreferences] = useState<ViewerPreferences>(
+    profileSettings.viewerPreferences || createDefaultViewerPreferences(),
+  );
   const [languages, setLanguages] = useState<ProfileLanguageEntry[]>(
     profile.languages?.length
       ? profile.languages
@@ -926,6 +937,7 @@ export default function ProfileForm({
         selectedWorkFormats,
         visibility,
         presentation,
+        viewerPreferences,
         languages,
         education,
         certificates,
@@ -938,6 +950,7 @@ export default function ProfileForm({
       form,
       languages,
       presentation,
+      viewerPreferences,
       qas,
       selectedEmploymentTypes,
       selectedWorkFormats,
@@ -1102,6 +1115,13 @@ export default function ProfileForm({
 
   const toggleVisibility = (key: ProfileVisibilityKey) => {
     setVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleShowOthersCustomization = () => {
+    setViewerPreferences((prev) => ({
+      ...prev,
+      showOthersCustomization: !prev.showOthersCustomization,
+    }));
   };
 
   const updatePresentation = <K extends keyof ProfilePresentation>(
@@ -1499,6 +1519,10 @@ export default function ProfileForm({
             ...createDefaultProfilePresentation().sectionSizes,
             ...presentation.sectionSizes,
           },
+        },
+        viewerPreferences: {
+          ...createDefaultViewerPreferences(),
+          ...viewerPreferences,
         },
       },
     };
@@ -3213,6 +3237,31 @@ export default function ProfileForm({
               </Button>
             );
           })}
+        </div>
+
+        <div className="border-t app-border pt-4">
+          <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
+            {dictionary.forms.viewOthersCustomization}
+          </h3>
+          <p className="mt-2 text-sm app-muted">
+            {dictionary.forms.viewOthersCustomizationHint}
+          </p>
+          <div className="mt-3">
+            <Button
+              variant={
+                viewerPreferences.showOthersCustomization
+                  ? "primary"
+                  : "secondary"
+              }
+              size="sm"
+              aria-pressed={viewerPreferences.showOthersCustomization}
+              onClick={toggleShowOthersCustomization}
+            >
+              {viewerPreferences.showOthersCustomization
+                ? dictionary.forms.viewOthersCustomizationOn
+                : dictionary.forms.viewOthersCustomizationOff}
+            </Button>
+          </div>
         </div>
       </section>
 
