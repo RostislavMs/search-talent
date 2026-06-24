@@ -372,15 +372,21 @@ function normalizeTopLevelNodes(nodes: Node[]): string {
   return html;
 }
 
-// True when the html carries real content — visible text, or a structural /
-// media block. A document that is only empty paragraphs collapses to nothing,
-// so a freshly-focused-then-abandoned editor stays empty.
+// True when the already-sanitised html carries real content. We only strip
+// fully-empty paragraphs (<p><br></p>, <p>&nbsp;</p>, …); if anything else
+// remains — visible text, media or a structural block — the document has
+// content. A page of nothing but empty paragraphs collapses to "", so a
+// freshly-focused-then-abandoned editor stays empty.
+//
+// NOTE: this is intentionally NOT an HTML-stripping sanitiser. The value never
+// reaches an HTML sink — it is only measured for length to decide emptiness —
+// so leaving non-empty-paragraph markup intact is correct, not a bypass.
 function hasMeaningfulContent(html: string): boolean {
-  const text = stripZeroWidth(
-    html.replace(/<[^>]+>/g, "").replace(/&nbsp;/gi, " "),
-  ).trim();
-  if (text) return true;
-  return /<(?:img|iframe|figure|hr|details|ul|ol|blockquote|h3)\b/i.test(html);
+  const withoutEmptyParagraphs = html.replace(
+    /<p>(?:<br\s*\/?>|&nbsp;|\s)*<\/p>/gi,
+    "",
+  );
+  return withoutEmptyParagraphs.trim().length > 0;
 }
 
 /**
