@@ -103,6 +103,17 @@ export default async function RootLayout({
         <ConsentedAnalytics
           initialAllowed={allowsCookieCategory(consent, "analytics")}
         />
+        <!-- BEGIN PLERDY CODE -->
+<script type="text/javascript" defer data-plerdy_code='1'>
+    var _protocol="https:"==document.location.protocol?"https://":"http://";
+    _site_hash_code = "44699a62bfe84558e64b152325ac1489",_suid=74681, plerdyScript=document.createElement("script");
+    plerdyScript.setAttribute("defer",""),plerdyScript.dataset.plerdymainscript="plerdymainscript",
+    plerdyScript.src="https://a.plerdy.com/public/js/click/main.js?v="+Math.random();
+    var plerdymainscript=document.querySelector("[data-plerdymainscript='plerdymainscript']");
+    plerdymainscript&&plerdymainscript.parentNode.removeChild(plerdymainscript);
+    try{document.head.appendChild(plerdyScript)}catch(t){console.log(t,"unable add script tag")}
+</script>
+<!-- END PLERDY CODE -->
       </body>
     </html>
   );
