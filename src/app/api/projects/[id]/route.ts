@@ -9,10 +9,13 @@ import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import {
+  CLEAN_MODERATION_RESULT,
   collectProjectModerationText,
+  describeModerationResult,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { syncCoAuthors } from "@/lib/db/co-authors";
 
 export async function PATCH(
@@ -60,7 +63,7 @@ export async function PATCH(
   const screen =
     payload.status === "published"
       ? screenContentForModeration(collectProjectModerationText(payload))
-      : { flagged: false as const, categories: [], note: null };
+      : CLEAN_MODERATION_RESULT;
   const willRemove = screen.flagged && project.moderation_status === "approved";
 
   const nextSlug =
@@ -185,6 +188,9 @@ export async function PATCH(
     slug: updatedProject.slug,
     status: updatedProject.status,
     autoRemoved: willRemove,
+    moderationReason: willRemove
+      ? describeModerationResult(screen, await getRequestLocale())
+      : null,
   });
 }
 

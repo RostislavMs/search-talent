@@ -10,10 +10,13 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import {
+  CLEAN_MODERATION_RESULT,
   collectArticleModerationText,
+  describeModerationResult,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { syncCoAuthors } from "@/lib/db/co-authors";
 import { z } from "zod";
 
@@ -79,7 +82,7 @@ export async function PUT(
   const screen =
     payload.status === "published"
       ? screenContentForModeration(collectArticleModerationText(payload))
-      : { flagged: false as const, categories: [], note: null };
+      : CLEAN_MODERATION_RESULT;
   const willRemove = screen.flagged && existing.moderation_status === "approved";
 
   const slug = await ensureUniqueArticleSlug(payload.title, id);
@@ -147,7 +150,13 @@ export async function PUT(
     });
   }
 
-  return NextResponse.json({ article: data, autoRemoved: willRemove });
+  return NextResponse.json({
+    article: data,
+    autoRemoved: willRemove,
+    moderationReason: willRemove
+      ? describeModerationResult(screen, await getRequestLocale())
+      : null,
+  });
 }
 
 export async function PATCH(

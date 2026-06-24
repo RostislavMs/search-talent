@@ -72,6 +72,7 @@ function CommentNode({
   setReplyDrafts,
   submittingFor,
   submitReply,
+  replyError,
   articleId,
   viewerUserId,
   ownerUserId,
@@ -90,6 +91,7 @@ function CommentNode({
   setReplyDrafts: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   submittingFor: string | null;
   submitReply: (parentId: string) => void;
+  replyError: string | null;
   articleId: string;
   viewerUserId: string | null;
   ownerUserId: string | null;
@@ -189,6 +191,11 @@ function CommentNode({
             >
               {sendLabel}
             </Button>
+            {replyError ? (
+              <p className="text-sm text-rose-500" role="alert">
+                {replyError}
+              </p>
+            ) : null}
           </div>
         ) : null}
 
@@ -243,6 +250,7 @@ function CommentNode({
                     setReplyDrafts={setReplyDrafts}
                     submittingFor={submittingFor}
                     submitReply={submitReply}
+                    replyError={replyError}
                     articleId={articleId}
                     viewerUserId={viewerUserId}
                     ownerUserId={ownerUserId}
@@ -278,6 +286,7 @@ function CommentThread({
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [submittingFor, setSubmittingFor] = useState<string | null>(null);
+  const [replyError, setReplyError] = useState<string | null>(null);
   const replyLabel = locale === "uk" ? "Відповісти" : "Reply";
   const replyPlaceholder =
     locale === "uk" ? "Напишіть відповідь..." : "Write a reply...";
@@ -288,6 +297,7 @@ function CommentThread({
     if (!body) return;
 
     setSubmittingFor(parentId);
+    setReplyError(null);
 
     const result = await apiFetch(`/api/articles/${articleId}/comments`, {
       method: "POST",
@@ -296,7 +306,15 @@ function CommentThread({
 
     setSubmittingFor(null);
 
-    if (!result.ok) return;
+    if (!result.ok) {
+      setReplyError(
+        result.error ||
+          (locale === "uk"
+            ? "Не вдалося опублікувати відповідь."
+            : "Could not post the reply."),
+      );
+      return;
+    }
 
     setReplyDrafts((prev) => ({ ...prev, [parentId]: "" }));
     setReplyingTo(null);
@@ -316,11 +334,15 @@ function CommentThread({
           replyPlaceholder={replyPlaceholder}
           sendLabel={sendLabel}
           replyingTo={replyingTo}
-          setReplyingTo={setReplyingTo}
+          setReplyingTo={(value) => {
+            setReplyError(null);
+            setReplyingTo(value);
+          }}
           replyDrafts={replyDrafts}
           setReplyDrafts={setReplyDrafts}
           submittingFor={submittingFor}
           submitReply={(id) => void submitReply(id)}
+          replyError={replyError}
           articleId={articleId}
           viewerUserId={viewerUserId}
           ownerUserId={ownerUserId}
@@ -360,6 +382,7 @@ export default function ArticleInteractions({
   const [viewsCount, setViewsCount] = useState(initialViewsCount);
   const [liked, setLiked] = useState(initialLiked);
   const [commentBody, setCommentBody] = useState("");
+  const [commentError, setCommentError] = useState<string | null>(null);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [submittingLike, setSubmittingLike] = useState(false);
   const totalCommentCount = countComments(comments);
@@ -417,6 +440,7 @@ export default function ArticleInteractions({
     }
 
     setSubmittingComment(true);
+    setCommentError(null);
 
     const result = await apiFetch(`/api/articles/${articleId}/comments`, {
       method: "POST",
@@ -426,6 +450,12 @@ export default function ArticleInteractions({
     setSubmittingComment(false);
 
     if (!result.ok) {
+      setCommentError(
+        result.error ||
+          (locale === "uk"
+            ? "Не вдалося опублікувати коментар."
+            : "Could not post the comment."),
+      );
       return;
     }
 
@@ -491,6 +521,11 @@ export default function ArticleInteractions({
               {locale === "uk" ? "Опублікувати коментар" : "Post comment"}
             </Button>
           </div>
+          {commentError ? (
+            <p className="mt-3 text-sm text-rose-500" role="alert">
+              {commentError}
+            </p>
+          ) : null}
         </div>
 
         {comments.length > 0 ? (

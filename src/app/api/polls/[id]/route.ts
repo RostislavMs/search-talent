@@ -13,10 +13,13 @@ import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildSavePollPayload } from "@/lib/db/save-poll-payload";
 import { syncCoAuthors } from "@/lib/db/co-authors";
 import {
+  CLEAN_MODERATION_RESULT,
   collectPollModerationText,
+  describeModerationResult,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { getRequestLocale } from "@/lib/i18n/server";
 
 const pinSchema = z.object({
   pinned_until: z.string().nullable(),
@@ -80,7 +83,7 @@ export async function PUT(
   const screen =
     payload.status === "published"
       ? screenContentForModeration(collectPollModerationText(payload))
-      : { flagged: false as const, categories: [], note: null };
+      : CLEAN_MODERATION_RESULT;
   const willRemove = screen.flagged && existing.moderation_status === "approved";
 
   const slug = await ensureUniquePollSlug(payload.title, id);
@@ -139,7 +142,13 @@ export async function PUT(
     });
   }
 
-  return NextResponse.json({ poll: result, autoRemoved: willRemove });
+  return NextResponse.json({
+    poll: result,
+    autoRemoved: willRemove,
+    moderationReason: willRemove
+      ? describeModerationResult(screen, await getRequestLocale())
+      : null,
+  });
 }
 
 export async function PATCH(

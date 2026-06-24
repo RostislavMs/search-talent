@@ -9,9 +9,10 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { dispatchCommentSideEffects } from "@/lib/db/comment-events";
 import { getReactionsForTargets } from "@/lib/db/reactions";
 import {
-  AUTO_MODERATION_BLOCKED_MESSAGE,
+  describeModerationResult,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
+import { getRequestLocale } from "@/lib/i18n/server";
 
 export async function GET(
   _request: Request,
@@ -137,10 +138,15 @@ export async function POST(
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  // Comments have no review pipeline, so a flagged comment is rejected outright.
-  if (screenContentForModeration([parsed.data.body]).flagged) {
+  // Comments have no review pipeline, so a flagged comment is rejected outright
+  // with a precise, localized explanation the author can act on.
+  const screen = screenContentForModeration([parsed.data.body]);
+  if (screen.flagged) {
     return NextResponse.json(
-      { error: AUTO_MODERATION_BLOCKED_MESSAGE, code: "moderation_blocked" },
+      {
+        error: describeModerationResult(screen, await getRequestLocale()),
+        code: "moderation_blocked",
+      },
       { status: 400 },
     );
   }

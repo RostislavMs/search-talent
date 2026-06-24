@@ -1126,6 +1126,7 @@ export default function CreateProjectForm({
           projectId?: string;
           slug?: string;
           autoRemoved?: boolean;
+          moderationReason?: string | null;
         }>(endpoint, {
           method,
           body: parsedPayload.data,
@@ -1151,9 +1152,13 @@ export default function CreateProjectForm({
         }
 
         // Auto-moderation removed the just-saved project; keep the form on
-        // screen with an explanation instead of navigating to a hidden page.
+        // screen with the precise reason (which rule + example) returned by the
+        // API instead of navigating to a hidden page.
         if (projectResult.data.autoRemoved) {
-          setErrorMessage(dictionary.forms.autoModerationRemoved);
+          setErrorMessage(
+            projectResult.data.moderationReason ||
+              dictionary.forms.autoModerationRemoved,
+          );
           return;
         }
 

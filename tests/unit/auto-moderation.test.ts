@@ -7,6 +7,7 @@ import {
   collectArticleModerationText,
   collectPollModerationText,
   collectProjectModerationText,
+  describeModerationResult,
   normalizeForMatch,
   screenContentForModeration,
 } from "@/lib/auto-moderation";
@@ -113,6 +114,34 @@ describe("screenContentForModeration — spam heuristics", () => {
     expect(result.flagged).toBe(false);
   });
 
+  it("counts links by distinct URL, not by occurrence", () => {
+    // The same link repeated many times (incl. trailing punctuation) is a single
+    // reference, not link spam.
+    const repeated = Array.from(
+      { length: AUTO_MODERATION_LINK_LIMIT + 5 },
+      () => "see https://example.com/post.",
+    ).join(" ");
+    expect(screenContentForModeration([repeated]).flagged).toBe(false);
+  });
+
+  it("does not flag a bilingual article that reuses the same links", () => {
+    // EN + UK bodies cite the same references; per-occurrence counting would
+    // double them and trip the limit at half the real number.
+    const links = Array.from(
+      { length: AUTO_MODERATION_LINK_LIMIT - 1 },
+      (_, i) => `https://example.com/source-${i}`,
+    ).join(" ");
+    const parts = collectArticleModerationText({
+      title: "Огляд інструментів",
+      excerpt: null,
+      content: `Корисні посилання: ${links}`,
+      translations: {
+        en: { title: "Tools overview", excerpt: null, content: `Useful links: ${links}` },
+      },
+    });
+    expect(screenContentForModeration(parts).flagged).toBe(false);
+  });
+
   it("flags sustained shouting (mostly uppercase, long text)", () => {
     const shout = "BUY NOW LIMITED OFFER ACT FAST DISCOUNT SALE ".repeat(4);
     const result = screenContentForModeration([shout]);
@@ -157,6 +186,51 @@ describe("screenContentForModeration — evasion / obfuscation", () => {
     expect(
       screenContentForModeration(["це повний мудак і гандон"]).flagged,
     ).toBe(true);
+  });
+});
+
+describe("match evidence", () => {
+  it("records the link count for link spam", () => {
+    const links = Array.from(
+      { length: AUTO_MODERATION_LINK_LIMIT },
+      (_, i) => `https://example.com/page-${i}`,
+    ).join(" ");
+    const result = screenContentForModeration([links]);
+    const spam = result.matches.find((m) => m.category === "spam");
+    expect(spam?.detail).toBe("links");
+    expect(spam?.count).toBe(AUTO_MODERATION_LINK_LIMIT);
+  });
+});
+
+describe("describeModerationResult", () => {
+  it("names the profanity rule WITHOUT quoting the offending word", () => {
+    const result = screenContentForModeration(["what the fuck is this"]);
+    const uk = describeModerationResult(result, "uk");
+    expect(uk).toContain("нецензурна лексика");
+    expect(uk).not.toContain("fuck");
+
+    const en = describeModerationResult(result, "en");
+    expect(en).toContain("profanity");
+    expect(en).not.toContain("fuck");
+  });
+
+  it("explains link spam with the concrete count", () => {
+    const links = Array.from(
+      { length: AUTO_MODERATION_LINK_LIMIT },
+      (_, i) => `https://example.com/page-${i}`,
+    ).join(" ");
+    const result = screenContentForModeration([links]);
+    const en = describeModerationResult(result, "en");
+    expect(en).toContain("too many links");
+    expect(en).toContain(String(AUTO_MODERATION_LINK_LIMIT));
+  });
+
+  it("falls back to bare category labels when no evidence is present", () => {
+    const message = describeModerationResult(
+      { categories: ["hate"] },
+      "en",
+    );
+    expect(message).toContain("slurs or hate speech");
   });
 });
 

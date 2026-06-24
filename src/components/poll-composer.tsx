@@ -373,6 +373,7 @@ export default function PollComposer({
     const result = await apiFetch<{
       poll?: { slug?: string };
       autoRemoved?: boolean;
+      moderationReason?: string | null;
     }>(url, {
       method,
       body: {
@@ -394,9 +395,10 @@ export default function PollComposer({
       return;
     }
 
-    // Auto-moderation removed the just-saved poll; keep the draft on screen.
+    // Auto-moderation removed the just-saved poll; keep the draft on screen and
+    // show the precise reason (which rule + example) returned by the API.
     if (result.data.autoRemoved) {
-      setErrorMessage(ui.autoModerationRemoved);
+      setErrorMessage(result.data.moderationReason || ui.autoModerationRemoved);
       return;
     }
 
