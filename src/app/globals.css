@@ -660,6 +660,107 @@ select {
   color: var(--muted-foreground);
 }
 
+.rich-text-editor hr,
+.rich-text-renderer hr {
+  margin: 1.75rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* Spoiler (collapsible) — a clearly bounded box with an accent rail and a
+   header bar, so it never blends into surrounding paragraphs. */
+.rich-text-editor details,
+.rich-text-renderer details {
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--rich-text-accent, var(--border));
+  border-radius: 0.9rem;
+  background: var(--surface-muted);
+  overflow: hidden;
+}
+
+/* Block (not flex): a flex/grid summary inside contentEditable swallows the
+   text caret in Chromium, so the title becomes impossible to click into. The
+   chevron is positioned absolutely instead, leaving the title as plain block
+   text where the caret behaves normally. */
+.rich-text-editor summary,
+.rich-text-renderer summary {
+  position: relative;
+  display: block;
+  padding: 0.75rem 1rem 0.75rem 2rem;
+  font-weight: 600;
+  color: var(--foreground);
+  list-style: none;
+}
+
+.rich-text-editor summary::-webkit-details-marker,
+.rich-text-renderer summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The summary in the editor is editable text, so show a text caret and let
+   clicks land in the title (the native toggle is cancelled in JS — spoilers
+   stay expanded while editing). */
+.rich-text-editor summary {
+  cursor: text;
+}
+
+/* Disclosure chevron — points right when collapsed, down when open. Absolutely
+   positioned and pointer-events:none so it never sits in the text flow nor eats
+   a caret placement. */
+.rich-text-editor summary::before,
+.rich-text-renderer summary::before {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  pointer-events: none;
+  border-right: 2px solid var(--rich-text-accent, var(--muted-foreground));
+  border-bottom: 2px solid var(--rich-text-accent, var(--muted-foreground));
+  transform: translateY(-50%) rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+
+.rich-text-editor details[open] > summary::before,
+.rich-text-renderer details[open] > summary::before {
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.rich-text-editor details[open] > summary,
+.rich-text-renderer details[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Body content sits inset from the accent rail; first/last get breathing room. */
+.rich-text-editor details > :not(summary),
+.rich-text-renderer details > :not(summary) {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.rich-text-editor details[open] > :not(summary):first-of-type,
+.rich-text-renderer details[open] > :not(summary):first-of-type {
+  margin-top: 0.9rem;
+}
+
+.rich-text-editor details > :not(summary):last-child,
+.rich-text-renderer details > :not(summary):last-child {
+  margin-bottom: 0.9rem;
+}
+
+/* Renderer-only: the summary is a toggle, not editable text. */
+.rich-text-renderer summary {
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.rich-text-renderer summary:hover {
+  color: var(--rich-text-accent, var(--foreground));
+}
+
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;

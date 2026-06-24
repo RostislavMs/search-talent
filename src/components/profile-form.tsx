@@ -1967,6 +1967,7 @@ export default function ProfileForm({
           placeholder={dictionary.forms.bio}
           maxLength={5000}
           minHeight={280}
+          variant="compact"
           contentClassName="min-h-[17rem] text-[15px] leading-8"
         />
       </section>

@@ -264,7 +264,7 @@ export default function ArticleComposer({
         pageTitle: isEditing ? "Редагувати статтю" : "Нова стаття",
         editorLabel: "Зміст",
         editorHint:
-          "Один редактор для заголовків, цитат, списків, виділень, посилань та медіа-блоків. Працює як справжнє полотно для написання.",
+          "Форматуйте текст і додавайте заголовки, списки, цитати, посилання та медіа.",
         sidebarTitle: "Параметри статті",
         languageLabel: "Мова статті",
         languageHint: "Заповніть одну або обидві мови. Друга — необов'язкова.",
@@ -299,7 +299,7 @@ export default function ArticleComposer({
         pageTitle: isEditing ? "Edit article" : "New article",
         editorLabel: "Content",
         editorHint:
-          "One editor for headings, quotes, lists, emphasis, links, and media blocks. It behaves like a real writing canvas.",
+          "Format your text and add headings, lists, quotes, links, and media.",
         sidebarTitle: "Article settings",
         languageLabel: "Article language",
         languageHint: "Fill in one or both languages. The second is optional.",

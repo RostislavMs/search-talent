@@ -79,6 +79,9 @@ function buildContentSecurityPolicy(): string {
       "https://va.vercel-scripts.com",
       "https://vitals.vercel-insights.com",
       "https://analytics.ahrefs.com",
+      // Plerdy click/heatmap analytics (consent-gated). main.js loads from
+      // a.plerdy.com and may pull helpers from other plerdy subdomains.
+      "https://*.plerdy.com",
     ],
     "style-src": ["'self'", "'unsafe-inline'"],
     "img-src": [
@@ -95,6 +98,8 @@ function buildContentSecurityPolicy(): string {
       "https://api.resend.com",
       "https://vitals.vercel-insights.com",
       "https://analytics.ahrefs.com",
+      // Plerdy beacons/heatmap payloads post back to its API subdomains.
+      "https://*.plerdy.com",
       ...supabaseHosts,
       ...supabaseWs,
       ...r2ConnectHosts,

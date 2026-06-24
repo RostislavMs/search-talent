@@ -111,6 +111,45 @@ describe("sanitizeRichTextHtml (server path)", () => {
     expect(result).toMatch(/<blockquote>/i);
   });
 
+  it("collapses unsupported heading levels onto <h3>", () => {
+    const result = sanitizeRichTextHtml(
+      "<h1>Title</h1><h2>Section</h2><h4>Minor</h4>",
+    );
+
+    expect(result).not.toMatch(/<h1\b/i);
+    expect(result).not.toMatch(/<h2\b/i);
+    expect(result).not.toMatch(/<h4\b/i);
+    expect(result.match(/<h3\b/gi)?.length).toBe(3);
+    expect(result).toContain("Title");
+    expect(result).toContain("Section");
+    expect(result).toContain("Minor");
+  });
+
+  it("keeps existing <h3> headings untouched", () => {
+    const result = sanitizeRichTextHtml("<h3>Kept</h3>");
+
+    expect(result).toMatch(/<h3\b/i);
+    expect(result).toContain("Kept");
+  });
+
+  it("keeps <hr> dividers", () => {
+    const result = sanitizeRichTextHtml("<p>a</p><hr><p>b</p>");
+
+    expect(result).toMatch(/<hr\b/i);
+  });
+
+  it("keeps <details>/<summary> spoilers and drops the open attribute", () => {
+    const result = sanitizeRichTextHtml(
+      "<details open><summary>Title</summary><p>Hidden</p></details>",
+    );
+
+    expect(result).toMatch(/<details\b/i);
+    expect(result).toMatch(/<summary\b/i);
+    expect(result).toContain("Title");
+    expect(result).toContain("Hidden");
+    expect(result).not.toMatch(/<details[^>]*\sopen/i);
+  });
+
   it("keeps youtube-nocookie iframes", () => {
     const result = sanitizeRichTextHtml(
       `<iframe src="https://www.youtube-nocookie.com/embed/abc123XYZ"></iframe>`,
