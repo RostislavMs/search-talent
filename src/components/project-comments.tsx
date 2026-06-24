@@ -10,6 +10,7 @@ import ReactionPicker from "@/components/ui/reaction-picker";
 import { apiFetch } from "@/lib/api-client";
 import type { ReactionSummary } from "@/lib/constants/reactions";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { formatRelativeTime } from "@/lib/format-relative-time";
 
 type Comment = {
   id: string;
@@ -33,39 +34,6 @@ type ProjectCommentsProps = {
   viewerUserId: string | null;
   ownerUserId: string | null;
 };
-
-function formatRelativeTime(isoDate: string, locale: string) {
-  const date = new Date(isoDate);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMinutes < 1) {
-    return locale === "uk" ? "щойно" : "just now";
-  }
-
-  if (diffMinutes < 60) {
-    return locale === "uk"
-      ? `${diffMinutes} хв тому`
-      : `${diffMinutes}m ago`;
-  }
-
-  if (diffHours < 24) {
-    return locale === "uk"
-      ? `${diffHours} год тому`
-      : `${diffHours}h ago`;
-  }
-
-  if (diffDays < 30) {
-    return locale === "uk" ? `${diffDays} дн тому` : `${diffDays}d ago`;
-  }
-
-  return new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-US", {
-    dateStyle: "medium",
-  }).format(date);
-}
 
 function pluralizeReplies(count: number, locale: string, hide: boolean) {
   if (locale === "uk") {

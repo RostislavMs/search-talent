@@ -14,7 +14,10 @@ import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import {
   buildNotificationHref,
   describeNotification,
+  resolveActorName,
+  resolveNotificationEmoji,
 } from "@/lib/notifications-presentation";
+import { formatRelativeTime } from "@/lib/format-relative-time";
 
 const PREVIEW_LIMIT = 6;
 
@@ -315,10 +318,8 @@ export default function NotificationsBell({
             {items.map((item) => {
               const href = buildNotificationHref(item, locale);
               const description = describeNotification(item, dict);
-              const actorName =
-                item.metadata.actorName ||
-                item.metadata.actorUsername ||
-                dict.someone;
+              const actorName = resolveActorName(item, dict);
+              const fallbackEmoji = resolveNotificationEmoji(item);
               return (
                 <li key={item.id}>
                   <LocalizedLink
@@ -329,7 +330,7 @@ export default function NotificationsBell({
                       item.readAt ? "" : "bg-[color:var(--surface-muted)]/60",
                     ].join(" ")}
                   >
-                    <span className="relative inline-flex h-8 w-8 shrink-0 overflow-hidden rounded-full app-panel">
+                    <span className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full app-panel">
                       {item.metadata.actorAvatarUrl ? (
                         <Image
                           src={item.metadata.actorAvatarUrl}
@@ -338,8 +339,12 @@ export default function NotificationsBell({
                           sizes="32px"
                           className="object-cover"
                         />
+                      ) : fallbackEmoji ? (
+                        <span className="text-base" aria-hidden="true">
+                          {fallbackEmoji}
+                        </span>
                       ) : (
-                        <span className="m-auto text-xs font-semibold text-[color:var(--foreground)]">
+                        <span className="text-xs font-semibold text-[color:var(--foreground)]">
                           {actorName.slice(0, 1).toUpperCase()}
                         </span>
                       )}
@@ -354,6 +359,9 @@ export default function NotificationsBell({
                           {item.metadata.excerpt}
                         </span>
                       ) : null}
+                      <span className="mt-0.5 block text-[11px] app-soft">
+                        {formatRelativeTime(item.createdAt, locale)}
+                      </span>
                     </span>
                     {!item.readAt ? (
                       <span

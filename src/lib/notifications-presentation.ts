@@ -1,8 +1,76 @@
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/i18n/config";
-import type { NotificationItem } from "@/lib/constants/notifications";
+import type {
+  NotificationItem,
+  NotificationType,
+} from "@/lib/constants/notifications";
 
 type NotificationDict = Dictionary["notifications"];
+
+/**
+ * Top-level buckets the /notifications page exposes as filter chips. Many
+ * raw notification types collapse into one user-facing category (e.g. all
+ * comment/reply/mention events read as "mentions & comments").
+ */
+export type NotificationCategory =
+  | "mentions"
+  | "reactions"
+  | "follows"
+  | "content"
+  | "coAuthors"
+  | "moderation"
+  | "badges";
+
+const CATEGORY_BY_TYPE: Record<NotificationType, NotificationCategory> = {
+  mention: "mentions",
+  new_comment: "mentions",
+  comment_reply: "mentions",
+  reaction: "reactions",
+  new_follower: "follows",
+  new_content: "content",
+  co_author_invite: "coAuthors",
+  co_author_accepted: "coAuthors",
+  co_author_declined: "coAuthors",
+  co_author_published: "coAuthors",
+  moderation_decision: "moderation",
+  new_badge: "badges",
+};
+
+export function getNotificationCategory(
+  item: NotificationItem,
+): NotificationCategory {
+  return CATEGORY_BY_TYPE[item.type];
+}
+
+/**
+ * Resolves the bold "subject" shown before the action text. Badges are the
+ * recipient's own achievement ("You earned…"), moderation is the platform
+ * acting ("Moderation removed…"), everything else is the acting user. Shared
+ * by the bell dropdown and the full list so the two never drift apart.
+ */
+export function resolveActorName(
+  item: NotificationItem,
+  dict: NotificationDict,
+): string {
+  if (item.type === "new_badge") return dict.you;
+  if (item.type === "moderation_decision") return dict.moderationActor;
+  return (
+    item.metadata.actorName || item.metadata.actorUsername || dict.someone
+  );
+}
+
+/**
+ * Emoji used in place of an avatar when a notification has no human actor
+ * (badge award, moderation action). Returns null when an avatar/initial
+ * should be shown instead.
+ */
+export function resolveNotificationEmoji(
+  item: NotificationItem,
+): string | null {
+  if (item.type === "new_badge") return item.metadata.badgeEmoji ?? "🏅";
+  if (item.type === "moderation_decision") return "🛡️";
+  return null;
+}
 
 /**
  * Resolves a localized phrase like "left a 🔥 reaction on your comment".
@@ -89,6 +157,17 @@ export function buildNotificationHref(
 ): string {
   const base = `/${locale}`;
 
+  // Moderation removals delete the underlying content, so deep-linking to it
+  // would 404. Send the owner to their dashboard where the decision (and any
+  // appeal path) is visible. Restrictions keep the content, so they fall
+  // through to the normal target resolution below.
+  if (
+    item.type === "moderation_decision" &&
+    item.metadata.moderationStatus === "removed"
+  ) {
+    return `${base}/dashboard`;
+  }
+
   // Co-author notifications carry the content type + slug in metadata.
   if (item.metadata.coAuthorContentType && item.metadata.coAuthorContentSlug) {
     const slug = item.metadata.coAuthorContentSlug;
@@ -145,7 +224,7 @@ export function buildNotificationHref(
       if (item.metadata.profileUsername) {
         return `${base}/u/${item.metadata.profileUsername}`;
       }
-      return `${base}/notifications`;
+      return `${base}/dashboard`;
     default:
       return `${base}/notifications`;
   }
