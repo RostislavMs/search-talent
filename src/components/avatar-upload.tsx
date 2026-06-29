@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useDictionary } from "@/lib/i18n/client";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -19,6 +20,7 @@ export default function AvatarUpload({
 }) {
   const supabase = createClient();
   const dictionary = useDictionary();
+  const router = useRouter();
 
   const [avatarUrl, setAvatarUrl] = useState(currentAvatarUrl);
   const [uploading, setUploading] = useState(false);
@@ -76,6 +78,9 @@ export default function AvatarUpload({
       }
 
       setAvatarUrl(versionedUrl);
+      // Re-render the server layout so the header (and any other server
+      // component reading the profile) picks up the new avatar URL.
+      router.refresh();
     } catch (error) {
       setErrorMessage(
         error instanceof Error
