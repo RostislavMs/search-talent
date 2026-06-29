@@ -37,6 +37,17 @@ function normalizeViewerAvatarUrl(value: string | null | undefined) {
       allowedHosts.add(supabaseHost);
     }
 
+    // Uploaded avatars live on Cloudflare R2 (see lib/storage/r2). The public
+    // host comes from R2_PUBLIC_BASE_URL — without it here, freshly uploaded
+    // avatars are silently rejected and the header falls back to the initial.
+    const r2Host = process.env.R2_PUBLIC_BASE_URL
+      ? new URL(process.env.R2_PUBLIC_BASE_URL).hostname
+      : null;
+
+    if (r2Host) {
+      allowedHosts.add(r2Host);
+    }
+
     return allowedHosts.has(url.hostname) ? url.toString() : null;
   } catch {
     return null;
