@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { JetBrains_Mono, Literata, Manrope } from "next/font/google";
 import ConsentedAnalytics from "@/components/consented-analytics";
 import HydrationCleanupScript from "@/components/hydration-cleanup-script";
@@ -32,7 +32,7 @@ import {
   cookieConsentCookieName,
   parseCookieConsentValue,
 } from "@/lib/cookie-consent";
-import { defaultLocale, localeCookieName } from "@/lib/i18n/config";
+import { defaultLocale, isLocale, localeCookieName } from "@/lib/i18n/config";
 import { getMetadataBase } from "@/lib/seo";
 import { isTheme, themeCookieName } from "@/lib/theme";
 import "./globals.css";
@@ -71,7 +71,16 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const locale = cookieStore.get(localeCookieName)?.value || defaultLocale;
+  // Prefer the URL locale forwarded by middleware (x-locale): the root layout
+  // sits above the [locale] segment and cannot read the route param, and a
+  // cookieless first request (e.g. Googlebot) would otherwise fall back to the
+  // default and mislabel every /en/ page as lang="uk".
+  const headerLocale = (await headers()).get("x-locale");
+  const cookieLocale = cookieStore.get(localeCookieName)?.value;
+  const locale =
+    (headerLocale && isLocale(headerLocale) && headerLocale) ||
+    (cookieLocale && isLocale(cookieLocale) && cookieLocale) ||
+    defaultLocale;
   const consent = parseCookieConsentValue(
     cookieStore.get(cookieConsentCookieName)?.value,
   );
