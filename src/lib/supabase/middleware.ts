@@ -3,8 +3,18 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
 
 export async function updateSession(request: NextRequest) {
+  // Forward the URL locale to the render as a request header so the root layout
+  // (which sits above the [locale] segment and can't read the route param) can
+  // set <html lang> from the actual path, not just the cookie. Without this a
+  // cookieless request — every crawler's first hit — mislabels /en/ as lang="uk".
+  const [, pathLocale] = request.nextUrl.pathname.split("/");
+  const requestHeaders = new Headers(request.headers);
+  if (isLocale(pathLocale || "")) {
+    requestHeaders.set("x-locale", pathLocale as Locale);
+  }
+
   let response = NextResponse.next({
-    request,
+    request: { headers: requestHeaders },
   });
 
   const supabase = createServerClient(
@@ -20,7 +30,7 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value),
           );
 
-          response = NextResponse.next({ request });
+          response = NextResponse.next({ request: { headers: requestHeaders } });
 
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
