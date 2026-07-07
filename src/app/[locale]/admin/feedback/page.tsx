@@ -124,7 +124,7 @@ export default async function AdminFeedbackPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-hero app-card p-5 sm:p-8">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8">
         <h2 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.title}
         </h2>
@@ -155,7 +155,7 @@ export default async function AdminFeedbackPage({
       </section>
 
       {filtered.length === 0 ? (
-        <section className="rounded-hero app-panel-dashed p-8 text-center">
+        <section className="rounded-none sm:rounded-hero app-panel-dashed p-8 text-center">
           <p className="text-sm app-muted">{copy.empty}</p>
         </section>
       ) : (

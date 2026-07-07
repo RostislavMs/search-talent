@@ -94,8 +94,8 @@ export default async function NewArticlePage({
         };
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-6 sm:p-8">
+    <main className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6">
+      <section className="rounded-none sm:rounded-hero app-card p-6 sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">

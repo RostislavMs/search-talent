@@ -746,9 +746,9 @@ export default async function RatingGuidePage({
   const BadgesIcon = copy.badges.Icon;
 
   return (
-    <main className="mx-auto max-w-[88rem] px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-[88rem] px-0 py-10 sm:px-6">
       {/* Hero */}
-      <section className="bg-brand-hero relative overflow-hidden rounded-hero border app-border p-6 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:p-10">
+      <section className="bg-brand-hero relative overflow-hidden rounded-none sm:rounded-hero border app-border p-6 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:p-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
             {copy.eyebrow}
@@ -783,7 +783,7 @@ export default async function RatingGuidePage({
 
       {/* Why not just likes */}
       <section
-        className="mt-6 rounded-hero app-card p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-why"
       >
         <h2
@@ -834,7 +834,7 @@ export default async function RatingGuidePage({
 
       {/* Profile rating */}
       <section
-        className="mt-6 rounded-hero app-card p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-profile"
       >
         <h2
@@ -855,7 +855,7 @@ export default async function RatingGuidePage({
 
       {/* Project rating */}
       <section
-        className="mt-6 rounded-hero app-card p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-project"
       >
         <h2
@@ -876,7 +876,7 @@ export default async function RatingGuidePage({
 
       {/* Mechanics */}
       <section
-        className="mt-6 rounded-hero app-card p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-mechanics"
       >
         <h2
@@ -961,7 +961,7 @@ export default async function RatingGuidePage({
 
       {/* Anti-patterns */}
       <section
-        className="mt-6 rounded-hero border border-rose-400/30 bg-rose-500/5 p-6 sm:mt-8 sm:p-10"
+        className="mt-6 rounded-none sm:rounded-hero border border-rose-400/30 bg-rose-500/5 p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-anti"
       >
         <h2
@@ -993,7 +993,7 @@ export default async function RatingGuidePage({
 
       {/* Outro */}
       <section
-        className="mt-6 rounded-hero app-card p-6 text-center sm:mt-8 sm:p-12"
+        className="mt-6 rounded-none sm:rounded-hero app-card p-6 text-center sm:mt-8 sm:p-12"
         aria-labelledby="rating-guide-outro"
       >
         <h2

@@ -65,6 +65,7 @@ import { apiFetch } from "@/lib/api-client";
 import { profilePayloadSchema } from "@/lib/validation/profile";
 import type { ProfileCategory } from "@/lib/profile-categories";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/toast";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import GithubIntegrationCard from "@/components/github-integration-card";
 import DeleteAccountSection from "@/components/delete-account-section";
@@ -526,6 +527,7 @@ export default function ProfileForm({
 }) {
   const router = useRouter();
   const dictionary = useDictionary();
+  const toast = useToast();
   const locale = useCurrentLocale();
   const profileSettings = normalizeProfileSettings(profile.profile_visibility);
   const profileUi =
@@ -895,7 +897,6 @@ export default function ProfileForm({
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [draggingSectionId, setDraggingSectionId] =
     useState<ProfileSectionId | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const initialBackgroundStoragePathRef = useRef(
     profileSettings.presentation.backgroundStoragePath,
   );
@@ -1185,7 +1186,6 @@ export default function ProfileForm({
     }
 
     setUploadingCertificateId(entryId);
-    setErrorMessage(null);
 
     try {
       const presign = await apiFetch<{
@@ -1254,7 +1254,7 @@ export default function ProfileForm({
         });
       }
     } catch (error) {
-      setErrorMessage(
+      toast.error(
         error instanceof Error
           ? error.message
           : dictionary.forms.errorUploadingCertificate,
@@ -1274,7 +1274,6 @@ export default function ProfileForm({
     }
 
     setUploadingBackground(true);
-    setErrorMessage(null);
 
     try {
       const nextMode = inferBackgroundMode(file);
@@ -1346,7 +1345,7 @@ export default function ProfileForm({
         });
       }
     } catch (error) {
-      setErrorMessage(
+      toast.error(
         error instanceof Error
           ? error.message
           : presentationExtrasUi.backgroundUploadFailed,
@@ -1449,7 +1448,6 @@ export default function ProfileForm({
 
   const save = async () => {
     setSaving(true);
-    setErrorMessage(null);
 
     const hasInvalidWorkExperienceRange = workExperience.some((item) => {
       const startedYear = parseOptionalInteger(item.started_year);
@@ -1464,7 +1462,7 @@ export default function ProfileForm({
     });
 
     if (hasInvalidWorkExperienceRange) {
-      setErrorMessage(dictionary.forms.invalidWorkExperienceRange);
+      toast.warning(dictionary.forms.invalidWorkExperienceRange);
       setSaving(false);
       return;
     }
@@ -1599,7 +1597,7 @@ export default function ProfileForm({
     const parsedPayload = profilePayloadSchema.safeParse(payload);
 
     if (!parsedPayload.success) {
-      setErrorMessage(
+      toast.error(
         parsedPayload.error.issues[0]?.message ||
           dictionary.forms.errorSavingProfile,
       );
@@ -1613,7 +1611,7 @@ export default function ProfileForm({
     });
 
     if (!result.ok) {
-      setErrorMessage(
+      toast.error(
         getProfileErrorMessage(
           result.error,
           dictionary.forms.errorSavingProfile,
@@ -1669,6 +1667,7 @@ export default function ProfileForm({
     savedDraftSnapshotRef.current = currentDraftSnapshot;
 
     setSaving(false);
+    toast.success(dictionary.forms.profileSaved);
     router.refresh();
   };
 
@@ -3297,7 +3296,6 @@ export default function ProfileForm({
       >
         {saving ? dictionary.forms.saving : dictionary.forms.saveProfile}
       </Button>
-      {errorMessage && <p className="text-sm text-rose-500">{errorMessage}</p>}
 
       {navModalOpen && (
         <div

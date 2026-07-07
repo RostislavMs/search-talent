@@ -55,7 +55,7 @@ export default async function FaqPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }}
       />
-      <section className="rounded-hero app-card p-8 sm:p-10">
+      <section className="-mx-4 rounded-none app-card p-8 sm:mx-0 sm:rounded-hero sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -69,7 +69,7 @@ export default async function FaqPage({
             </p>
           </div>
 
-          <ButtonLink href="/" variant="ghost">
+          <ButtonLink href="/" variant="secondary" className="shrink-0">
             {dictionary.faqPage.backToHome}
           </ButtonLink>
         </div>

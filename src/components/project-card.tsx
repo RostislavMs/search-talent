@@ -7,6 +7,7 @@ import {
   getProjectKindLabel,
   normalizeProjectKind,
 } from "@/lib/projects";
+import { toPlainText } from "@/lib/plain-text";
 
 type ProjectCardData = {
   id: string;
@@ -60,7 +61,7 @@ export default function ProjectCard({
   return (
     <LocalizedLink
       href={buildProjectPath(project.id, project.slug)}
-      className="group block overflow-hidden rounded-3xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl"
+      className="group flex h-full flex-col overflow-hidden rounded-3xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl"
     >
       <div className={coverWrapperClass}>
         {project.is_pinned && (
@@ -111,7 +112,7 @@ export default function ProjectCard({
         )}
       </div>
 
-      <div className="p-5">
+      <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
@@ -141,11 +142,11 @@ export default function ProjectCard({
 
         {project.description && (
           <p className="mt-4 line-clamp-3 text-sm leading-6 app-muted">
-            {project.description}
+            {toPlainText(project.description)}
           </p>
         )}
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-auto flex justify-end pt-6">
           <span className={buttonStyles({ variant: "ghost", size: "sm" })}>
             {dictionary.common.viewProject}
           </span>

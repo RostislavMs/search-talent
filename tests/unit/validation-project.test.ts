@@ -46,6 +46,33 @@ describe("projectPayloadSchema", () => {
     ).toBe(false);
   });
 
+  it("normalizes kindMetadata.hoursSpent (fractional, positive, capped)", () => {
+    const parse = (hoursSpent: unknown) =>
+      projectPayloadSchema.safeParse({
+        title: "X",
+        kindMetadata: { hoursSpent },
+      });
+
+    const cases: Array<[unknown, number | null]> = [
+      [2.5, 2.5],
+      ["8", 8],
+      [2.555, 2.56],
+      [0, null],
+      [-3, null],
+      ["", null],
+      ["abc", null],
+      [1_000_000, 100_000],
+    ];
+
+    for (const [input, expected] of cases) {
+      const result = parse(input);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.kindMetadata?.hoursSpent ?? null).toBe(expected);
+      }
+    }
+  });
+
   it("normalizes URLs and rejects invalid ones", () => {
     const ok = projectPayloadSchema.safeParse({
       title: "X",

@@ -177,7 +177,7 @@ export default function ArticleDetailView({
 
   return (
     <main
-      className={`mx-auto px-4 py-10 sm:px-6 ${
+      className={`mx-auto px-0 py-10 sm:px-6 ${
         showTableOfContents ? "max-w-7xl" : "max-w-6xl"
       }`}
     >
@@ -196,7 +196,7 @@ export default function ArticleDetailView({
             : ""
         }
       >
-        <div className="rounded-hero app-card min-w-0">
+        <div className="rounded-none app-card min-w-0 sm:rounded-hero">
           <div className="border-b app-border p-6 sm:p-8">
             <div className="flex flex-wrap gap-3">
               <ButtonLink href={sectionHref} variant="secondary">

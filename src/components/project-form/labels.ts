@@ -181,6 +181,28 @@ export function getVideoRoleLabel(role: VideoRole, dictionary: Dictionary) {
 
 export function getVideoGenreLabel(genre: VideoGenre, dictionary: Dictionary) {
   switch (genre) {
+    case "edit":
+      return dictionary.forms.videoGenreEdit;
+    case "amv":
+      return dictionary.forms.videoGenreAmv;
+    case "gaming_montage":
+      return dictionary.forms.videoGenreGamingMontage;
+    case "highlights":
+      return dictionary.forms.videoGenreHighlights;
+    case "lyric_video":
+      return dictionary.forms.videoGenreLyricVideo;
+    case "reaction":
+      return dictionary.forms.videoGenreReaction;
+    case "review":
+      return dictionary.forms.videoGenreReview;
+    case "explainer":
+      return dictionary.forms.videoGenreExplainer;
+    case "podcast":
+      return dictionary.forms.videoGenrePodcast;
+    case "interview":
+      return dictionary.forms.videoGenreInterview;
+    case "wedding":
+      return dictionary.forms.videoGenreWedding;
     case "commercial":
       return dictionary.forms.videoGenreCommercial;
     case "music_video":

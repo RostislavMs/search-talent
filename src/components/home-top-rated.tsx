@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { RankedCreator, RankedProject } from "@/lib/db/leaderboards";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { buildProjectPath } from "@/lib/projects";
+import { toPlainText } from "@/lib/plain-text";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 
@@ -70,7 +71,7 @@ export default function HomeTopRated({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <section className="bg-brand-hero rounded-2xl border app-border p-5 text-center text-white shadow-[0_30px_80px_rgba(15,23,42,0.24)] sm:rounded-hero sm:p-7 sm:text-left md:p-8">
+      <section className="bg-brand-hero rounded-none border app-border p-5 text-center text-white shadow-[0_30px_80px_rgba(15,23,42,0.24)] sm:rounded-hero sm:p-7 sm:text-left md:p-8">
         <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
           {dictionary.home.topRatedEyebrow}
         </p>
@@ -112,7 +113,7 @@ export default function HomeTopRated({
         </div>
       </section>
 
-      <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6 md:p-8">
+      <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6 md:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl">
@@ -220,7 +221,7 @@ export default function HomeTopRated({
         )}
       </section>
 
-      <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6 md:p-8">
+      <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6 md:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl">
@@ -300,7 +301,7 @@ export default function HomeTopRated({
 
                     {project.description && (
                       <p className="mt-2 line-clamp-2 text-sm leading-snug app-muted">
-                        {project.description}
+                        {toPlainText(project.description)}
                       </p>
                     )}
 

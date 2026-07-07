@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import BadgeShelf from "@/components/badge-shelf";
 import BookmarkButton from "@/components/bookmark-button";
+import CollapsibleTags from "@/components/collapsible-tags";
 import ExpandableProfileBio from "@/components/expandable-profile-bio";
 import ProfileCompletenessButton from "@/components/profile-completeness-button";
 import FollowButton from "@/components/follow-button";
@@ -257,7 +258,7 @@ export default function PublicProfileShowcase({
     ["about", { title: dictionary.creatorProfile.about, visible: profile.visibility.about && Boolean(profile.bio || profile.headline), content: <div className="space-y-4">{profile.headline && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.positionLabel}</p><p className="mt-2 leading-7 app-muted">{profile.headline}</p></div>}{profile.bio && <div style={{ fontSize: `${typeScale.body}rem` }}><ExpandableProfileBio content={profile.bio} locale={locale} accentColor={presentation.accentColor} /></div>}</div> }],
     ["professionalDetails", { title: dictionary.creatorProfile.professionalDetails, visible: profile.visibility.professionalDetails && Boolean(profile.experience_level || profile.salary_expectations || (profile.employment_types?.length || 0) > 0 || (profile.work_formats?.length || 0) > 0 || profile.additional_info), content: <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2">{profile.experience_level && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.totalExperienceYears}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{getExperienceLabel(profile.experience_level, locale)}</p></div>}{profile.salary_expectations && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.salaryExpectations}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{profile.salary_expectations}{profile.salary_currency ? ` ${profile.salary_currency.toUpperCase()}` : ""}</p></div>}</div>{(profile.employment_types?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.employmentTypes}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.employment_types || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getEmploymentLabel(item, dictionary)}</span>)}</div></div>}{(profile.work_formats?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.workFormats}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.work_formats || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getWorkFormatLabel(item, dictionary)}</span>)}</div></div>}{profile.additional_info && <p className="text-sm leading-8 app-muted" style={{ fontSize: `${typeScale.body}rem` }}>{profile.additional_info}</p>}</div> }],
     ["workExperience", { title: dictionary.creatorProfile.workExperience, visible: profile.visibility.workExperience && workExperience.length > 0, content: <div className="space-y-4">{workExperience.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-[color:var(--foreground)]">{item.position || "—"}</h3><p className="mt-1 text-sm app-muted">{item.company_name || "—"}</p></div><span className="text-sm app-soft">{item.started_year || "—"} - {item.is_current ? dictionary.creatorProfile.present : item.ended_year || "—"}</span></div>{item.responsibilities && <p className="mt-3 text-sm leading-7 app-muted">{item.responsibilities}</p>}</article>)}</div> }],
-    ["skills", { title: dictionary.creatorProfile.skills, visible: profile.visibility.skills && technologies.length > 0, content: <div className="flex flex-wrap gap-2">{technologies.map((technology) => <span key={technology.id} className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)]">{technology.name}</span>)}</div> }],
+    ["skills", { title: dictionary.creatorProfile.skills, visible: profile.visibility.skills && technologies.length > 0, content: <CollapsibleTags items={technologies} initialCount={12} showMoreLabel={dictionary.creatorProfile.skillsShowAll} showLessLabel={dictionary.creatorProfile.skillsShowLess} /> }],
     ["languages", { title: dictionary.creatorProfile.languages, visible: profile.visibility.languages && languages.length > 0, content: <div className="grid gap-3 md:grid-cols-2">{languages.map((item) => <div key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><p className="font-medium text-[color:var(--foreground)]">{item.name}</p><p className="mt-1 text-sm app-muted">{getLanguageLevelLabel(item.level, dictionary)}</p></div>)}</div> }],
     ["education", { title: dictionary.creatorProfile.education, visible: profile.visibility.education && education.length > 0, content: <div className="space-y-4">{education.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.institution || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.degree, item.field_of_study].filter(Boolean).join(" • ")}</p>{(item.started_on || item.completed_on) && <p className="mt-1 text-sm app-soft">{[item.started_on, item.completed_on].filter(Boolean).join(" - ")}</p>}{item.description && <p className="mt-3 text-sm leading-7 app-muted">{item.description}</p>}</article>)}</div> }],
     ["certificates", { title: dictionary.creatorProfile.certificates, visible: profile.visibility.certificates && certificates.length > 0, content: <div className="space-y-4">{certificates.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.title || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.issuer, item.issued_on].filter(Boolean).join(" • ")}</p><div className="mt-3 flex flex-wrap gap-2">{item.credential_url && <a href={item.credential_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{dictionary.creatorProfile.openCertificateLink}</a>}{item.file_url && <a href={item.file_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{item.file_name || dictionary.creatorProfile.openCertificateFile}</a>}</div></article>)}</div> }],
@@ -379,9 +380,9 @@ export default function PublicProfileShowcase({
     : `linear-gradient(180deg, transparent 0%, ${withAlpha(presentation.surfaceColor, 0.7)} 100%)`;
 
   return (
-    <main className="mx-auto max-w-[88rem] px-3 py-4 sm:px-6 sm:py-8">
+    <main className="mx-auto max-w-[88rem] px-0 py-4 sm:px-6 sm:py-8">
       <div
-        className="relative overflow-hidden rounded-hero border"
+        className="relative overflow-hidden rounded-none border-y sm:rounded-hero sm:border"
         style={containerStyle}
       >
         {profile.cover_url && (
@@ -493,11 +494,11 @@ export default function PublicProfileShowcase({
                 )}
               </div>
 
-              <div className="space-y-4 xl:self-start">
+              <div className="min-w-0 space-y-4 xl:self-start">
                 <div className="hidden xl:block">
                   <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} rating={profileRating} isAuthenticated={isAuthenticated} isOwner={isOwner} />
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-nowrap gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0 sm:flex-wrap sm:gap-2 sm:overflow-visible">
                   {isOwner && (
                     <ButtonLink href="/profile/edit" size="sm">
                       {dictionary.creatorProfile.editProfile}

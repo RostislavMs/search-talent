@@ -129,7 +129,7 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-hero app-card p-5 sm:p-8">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8">
         <h2 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.title}
         </h2>
@@ -167,7 +167,7 @@ export default async function AdminUsersPage({
         </div>
       </section>
 
-      <section className="rounded-hero app-card p-4 sm:p-6">
+      <section className="rounded-none sm:rounded-hero app-card p-4 sm:p-6">
         {result.items.length === 0 ? (
           <div className="rounded-3xl app-panel-dashed p-8 text-center">
             <p className="text-sm app-muted">{copy.empty}</p>

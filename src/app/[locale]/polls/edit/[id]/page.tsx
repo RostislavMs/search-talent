@@ -138,7 +138,7 @@ export default async function EditPollPage({
   );
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6">
       <PollComposer
         locale={safeLocale}
         categories={categories}

@@ -129,8 +129,8 @@ export default async function FollowersPage({
   const hasNext = safePage < totalPages;
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
+    <main className="mx-auto max-w-5xl px-0 py-4 sm:px-6 sm:py-10">
+      <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -143,13 +143,10 @@ export default async function FollowersPage({
               {dictionary.follows.followersDescription}
             </p>
           </div>
-          <ButtonLink href="/dashboard" variant="ghost">
-            {dictionary.dashboard.backToDashboard}
-          </ButtonLink>
         </div>
       </section>
 
-      <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
+      <section className="mt-4 rounded-none app-card p-4 sm:mt-8 sm:rounded-hero sm:p-8">
         {items.length === 0 ? (
           <p className="text-sm app-muted">{dictionary.follows.followersEmpty}</p>
         ) : (

@@ -28,7 +28,7 @@ export default async function AdminLayout({
   const copy = dictionary.admin;
 
   return (
-    <main className="mx-auto w-full max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto w-full max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">

@@ -145,7 +145,7 @@ export default async function LocalizedHomePage({
   const webSiteSchema = buildWebSiteSchema();
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationSchema) }}
@@ -162,7 +162,7 @@ export default async function LocalizedHomePage({
         queries. Only the data-dependent pieces (the live cards and the
         sections below the hero) stream in behind Suspense.
       */}
-      <section className="bg-brand-hero overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:rounded-hero sm:p-8 md:p-10">
+      <section className="bg-brand-hero mx-4 overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:mx-0 sm:rounded-hero sm:p-8 md:p-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:gap-8">
           <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
@@ -321,7 +321,7 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
       {/* Interest — навіщо це користувачу */}
       <section
         aria-labelledby="home-why-heading"
-        className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-7"
+        className="mt-6 rounded-none app-card p-5 sm:mt-8 sm:rounded-hero sm:p-7"
       >
         <h2
           id="home-why-heading"
@@ -360,7 +360,7 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
       {/* Action — як це працює */}
       <section
         aria-labelledby="home-how-heading"
-        className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-6"
+        className="mt-6 rounded-none app-card p-5 sm:mt-8 sm:rounded-hero sm:p-6"
       >
         <h2
           id="home-how-heading"
@@ -413,7 +413,7 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
       {/* Вторинний контент — статті */}
       <section
         aria-labelledby="home-articles-heading"
-        className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-7"
+        className="mt-6 rounded-none app-card p-5 sm:mt-8 sm:rounded-hero sm:p-7"
       >
         <div className="max-w-3xl">
           <h2

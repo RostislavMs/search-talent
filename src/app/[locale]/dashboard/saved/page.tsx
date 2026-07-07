@@ -7,6 +7,7 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
+import { toPlainText } from "@/lib/plain-text";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 12;
@@ -148,8 +149,8 @@ export default async function SavedItemsPage({
   const hasNext = safePage < totalPages;
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
+    <main className="mx-auto max-w-5xl px-0 py-4 sm:px-6 sm:py-10">
+      <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -162,13 +163,10 @@ export default async function SavedItemsPage({
               {dictionary.bookmarks.description}
             </p>
           </div>
-          <ButtonLink href="/dashboard" variant="ghost">
-            {dictionary.dashboard.backToDashboard}
-          </ButtonLink>
         </div>
       </section>
 
-      <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
+      <section className="mt-4 rounded-none app-card p-4 sm:mt-8 sm:rounded-hero sm:p-8">
         {items.length === 0 ? (
           <p className="text-sm app-muted">{dictionary.bookmarks.emptyMessage}</p>
         ) : (
@@ -266,7 +264,7 @@ export default async function SavedItemsPage({
                         </p>
                         {project.description && (
                           <p className="truncate text-sm app-muted">
-                            {project.description}
+                            {toPlainText(project.description)}
                           </p>
                         )}
                       </div>

@@ -30,6 +30,7 @@ export default function SiteFooter({
   const accountLabel = isEnglish ? "Account" : "Акаунт";
 
   const infoLabel = isEnglish ? "Info" : "Інформація";
+  const legalLabel = isEnglish ? "Legal" : "Правова інформація";
 
   const aboutLabel = isEnglish ? "About" : "Про нас";
   const ratingGuideLabel = isEnglish ? "Rating guide" : "Гайд по рейтингу";
@@ -40,7 +41,7 @@ export default function SiteFooter({
   return (
     <footer className="border-t border-[color:var(--border)] bg-[color:var(--surface)]">
       <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 sm:py-10">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
           <div className="sm:col-span-2 lg:col-span-1">
             <LocalizedLink
               href="/"
@@ -164,35 +165,40 @@ export default function SiteFooter({
               </LocalizedLink>
             </nav>
           </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-eyebrow text-[color:var(--soft-foreground)]">
+              {legalLabel}
+            </p>
+            <nav className="mt-3 flex flex-col items-start gap-2 text-sm text-[color:var(--muted-foreground)]">
+              <LocalizedLink
+                href="/terms"
+                className="hover:text-[color:var(--foreground)]"
+              >
+                {dictionary.footer.terms}
+              </LocalizedLink>
+              <LocalizedLink
+                href="/privacy"
+                className="hover:text-[color:var(--foreground)]"
+              >
+                {dictionary.footer.privacy}
+              </LocalizedLink>
+              <LocalizedLink
+                href="/cookies"
+                className="hover:text-[color:var(--foreground)]"
+              >
+                {dictionary.footer.cookies}
+              </LocalizedLink>
+              <CookieSettingsButton
+                label={dictionary.footer.manageCookies}
+                className="text-left hover:text-[color:var(--foreground)]"
+              />
+            </nav>
+          </div>
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 border-t border-[color:var(--border)] pt-6 text-xs text-[color:var(--muted-foreground)] sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 border-t border-[color:var(--border)] pt-6 text-xs text-[color:var(--muted-foreground)]">
           <p>&copy; {new Date().getFullYear()} SearchTalent</p>
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <LocalizedLink
-              href="/terms"
-              className="hover:text-[color:var(--foreground)]"
-            >
-              {dictionary.footer.terms}
-            </LocalizedLink>
-            <LocalizedLink
-              href="/privacy"
-              className="hover:text-[color:var(--foreground)]"
-            >
-              {dictionary.footer.privacy}
-            </LocalizedLink>
-            <LocalizedLink
-              href="/cookies"
-              className="hover:text-[color:var(--foreground)]"
-            >
-              {dictionary.footer.cookies}
-            </LocalizedLink>
-            <CookieSettingsButton
-              label={dictionary.footer.manageCookies}
-              className="hover:text-[color:var(--foreground)]"
-            />
-          </div>
         </div>
       </div>
     </footer>

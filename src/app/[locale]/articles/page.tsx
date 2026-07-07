@@ -71,8 +71,8 @@ export default async function ArticlesPage({
   const ui = dictionary.articlesPage;
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="relative rounded-hero app-card">
+    <main className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6">
+      <section className="relative rounded-none sm:rounded-hero app-card">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
           <div className="p-6 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
@@ -173,7 +173,7 @@ export default async function ArticlesPage({
             ))}
           </div>
         ) : (
-          <p className="rounded-panel app-panel-dashed p-6 text-sm app-muted">
+          <p className="rounded-none sm:rounded-panel app-panel-dashed p-6 text-sm app-muted">
             {ui.empty}
           </p>
         )}

@@ -153,8 +153,8 @@ async function renderOwnerView({
   });
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -172,14 +172,14 @@ async function renderOwnerView({
             <ButtonLink href="/projects/new">
               {dictionary.forms.createProject}
             </ButtonLink>
-            <ButtonLink href={`/u/${username}`} variant="ghost">
+            <ButtonLink href={`/u/${username}`} variant="secondary">
               {dictionary.creatorProfile.backToProfile}
             </ButtonLink>
           </div>
         </div>
       </section>
 
-      <section className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-8">
+      <section className="mt-6 rounded-none sm:rounded-hero app-card p-5 sm:mt-8 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
@@ -194,7 +194,7 @@ async function renderOwnerView({
 
         {result.projects.length > 0 ? (
           <>
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {result.projects.map((project) => {
                 const publicHref = buildProjectPath(project.id, project.slug || undefined);
 
@@ -346,8 +346,8 @@ async function renderPublicView({
     result.profile.name || `@${result.profile.username}` || username;
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -362,7 +362,7 @@ async function renderPublicView({
             </p>
           </div>
 
-          <ButtonLink href={`/u/${username}`} variant="ghost">
+          <ButtonLink href={`/u/${username}`} variant="secondary">
             {dictionary.creatorProfile.backToProfile}
           </ButtonLink>
         </div>
@@ -371,7 +371,7 @@ async function renderPublicView({
       <section className="mt-6 sm:mt-8">
         {result.projects.length > 0 ? (
           <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {result.projects.map((project) => (
                 <ProjectCard
                   key={project.id}
@@ -419,7 +419,7 @@ async function renderPublicView({
             )}
           </>
         ) : (
-          <div className="rounded-panel app-card p-6">
+          <div className="rounded-none sm:rounded-panel app-card p-6">
             <p className="text-sm app-muted">
               {dictionary.creatorProfile.noProjects}
             </p>

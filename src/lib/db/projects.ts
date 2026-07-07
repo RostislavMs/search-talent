@@ -144,7 +144,7 @@ export async function getMyProjectsPage({
   const initialResponse = await supabase
     .from("projects")
     .select(
-      "id, title, slug, cover_url, is_pinned, created_at, moderation_status, status, kind",
+      "id, title, slug, description, cover_url, is_pinned, created_at, moderation_status, status, kind",
       { count: "exact" },
     )
     .eq("owner_id", user.id)
@@ -163,7 +163,7 @@ export async function getMyProjectsPage({
     const adjustedResponse = await supabase
       .from("projects")
       .select(
-        "id, title, slug, cover_url, is_pinned, created_at, moderation_status, status, kind",
+        "id, title, slug, description, cover_url, is_pinned, created_at, moderation_status, status, kind",
         { count: "exact" },
       )
       .eq("owner_id", user.id)

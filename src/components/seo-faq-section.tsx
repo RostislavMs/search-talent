@@ -16,7 +16,7 @@ export default function SeoFaqSection({
   const schema = buildFaqSchema(items);
 
   return (
-    <section className="rounded-hero app-card p-5 sm:p-7">
+    <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-7">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}

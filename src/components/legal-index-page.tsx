@@ -20,8 +20,8 @@ export default function LegalIndexPage({
   cards,
 }: LegalIndexPageProps) {
   return (
-    <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
+    <main className="mx-auto max-w-5xl px-0 py-12 sm:px-6">
+      <section className="rounded-none app-card p-8 sm:rounded-hero sm:p-10">
         <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
           {eyebrow}
         </p>
@@ -33,7 +33,7 @@ export default function LegalIndexPage({
         </p>
       </section>
 
-      <section className="mt-8 grid gap-5 md:grid-cols-3">
+      <section className="mt-8 grid gap-5 px-4 sm:grid-cols-2 sm:px-0 md:grid-cols-3">
         {cards.map((card) => (
           <LocalizedLink
             key={card.href}

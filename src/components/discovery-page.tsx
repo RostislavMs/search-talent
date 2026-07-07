@@ -1060,7 +1060,7 @@ export default function DiscoveryPage({
   return (
     <section>
       {hero ? (
-        <section className="rounded-hero app-card p-5 sm:p-7">
+        <section className="mx-4 rounded-hero app-card p-5 sm:mx-0 sm:p-7">
           {hero.eyebrow ? (
             <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft sm:text-sm">
               {hero.eyebrow}
@@ -1096,7 +1096,7 @@ export default function DiscoveryPage({
           />
         </section>
       ) : (
-        <section className="bg-brand-hero rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:rounded-hero sm:p-8 md:p-10">
+        <section className="bg-brand-hero mx-4 rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:mx-0 sm:rounded-hero sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
@@ -1170,7 +1170,7 @@ export default function DiscoveryPage({
         </section>
       )}
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 xl:hidden">
+      <div className="mx-4 mt-5 flex flex-wrap items-center justify-between gap-3 sm:mx-0 xl:hidden">
         <button
           type="button"
           onClick={() => setMobileFiltersOpen(true)}
@@ -1660,7 +1660,7 @@ export default function DiscoveryPage({
             </section>
           )}
 
-          <section className="rounded-hero app-card p-4 sm:p-6">
+          <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">

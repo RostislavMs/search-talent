@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/toast";
 import type { ButtonSize, ButtonVariant } from "@/components/ui/button-styles";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { apiFetch } from "@/lib/api-client";
@@ -23,6 +24,7 @@ export default function DeletePollButton({
   variant?: ButtonVariant;
 }) {
   const router = useLocalizedRouter();
+  const toast = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -37,6 +39,7 @@ export default function DeletePollButton({
         confirm: "Видалити",
         cancel: "Скасувати",
         error: "Не вдалося видалити опитування.",
+        deleted: "Опитування видалено",
       }
     : {
         label: adminEndpoint ? "Delete as admin" : "Delete",
@@ -46,6 +49,7 @@ export default function DeletePollButton({
         confirm: "Delete",
         cancel: "Cancel",
         error: "Could not delete the poll.",
+        deleted: "Poll deleted",
       };
 
   const handleConfirm = async () => {
@@ -59,6 +63,7 @@ export default function DeletePollButton({
       return;
     }
     setDialogOpen(false);
+    toast.success(ui.deleted);
     if (redirectHref) {
       router.replace(redirectHref);
       return;

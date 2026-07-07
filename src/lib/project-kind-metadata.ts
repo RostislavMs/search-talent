@@ -340,6 +340,21 @@ export const videoTools = [
   "DaVinci Resolve",
   "After Effects",
   "Final Cut Pro",
+  "CapCut",
+  "Alight Motion",
+  "VN",
+  "Filmora",
+  "VEGAS Pro",
+  "iMovie",
+  "HitFilm",
+  "Premiere Rush",
+  "KineMaster",
+  "Shotcut",
+  "Movavi",
+  "Camtasia",
+  "Descript",
+  "OBS Studio",
+  "Topaz Video AI",
   "Avid Media Composer",
   "Fusion",
   "Nuke",
@@ -356,16 +371,27 @@ export const videoTools = [
 export type VideoTool = (typeof videoTools)[number];
 
 export const videoGenres = [
+  "edit",
+  "amv",
+  "gaming_montage",
+  "highlights",
   "commercial",
   "music_video",
+  "lyric_video",
   "documentary",
   "short_film",
   "feature_film",
   "vlog",
   "gameplay",
+  "reaction",
+  "review",
   "tutorial",
+  "explainer",
+  "podcast",
+  "interview",
   "corporate",
   "event",
+  "wedding",
   "social_media",
   "advertising",
   "trailer",
@@ -1430,7 +1456,26 @@ export type ProjectKindMetadata = {
   qa?: QaKindMetadata;
   motion?: MotionKindMetadata;
   writing?: WritingKindMetadata;
+  // Kind-agnostic: how long the project took, in hours (supports fractions
+  // like 2.5). Lives at the top level so every kind can surface it without a
+  // schema/migration change.
+  hoursSpent?: number | null;
 };
+
+// Accepts fractional hours, keeps 2-decimal precision, rejects non-positive.
+export function pickPositiveNumber(
+  value: unknown,
+  max: number,
+): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return Math.min(Math.round(parsed * 100) / 100, max);
+}
 
 export function normalizeProjectKindMetadata(
   kind: ProjectKind | null,
@@ -1493,6 +1538,10 @@ export function normalizeProjectKindMetadata(
     if (!isWritingKindMetadataEmpty(writing)) {
       result.writing = writing;
     }
+  }
+  const hoursSpent = pickPositiveNumber(value.hoursSpent, 100_000);
+  if (hoursSpent !== null) {
+    result.hoursSpent = hoursSpent;
   }
   return result;
 }
