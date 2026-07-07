@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/*
+ * The site theme is driven by `html[data-theme="dark"]` (see theme-script),
+ * not the OS `prefers-color-scheme`. Remap Tailwind's `dark:` variant to that
+ * attribute so `dark:` utilities follow the in-app Light/Dark toggle instead
+ * of the operating system — otherwise they silently disagree with the theme.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   --background: #f4f7fb;
   --foreground: #0f172a;

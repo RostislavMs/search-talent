@@ -67,6 +67,156 @@ export function buildYouTubeThumbnailUrl(videoId: string): string {
   return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 }
 
+// ---------------------------------------------------------------------------
+// Unified video-link embedding
+//
+// A single detector recognises the platforms creators actually publish on and
+// returns everything the UI needs to embed the clip inline: the iframe `src`,
+// a best-effort poster (only the ones we can derive without a network call),
+// and the natural orientation so vertical clips (Shorts/Reels/TikTok) are not
+// stretched into a 16:9 box. Detection is URL-based, so nothing extra needs to
+// be persisted — the same URL that is stored is re-parsed at render time.
+//
+// Every `embedUrl` host below must also be whitelisted in the CSP `frame-src`
+// (see src/lib/security/headers.ts) or the browser will refuse to load it.
+// ---------------------------------------------------------------------------
+
+export const videoEmbedProviders = [
+  "youtube",
+  "vimeo",
+  "tiktok",
+  "instagram",
+] as const;
+
+export type VideoEmbedProvider = (typeof videoEmbedProviders)[number];
+
+export type VideoEmbedOrientation = "landscape" | "portrait";
+
+export type VideoEmbed = {
+  provider: VideoEmbedProvider;
+  embedUrl: string;
+  // Only set when we can build a poster without a network round-trip
+  // (YouTube). Others resolve their poster lazily via oEmbed elsewhere.
+  thumbnailUrl: string | null;
+  aspectRatio: number;
+  orientation: VideoEmbedOrientation;
+};
+
+const LANDSCAPE_ASPECT = 16 / 9;
+const PORTRAIT_ASPECT = 9 / 16;
+// Instagram feed posts render in a squarish card (image + caption chrome).
+const INSTAGRAM_POST_ASPECT = 4 / 5;
+
+function orientationFor(aspectRatio: number): VideoEmbedOrientation {
+  return aspectRatio < 0.95 ? "portrait" : "landscape";
+}
+
+/**
+ * Recognises a pasted link as an embeddable video and returns its embed
+ * descriptor, or `null` if the URL is not a supported video link. Callers use
+ * the `null` result to both reject invalid input and to fall back to a plain
+ * anchor. Short share links that hide the id (e.g. `vm.tiktok.com/…`) return
+ * `null` because the canonical id cannot be resolved client-side.
+ */
+export function detectVideoEmbed(
+  value: string | null | undefined,
+): VideoEmbed | null {
+  if (!value) return null;
+
+  let url: URL;
+  try {
+    url = new URL(value.trim());
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return null;
+  }
+
+  const host = url.hostname.toLowerCase().replace(/^www\./, "");
+
+  // YouTube (incl. Shorts, which are vertical).
+  const youTubeId = getYouTubeVideoId(value);
+  if (youTubeId) {
+    const isShorts = /\/shorts\//.test(url.pathname);
+    const aspectRatio = isShorts ? PORTRAIT_ASPECT : LANDSCAPE_ASPECT;
+    return {
+      provider: "youtube",
+      embedUrl: buildYouTubeEmbedUrl(youTubeId),
+      thumbnailUrl: buildYouTubeThumbnailUrl(youTubeId),
+      aspectRatio,
+      orientation: orientationFor(aspectRatio),
+    };
+  }
+
+  // Vimeo: vimeo.com/{id}, vimeo.com/channels/x/{id}, player.vimeo.com/video/{id}
+  if (host === "vimeo.com" || host === "player.vimeo.com") {
+    const numericId = url.pathname
+      .split("/")
+      .filter(Boolean)
+      .reverse()
+      .find((segment) => /^\d+$/.test(segment));
+    if (numericId) {
+      return {
+        provider: "vimeo",
+        embedUrl: `https://player.vimeo.com/video/${numericId}`,
+        thumbnailUrl: null,
+        aspectRatio: LANDSCAPE_ASPECT,
+        orientation: "landscape",
+      };
+    }
+    return null;
+  }
+
+  // TikTok: tiktok.com/@user/video/{id}
+  if (host === "tiktok.com" || host.endsWith(".tiktok.com")) {
+    const match = url.pathname.match(/\/video\/(\d+)/);
+    if (match) {
+      return {
+        provider: "tiktok",
+        embedUrl: `https://www.tiktok.com/player/v1/${match[1]}`,
+        thumbnailUrl: null,
+        aspectRatio: PORTRAIT_ASPECT,
+        orientation: "portrait",
+      };
+    }
+    return null;
+  }
+
+  // Instagram: /p/{code}, /reel/{code}, /reels/{code}, /tv/{code}
+  if (host === "instagram.com" || host.endsWith(".instagram.com")) {
+    const match = url.pathname.match(
+      /\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/,
+    );
+    if (match) {
+      const type = match[1] === "reels" ? "reel" : match[1];
+      const isReel = type === "reel";
+      const aspectRatio = isReel ? PORTRAIT_ASPECT : INSTAGRAM_POST_ASPECT;
+      return {
+        provider: "instagram",
+        embedUrl: `https://www.instagram.com/${type}/${match[2]}/embed`,
+        thumbnailUrl: null,
+        aspectRatio,
+        orientation: orientationFor(aspectRatio),
+      };
+    }
+    return null;
+  }
+
+  return null;
+}
+
+/**
+ * A poster URL for a link that can be derived synchronously (YouTube only for
+ * now). Used as a cover-image fallback for video-only projects.
+ */
+export function getVideoEmbedThumbnail(
+  value: string | null | undefined,
+): string | null {
+  return detectVideoEmbed(value)?.thumbnailUrl ?? null;
+}
+
 export function inferProjectMediaKind(
   mimeType?: string | null,
   fileNameOrUrl?: string | null,

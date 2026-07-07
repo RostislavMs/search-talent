@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/toast";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
@@ -112,6 +113,7 @@ export default function PollComposer({
   editPoll?: EditablePoll | null;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const isUkrainian = locale === "uk";
   const siteLocale: PollLocale = locale === "en" ? "en" : "uk";
   const availableCategories = useMemo(
@@ -163,7 +165,6 @@ export default function PollComposer({
   const [closesAtLocal, setClosesAtLocal] = useState(toLocalInput(editPoll?.closesAt ?? null));
   const [saving, setSaving] = useState<null | "draft" | "published">(null);
   const [uploadingCover, setUploadingCover] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isEditing = Boolean(editPoll?.id);
   const locked = Boolean(editPoll?.locked);
 
@@ -223,6 +224,8 @@ export default function PollComposer({
         publishNow: "Опублікувати",
         remove: "Прибрати",
         error: "Не вдалося зберегти опитування.",
+        toastDraftSaved: "Опитування збережено як чернетку",
+        toastPublished: "Опитування опубліковано",
         autoModerationRemoved:
           "Опитування автоматично приховано: вміст не пройшов перевірку (нецензурна лексика, образи або спам). Відредагуйте текст і спробуйте ще раз.",
         placeholder: "Додайте опис до опитування...",
@@ -251,6 +254,8 @@ export default function PollComposer({
         publishNow: "Publish now",
         remove: "Remove",
         error: "Could not save the poll.",
+        toastDraftSaved: "Poll saved as a draft",
+        toastPublished: "Poll published",
         autoModerationRemoved:
           "This poll was automatically hidden: the content did not pass the check (profanity, slurs, or spam). Edit the text and try again.",
         placeholder: "Add a description to your poll...",
@@ -258,7 +263,6 @@ export default function PollComposer({
 
   const uploadCover = async (rawFile: File) => {
     setUploadingCover(true);
-    setErrorMessage(null);
     try {
       const file = await compressImageFile(rawFile, "cover");
       const presign = await apiFetch<{
@@ -287,7 +291,7 @@ export default function PollComposer({
 
       updateActive({ coverImageUrl: publicUrl, coverImageStoragePath: storagePath });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : ui.error);
+      toast.error(error instanceof Error ? error.message : ui.error);
     } finally {
       setUploadingCover(false);
     }
@@ -323,24 +327,22 @@ export default function PollComposer({
   };
 
   const savePoll = async (nextStatus: "draft" | "published") => {
-    setErrorMessage(null);
-
     const filledLocales = LOCALES.filter((loc) => versions[loc].title.trim().length > 0);
     if (filledLocales.length === 0) {
-      setErrorMessage(ui.needTitle);
+      toast.warning(ui.needTitle);
       return;
     }
 
     if (!locked) {
       for (const question of questions) {
         if (!question.prompt.trim()) {
-          setErrorMessage(ui.needQuestion);
+          toast.warning(ui.needQuestion);
           return;
         }
         if (question.type !== "rating") {
           const filledOptions = question.options.filter((o) => o.label.trim().length > 0);
           if (filledOptions.length < 2) {
-            setErrorMessage(ui.needOptions);
+            toast.warning(ui.needOptions);
             return;
           }
         }
@@ -391,16 +393,20 @@ export default function PollComposer({
     setSaving(null);
 
     if (!result.ok) {
-      setErrorMessage(result.error || ui.error);
+      toast.error(result.error || ui.error);
       return;
     }
 
     // Auto-moderation removed the just-saved poll; keep the draft on screen and
     // show the precise reason (which rule + example) returned by the API.
     if (result.data.autoRemoved) {
-      setErrorMessage(result.data.moderationReason || ui.autoModerationRemoved);
+      toast.error(result.data.moderationReason || ui.autoModerationRemoved);
       return;
     }
+
+    toast.success(
+      nextStatus === "published" ? ui.toastPublished : ui.toastDraftSaved,
+    );
 
     const slug = result.data.poll?.slug;
     if (slug) {
@@ -616,7 +622,6 @@ export default function PollComposer({
               >
                 {saving === "published" ? ui.uploading : ui.publishNow}
               </Button>
-              {errorMessage ? <p className="text-sm text-rose-500">{errorMessage}</p> : null}
             </div>
           </div>
         </aside>

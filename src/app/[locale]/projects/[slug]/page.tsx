@@ -32,6 +32,7 @@ import {
   safeJsonLd,
 } from "@/lib/seo";
 import { getProjectKindLabel, normalizeProjectKind } from "@/lib/projects";
+import { toPlainText } from "@/lib/plain-text";
 import {
   isAudioKindMetadataEmpty,
   isCodeKindMetadataEmpty,
@@ -290,6 +291,11 @@ export default async function PublicProjectPage({
   const showWritingDetails =
     writingMeta !== null && !isWritingKindMetadataEmpty(writingMeta);
 
+  // Kind-agnostic: hours the author spent, surfaced for any project kind.
+  const hoursSpent =
+    (project as { kind_metadata?: { hoursSpent?: number | null } | null })
+      .kind_metadata?.hoursSpent ?? null;
+
   // Auto-sync GitHub data when the owner opens a linked project and
   // the last sync is older than the configured interval. This runs in a
   // Server Component (async page), not a render-phase hook — Date.now()
@@ -350,7 +356,7 @@ export default async function PublicProjectPage({
   ]);
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(projectSchema) }}
@@ -359,7 +365,7 @@ export default async function PublicProjectPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
-      <section className="overflow-hidden rounded-2xl app-card sm:rounded-hero">
+      <section className="overflow-hidden rounded-none app-card sm:rounded-hero">
         <div className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
           <div className="p-5 sm:p-8 md:p-10">
             <div className="flex flex-wrap items-center gap-3">
@@ -395,7 +401,8 @@ export default async function PublicProjectPage({
             </h1>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:mt-4 sm:text-base sm:leading-8">
-              {project.description || dictionary.projectPage.noDescription}
+              {toPlainText(project.description) ||
+                dictionary.projectPage.noDescription}
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
@@ -493,7 +500,7 @@ export default async function PublicProjectPage({
 
       <section className="mt-5 grid grid-cols-1 gap-5 sm:mt-8 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-5 sm:space-y-8">
-          <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
+          <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.projectPage.details}
             </h2>
@@ -512,6 +519,12 @@ export default async function PublicProjectPage({
                 <DetailCard
                   label={dictionary.projectPage.teamSize}
                   value={String(project.team_size)}
+                />
+              )}
+              {hoursSpent !== null && (
+                <DetailCard
+                  label={dictionary.projectPage.hoursSpent}
+                  value={`${hoursSpent} ${dictionary.projectPage.hoursSuffix}`}
                 />
               )}
               {(project.started_on || project.completed_on) && (
@@ -649,7 +662,7 @@ export default async function PublicProjectPage({
             </section>
           )}
 
-          <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
+          <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
             <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-2xl">
               {dictionary.projectPage.gallery}
             </h2>
@@ -784,7 +797,7 @@ export default async function PublicProjectPage({
 
       <Suspense
         fallback={
-          <section className="mt-5 rounded-2xl app-card p-4 sm:mt-8 sm:rounded-hero sm:p-6">
+          <section className="mt-5 rounded-none app-card p-4 sm:mt-8 sm:rounded-hero sm:p-6">
             <ProjectCardGridSkeleton count={3} />
           </section>
         }

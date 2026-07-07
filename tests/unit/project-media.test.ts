@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   buildYouTubeEmbedUrl,
   buildYouTubeThumbnailUrl,
+  detectVideoEmbed,
   formatFileSize,
+  getVideoEmbedThumbnail,
   getYouTubeVideoId,
   inferProjectMediaKind,
   isYouTubeMediaUrl,
@@ -85,6 +87,93 @@ describe("buildYouTubeThumbnailUrl", () => {
     expect(buildYouTubeThumbnailUrl("dQw4w9WgXcQ")).toBe(
       "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
     );
+  });
+});
+
+describe("detectVideoEmbed", () => {
+  it("returns null for empty, non-URL and unsupported hosts", () => {
+    expect(detectVideoEmbed(null)).toBeNull();
+    expect(detectVideoEmbed("")).toBeNull();
+    expect(detectVideoEmbed("not a url")).toBeNull();
+    expect(detectVideoEmbed("https://example.com/video/123")).toBeNull();
+    expect(detectVideoEmbed("ftp://vimeo.com/123456")).toBeNull();
+  });
+
+  it("detects a landscape YouTube video", () => {
+    const embed = detectVideoEmbed(
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    );
+    expect(embed).toEqual({
+      provider: "youtube",
+      embedUrl: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      thumbnailUrl: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+      aspectRatio: 16 / 9,
+      orientation: "landscape",
+    });
+  });
+
+  it("marks YouTube Shorts as portrait", () => {
+    const embed = detectVideoEmbed(
+      "https://www.youtube.com/shorts/dQw4w9WgXcQ",
+    );
+    expect(embed?.provider).toBe("youtube");
+    expect(embed?.orientation).toBe("portrait");
+    expect(embed?.aspectRatio).toBe(9 / 16);
+  });
+
+  it("detects Vimeo from canonical and player URLs", () => {
+    expect(detectVideoEmbed("https://vimeo.com/123456789")?.embedUrl).toBe(
+      "https://player.vimeo.com/video/123456789",
+    );
+    expect(
+      detectVideoEmbed("https://player.vimeo.com/video/123456789")?.embedUrl,
+    ).toBe("https://player.vimeo.com/video/123456789");
+    expect(
+      detectVideoEmbed("https://vimeo.com/channels/staffpicks/987654")
+        ?.embedUrl,
+    ).toBe("https://player.vimeo.com/video/987654");
+    expect(detectVideoEmbed("https://vimeo.com/notanumber")).toBeNull();
+  });
+
+  it("detects a TikTok video as portrait and rejects short share links", () => {
+    const embed = detectVideoEmbed(
+      "https://www.tiktok.com/@creator/video/7212345678901234567",
+    );
+    expect(embed).toEqual({
+      provider: "tiktok",
+      embedUrl: "https://www.tiktok.com/player/v1/7212345678901234567",
+      thumbnailUrl: null,
+      aspectRatio: 9 / 16,
+      orientation: "portrait",
+    });
+    // vm.tiktok.com short links hide the id — cannot resolve client-side.
+    expect(detectVideoEmbed("https://vm.tiktok.com/ZM123abc/")).toBeNull();
+  });
+
+  it("detects Instagram reels (portrait) and posts", () => {
+    const reel = detectVideoEmbed("https://www.instagram.com/reel/CxAbc123/");
+    expect(reel?.provider).toBe("instagram");
+    expect(reel?.embedUrl).toBe(
+      "https://www.instagram.com/reel/CxAbc123/embed",
+    );
+    expect(reel?.orientation).toBe("portrait");
+
+    const post = detectVideoEmbed("https://www.instagram.com/p/CxAbc123/");
+    expect(post?.embedUrl).toBe("https://www.instagram.com/p/CxAbc123/embed");
+    // /reels/ (plural) normalises to /reel/
+    expect(
+      detectVideoEmbed("https://www.instagram.com/reels/CxAbc123/")?.embedUrl,
+    ).toBe("https://www.instagram.com/reel/CxAbc123/embed");
+  });
+});
+
+describe("getVideoEmbedThumbnail", () => {
+  it("returns the YouTube poster and null for providers without a sync thumbnail", () => {
+    expect(
+      getVideoEmbedThumbnail("https://youtu.be/dQw4w9WgXcQ"),
+    ).toBe("https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg");
+    expect(getVideoEmbedThumbnail("https://vimeo.com/123456789")).toBeNull();
+    expect(getVideoEmbedThumbnail("https://example.com")).toBeNull();
   });
 });
 

@@ -38,7 +38,7 @@ export default function BrowseFacets({
   const hasHeader = Boolean(title || description);
 
   return (
-    <section className="rounded-hero app-card p-4 sm:p-7">
+    <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-7">
       {hasHeader ? (
         <div className="max-w-3xl">
           {title ? (

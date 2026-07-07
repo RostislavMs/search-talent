@@ -64,29 +64,23 @@ export default async function NewProjectPage({
   const dictionary = getDictionary(locale);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.dashboardProjects.eyebrow}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+    <main className="mx-auto max-w-7xl px-0 py-10 sm:px-6">
+      <CreateProjectForm
+        sidebarHeader={
+          <div className="space-y-3">
+            <h1 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
               {dictionary.forms.createProject}
             </h1>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <ButtonLink href="/projects" variant="ghost">
+            <ButtonLink
+              href="/projects"
+              variant="secondary"
+              className="w-full justify-center"
+            >
               {dictionary.dashboardProjects.publicCatalog}
             </ButtonLink>
           </div>
-        </div>
-
-        <div className="mt-8">
-          <CreateProjectForm />
-        </div>
-      </section>
+        }
+      />
     </main>
   );
 }

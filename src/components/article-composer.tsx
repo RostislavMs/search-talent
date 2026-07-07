@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/toast";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
@@ -132,6 +133,7 @@ export default function ArticleComposer({
   showHeading?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const isUkrainian = locale === "uk";
   const siteLocale: ArticleLocale = locale === "en" ? "en" : "uk";
   const availableCategories = useMemo(
@@ -213,7 +215,6 @@ export default function ArticleComposer({
   const [uploadingAsset, setUploadingAsset] = useState<
     null | "cover" | "hero" | "inline"
   >(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isEditing = Boolean(editArticle?.id);
 
   const current = versions[activeLocale];
@@ -290,6 +291,8 @@ export default function ArticleComposer({
         publishNow: "Опублікувати",
         remove: "Прибрати",
         error: "Не вдалося зберегти статтю.",
+        toastDraftSaved: "Статтю збережено як чернетку",
+        toastPublished: "Статтю опубліковано",
         autoModerationRemoved:
           "Статтю автоматично приховано: вміст не пройшов перевірку (нецензурна лексика, образи або спам). Відредагуйте текст і спробуйте ще раз.",
         placeholder:
@@ -325,6 +328,8 @@ export default function ArticleComposer({
         publishNow: "Publish now",
         remove: "Remove",
         error: "Could not save the article.",
+        toastDraftSaved: "Article saved as a draft",
+        toastPublished: "Article published",
         autoModerationRemoved:
           "This article was automatically hidden: the content did not pass the check (profanity, slurs, or spam). Edit the text and try again.",
         placeholder:
@@ -333,7 +338,6 @@ export default function ArticleComposer({
 
   const uploadAsset = async (rawFile: File, mode: "cover" | "hero" | "inline") => {
     setUploadingAsset(mode);
-    setErrorMessage(null);
 
     try {
       const kind = inferAssetKind(rawFile);
@@ -396,7 +400,7 @@ export default function ArticleComposer({
         kind,
       };
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : ui.error);
+      toast.error(error instanceof Error ? error.message : ui.error);
       return null;
     } finally {
       setUploadingAsset(null);
@@ -404,15 +408,13 @@ export default function ArticleComposer({
   };
 
   const saveArticle = async (nextStatus: "draft" | "published") => {
-    setErrorMessage(null);
-
     // A language version counts as present once it has a title.
     const filledLocales = LOCALES.filter(
       (loc) => versions[loc].title.trim().length > 0,
     );
 
     if (filledLocales.length === 0) {
-      setErrorMessage(ui.needTitle);
+      toast.warning(ui.needTitle);
       return;
     }
 
@@ -426,7 +428,7 @@ export default function ArticleComposer({
 
       if (bodyIsEmpty) {
         const lang = LOCALE_NAMES[loc];
-        setErrorMessage(
+        toast.warning(
           isUkrainian
             ? `Додайте текст статті для версії «${lang}».`
             : `Add the article body for the ${lang} version.`,
@@ -484,16 +486,20 @@ export default function ArticleComposer({
     setSaving(null);
 
     if (!result.ok) {
-      setErrorMessage(result.error || ui.error);
+      toast.error(result.error || ui.error);
       return;
     }
 
     // Auto-moderation removed the just-saved article; keep the draft on screen
     // and show the precise reason (which rule + example) returned by the API.
     if (result.data.autoRemoved) {
-      setErrorMessage(result.data.moderationReason || ui.autoModerationRemoved);
+      toast.error(result.data.moderationReason || ui.autoModerationRemoved);
       return;
     }
+
+    toast.success(
+      nextStatus === "published" ? ui.toastPublished : ui.toastDraftSaved,
+    );
 
     // The content is now persisted server-side — advance the dirty baseline so
     // isDirty goes false and the unsaved-changes guard doesn't warn during the
@@ -786,9 +792,6 @@ export default function ArticleComposer({
               >
                 {saving === "published" ? ui.uploading : ui.publishNow}
               </Button>
-              {errorMessage ? (
-                <p className="text-sm text-rose-500">{errorMessage}</p>
-              ) : null}
             </div>
           </div>
         </aside>

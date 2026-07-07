@@ -66,16 +66,11 @@ export default async function ProfileEditPage({
 
   if (!profile) {
     return (
-      <main className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6">
-        <section className="rounded-hero app-card p-8">
+      <main className="mx-auto max-w-[90rem] px-0 py-4 sm:px-6 sm:py-12">
+        <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-8">
           <h1 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
             {dictionary.dashboardProfile.profileNotFound}
           </h1>
-          <div className="mt-6">
-            <ButtonLink href="/dashboard" variant="ghost">
-              {dictionary.dashboardProfile.backToDashboard}
-            </ButtonLink>
-          </div>
         </section>
       </main>
     );
@@ -89,9 +84,9 @@ export default async function ProfileEditPage({
     .toUpperCase();
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-5 sm:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <main className="mx-auto max-w-[90rem] px-0 py-4 sm:px-6 sm:py-10">
+      <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
+        <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
               {dictionary.dashboardProfile.eyebrow}
@@ -105,32 +100,31 @@ export default async function ProfileEditPage({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <ButtonLink href="/dashboard" variant="ghost">
-              {dictionary.dashboardProfile.backToDashboard}
-            </ButtonLink>
             <ButtonLink href={publicProfileHref} variant="secondary">
               {dictionary.dashboardProfile.viewPublicProfile}
             </ButtonLink>
           </div>
         </div>
 
-        <AvatarUpload
-          userId={profile.user_id}
-          currentAvatarUrl={profile.avatar_url || null}
-          fallbackText={fallbackText}
-        />
-
-        <div className="mt-6 flex items-center gap-4">
-          <p className="text-sm font-medium text-[color:var(--foreground)]">
-            {dictionary.emailVerification.sectionTitle}
-          </p>
-          <EmailVerificationButton
-            initialVerified={profile.email_verified ?? false}
+        <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-4">
+          <AvatarUpload
+            userId={profile.user_id}
+            currentAvatarUrl={profile.avatar_url || null}
+            fallbackText={fallbackText}
           />
+
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-medium text-[color:var(--foreground)]">
+              {dictionary.emailVerification.sectionTitle}
+            </p>
+            <EmailVerificationButton
+              initialVerified={profile.email_verified ?? false}
+            />
+          </div>
         </div>
       </section>
 
-      <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
+      <section className="mt-4 rounded-none app-card p-4 sm:mt-8 sm:rounded-hero sm:p-8">
         <ProfileForm profile={profile} email={user.email ?? ""} />
       </section>
     </main>

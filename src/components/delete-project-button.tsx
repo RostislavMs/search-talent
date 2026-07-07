@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/toast";
 import type { ButtonSize, ButtonVariant } from "@/components/ui/button-styles";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { apiFetch } from "@/lib/api-client";
@@ -37,6 +38,7 @@ export default function DeleteProjectButton({
   adminEndpoint = false,
 }: DeleteProjectButtonProps) {
   const router = useLocalizedRouter();
+  const toast = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -58,6 +60,7 @@ export default function DeleteProjectButton({
     }
 
     setDialogOpen(false);
+    toast.success(router.locale === "uk" ? "Проєкт видалено" : "Project deleted");
 
     if (redirectHref) {
       router.replace(redirectHref);

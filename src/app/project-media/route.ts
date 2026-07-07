@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { normalizeProjectMediaItem } from "@/lib/project-media";
+import {
+  getVideoEmbedThumbnail,
+  normalizeProjectMediaItem,
+} from "@/lib/project-media";
 import { deleteStorageObject } from "@/lib/storage/provider";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -8,6 +11,32 @@ import {
   updateProjectMediaSchema,
 } from "@/lib/validation/project-media";
 import { parseJsonRequest } from "@/lib/validation/request";
+
+type CoverCandidateRow = {
+  url: string;
+  media_kind: string | null;
+};
+
+// The project cover is the first uploaded image; failing that, the poster of
+// the first video link we can derive one from without a network call
+// (YouTube). This keeps video-only projects — a YouTube/Shorts link and
+// nothing else — from rendering as a blank card. Rows must be passed already
+// ordered (sort_index, then created_at).
+function resolveCoverFromRows(rows: CoverCandidateRow[]): string | null {
+  const firstImage = rows.find((row) => row.media_kind === "image");
+  if (firstImage) {
+    return firstImage.url;
+  }
+  for (const row of rows) {
+    if (row.media_kind === "video") {
+      const thumbnail = getVideoEmbedThumbnail(row.url);
+      if (thumbnail) {
+        return thumbnail;
+      }
+    }
+  }
+  return null;
+}
 
 async function getOwnedProject(
   projectId: string,
@@ -111,17 +140,26 @@ export async function POST(request: Request) {
 
   let nextCoverUrl = project.cover_url;
 
-  if (!project.cover_url && mediaKind === "image") {
-    const { error: coverError } = await ownership.supabase
-      .from("projects")
-      .update({
-        cover_url: url,
-      })
-      .eq("id", projectId)
-      .eq("owner_id", user.id);
+  if (!project.cover_url) {
+    const coverCandidate =
+      mediaKind === "image"
+        ? url
+        : mediaKind === "video"
+          ? getVideoEmbedThumbnail(url)
+          : null;
 
-    if (!coverError) {
-      nextCoverUrl = url;
+    if (coverCandidate) {
+      const { error: coverError } = await ownership.supabase
+        .from("projects")
+        .update({
+          cover_url: coverCandidate,
+        })
+        .eq("id", projectId)
+        .eq("owner_id", user.id);
+
+      if (!coverError) {
+        nextCoverUrl = coverCandidate;
+      }
     }
   }
 
@@ -259,17 +297,18 @@ export async function PUT(request: Request) {
     }
   }
 
-  const { data: firstImage } = await ownership.supabase
+  const { data: orderedRows } = await ownership.supabase
     .from("project_media")
-    .select("url")
+    .select("url, media_kind")
     .eq("project_id", projectId)
-    .eq("media_kind", "image")
     .order("sort_index", { ascending: true })
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
 
-  const nextCoverUrl = firstImage?.url ?? null;
+  // The cover is explicit once set (uploaded image, captured frame, or the
+  // first image auto-picked on the very first upload). Reordering must not
+  // silently change it, so we only derive a cover here when none exists yet.
+  const nextCoverUrl =
+    ownership.project.cover_url ?? resolveCoverFromRows(orderedRows ?? []);
 
   if (nextCoverUrl !== ownership.project.cover_url) {
     await ownership.supabase
@@ -350,17 +389,24 @@ export async function DELETE(request: Request) {
 
   let nextCoverUrl = ownership.project.cover_url;
 
-  if (ownership.project.cover_url === media.url) {
-    const { data: nextCoverCandidate } = await ownership.supabase
-      .from("project_media")
-      .select("url")
-      .eq("project_id", projectId)
-      .eq("media_kind", "image")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+  // The cover may be the deleted row's own url (an image) or the poster we
+  // derived from a video link (thumbnail !== the stored url). Recompute in
+  // both cases so removing the cover's source does not leave a dangling image.
+  const deletedThumbnail = getVideoEmbedThumbnail(media.url);
+  const coverCameFromDeleted =
+    ownership.project.cover_url === media.url ||
+    (deletedThumbnail !== null &&
+      ownership.project.cover_url === deletedThumbnail);
 
-    nextCoverUrl = nextCoverCandidate?.url ?? null;
+  if (coverCameFromDeleted) {
+    const { data: remainingRows } = await ownership.supabase
+      .from("project_media")
+      .select("url, media_kind")
+      .eq("project_id", projectId)
+      .order("sort_index", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    nextCoverUrl = resolveCoverFromRows(remainingRows ?? []);
 
     await ownership.supabase
       .from("projects")

@@ -47,8 +47,8 @@ export default async function NewsPage({
   ]);
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-6 sm:p-8">
+    <main className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6">
+      <section className="rounded-none sm:rounded-hero app-card p-6 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
           {ui.eyebrow}
         </p>
@@ -80,7 +80,7 @@ export default async function NewsPage({
             ))}
           </div>
         ) : (
-          <p className="rounded-panel app-panel-dashed p-6 text-sm app-muted">
+          <p className="rounded-none sm:rounded-panel app-panel-dashed p-6 text-sm app-muted">
             {ui.empty}
           </p>
         )}

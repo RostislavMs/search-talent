@@ -6,6 +6,7 @@ import {
   type Locale,
 } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { toPlainText } from "@/lib/plain-text";
 
 export function getSiteUrl() {
   return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -823,6 +824,8 @@ export function getProjectNarrative(project: {
 }): string {
   return [project.description, project.problem, project.solution, project.results]
     .filter((value): value is string => Boolean(value))
+    .map((value) => toPlainText(value))
+    .filter(Boolean)
     .join(" ");
 }
 

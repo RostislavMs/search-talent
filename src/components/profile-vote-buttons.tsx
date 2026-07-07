@@ -135,8 +135,8 @@ export default function ProfileVoteButtons({
 
   return (
     <section className={className ?? "mt-8 rounded-panel app-panel p-5"}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
               {dictionary.creatorProfile.profileRating}
@@ -154,16 +154,14 @@ export default function ProfileVoteButtons({
               >
                 <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm.85 9.6h-1.7v-1.7h1.7v1.7Zm.7-4.3c-.2.3-.6.6-1 .9-.3.2-.4.4-.5.6-.05.15-.1.4-.1.7H6.45c0-.6.05-1 .2-1.3.15-.3.45-.55.85-.85.25-.2.45-.35.55-.5a.85.85 0 0 0 .2-.55.7.7 0 0 0-.25-.55c-.15-.15-.35-.25-.6-.25a.95.95 0 0 0-.7.27.95.95 0 0 0-.3.72H4.65c0-.65.25-1.2.75-1.65a2.8 2.8 0 0 1 1.85-.7c.7 0 1.3.2 1.75.6.45.4.7.95.7 1.6 0 .35-.1.7-.3 1.05Z" />
               </svg>
-              <span>{dictionary.creatorProfile.ratingHowItWorks}</span>
+              <span className="hidden sm:inline">
+                {dictionary.creatorProfile.ratingHowItWorks}
+              </span>
             </LocalizedLink>
           </div>
-          <p className="mt-1 text-sm app-muted">
-            {voteState.likes} {dictionary.projectPage.likes} / {voteState.dislikes}{" "}
-            {dictionary.projectPage.dislikes}
-          </p>
         </div>
 
-        <span className="font-display rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
+        <span className="font-display shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
           {typeof rating === "number"
             ? rating
             : voteState.likes - voteState.dislikes}{" "}

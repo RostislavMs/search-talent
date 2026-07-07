@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import ArticleCard from "@/components/article-card";
 import DeleteArticleButton from "@/components/delete-article-button";
 import { ButtonLink } from "@/components/ui/Button";
-import { buttonStyles } from "@/components/ui/button-styles";
 import { getCategoryDisplayName, type ArticleFeedItem } from "@/lib/articles";
 import { getDashboardArticles } from "@/lib/db/articles";
 import { getUserArticlesPage } from "@/lib/db/public";
@@ -196,8 +195,8 @@ async function renderOwnerView({
   }
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -216,7 +215,7 @@ async function renderOwnerView({
             <ButtonLink href="/articles" variant="secondary">
               {ui.openFeed}
             </ButtonLink>
-            <ButtonLink href={`/u/${username}`} variant="ghost">
+            <ButtonLink href={`/u/${username}`} variant="secondary">
               {ui.backToProfile}
             </ButtonLink>
           </div>
@@ -225,7 +224,7 @@ async function renderOwnerView({
 
       <section className="mt-6 sm:mt-8">
         {dashboard.items.length > 0 ? (
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             {dashboard.items.map((item) => (
               <article
                 key={item.id}
@@ -303,7 +302,7 @@ async function renderOwnerView({
             ))}
           </div>
         ) : (
-          <div className="rounded-panel app-panel-dashed p-6">
+          <div className="rounded-none sm:rounded-panel app-panel-dashed p-6">
             <p className="text-sm app-muted">{ui.empty}</p>
             <div className="mt-4">
               <ButtonLink href="/articles/new" size="sm">
@@ -351,8 +350,8 @@ async function renderPublicView({
   const pageLabel = dictionary.dashboardProjects.pageLabel;
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -368,32 +367,7 @@ async function renderPublicView({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {result.totalCount > 0 ? (
-              <a
-                href={`/${locale}/u/${username}/articles/feed.xml`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={
-                  locale === "uk"
-                    ? `RSS-стрічка статей ${displayName}`
-                    : `RSS feed of articles by ${displayName}`
-                }
-                className={buttonStyles({ variant: "ghost", className: "gap-2" })}
-              >
-                <svg
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                  className="h-3.5 w-3.5"
-                  aria-hidden="true"
-                >
-                  <path d="M2 11a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
-                  <path d="M2 5.5a.5.5 0 0 1 .5-.5c5.247 0 9.5 4.253 9.5 9.5a.5.5 0 0 1-1 0A8.5 8.5 0 0 0 2.5 6a.5.5 0 0 1-.5-.5z" />
-                  <path d="M2 1.5a.5.5 0 0 1 .5-.5C9.404 1 15 6.596 15 13.5a.5.5 0 0 1-1 0C14 7.149 8.851 2 2.5 2a.5.5 0 0 1-.5-.5z" />
-                </svg>
-                RSS
-              </a>
-            ) : null}
-            <ButtonLink href={`/u/${username}`} variant="ghost">
+            <ButtonLink href={`/u/${username}`} variant="secondary">
               {backToProfile}
             </ButtonLink>
           </div>
@@ -403,7 +377,7 @@ async function renderPublicView({
       <section className="mt-6 sm:mt-8">
         {result.articles.length > 0 ? (
           <>
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {result.articles.map((item) => {
                 const feedItem: ArticleFeedItem = {
                   id: item.id,
@@ -466,7 +440,7 @@ async function renderPublicView({
             ) : null}
           </>
         ) : (
-          <div className="rounded-panel app-card p-6">
+          <div className="rounded-none sm:rounded-panel app-card p-6">
             <p className="text-sm app-muted">{empty}</p>
           </div>
         )}

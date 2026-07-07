@@ -1,6 +1,6 @@
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { detectVideoEmbed } from "@/lib/project-media";
 import {
-  getVideoEmbedUrl,
   type VideoGenre,
   type VideoKindMetadata,
   type VideoRole,
@@ -33,6 +33,28 @@ function getVideoRoleLabel(role: VideoRole, dictionary: Dictionary) {
 
 function getVideoGenreLabel(genre: VideoGenre, dictionary: Dictionary) {
   switch (genre) {
+    case "edit":
+      return dictionary.forms.videoGenreEdit;
+    case "amv":
+      return dictionary.forms.videoGenreAmv;
+    case "gaming_montage":
+      return dictionary.forms.videoGenreGamingMontage;
+    case "highlights":
+      return dictionary.forms.videoGenreHighlights;
+    case "lyric_video":
+      return dictionary.forms.videoGenreLyricVideo;
+    case "reaction":
+      return dictionary.forms.videoGenreReaction;
+    case "review":
+      return dictionary.forms.videoGenreReview;
+    case "explainer":
+      return dictionary.forms.videoGenreExplainer;
+    case "podcast":
+      return dictionary.forms.videoGenrePodcast;
+    case "interview":
+      return dictionary.forms.videoGenreInterview;
+    case "wedding":
+      return dictionary.forms.videoGenreWedding;
     case "commercial":
       return dictionary.forms.videoGenreCommercial;
     case "music_video":
@@ -87,7 +109,7 @@ export default function ProjectVideoDetails({
   dictionary: Dictionary;
   meta: VideoKindMetadata;
 }) {
-  const embedUrl = getVideoEmbedUrl(meta.showreelUrl);
+  const embed = detectVideoEmbed(meta.showreelUrl);
 
   return (
     <div className="mt-6 space-y-5 rounded-2xl border app-border p-5">
@@ -95,11 +117,18 @@ export default function ProjectVideoDetails({
         {dictionary.forms.videoSectionTitle}
       </h3>
 
-      {embedUrl ? (
+      {embed ? (
         <div className="overflow-hidden rounded-2xl bg-black">
-          <div className="relative aspect-video">
+          <div
+            className={
+              embed.orientation === "portrait"
+                ? "relative mx-auto max-w-[360px]"
+                : "relative"
+            }
+            style={{ aspectRatio: embed.aspectRatio }}
+          >
             <iframe
-              src={embedUrl}
+              src={embed.embedUrl}
               title={dictionary.forms.videoShowreelUrlLabel}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
               allowFullScreen

@@ -228,7 +228,7 @@ export default function BadgeShelf({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         {visibleBadges.map((entry, index) => {
           const { badge, earned, tier } = entry;
           const { name, description } = getBadgeLabel(badge, locale);
@@ -255,7 +255,7 @@ export default function BadgeShelf({
               aria-label={ariaLabel}
               className={[
                 index >= mobileMax ? "hidden sm:inline-flex" : "inline-flex",
-                "relative h-10 w-10 cursor-pointer items-center justify-center rounded-full border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--foreground)]/30",
+                "relative h-9 w-9 cursor-pointer items-center justify-center rounded-full border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--foreground)]/30 sm:h-10 sm:w-10",
                 chipClasses,
               ].join(" ")}
             >
@@ -284,7 +284,7 @@ export default function BadgeShelf({
             onClick={() => setOpen(true)}
             aria-label={strings.showAll}
             title={strings.showAll}
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-full border app-border bg-[color:var(--surface)] px-3 text-sm font-semibold text-[color:var(--foreground)] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--foreground)]/30 sm:hidden"
+            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-full border app-border bg-[color:var(--surface)] px-2.5 text-sm font-semibold text-[color:var(--foreground)] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--foreground)]/30 sm:hidden"
           >
             +{mobileHidden}
           </button>

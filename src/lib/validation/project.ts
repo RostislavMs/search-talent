@@ -644,6 +644,18 @@ export const projectPayloadSchema = z
           })
           .partial()
           .optional(),
+        hoursSpent: z
+          .union([z.number(), z.string(), z.null(), z.undefined()])
+          .transform((value) => {
+            if (value === null || value === undefined || value === "") {
+              return null;
+            }
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed) || parsed <= 0) {
+              return null;
+            }
+            return Math.min(Math.round(parsed * 100) / 100, 100_000);
+          }),
       })
       .partial()
       .nullable()

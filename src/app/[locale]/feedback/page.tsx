@@ -58,8 +58,8 @@ export default function FeedbackPage() {
   };
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-6 sm:p-10">
+    <main className="mx-auto max-w-3xl px-0 py-10 sm:px-6">
+      <section className="rounded-none sm:rounded-hero app-card p-6 sm:p-10">
         <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
           {dictionary.feedbackPage.eyebrow}
         </p>

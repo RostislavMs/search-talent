@@ -30,6 +30,13 @@ const remotePatterns: RemotePattern[] = [
     hostname: "avatars.githubusercontent.com",
     pathname: "/**",
   },
+  {
+    // YouTube video thumbnails, used as the auto-cover for video projects
+    // that only carry a YouTube link (no uploaded image).
+    protocol: "https",
+    hostname: "i.ytimg.com",
+    pathname: "/vi/**",
+  },
 ];
 
 if (r2Hostname) {

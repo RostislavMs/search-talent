@@ -151,8 +151,8 @@ async function renderOwnerView({ locale, username }: { locale: string; username:
   }
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
@@ -169,7 +169,7 @@ async function renderOwnerView({ locale, username }: { locale: string; username:
             <ButtonLink href="/polls" variant="secondary">
               {ui.openFeed}
             </ButtonLink>
-            <ButtonLink href={`/u/${username}`} variant="ghost">
+            <ButtonLink href={`/u/${username}`} variant="secondary">
               {ui.backToProfile}
             </ButtonLink>
           </div>
@@ -178,7 +178,7 @@ async function renderOwnerView({ locale, username }: { locale: string; username:
 
       <section className="mt-6 sm:mt-8">
         {dashboard.items.length > 0 ? (
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             {dashboard.items.map((item) => (
               <article key={item.id} className="rounded-panel app-card p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -232,7 +232,7 @@ async function renderOwnerView({ locale, username }: { locale: string; username:
             ))}
           </div>
         ) : (
-          <div className="rounded-panel app-panel-dashed p-6">
+          <div className="rounded-none sm:rounded-panel app-panel-dashed p-6">
             <p className="text-sm app-muted">{ui.empty}</p>
             <div className="mt-4">
               <ButtonLink href="/polls/new" size="sm">
@@ -275,8 +275,8 @@ async function renderPublicView({
   const pageLabel = dictionary.dashboardProjects.pageLabel;
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">{heading}</p>
@@ -289,7 +289,7 @@ async function renderPublicView({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <ButtonLink href={`/u/${username}`} variant="ghost">
+            <ButtonLink href={`/u/${username}`} variant="secondary">
               {backToProfile}
             </ButtonLink>
           </div>
@@ -299,7 +299,7 @@ async function renderPublicView({
       <section className="mt-6 sm:mt-8">
         {result.polls.length > 0 ? (
           <>
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {result.polls.map((poll) => (
                 <PollCard key={poll.id} poll={poll} locale={locale} />
               ))}
@@ -336,7 +336,7 @@ async function renderPublicView({
             ) : null}
           </>
         ) : (
-          <div className="rounded-panel app-card p-6">
+          <div className="rounded-none sm:rounded-panel app-card p-6">
             <p className="text-sm app-muted">{empty}</p>
           </div>
         )}

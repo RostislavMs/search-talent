@@ -106,8 +106,8 @@ export default async function PollDetailPage({
       };
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <div className="rounded-hero app-card">
+    <main className="mx-auto max-w-4xl px-0 py-10 sm:px-6">
+      <div className="rounded-none sm:rounded-hero app-card">
         <div className="border-b app-border p-6 sm:p-8">
           <div className="flex flex-wrap gap-3">
             <ButtonLink href="/polls" variant="secondary">

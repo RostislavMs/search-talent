@@ -406,15 +406,9 @@ export function VideoDetailsFields({
         </p>
       </header>
 
-      <UrlField
-        id="video-showreel-url"
-        label={dictionary.forms.videoShowreelUrlLabel}
-        description={dictionary.forms.videoShowreelUrlHint}
-        placeholder={dictionary.forms.videoShowreelUrlPlaceholder}
-        value={value.showreelUrl ?? ""}
-        onChange={(next) => update("showreelUrl", next || null)}
-        invalidMessage={dictionary.forms.invalidUrl}
-      />
+      <p className="rounded-2xl app-panel px-4 py-3 text-sm app-muted">
+        {dictionary.forms.videoLinksMovedHint}
+      </p>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Field label={dictionary.forms.videoRoleLabel} htmlFor="video-role">

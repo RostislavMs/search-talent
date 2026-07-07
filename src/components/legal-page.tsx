@@ -26,8 +26,8 @@ export default function LegalPage({
   sections,
 }: LegalPageProps) {
   return (
-    <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
+    <main className="mx-auto max-w-4xl px-0 py-12 sm:px-6">
+      <section className="rounded-none app-card p-8 sm:rounded-hero sm:p-10">
         <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
           {eyebrow}
         </p>
@@ -51,7 +51,7 @@ export default function LegalPage({
 
       <section className="mt-8 space-y-5">
         {sections.map((section) => (
-          <article key={section.title} className="rounded-hero app-card p-6 sm:p-7">
+          <article key={section.title} className="rounded-none app-card p-6 sm:rounded-hero sm:p-7">
             <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
               {section.title}
             </h2>

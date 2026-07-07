@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { notFound, redirect } from "next/navigation";
-import DeleteProjectButton from "@/components/delete-project-button";
 
 const CreateProjectForm = dynamic(
   () => import("@/components/create-project-form"),
@@ -72,8 +71,8 @@ export default async function ProjectEditPage({
 
   if (!project) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-        <section className="rounded-hero app-card p-8">
+      <main className="mx-auto max-w-4xl px-0 py-12 sm:px-6">
+        <section className="rounded-none app-card p-8 sm:rounded-hero">
           <h1 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
             {dictionary.dashboardProjects.projectNotFound}
           </h1>
@@ -102,47 +101,33 @@ export default async function ProjectEditPage({
     : "/projects";
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <section className="rounded-hero app-card p-8 sm:p-10">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.dashboardProjects.eyebrow}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+    <main className="mx-auto max-w-7xl px-0 py-10 sm:px-6">
+      <CreateProjectForm
+        project={{ ...project, coAuthors }}
+        sidebarHeader={
+          <div className="space-y-3">
+            <h1 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
               {dictionary.dashboardProjects.editProject}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
-              {dictionary.dashboardProjects.editProjectDescription}
-            </p>
+            <div className="space-y-2">
+              <ButtonLink
+                href={backToProjectsHref}
+                variant="secondary"
+                className="w-full justify-center"
+              >
+                {dictionary.dashboardProjects.backToProjects}
+              </ButtonLink>
+              <ButtonLink
+                href={publicHref}
+                variant="secondary"
+                className="w-full justify-center"
+              >
+                {dictionary.dashboardProjects.openPublicPage}
+              </ButtonLink>
+            </div>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <ButtonLink href={backToProjectsHref} variant="ghost">
-              {dictionary.dashboardProjects.backToProjects}
-            </ButtonLink>
-            <ButtonLink href={publicHref} variant="secondary">
-              {dictionary.dashboardProjects.openPublicPage}
-            </ButtonLink>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-8 rounded-hero app-card p-6 sm:p-8">
-        <CreateProjectForm project={{ ...project, coAuthors }} />
-      </section>
-
-      <section className="mt-8 rounded-hero app-card p-6">
-        <DeleteProjectButton
-          projectId={project.id}
-          label={dictionary.dashboardProjects.deleteProject}
-          pendingLabel={dictionary.dashboardProjects.deletingProject}
-          confirmMessage={dictionary.dashboardProjects.confirmDeleteProject}
-          errorFallback={dictionary.dashboardProjects.deleteProjectFailed}
-          redirectHref={backToProjectsHref}
-          variant="ghost"
-        />
-      </section>
+        }
+      />
     </main>
   );
 }

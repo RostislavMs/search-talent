@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/toast";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import GithubRepoImporter, {
   type GithubImportPayload,
@@ -23,6 +24,7 @@ import CoAuthorPicker, {
   type CoAuthorOption,
 } from "@/components/co-author-picker";
 import { apiFetch } from "@/lib/api-client";
+import { createClient } from "@/lib/supabase/client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -66,11 +68,11 @@ import {
   type GithubProjectRole,
 } from "@/lib/constants/github";
 import {
-  buildYouTubeEmbedUrl,
-  getYouTubeVideoId,
+  detectVideoEmbed,
   inferProjectMediaKind,
   type ProjectMediaItem,
   type ProjectMediaKind,
+  type VideoEmbed,
 } from "@/lib/project-media";
 import { projectPayloadSchema } from "@/lib/validation/project";
 import { uploadWithProgress } from "@/lib/storage/upload-with-progress";
@@ -91,6 +93,9 @@ import {
   VideoDetailsFields,
   WritingDetailsFields,
 } from "@/components/project-form/kind-fields";
+import VideoCoverPicker from "@/components/project-form/video-cover-picker";
+import { blobToFile, captureVideoPoster } from "@/lib/video-poster";
+import { toPlainText } from "@/lib/plain-text";
 
 // Photography projects keep originals at full resolution, so they get the
 // largest budget. Other kinds compress images on upload (browser-image-
@@ -143,6 +148,7 @@ export type EditableProject = {
   solution: string | null;
   results: string | null;
   status?: ProjectVisibilityStatus | null;
+  cover_url?: string | null;
   technologies: { id: number; name: string }[];
   media?: ProjectMediaItem[];
   github_full_name?: string | null;
@@ -178,6 +184,7 @@ type ProjectFormState = {
   writingMeta: WritingKindMetadata;
   projectStatus: ProjectStatus | "";
   teamSize: string;
+  hoursSpent: string;
   projectUrl: string;
   repositoryUrl: string;
   startedOn: string;
@@ -218,19 +225,28 @@ type RemoteMediaItem = {
   mimeType: string | null;
   fileSize: number | null;
   aspectRatio: number;
-  youTubeId: string | null;
+  embed: VideoEmbed | null;
 };
 
-type YouTubeMediaItem = {
+type EmbedMediaItem = {
   id: string;
-  kind: "youtube";
+  kind: "embed";
   url: string;
-  videoId: string;
+  embed: VideoEmbed;
   mediaKind: "video";
   aspectRatio: number;
 };
 
-type WizardMediaItem = LocalMediaItem | RemoteMediaItem | YouTubeMediaItem;
+type WizardMediaItem = LocalMediaItem | RemoteMediaItem | EmbedMediaItem;
+
+// Explicit project cover, decoupled from gallery media. `file` is a pending
+// upload (an image the author picked, or a frame captured from a clip);
+// `clear` reverts the project to having no cover. `null` means "leave the
+// current cover untouched" (edit mode) or "auto-pick from the first image"
+// (new project — the backend fills it on first upload).
+type PendingCover =
+  | { kind: "file"; file: File; previewUrl: string }
+  | { kind: "clear" };
 
 
 function getInitialFormState(
@@ -242,7 +258,7 @@ function getInitialFormState(
 
   return {
     title: project?.title || "",
-    description: project?.description || "",
+    description: toPlainText(project?.description) || "",
     role: project?.role || "",
     kind: project?.kind || "",
     designMeta: normalizeDesignKindMetadata(
@@ -281,6 +297,9 @@ function getInitialFormState(
     ),
     projectStatus: project?.project_status || "",
     teamSize: project?.team_size ? String(project.team_size) : "",
+    hoursSpent: project?.kind_metadata?.hoursSpent
+      ? String(project.kind_metadata.hoursSpent)
+      : "",
     projectUrl: project?.project_url || "",
     repositoryUrl: project?.repository_url || "",
     startedOn: project?.started_on || "",
@@ -311,9 +330,14 @@ function getInitialFormState(
 }
 
 function toRemoteMediaItem(item: ProjectMediaItem): RemoteMediaItem {
-  const youTubeId = getYouTubeVideoId(item.url);
-  const mediaKind = (item.media_kind ||
-    inferProjectMediaKind(item.mime_type, item.file_name || item.url)) as ProjectMediaKind;
+  const embed = detectVideoEmbed(item.url);
+  const mediaKind = (embed
+    ? "video"
+    : item.media_kind ||
+      inferProjectMediaKind(
+        item.mime_type,
+        item.file_name || item.url,
+      )) as ProjectMediaKind;
 
   return {
     id: `remote-${item.id}`,
@@ -324,18 +348,23 @@ function toRemoteMediaItem(item: ProjectMediaItem): RemoteMediaItem {
     storagePath: item.storage_path,
     mimeType: item.mime_type,
     fileSize: item.file_size,
-    aspectRatio: youTubeId ? 16 / 9 : DEFAULT_ASPECT_RATIO,
-    youTubeId,
+    aspectRatio: embed ? embed.aspectRatio : DEFAULT_ASPECT_RATIO,
+    embed,
   };
 }
 
 export default function CreateProjectForm({
   project,
+  sidebarHeader,
 }: {
   project?: EditableProject | null;
+  // Page-provided title/nav block (differs for create vs edit). Rendered
+  // inside the sidebar on desktop and at the top on mobile.
+  sidebarHeader?: ReactNode;
 }) {
   const router = useLocalizedRouter();
   const dictionary = useDictionary();
+  const toast = useToast();
   const isEditMode = Boolean(project);
 
   const [metaSkills, setMetaSkills] = useState<MetaOption[]>([]);
@@ -347,8 +376,6 @@ export default function CreateProjectForm({
   );
   const [step, setStep] = useState<number>(1);
   const [pendingSaveMode, setPendingSaveMode] = useState<SaveMode | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{
     currentIndex: number;
     totalFiles: number;
@@ -369,8 +396,15 @@ export default function CreateProjectForm({
   const [isProjectOngoing, setIsProjectOngoing] = useState<boolean>(
     () => Boolean(project) && !project?.completed_on,
   );
-  const [youTubeInput, setYouTubeInput] = useState("");
+  const [linkInput, setLinkInput] = useState("");
+  const [coverPickerFile, setCoverPickerFile] = useState<File | null>(null);
+  const [pendingCover, setPendingCover] = useState<PendingCover | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const coverAutoAttemptedRef = useRef(false);
+  const supabase = useMemo(() => createClient(), []);
   const objectUrlsRef = useRef<Set<string>>(new Set());
 
   const initialFormSnapshot = useMemo(
@@ -390,8 +424,8 @@ export default function CreateProjectForm({
     [project],
   );
 
-  const hasLocalOrYouTubeMedia = mediaItems.some(
-    (item) => item.kind === "local" || item.kind === "youtube",
+  const hasLocalOrEmbedMedia = mediaItems.some(
+    (item) => item.kind === "local" || item.kind === "embed",
   );
   const currentRemoteMediaSnapshot = JSON.stringify(
     mediaItems
@@ -403,7 +437,8 @@ export default function CreateProjectForm({
     (JSON.stringify(form) !== initialFormSnapshot ||
       JSON.stringify([...skillIds].sort()) !== initialSkillsSnapshot ||
       currentRemoteMediaSnapshot !== initialRemoteMediaSnapshot ||
-      hasLocalOrYouTubeMedia);
+      hasLocalOrEmbedMedia ||
+      pendingCover !== null);
 
   const { isWarningOpen, confirmLeave, cancelLeave } =
     useUnsavedChangesGuard(isDirty);
@@ -481,12 +516,35 @@ export default function CreateProjectForm({
     [],
   );
 
+  // When a project gains a video but has no cover, quietly extract a poster
+  // from the clip and use it as the cover — so video-only projects are never
+  // blank. The functional setState never overrides a cover the author already
+  // picked (manual upload / captured frame / clear).
+  const autoCoverFromVideo = useCallback(async (file: File) => {
+    const result = await captureVideoPoster(file);
+    if (!result || result.luminance < 10) return;
+
+    const posterFile = blobToFile(
+      result.blob,
+      `cover-${crypto.randomUUID()}.webp`,
+    );
+    const previewUrl = URL.createObjectURL(posterFile);
+    objectUrlsRef.current.add(previewUrl);
+
+    setPendingCover((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(previewUrl);
+        objectUrlsRef.current.delete(previewUrl);
+        return prev;
+      }
+      return { kind: "file", file: posterFile, previewUrl };
+    });
+  }, []);
+
   const addFiles = useCallback(
     async (files: File[]) => {
       if (files.length === 0 || mediaWorking) return;
 
-      setErrorMessage(null);
-      setSuccessMessage(null);
       setMediaWorking(true);
 
       const newItems: WizardMediaItem[] = [];
@@ -503,7 +561,7 @@ export default function CreateProjectForm({
           const initialKind = inferProjectMediaKind(rawFile.type, rawFile.name);
 
           if (initialKind !== "image" && initialKind !== "video") {
-            setErrorMessage(dictionary.forms.mediaUnsupportedKind);
+            toast.warning(dictionary.forms.mediaUnsupportedKind);
             continue;
           }
 
@@ -515,7 +573,7 @@ export default function CreateProjectForm({
             initialKind === "image" &&
             rawFile.size > MAX_PHOTO_IMAGE_BYTES
           ) {
-            setErrorMessage(
+            toast.warning(
               dictionary.forms.mediaImageTooLarge.replace(
                 "{limit}",
                 String(imageLimitMb),
@@ -531,7 +589,7 @@ export default function CreateProjectForm({
           const mediaKind = inferProjectMediaKind(file.type, file.name);
 
           if (mediaKind === "image" && file.size > imageSizeLimit) {
-            setErrorMessage(
+            toast.warning(
               dictionary.forms.mediaImageTooLarge.replace(
                 "{limit}",
                 String(imageLimitMb),
@@ -541,7 +599,7 @@ export default function CreateProjectForm({
           }
 
           if (mediaKind === "video" && file.size > videoSizeLimit) {
-            setErrorMessage(
+            toast.warning(
               dictionary.forms.mediaVideoTooLarge.replace(
                 "{limit}",
                 String(videoLimitMb),
@@ -567,6 +625,24 @@ export default function CreateProjectForm({
         if (newItems.length > 0) {
           setMediaItems((prev) => [...prev, ...newItems]);
         }
+
+        // Auto-cover: first video in a project with no cover yet gets a poster
+        // extracted from it (once). Runs in the background so the upload UI is
+        // not blocked; never overrides a cover the author set themselves.
+        if (
+          newItems.length > 0 &&
+          !project?.cover_url &&
+          !coverAutoAttemptedRef.current
+        ) {
+          const firstVideo = newItems.find(
+            (item): item is LocalMediaItem =>
+              item.kind === "local" && item.mediaKind === "video",
+          );
+          if (firstVideo) {
+            coverAutoAttemptedRef.current = true;
+            void autoCoverFromVideo(firstVideo.file);
+          }
+        }
       } finally {
         setMediaWorking(false);
       }
@@ -578,6 +654,9 @@ export default function CreateProjectForm({
       form.kind,
       measureLocalAspectRatio,
       mediaWorking,
+      autoCoverFromVideo,
+      project?.cover_url,
+      toast,
     ],
   );
 
@@ -618,39 +697,75 @@ export default function CreateProjectForm({
     });
   }, []);
 
-  const addYouTubeItem = useCallback(() => {
-    const trimmed = youTubeInput.trim();
+  const addLinkItem = useCallback(() => {
+    const trimmed = linkInput.trim();
     if (!trimmed) return;
 
-    const videoId = getYouTubeVideoId(trimmed);
+    const embed = detectVideoEmbed(trimmed);
 
-    if (!videoId) {
-      setErrorMessage(dictionary.forms.mediaYouTubeInvalid);
+    if (!embed) {
+      toast.warning(dictionary.forms.mediaLinkInvalid);
       return;
     }
 
     setMediaItems((prev) => {
       const exists = prev.some(
-        (item) => item.kind === "youtube" && item.videoId === videoId,
+        (item) =>
+          (item.kind === "embed" || item.kind === "remote") &&
+          item.embed?.embedUrl === embed.embedUrl,
       );
       if (exists) {
         return prev;
       }
 
-      const next: YouTubeMediaItem = {
-        id: `youtube-${crypto.randomUUID()}`,
-        kind: "youtube",
-        url: `https://www.youtube.com/watch?v=${videoId}`,
-        videoId,
+      const next: EmbedMediaItem = {
+        id: `embed-${crypto.randomUUID()}`,
+        kind: "embed",
+        url: trimmed,
+        embed,
         mediaKind: "video",
-        aspectRatio: 16 / 9,
+        aspectRatio: embed.aspectRatio,
       };
       return [...prev, next];
     });
 
-    setYouTubeInput("");
-    setErrorMessage(null);
-  }, [dictionary.forms.mediaYouTubeInvalid, youTubeInput]);
+    setLinkInput("");
+  }, [dictionary.forms.mediaLinkInvalid, linkInput, toast]);
+
+  // Sets the explicit project cover from an image the author picked or a frame
+  // captured from a clip. The cover is a standalone image (uploaded at save
+  // time and written to projects.cover_url) — it does NOT become a gallery
+  // tile, so video-only projects can have a proper thumbnail.
+  const setCoverImage = useCallback((file: File) => {
+    const previewUrl = URL.createObjectURL(file);
+    objectUrlsRef.current.add(previewUrl);
+    setPendingCover((prev) => {
+      if (prev?.kind === "file") {
+        URL.revokeObjectURL(prev.previewUrl);
+        objectUrlsRef.current.delete(prev.previewUrl);
+      }
+      return { kind: "file", file, previewUrl };
+    });
+  }, []);
+
+  const clearCover = useCallback(() => {
+    setPendingCover((prev) => {
+      if (prev?.kind === "file") {
+        URL.revokeObjectURL(prev.previewUrl);
+        objectUrlsRef.current.delete(prev.previewUrl);
+      }
+      return { kind: "clear" };
+    });
+  }, []);
+
+  const addCoverFrame = useCallback(
+    (blob: Blob) => {
+      setCoverPickerFile(null);
+      setCoverImage(blobToFile(blob, `cover-${crypto.randomUUID()}.webp`));
+      toast.success(dictionary.forms.mediaCoverFrameAdded);
+    },
+    [dictionary.forms.mediaCoverFrameAdded, setCoverImage, toast],
+  );
 
   const moveMediaItem = useCallback((fromIndex: number, toIndex: number) => {
     setMediaItems((prev) => {
@@ -691,15 +806,13 @@ export default function CreateProjectForm({
       const safe = Math.min(Math.max(target, 1), BASE_TOTAL_STEPS);
 
       if (safe > step && !reachedStep(safe)) {
-        setErrorMessage(dictionary.forms.mediaTitleRequired);
+        toast.warning(dictionary.forms.mediaTitleRequired);
         return;
       }
 
-      setErrorMessage(null);
-      setSuccessMessage(null);
       setStep(safe);
     },
-    [dictionary.forms.mediaTitleRequired, reachedStep, step],
+    [dictionary.forms.mediaTitleRequired, reachedStep, step, toast],
   );
 
   const uploadLocalFile = useCallback(
@@ -778,10 +891,10 @@ export default function CreateProjectForm({
     [dictionary.dashboardProjects.uploadFailed],
   );
 
-  const uploadYouTubeItem = useCallback(
+  const uploadEmbedItem = useCallback(
     async (
       projectId: string,
-      item: YouTubeMediaItem,
+      item: EmbedMediaItem,
       sortIndex: number,
     ): Promise<ProjectMediaItem> => {
       const result = await apiFetch<{
@@ -793,7 +906,7 @@ export default function CreateProjectForm({
           url: item.url,
           storagePath: null,
           fileName: null,
-          mimeType: "video/youtube",
+          mimeType: `video/${item.embed.provider}`,
           fileSize: null,
           mediaKind: "video",
           sortIndex,
@@ -825,6 +938,64 @@ export default function CreateProjectForm({
     [],
   );
 
+  // Applies the explicit cover after the project exists: uploads the image to
+  // storage and writes projects.cover_url directly (owner-scoped RLS). Runs
+  // last on save so it wins over the backend's first-image auto-pick.
+  const applyPendingCover = useCallback(
+    async (projectId: string) => {
+      if (!pendingCover) return;
+
+      if (pendingCover.kind === "clear") {
+        await supabase
+          .from("projects")
+          .update({ cover_url: null })
+          .eq("id", projectId);
+        return;
+      }
+
+      const compressed = await compressImageFile(pendingCover.file, "cover");
+      const contentType = compressed.type || "image/webp";
+
+      const presign = await apiFetch<{
+        uploadUrl: string;
+        publicUrl: string;
+        storagePath: string;
+      }>("/api/storage/presign", {
+        method: "POST",
+        body: {
+          scope: "project-media",
+          projectId,
+          fileName: compressed.name,
+          contentType,
+          fileSize: compressed.size,
+        },
+      });
+
+      if (!presign.ok) {
+        throw new Error(
+          presign.error || dictionary.dashboardProjects.uploadFailed,
+        );
+      }
+
+      await uploadWithProgress({
+        url: presign.data.uploadUrl,
+        file: compressed,
+        contentType,
+      });
+
+      const versionedUrl = `${presign.data.publicUrl}?v=${Date.now()}`;
+      const { error } = await supabase
+        .from("projects")
+        .update({ cover_url: versionedUrl })
+        .eq("id", projectId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    [dictionary.dashboardProjects.uploadFailed, pendingCover, supabase],
+  );
+
   const buildPayload = useCallback(
     (status: ProjectVisibilityStatus) => {
       const slug = slugify(form.title);
@@ -832,7 +1003,7 @@ export default function CreateProjectForm({
       return {
         title: form.title,
         slug,
-        description: form.description,
+        description: toPlainText(form.description),
         role: form.role,
         kind: form.kind || null,
         kindMetadata: {
@@ -960,6 +1131,7 @@ export default function CreateProjectForm({
                   client: form.writingMeta.client,
                 }
               : undefined,
+          hoursSpent: form.hoursSpent ? Number(form.hoursSpent) : null,
         },
         projectStatus: form.projectStatus || null,
         teamSize: form.teamSize ? Number(form.teamSize) : null,
@@ -1037,10 +1209,9 @@ export default function CreateProjectForm({
         }
       }
 
-      setSuccessMessage(dictionary.githubIntegration.importApplied);
-      setErrorMessage(null);
+      toast.success(dictionary.githubIntegration.importApplied);
     },
-    [dictionary.githubIntegration.importApplied, metaSkills],
+    [dictionary.githubIntegration.importApplied, metaSkills, toast],
   );
 
   const updateGithubDisplayOption = useCallback(
@@ -1075,16 +1246,15 @@ export default function CreateProjectForm({
     }));
     // Move user away from the now-gone "GitHub" step.
     setStep(1);
-    setSuccessMessage(dictionary.githubIntegration.unlinkedMessage);
-    setErrorMessage(null);
-  }, [dictionary.githubIntegration.unlinkedMessage]);
+    toast.success(dictionary.githubIntegration.unlinkedMessage);
+  }, [dictionary.githubIntegration.unlinkedMessage, toast]);
 
   const handleSave = useCallback(
     async (mode: SaveMode) => {
       if (pendingSaveMode) return;
 
       if (!form.title.trim()) {
-        setErrorMessage(dictionary.forms.mediaTitleRequired);
+        toast.warning(dictionary.forms.mediaTitleRequired);
         setStep(1);
         return;
       }
@@ -1094,7 +1264,7 @@ export default function CreateProjectForm({
         form.completedOn &&
         form.completedOn < form.startedOn
       ) {
-        setErrorMessage(dictionary.forms.invalidProjectDateRange);
+        toast.warning(dictionary.forms.invalidProjectDateRange);
         setStep(2);
         return;
       }
@@ -1106,7 +1276,7 @@ export default function CreateProjectForm({
       const parsedPayload = projectPayloadSchema.safeParse(payload);
 
       if (!parsedPayload.success) {
-        setErrorMessage(
+        toast.error(
           parsedPayload.error.issues[0]?.message ||
             dictionary.forms.errorCreatingProject,
         );
@@ -1114,8 +1284,6 @@ export default function CreateProjectForm({
       }
 
       setPendingSaveMode(mode);
-      setErrorMessage(null);
-      setSuccessMessage(null);
 
       try {
         const endpoint = isEditMode
@@ -1133,7 +1301,7 @@ export default function CreateProjectForm({
         });
 
         if (!projectResult.ok) {
-          setErrorMessage(
+          toast.error(
             projectResult.error ||
               (isEditMode
                 ? dictionary.forms.errorUpdatingProject
@@ -1147,7 +1315,7 @@ export default function CreateProjectForm({
         const projectSlug = projectResult.data.slug || parsedPayload.data.slug;
 
         if (!projectId) {
-          setErrorMessage(dictionary.forms.errorCreatingProject);
+          toast.error(dictionary.forms.errorCreatingProject);
           return;
         }
 
@@ -1155,11 +1323,40 @@ export default function CreateProjectForm({
         // screen with the precise reason (which rule + example) returned by the
         // API instead of navigating to a hidden page.
         if (projectResult.data.autoRemoved) {
-          setErrorMessage(
+          toast.error(
             projectResult.data.moderationReason ||
               dictionary.forms.autoModerationRemoved,
           );
           return;
+        }
+
+        // Edit mode: media the author removed from the list must be deleted
+        // on the backend too — dropping them from local state alone left the
+        // rows (and their storage objects) in place.
+        if (isEditMode) {
+          const keptRemoteIds = new Set(
+            mediaItems
+              .filter(
+                (item): item is RemoteMediaItem => item.kind === "remote",
+              )
+              .map((item) => item.remoteId),
+          );
+          const removedRemoteIds = (project?.media || [])
+            .map((media) => media.id)
+            .filter((id) => !keptRemoteIds.has(id));
+
+          for (const mediaId of removedRemoteIds) {
+            const removal = await apiFetch("/project-media", {
+              method: "DELETE",
+              body: { projectId, mediaId },
+            });
+            if (!removal.ok) {
+              toast.error(
+                removal.error || dictionary.dashboardProjects.uploadFailed,
+              );
+              return;
+            }
+          }
         }
 
         const orderedRemoteIds: string[] = [];
@@ -1198,20 +1395,20 @@ export default function CreateProjectForm({
               orderedRemoteIds.push(uploaded.id);
             } catch (error) {
               setUploadProgress(null);
-              setErrorMessage(
+              toast.error(
                 error instanceof Error
                   ? error.message
                   : dictionary.dashboardProjects.uploadFailed,
               );
               return;
             }
-          } else if (item.kind === "youtube") {
+          } else if (item.kind === "embed") {
             try {
-              const uploaded = await uploadYouTubeItem(projectId, item, index);
+              const uploaded = await uploadEmbedItem(projectId, item, index);
               orderedRemoteIds.push(uploaded.id);
             } catch (error) {
               setUploadProgress(null);
-              setErrorMessage(
+              toast.error(
                 error instanceof Error
                   ? error.message
                   : dictionary.dashboardProjects.uploadFailed,
@@ -1229,10 +1426,25 @@ export default function CreateProjectForm({
           await persistMediaOrder(projectId, orderedRemoteIds);
         }
 
-        setSuccessMessage(
+        if (pendingCover) {
+          try {
+            await applyPendingCover(projectId);
+          } catch (error) {
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : dictionary.dashboardProjects.uploadFailed,
+            );
+            return;
+          }
+        }
+
+        toast.success(
           mode === "draft"
             ? dictionary.forms.projectSavedAsDraft
-            : dictionary.forms.projectPublished,
+            : isEditMode
+              ? dictionary.forms.projectUpdated
+              : dictionary.forms.projectPublished,
         );
 
         startTransition(() => {
@@ -1263,6 +1475,7 @@ export default function CreateProjectForm({
       dictionary.forms.mediaTitleRequired,
       dictionary.forms.projectPublished,
       dictionary.forms.projectSavedAsDraft,
+      dictionary.forms.projectUpdated,
       form.completedOn,
       form.startedOn,
       form.title,
@@ -1270,12 +1483,43 @@ export default function CreateProjectForm({
       mediaItems,
       pendingSaveMode,
       persistMediaOrder,
+      applyPendingCover,
+      pendingCover,
       project?.id,
+      project?.media,
       router,
+      toast,
       uploadLocalFile,
-      uploadYouTubeItem,
+      uploadEmbedItem,
     ],
   );
+
+  const handleDelete = useCallback(async () => {
+    if (!project?.id || deleting) return;
+    setDeleting(true);
+    const result = await apiFetch(`/api/projects/${project.id}`, {
+      method: "DELETE",
+    });
+    if (!result.ok) {
+      setDeleting(false);
+      setDeleteConfirmOpen(false);
+      toast.error(
+        result.error || dictionary.dashboardProjects.deleteProjectFailed,
+      );
+      return;
+    }
+    setDeleteConfirmOpen(false);
+    toast.success(dictionary.dashboardProjects.projectDeleted);
+    startTransition(() => router.refresh());
+    router.push("/projects");
+  }, [
+    deleting,
+    dictionary.dashboardProjects.deleteProjectFailed,
+    dictionary.dashboardProjects.projectDeleted,
+    project?.id,
+    router,
+    toast,
+  ]);
 
   // The wizard is fixed at 5 steps: basics → specifics → details → story → media.
   // The "specifics" step renders kind-aware fields (Design, Code+GitHub,
@@ -1329,35 +1573,68 @@ export default function CreateProjectForm({
       ? dictionary.forms.publishing
       : dictionary.forms.publishProject;
 
+  const handleBack = () => goToStep(step - 1);
+  const handleNext = () => {
+    if (isLastStep) {
+      void handleSave("publish");
+    } else {
+      goToStep(step + 1);
+    }
+  };
+  const handlePublish = () => void handleSave("publish");
+  const handleSaveDraft = () => void handleSave("draft");
+  const requestDelete = () => setDeleteConfirmOpen(true);
+
+  const sidebar = (onAfterAction?: () => void) => (
+    <SidebarContent
+      dictionary={dictionary}
+      isFirstStep={step === 1}
+      isLastStep={isLastStep}
+      submitting={submitting}
+      isEditMode={isEditMode}
+      draftLabel={draftLabel}
+      publishLabel={publishLabel}
+      onBack={handleBack}
+      onNext={handleNext}
+      onPublish={handlePublish}
+      onSaveDraft={handleSaveDraft}
+      onDelete={requestDelete}
+      onAfterAction={onAfterAction}
+    />
+  );
+
   return (
     <div className="space-y-6">
-      <StepHeader
-        descriptors={stepDescriptors}
-        current={step}
-        onSelect={goToStep}
-        dictionary={dictionary}
-        unlockAll={isEditMode}
-      />
+      {/* Mobile: the title/nav block sits on top (the sidebar is desktop-only). */}
+      {sidebarHeader ? (
+        <div className="rounded-hero app-card p-5 lg:hidden">{sidebarHeader}</div>
+      ) : null}
 
-      <div className="space-y-2">
-        <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
-          {currentDescriptor.title}
-        </h2>
-        <p className="text-sm app-muted">{currentDescriptor.description}</p>
-      </div>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-6">
+        <div className="space-y-6 rounded-hero app-card p-5 sm:p-8">
+          <StepHeader
+            descriptors={stepDescriptors}
+            current={step}
+            onSelect={goToStep}
+            dictionary={dictionary}
+            unlockAll={isEditMode}
+          />
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (isLastStep) {
-            void handleSave("publish");
-          } else {
-            goToStep(step + 1);
-          }
-        }}
-        className="space-y-6"
-      >
-        {currentStepKey === "basics" && (
+          <div className="space-y-2">
+            <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
+              {currentDescriptor.title}
+            </h2>
+            <p className="text-sm app-muted">{currentDescriptor.description}</p>
+          </div>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleNext();
+            }}
+            className="space-y-6"
+          >
+            {currentStepKey === "basics" && (
           <StepBasics
             dictionary={dictionary}
             form={form}
@@ -1421,9 +1698,14 @@ export default function CreateProjectForm({
             onRemove={removeMediaItem}
             onMove={moveMediaItem}
             working={mediaWorking}
-            youTubeInput={youTubeInput}
-            onYouTubeInputChange={setYouTubeInput}
-            onAddYouTube={addYouTubeItem}
+            linkInput={linkInput}
+            onLinkInputChange={setLinkInput}
+            onAddLink={addLinkItem}
+            onPickCoverFrame={setCoverPickerFile}
+            currentCoverUrl={project?.cover_url ?? null}
+            pendingCover={pendingCover}
+            onUploadCover={() => coverInputRef.current?.click()}
+            onClearCover={clearCover}
             allowDownloads={form.allowDownloads}
             onToggleAllowDownloads={(value) =>
               update("allowDownloads", value)
@@ -1471,51 +1753,24 @@ export default function CreateProjectForm({
           </div>
         )}
 
-        {errorMessage && (
-          <div
-            className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-500"
-            role="alert"
-          >
-            {errorMessage}
-          </div>
-        )}
+          </form>
 
-        {!errorMessage && successMessage && (
-          <div
-            className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-600"
-            role="status"
-          >
-            {successMessage}
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3 border-t border-dashed app-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => goToStep(step - 1)}
-              disabled={step === 1 || submitting}
-            >
-              {dictionary.forms.stepBack}
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => void handleSave("draft")}
-              disabled={submitting}
-            >
-              {draftLabel}
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {isLastStep ? publishLabel : dictionary.forms.stepNext}
-            </Button>
-          </div>
+          {/* Mobile: the action rail sits below the form (the sidebar is
+              desktop-only). Buttons stay visible instead of hiding in a menu. */}
+          <div className="lg:hidden">{sidebar()}</div>
         </div>
-      </form>
+
+        <aside className="hidden lg:block">
+          <div className="sticky top-6 rounded-hero app-card p-5">
+            {sidebarHeader ? (
+              <div className="mb-4 border-b border-dashed app-border pb-4">
+                {sidebarHeader}
+              </div>
+            ) : null}
+            {sidebar()}
+          </div>
+        </aside>
+      </div>
 
       <input
         ref={fileInputRef}
@@ -1527,6 +1782,30 @@ export default function CreateProjectForm({
         aria-label={dictionary.forms.mediaBrowseFiles}
       />
 
+      <input
+        ref={coverInputRef}
+        type="file"
+        accept="image/*"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) {
+            setCoverImage(file);
+          }
+        }}
+        className="sr-only"
+        aria-label={dictionary.forms.coverUploadButton}
+      />
+
+      {coverPickerFile ? (
+        <VideoCoverPicker
+          file={coverPickerFile}
+          dictionary={dictionary}
+          onCancel={() => setCoverPickerFile(null)}
+          onConfirm={(blob) => void addCoverFrame(blob)}
+        />
+      ) : null}
+
       <ConfirmDialog
         open={isWarningOpen}
         title={dictionary.common.unsavedChangesTitle}
@@ -1536,6 +1815,18 @@ export default function CreateProjectForm({
         confirmVariant="primary"
         onConfirm={confirmLeave}
         onCancel={cancelLeave}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title={dictionary.dashboardProjects.deleteProject}
+        description={dictionary.dashboardProjects.confirmDeleteProject}
+        confirmLabel={dictionary.dashboardProjects.deleteProject}
+        cancelLabel={dictionary.dashboardProjects.cancel}
+        confirmVariant="primary"
+        pending={deleting}
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setDeleteConfirmOpen(false)}
       />
     </div>
   );
@@ -1567,7 +1858,7 @@ function StepHeader({
   return (
     <ol
       aria-label={dictionary.forms.stepLabel}
-      className={`grid gap-3 ${
+      className={`grid gap-2 sm:gap-3 ${
         total >= 5 ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-2 sm:grid-cols-4"
       }`}
     >
@@ -1582,7 +1873,7 @@ function StepHeader({
               type="button"
               onClick={() => onSelect(descriptor.index)}
               disabled={!isClickable}
-              className={`group flex w-full flex-col gap-1 rounded-2xl border p-3 text-left transition ${
+              className={`group flex w-full flex-col gap-0.5 rounded-xl border p-2.5 text-left transition sm:gap-1 sm:rounded-2xl sm:p-3 ${
                 isActive
                   ? "border-[color:var(--accent)] bg-[color:var(--surface)] shadow-sm"
                   : isCompleted
@@ -1593,10 +1884,10 @@ function StepHeader({
               }`}
               aria-current={isActive ? "step" : undefined}
             >
-              <span className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
+              <span className="text-[10px] font-semibold uppercase tracking-eyebrow app-soft sm:text-xs">
                 {dictionary.forms.stepLabel} {descriptor.index} / {total}
               </span>
-              <span className="text-sm font-semibold text-[color:var(--foreground)]">
+              <span className="text-xs font-semibold text-[color:var(--foreground)] sm:text-sm">
                 {descriptor.title}
               </span>
             </button>
@@ -1604,6 +1895,98 @@ function StepHeader({
         );
       })}
     </ol>
+  );
+}
+
+// Action rail: navigation + save/publish/delete. Lives in the sidebar on
+// desktop and inside the mobile actions menu. The stepper is NOT here — it
+// stays at the top of the form.
+function SidebarContent({
+  dictionary,
+  isFirstStep,
+  isLastStep,
+  submitting,
+  isEditMode,
+  draftLabel,
+  publishLabel,
+  onBack,
+  onNext,
+  onPublish,
+  onSaveDraft,
+  onDelete,
+  onAfterAction,
+}: {
+  dictionary: Dictionary;
+  isFirstStep: boolean;
+  isLastStep: boolean;
+  submitting: boolean;
+  isEditMode: boolean;
+  draftLabel: string;
+  publishLabel: string;
+  onBack: () => void;
+  onNext: () => void;
+  onPublish: () => void;
+  onSaveDraft: () => void;
+  onDelete: () => void;
+  onAfterAction?: () => void;
+}) {
+  const run = (action: () => void) => {
+    action();
+    onAfterAction?.();
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* Publish is the primary action on every step — the wizard never forces
+          the author to reach the last step first (only a title is required). */}
+      <Button
+        type="button"
+        className="w-full justify-center"
+        onClick={() => run(onPublish)}
+        disabled={submitting}
+      >
+        {publishLabel}
+      </Button>
+      {!isLastStep ? (
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full justify-center"
+          onClick={() => run(onNext)}
+          disabled={submitting}
+        >
+          {dictionary.forms.stepNext}
+        </Button>
+      ) : null}
+      <Button
+        type="button"
+        variant="secondary"
+        className="w-full justify-center"
+        onClick={() => run(onSaveDraft)}
+        disabled={submitting}
+      >
+        {draftLabel}
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        className="w-full justify-center"
+        onClick={() => run(onBack)}
+        disabled={isFirstStep || submitting}
+      >
+        {dictionary.forms.stepBack}
+      </Button>
+      {isEditMode ? (
+        <button
+          type="button"
+          onClick={() => run(onDelete)}
+          disabled={submitting}
+          className="w-full cursor-pointer rounded-full border border-rose-500/40 px-4 py-2 text-sm font-medium text-rose-500 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {dictionary.dashboardProjects.deleteProject}
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -2338,6 +2721,24 @@ function StepDetails({
         />
       </Field>
 
+      <Field
+        label={dictionary.forms.hoursSpentLabel}
+        htmlFor="project-hours-spent"
+        description={dictionary.forms.hoursSpentHint}
+      >
+        <input
+          id="project-hours-spent"
+          type="number"
+          min="0"
+          step="0.5"
+          inputMode="decimal"
+          placeholder={dictionary.forms.hoursSpentPlaceholder}
+          className="app-input"
+          value={form.hoursSpent}
+          onChange={(e) => update("hoursSpent", e.target.value)}
+        />
+      </Field>
+
       <Field label={dictionary.forms.startedOn} htmlFor="project-started-on">
         <input
           id="project-started-on"
@@ -2468,9 +2869,14 @@ function StepMedia({
   onRemove,
   onMove,
   working,
-  youTubeInput,
-  onYouTubeInputChange,
-  onAddYouTube,
+  linkInput,
+  onLinkInputChange,
+  onAddLink,
+  onPickCoverFrame,
+  currentCoverUrl,
+  pendingCover,
+  onUploadCover,
+  onClearCover,
   allowDownloads,
   onToggleAllowDownloads,
 }: {
@@ -2482,9 +2888,14 @@ function StepMedia({
   onRemove: (id: string) => void;
   onMove: (fromIndex: number, toIndex: number) => void;
   working: boolean;
-  youTubeInput: string;
-  onYouTubeInputChange: (value: string) => void;
-  onAddYouTube: () => void;
+  linkInput: string;
+  onLinkInputChange: (value: string) => void;
+  onAddLink: () => void;
+  onPickCoverFrame: (file: File) => void;
+  currentCoverUrl: string | null;
+  pendingCover: PendingCover | null;
+  onUploadCover: () => void;
+  onClearCover: () => void;
   allowDownloads: boolean;
   onToggleAllowDownloads: (value: boolean) => void;
 }) {
@@ -2492,11 +2903,57 @@ function StepMedia({
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const kindHint = getMediaHint(kind, dictionary);
 
+  const coverPreview =
+    pendingCover?.kind === "file"
+      ? pendingCover.previewUrl
+      : pendingCover?.kind === "clear"
+        ? null
+        : currentCoverUrl;
+
   return (
     <div className="space-y-5">
       {kindHint ? (
         <p className="text-sm app-muted">{kindHint}</p>
       ) : null}
+
+      <section className="rounded-2xl border app-border p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
+              {dictionary.forms.coverSectionTitle}
+            </h3>
+            <p className="mt-1 text-sm app-muted">
+              {dictionary.forms.coverSectionHint}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={onUploadCover}>
+              {coverPreview
+                ? dictionary.forms.coverReplaceButton
+                : dictionary.forms.coverUploadButton}
+            </Button>
+            {coverPreview ? (
+              <Button type="button" variant="ghost" onClick={onClearCover}>
+                {dictionary.forms.coverRemoveButton}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+        <div className="relative mt-4 aspect-[16/10] w-full max-w-md overflow-hidden rounded-2xl bg-[color:var(--surface-muted)]">
+          {coverPreview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverPreview}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center px-6 text-center text-sm app-muted">
+              {dictionary.forms.coverAutoHint}
+            </div>
+          )}
+        </div>
+      </section>
 
       <fieldset className="rounded-2xl border app-border p-4">
         <legend className="px-1 text-xs font-semibold uppercase tracking-eyebrow app-soft">
@@ -2552,37 +3009,39 @@ function StepMedia({
 
       <div className="rounded-3xl border app-border bg-[color:var(--surface)] p-4">
         <label
-          htmlFor="project-youtube-url"
+          htmlFor="project-media-url"
           className="block text-sm font-medium text-[color:var(--foreground)]"
         >
-          {dictionary.forms.mediaYouTubeLabel}
+          {dictionary.forms.mediaLinkLabel}
         </label>
         <p className="mt-1 text-xs app-soft">
-          {dictionary.forms.mediaYouTubeHint}
+          {dictionary.forms.mediaLinkHint}
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
-            id="project-youtube-url"
+            id="project-media-url"
             type="url"
             inputMode="url"
-            placeholder={dictionary.forms.mediaYouTubePlaceholder}
+            placeholder={dictionary.forms.mediaLinkPlaceholder}
             className="app-input flex-1"
-            value={youTubeInput}
-            onChange={(event) => onYouTubeInputChange(event.target.value)}
+            value={linkInput}
+            onChange={(event) => onLinkInputChange(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
-                onAddYouTube();
+                onAddLink();
               }
             }}
           />
           <Button
             type="button"
             variant="secondary"
-            onClick={onAddYouTube}
-            disabled={!youTubeInput.trim()}
+            onClick={onAddLink}
+            disabled={!linkInput.trim()}
           >
-            {dictionary.forms.mediaYouTubeAdd}
+            {mediaItems.some((item) => item.kind === "embed")
+              ? dictionary.forms.mediaLinkAddAnother
+              : dictionary.forms.mediaLinkAdd}
           </Button>
         </div>
       </div>
@@ -2600,10 +3059,19 @@ function StepMedia({
             {mediaItems.map((item, index) => {
               const isDragging = dragIndex === index;
               const isOver = overIndex === index && dragIndex !== index;
-              const isYouTube = item.kind === "youtube";
+              const embed =
+                item.kind === "embed" || item.kind === "remote"
+                  ? item.embed
+                  : null;
               const previewUrl =
                 item.kind === "local" ? item.previewUrl : item.url;
-              const ratio = Math.min(Math.max(item.aspectRatio, 0.4), 3);
+              // Embeds are shown as a compact, uniform 16:9 card in the editor
+              // (thumbnail or a provider chip) instead of a full live player —
+              // the reorder grid only needs to identify each item, and live
+              // TikTok/Instagram frames made it huge.
+              const ratio = embed
+                ? 16 / 9
+                : Math.min(Math.max(item.aspectRatio, 0.4), 3);
 
               return (
                 <li
@@ -2652,15 +3120,20 @@ function StepMedia({
                       </span>
                     )}
 
-                    {isYouTube ? (
-                      <iframe
-                        src={buildYouTubeEmbedUrl(item.videoId)}
-                        title="YouTube preview"
-                        loading="lazy"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        className="absolute inset-0 h-full w-full"
-                      />
+                    {embed ? (
+                      <div className="flex h-full w-full items-center justify-center bg-[color:var(--surface-muted)]">
+                        {embed.thumbnailUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={embed.thumbnailUrl}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        ) : null}
+                        <span className="relative z-10 rounded-full bg-black/70 px-3 py-1 text-xs font-medium capitalize text-white">
+                          {embed.provider}
+                        </span>
+                      </div>
                     ) : item.mediaKind === "image" ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -2683,6 +3156,16 @@ function StepMedia({
                       {dictionary.forms.stepLabel} {index + 1}
                     </span>
                     <div className="flex items-center gap-1">
+                      {item.kind === "local" &&
+                      item.mediaKind === "video" ? (
+                        <button
+                          type="button"
+                          onClick={() => onPickCoverFrame(item.file)}
+                          className="cursor-pointer rounded-full border app-border bg-[color:var(--surface)] px-2.5 py-1 text-xs font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
+                        >
+                          {dictionary.forms.mediaCoverFrameButton}
+                        </button>
+                      ) : null}
                       <IconButton
                         ariaLabel={dictionary.forms.stepBack}
                         onClick={() => onMove(index, Math.max(0, index - 1))}

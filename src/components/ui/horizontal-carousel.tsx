@@ -203,7 +203,7 @@ export default function HorizontalCarousel({
         {items.map((child, index) => (
           <div
             key={index}
-            className="shrink-0 snap-center sm:snap-start"
+            className="flex shrink-0 snap-center sm:snap-start [&>*]:w-full"
             style={itemStyle}
           >
             {child}
@@ -213,7 +213,7 @@ export default function HorizontalCarousel({
 
       {showDots && (
         <div
-          className="mt-3 flex justify-center gap-1.5 sm:hidden"
+          className="mt-4 flex justify-center gap-2 sm:hidden"
           role="tablist"
           aria-label={ariaLabelNext}
         >
@@ -227,10 +227,10 @@ export default function HorizontalCarousel({
                 aria-selected={isActive}
                 aria-label={`${index + 1} / ${itemCount}`}
                 onClick={() => scrollToIndex(index)}
-                className={`h-1.5 cursor-pointer rounded-full transition-all ${
+                className={`h-2 cursor-pointer rounded-full transition-all ${
                   isActive
-                    ? "w-5 bg-[color:var(--foreground)]"
-                    : "w-1.5 bg-[color:var(--surface-muted)]"
+                    ? "w-6 bg-[color:var(--foreground)]"
+                    : "w-2 bg-[color:var(--foreground)]/30"
                 }`}
               />
             );

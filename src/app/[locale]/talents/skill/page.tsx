@@ -63,8 +63,8 @@ export default async function TalentSkillDirectoryPage({
     }));
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
-      <header className="max-w-3xl">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      <header className="max-w-3xl px-4 sm:px-0">
         <h1 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl">
           {locale === "uk" ? "Навички фахівців" : "Talent skills"}
         </h1>

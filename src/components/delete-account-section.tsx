@@ -122,27 +122,49 @@ export default function DeleteAccountSection({ email }: { email: string }) {
 
   return (
     <>
-      <section className="mt-8 rounded-hero border border-rose-300/50 bg-rose-50/40 p-6 sm:p-8 dark:border-rose-500/30 dark:bg-rose-500/5">
-        <h2 className="font-display text-lg font-semibold tracking-tight text-rose-700 dark:text-rose-300">
-          {t.sectionTitle}
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-7 app-muted">
-          {t.sectionDescription}
-        </p>
-        <div className="mt-5">
-          <Button
-            variant="primary"
-            onClick={() => {
-              setError(null);
-              setCode("");
-              setMode("erase");
-              setStep("confirm");
-              setOpen(true);
-            }}
-            className="bg-rose-600! text-white! hover:opacity-90!"
-          >
-            {t.openButton}
-          </Button>
+      <section className="mt-8 overflow-hidden rounded-hero border app-card">
+        <div className="border-l-4 border-rose-500/70 p-5 sm:p-6">
+          <div className="flex items-center gap-2.5">
+            <span
+              aria-hidden="true"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/12 text-rose-600 dark:text-rose-400"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+              >
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+              </svg>
+            </span>
+            <h2 className="font-display text-lg font-semibold tracking-tight text-rose-600 dark:text-rose-400">
+              {t.sectionTitle}
+            </h2>
+          </div>
+          <p className="mt-3 max-w-3xl text-sm leading-7 app-muted">
+            {t.sectionDescription}
+          </p>
+          <div className="mt-5">
+            <Button
+              variant="primary"
+              onClick={() => {
+                setError(null);
+                setCode("");
+                setMode("erase");
+                setStep("confirm");
+                setOpen(true);
+              }}
+              className="bg-rose-600! text-white! hover:opacity-90!"
+            >
+              {t.openButton}
+            </Button>
+          </div>
         </div>
       </section>
 

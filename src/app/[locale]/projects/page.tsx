@@ -96,7 +96,7 @@ export default async function LocalizedProjectsPage({
     }));
 
   return (
-    <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
       <DiscoveryPage
         mode="projects"
         initialUsers={initial?.users}

@@ -52,7 +52,7 @@ export default async function AdminOverviewPage({
 
   return (
     <div className="space-y-8">
-      <section className="rounded-hero app-card p-5 sm:p-8">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8">
         <h2 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.title}
         </h2>

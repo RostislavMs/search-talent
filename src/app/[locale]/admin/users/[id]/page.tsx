@@ -89,7 +89,7 @@ export default async function AdminUserDetailPage({
         </Link>
       </div>
 
-      <section className="rounded-hero app-card p-5 sm:p-8">
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-5">
             {detail.avatarUrl ? (
@@ -230,7 +230,7 @@ export default async function AdminUserDetailPage({
         </div>
       </section>
 
-      <section className="rounded-hero app-card p-6">
+      <section className="rounded-none sm:rounded-hero app-card p-6">
         <h3 className="text-xl font-semibold text-[color:var(--foreground)]">
           {detailCopy.contentHeading}
         </h3>
@@ -301,7 +301,7 @@ export default async function AdminUserDetailPage({
         </div>
       </section>
 
-      <section className="rounded-hero app-card p-6">
+      <section className="rounded-none sm:rounded-hero app-card p-6">
         <h3 className="text-xl font-semibold text-[color:var(--foreground)]">
           {detailCopy.activityHeading}
         </h3>
