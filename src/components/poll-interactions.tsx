@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import CommentDeleteButton from "@/components/comment-delete-button";
+import CommentGif from "@/components/ui/comment-gif";
 import FormTextarea from "@/components/ui/form-textarea";
+import GifPicker from "@/components/ui/gif-picker";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { apiFetch } from "@/lib/api-client";
 import { createLocalePath } from "@/lib/i18n/config";
@@ -55,9 +57,13 @@ function CommentNode({
   setReplyingTo,
   replyDrafts,
   setReplyDrafts,
+  replyMediaDrafts,
+  setReplyMediaDrafts,
   submittingFor,
   submitReply,
   replyError,
+  gifEnabled,
+  removeGifLabel,
   pollId,
   viewerUserId,
   ownerUserId,
@@ -74,9 +80,15 @@ function CommentNode({
   setReplyingTo: React.Dispatch<React.SetStateAction<string | null>>;
   replyDrafts: Record<string, string>;
   setReplyDrafts: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  replyMediaDrafts: Record<string, string | null>;
+  setReplyMediaDrafts: React.Dispatch<
+    React.SetStateAction<Record<string, string | null>>
+  >;
   submittingFor: string | null;
   submitReply: (parentId: string) => void;
   replyError: string | null;
+  gifEnabled: boolean;
+  removeGifLabel: string;
   pollId: string;
   viewerUserId: string | null;
   ownerUserId: string | null;
@@ -118,9 +130,13 @@ function CommentNode({
           ) : null}
         </header>
 
-        <p className="mt-0.5 block break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6">
-          {comment.body}
-        </p>
+        {comment.body ? (
+          <p className="mt-0.5 block break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6">
+            {comment.body}
+          </p>
+        ) : null}
+
+        {comment.mediaUrl ? <CommentGif url={comment.mediaUrl} /> : null}
 
         {canComment || canDelete ? (
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mt-2.5">
@@ -153,13 +169,44 @@ function CommentNode({
                 setReplyDrafts((prev) => ({ ...prev, [comment.id]: event.target.value }))
               }
             />
-            <Button
-              size="sm"
-              onClick={() => submitReply(comment.id)}
-              disabled={submittingFor === comment.id}
-            >
-              {sendLabel}
-            </Button>
+            {replyMediaDrafts[comment.id] ? (
+              <div className="relative inline-block">
+                <CommentGif url={replyMediaDrafts[comment.id]!} className="mt-0 block max-h-48 w-auto max-w-full rounded-xl border app-border" />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setReplyMediaDrafts((prev) => ({ ...prev, [comment.id]: null }))
+                  }
+                  aria-label={removeGifLabel}
+                  className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+                >
+                  ×
+                </button>
+              </div>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => submitReply(comment.id)}
+                disabled={
+                  submittingFor === comment.id ||
+                  (!replyDrafts[comment.id]?.trim() &&
+                    !replyMediaDrafts[comment.id])
+                }
+              >
+                {sendLabel}
+              </Button>
+              <GifPicker
+                enabled={gifEnabled}
+                onSelect={(gif) =>
+                  setReplyMediaDrafts((prev) => ({
+                    ...prev,
+                    [comment.id]: gif.url,
+                  }))
+                }
+                disabled={submittingFor === comment.id}
+              />
+            </div>
             {replyError ? (
               <p className="text-sm text-rose-500" role="alert">
                 {replyError}
@@ -217,9 +264,13 @@ function CommentNode({
                     setReplyingTo={setReplyingTo}
                     replyDrafts={replyDrafts}
                     setReplyDrafts={setReplyDrafts}
+                    replyMediaDrafts={replyMediaDrafts}
+                    setReplyMediaDrafts={setReplyMediaDrafts}
                     submittingFor={submittingFor}
                     submitReply={submitReply}
                     replyError={replyError}
+                    gifEnabled={gifEnabled}
+                    removeGifLabel={removeGifLabel}
                     pollId={pollId}
                     viewerUserId={viewerUserId}
                     ownerUserId={ownerUserId}
@@ -245,6 +296,7 @@ export default function PollInteractions({
   isAuthenticated,
   viewerUserId,
   ownerUserId,
+  gifEnabled,
 }: {
   locale: string;
   pollId: string;
@@ -255,6 +307,7 @@ export default function PollInteractions({
   isAuthenticated: boolean;
   viewerUserId: string | null;
   ownerUserId: string | null;
+  gifEnabled: boolean;
 }) {
   const router = useRouter();
   const loginPath = createLocalePath(locale === "uk" ? "uk" : "en", "/login");
@@ -262,11 +315,15 @@ export default function PollInteractions({
   const [viewsCount, setViewsCount] = useState(initialViewsCount);
   const [liked, setLiked] = useState(initialLiked);
   const [commentBody, setCommentBody] = useState("");
+  const [commentMedia, setCommentMedia] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [submittingLike, setSubmittingLike] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [replyMediaDrafts, setReplyMediaDrafts] = useState<
+    Record<string, string | null>
+  >({});
   const [submittingFor, setSubmittingFor] = useState<string | null>(null);
   const [replyError, setReplyError] = useState<string | null>(null);
   const totalCommentCount = countComments(comments);
@@ -302,7 +359,7 @@ export default function PollInteractions({
 
   const submitComment = async () => {
     const body = commentBody.trim();
-    if (!body || !isAuthenticated) {
+    if ((!body && !commentMedia) || !isAuthenticated) {
       if (!isAuthenticated) router.push(loginPath);
       return;
     }
@@ -310,7 +367,7 @@ export default function PollInteractions({
     setCommentError(null);
     const result = await apiFetch(`/api/polls/${pollId}/comments`, {
       method: "POST",
-      body: { body, parent_id: null },
+      body: { body, media_url: commentMedia, parent_id: null },
     });
     setSubmittingComment(false);
     if (!result.ok) {
@@ -323,17 +380,19 @@ export default function PollInteractions({
       return;
     }
     setCommentBody("");
+    setCommentMedia(null);
     router.refresh();
   };
 
   const submitReply = async (parentId: string) => {
-    const body = replyDrafts[parentId]?.trim();
-    if (!body) return;
+    const body = replyDrafts[parentId]?.trim() || "";
+    const media = replyMediaDrafts[parentId] || null;
+    if (!body && !media) return;
     setSubmittingFor(parentId);
     setReplyError(null);
     const result = await apiFetch(`/api/polls/${pollId}/comments`, {
       method: "POST",
-      body: { body, parent_id: parentId },
+      body: { body, media_url: media, parent_id: parentId },
     });
     setSubmittingFor(null);
     if (!result.ok) {
@@ -346,11 +405,13 @@ export default function PollInteractions({
       return;
     }
     setReplyDrafts((prev) => ({ ...prev, [parentId]: "" }));
+    setReplyMediaDrafts((prev) => ({ ...prev, [parentId]: null }));
     setReplyingTo(null);
     router.refresh();
   };
 
   const isUk = locale === "uk";
+  const removeGifLabel = isUk ? "Прибрати GIF" : "Remove GIF";
 
   return (
     <div className="space-y-8">
@@ -380,8 +441,29 @@ export default function PollInteractions({
             value={commentBody}
             onChange={(event) => setCommentBody(event.target.value)}
           />
-          <div className="mt-4 flex justify-end">
-            <Button onClick={() => void submitComment()} disabled={submittingComment}>
+          {commentMedia ? (
+            <div className="relative mt-3 inline-block">
+              <CommentGif url={commentMedia} className="mt-0 block max-h-48 w-auto max-w-full rounded-xl border app-border" />
+              <button
+                type="button"
+                onClick={() => setCommentMedia(null)}
+                aria-label={removeGifLabel}
+                className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+              >
+                ×
+              </button>
+            </div>
+          ) : null}
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <GifPicker
+              enabled={gifEnabled}
+              onSelect={(gif) => setCommentMedia(gif.url)}
+              disabled={submittingComment}
+            />
+            <Button
+              onClick={() => void submitComment()}
+              disabled={submittingComment || (!commentBody.trim() && !commentMedia)}
+            >
               {isUk ? "Опублікувати коментар" : "Post comment"}
             </Button>
           </div>
@@ -411,9 +493,13 @@ export default function PollInteractions({
                 }}
                 replyDrafts={replyDrafts}
                 setReplyDrafts={setReplyDrafts}
+                replyMediaDrafts={replyMediaDrafts}
+                setReplyMediaDrafts={setReplyMediaDrafts}
                 submittingFor={submittingFor}
                 submitReply={(id) => void submitReply(id)}
                 replyError={replyError}
+                gifEnabled={gifEnabled}
+                removeGifLabel={removeGifLabel}
                 pollId={pollId}
                 viewerUserId={viewerUserId}
                 ownerUserId={ownerUserId}

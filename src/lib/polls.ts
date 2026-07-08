@@ -77,6 +77,7 @@ export type PollComment = {
   parentId: string | null;
   authorUserId: string | null;
   body: string;
+  mediaUrl: string | null;
   createdAt: string | null;
   author: PollAuthor | null;
   authorDeleted: boolean;

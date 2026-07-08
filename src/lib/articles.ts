@@ -57,6 +57,7 @@ export type ArticleComment = {
   parentId: string | null;
   authorUserId: string | null;
   body: string;
+  mediaUrl: string | null;
   createdAt: string | null;
   author: ArticleAuthor | null;
   authorDeleted: boolean;

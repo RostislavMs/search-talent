@@ -6,6 +6,7 @@ import { createNotifications } from "@/lib/db/notifications";
 import { pollCommentPayloadSchema, routePollIdSchema } from "@/lib/validation/polls";
 import { parseJsonRequest } from "@/lib/validation/request";
 import type { CreateNotificationInput } from "@/lib/db/notifications";
+import { isAllowedGifUrl } from "@/lib/gif/provider";
 import {
   describeModerationResult,
   screenContentForModeration,
@@ -41,17 +42,25 @@ export async function POST(
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
+  // Never trust a client-supplied GIF URL: it must be an https provider-CDN URL.
+  if (parsed.data.media_url && !isAllowedGifUrl(parsed.data.media_url)) {
+    return NextResponse.json({ error: "Invalid GIF URL" }, { status: 400 });
+  }
+
   // Comments have no review pipeline, so a flagged comment is rejected outright
-  // with a precise, localized explanation the author can act on.
-  const screen = screenContentForModeration([parsed.data.body]);
-  if (screen.flagged) {
-    return NextResponse.json(
-      {
-        error: describeModerationResult(screen, await getRequestLocale()),
-        code: "moderation_blocked",
-      },
-      { status: 400 },
-    );
+  // with a precise, localized explanation the author can act on. A GIF-only
+  // comment has no text to screen.
+  if (parsed.data.body.trim()) {
+    const screen = screenContentForModeration([parsed.data.body]);
+    if (screen.flagged) {
+      return NextResponse.json(
+        {
+          error: describeModerationResult(screen, await getRequestLocale()),
+          code: "moderation_blocked",
+        },
+        { status: 400 },
+      );
+    }
   }
 
   const { data: poll } = await supabase
@@ -81,6 +90,7 @@ export async function POST(
       author_user_id: user.id,
       parent_id: parsed.data.parent_id,
       body: parsed.data.body,
+      media_url: parsed.data.media_url,
     })
     .select("id")
     .single();
@@ -98,7 +108,7 @@ export async function POST(
   if (admin) {
     const metadata = {
       pollSlug: poll.slug ?? undefined,
-      excerpt: parsed.data.body.slice(0, 160),
+      excerpt: parsed.data.body.trim() ? parsed.data.body.slice(0, 160) : "GIF",
     };
     const inserts: CreateNotificationInput[] = [];
 

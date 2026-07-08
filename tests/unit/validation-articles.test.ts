@@ -133,6 +133,22 @@ describe("articleCommentPayloadSchema", () => {
       articleCommentPayloadSchema.safeParse({ body: "x".repeat(4001) }).success,
     ).toBe(false);
   });
+
+  it("accepts a GIF-only comment (empty body + media_url)", () => {
+    expect(
+      articleCommentPayloadSchema.safeParse({
+        body: "",
+        media_url: "https://media.giphy.com/media/abc/giphy.gif",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a non-URL media_url", () => {
+    expect(
+      articleCommentPayloadSchema.safeParse({ body: "", media_url: "nope" })
+        .success,
+    ).toBe(false);
+  });
 });
 
 describe("routeArticleIdSchema", () => {

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import BookmarkButton from "@/components/bookmark-button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import ProjectComments from "@/components/project-comments";
+import { isGifSearchConfigured } from "@/lib/gif/provider";
 import RelatedProjects from "@/components/related-projects";
 import { ProjectCardGridSkeleton } from "@/components/skeletons/card-skeletons";
 import ProjectGallery from "@/components/project-gallery";
@@ -115,16 +116,22 @@ function formatDate(value: string | null, locale: string) {
 function DetailCard({
   label,
   value,
+  wide = false,
 }: {
   label: string;
   value: string;
+  wide?: boolean;
 }) {
   return (
-    <div className="rounded-3xl app-panel p-4">
-      <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
+    <div
+      className={`rounded-2xl app-panel p-3 sm:rounded-3xl sm:p-4 ${
+        wide ? "col-span-2 sm:col-span-1" : ""
+      }`}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-eyebrow app-soft sm:text-xs">
         {label}
       </p>
-      <p className="mt-2 text-sm leading-7 text-[color:var(--foreground)]">
+      <p className="mt-1 text-sm leading-6 text-[color:var(--foreground)] sm:mt-2 sm:leading-7">
         {value}
       </p>
     </div>
@@ -405,15 +412,16 @@ export default async function PublicProjectPage({
                 dictionary.projectPage.noDescription}
             </p>
 
-            <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
+            <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-6">
               <span className="inline-flex items-center font-display rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-on-soft">
                 {rating ?? voteSummary.score} {dictionary.common.scoreSuffix}
               </span>
-              {statusLabel && (
-                <span className="inline-flex items-center rounded-full app-panel px-3 py-1 text-sm app-muted">
-                  {statusLabel}
-                </span>
-              )}
+              <BookmarkButton
+                targetType="project"
+                targetId={project.id}
+                initialBookmarked={isBookmarked}
+                isAuthenticated={isAuthenticated}
+              />
               {owner &&
                 (owner.username ? (
                   <ButtonLink
@@ -421,12 +429,24 @@ export default async function PublicProjectPage({
                     variant="ghost"
                     className="rounded-full app-panel px-3 py-1 text-sm app-muted transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
                   >
-                    {dictionary.projectPage.createdBy}:{" "}
+                    <span className="sm:hidden">
+                      {dictionary.projectPage.createdByShort}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {dictionary.projectPage.createdBy}
+                    </span>
+                    :{" "}
                     {owner.name || owner.username || dictionary.projectPage.creatorFallback}
                   </ButtonLink>
                 ) : (
                   <span className="inline-flex items-center rounded-full app-panel px-3 py-1 text-sm app-muted">
-                    {dictionary.projectPage.createdBy}:{" "}
+                    <span className="sm:hidden">
+                      {dictionary.projectPage.createdByShort}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {dictionary.projectPage.createdBy}
+                    </span>
+                    :{" "}
                     {owner.name || dictionary.projectPage.creatorFallback}
                   </span>
                 ))}
@@ -505,7 +525,7 @@ export default async function PublicProjectPage({
               {dictionary.projectPage.details}
             </h2>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4">
               {statusLabel && (
                 <DetailCard label={dictionary.projectPage.status} value={statusLabel} />
               )}
@@ -529,6 +549,7 @@ export default async function PublicProjectPage({
               )}
               {(project.started_on || project.completed_on) && (
                 <DetailCard
+                  wide
                   label={dictionary.projectPage.timeline}
                   value={[
                     formatDate(project.started_on, locale)
@@ -698,15 +719,9 @@ export default async function PublicProjectPage({
             </>
           ) : null}
 
-          <ProjectComments
-            projectId={project.id}
-            isAuthenticated={isAuthenticated}
-            viewerUserId={viewer.user?.id ?? null}
-            ownerUserId={project.owner_id}
-          />
         </div>
 
-        <aside className="space-y-4 sm:space-y-6 xl:sticky xl:top-24 xl:self-start">
+        <aside className="space-y-4 sm:space-y-6 xl:sticky xl:top-24 xl:self-start xl:row-span-2">
           <VoteButtons
             projectId={project.id}
             initialVote={voteSummary.currentVote}
@@ -714,13 +729,6 @@ export default async function PublicProjectPage({
             initialDislikes={voteSummary.dislikes}
             isAuthenticated={isAuthenticated}
             isOwner={isOwner}
-          />
-
-          <BookmarkButton
-            targetType="project"
-            targetId={project.id}
-            initialBookmarked={isBookmarked}
-            isAuthenticated={isAuthenticated}
           />
 
           {owner && (
@@ -793,6 +801,14 @@ export default async function PublicProjectPage({
             </section>
           )}
         </aside>
+
+        <ProjectComments
+          projectId={project.id}
+          isAuthenticated={isAuthenticated}
+          viewerUserId={viewer.user?.id ?? null}
+          ownerUserId={project.owner_id}
+          gifEnabled={isGifSearchConfigured()}
+        />
       </section>
 
       <Suspense

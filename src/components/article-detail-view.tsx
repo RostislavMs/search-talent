@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import ArticleInteractions from "@/components/article-interactions";
+import { isGifSearchConfigured } from "@/lib/gif/provider";
 import AuthorList from "@/components/author-list";
 import ArticlePinButton from "@/components/article-pin-button";
 import ArticleTableOfContents from "@/components/article-table-of-contents";
@@ -355,6 +356,7 @@ export default function ArticleDetailView({
               isAuthenticated={Boolean(viewerUserId)}
               viewerUserId={viewerUserId ?? null}
               ownerUserId={author?.userId ?? null}
+              gifEnabled={isGifSearchConfigured()}
             />
           </div>
         </div>

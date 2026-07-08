@@ -8,6 +8,7 @@ import {
 import { parseJsonRequest } from "@/lib/validation/request";
 import { dispatchCommentSideEffects } from "@/lib/db/comment-events";
 import { getReactionsForTargets } from "@/lib/db/reactions";
+import { isAllowedGifUrl } from "@/lib/gif/provider";
 import {
   describeModerationResult,
   screenContentForModeration,
@@ -43,7 +44,7 @@ export async function GET(
   const { data: comments, error } = await supabase
     .from("project_comments")
     .select(
-      "id, project_id, author_user_id, parent_id, body, created_at, updated_at",
+      "id, project_id, author_user_id, parent_id, body, media_url, created_at, updated_at",
     )
     .eq("project_id", id)
     .order("created_at", { ascending: true });
@@ -138,17 +139,25 @@ export async function POST(
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
+  // Never trust a client-supplied GIF URL: it must be an https provider-CDN URL.
+  if (parsed.data.media_url && !isAllowedGifUrl(parsed.data.media_url)) {
+    return NextResponse.json({ error: "Invalid GIF URL" }, { status: 400 });
+  }
+
   // Comments have no review pipeline, so a flagged comment is rejected outright
-  // with a precise, localized explanation the author can act on.
-  const screen = screenContentForModeration([parsed.data.body]);
-  if (screen.flagged) {
-    return NextResponse.json(
-      {
-        error: describeModerationResult(screen, await getRequestLocale()),
-        code: "moderation_blocked",
-      },
-      { status: 400 },
-    );
+  // with a precise, localized explanation the author can act on. A GIF-only
+  // comment has no text to screen.
+  if (parsed.data.body.trim()) {
+    const screen = screenContentForModeration([parsed.data.body]);
+    if (screen.flagged) {
+      return NextResponse.json(
+        {
+          error: describeModerationResult(screen, await getRequestLocale()),
+          code: "moderation_blocked",
+        },
+        { status: 400 },
+      );
+    }
   }
 
   const { data: project } = await supabase
@@ -178,6 +187,7 @@ export async function POST(
       author_user_id: user.id,
       parent_id: parsed.data.parent_id,
       body: parsed.data.body,
+      media_url: parsed.data.media_url,
     })
     .select("id")
     .single();
@@ -198,7 +208,7 @@ export async function POST(
     contentOwnerUserId: project.owner_id ?? null,
     metadata: {
       projectId: id,
-      excerpt: parsed.data.body.slice(0, 160),
+      excerpt: parsed.data.body.trim() ? parsed.data.body.slice(0, 160) : "GIF",
     },
   });
 

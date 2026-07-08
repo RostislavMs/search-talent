@@ -149,6 +149,7 @@ export default async function AdminCommentsContentPage({
               id: comment.id,
               kind: comment.kind,
               body: comment.body,
+              mediaUrl: comment.mediaUrl,
               kindLabel:
                 comment.kind === "article"
                   ? copy.typeArticle

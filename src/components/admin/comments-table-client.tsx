@@ -3,6 +3,7 @@
 import Link from "next/link";
 import CommentDeleteButton from "@/components/admin/comment-delete-button";
 import CommentsBulkTable from "@/components/admin/comments-bulk-table";
+import CommentGif from "@/components/ui/comment-gif";
 import {
   AdminCard,
   AdminCardActions,
@@ -14,6 +15,7 @@ export type CommentTableItem = {
   id: string;
   kind: "article" | "project";
   body: string;
+  mediaUrl: string | null;
   kindLabel: string;
   authorLabel: string;
   authorHref: string | null;
@@ -114,9 +116,17 @@ export default function CommentsTableClient({
                       />
                     </td>
                     <td className="px-3 py-3">
-                      <p className="max-w-md whitespace-pre-wrap text-[color:var(--foreground)]">
-                        {row.body}
-                      </p>
+                      {row.body ? (
+                        <p className="max-w-md whitespace-pre-wrap text-[color:var(--foreground)]">
+                          {row.body}
+                        </p>
+                      ) : null}
+                      {row.mediaUrl ? (
+                        <CommentGif
+                          url={row.mediaUrl}
+                          className="mt-1 block max-h-28 w-auto max-w-full rounded-lg border app-border"
+                        />
+                      ) : null}
                       <p className="mt-1 text-xs app-soft">{row.kindLabel}</p>
                     </td>
                     <td className="px-3 py-3">
@@ -174,9 +184,17 @@ export default function CommentsTableClient({
                       onChange={() => toggle(item)}
                     />
                     <div className="min-w-0 flex-1 space-y-1">
-                      <p className="whitespace-pre-wrap break-words text-sm text-[color:var(--foreground)]">
-                        {row.body}
-                      </p>
+                      {row.body ? (
+                        <p className="whitespace-pre-wrap break-words text-sm text-[color:var(--foreground)]">
+                          {row.body}
+                        </p>
+                      ) : null}
+                      {row.mediaUrl ? (
+                        <CommentGif
+                          url={row.mediaUrl}
+                          className="block max-h-28 w-auto max-w-full rounded-lg border app-border"
+                        />
+                      ) : null}
                       <p className="text-xs app-soft">{row.kindLabel}</p>
                     </div>
                   </div>

@@ -155,7 +155,7 @@ describe("projectPayloadSchema", () => {
 });
 
 describe("projectCommentPayloadSchema", () => {
-  it("requires body", () => {
+  it("rejects an empty comment with no GIF", () => {
     expect(projectCommentPayloadSchema.safeParse({ body: "" }).success).toBe(
       false,
     );
@@ -166,7 +166,23 @@ describe("projectCommentPayloadSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.parent_id).toBeNull();
+      expect(result.data.media_url).toBeNull();
     }
+  });
+
+  it("accepts a GIF-only comment (empty body + media_url)", () => {
+    const result = projectCommentPayloadSchema.safeParse({
+      body: "",
+      media_url: "https://media.giphy.com/media/abc/giphy.gif",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a non-URL media_url", () => {
+    expect(
+      projectCommentPayloadSchema.safeParse({ body: "", media_url: "not-a-url" })
+        .success,
+    ).toBe(false);
   });
 });
 
