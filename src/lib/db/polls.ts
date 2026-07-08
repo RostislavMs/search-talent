@@ -104,6 +104,7 @@ type PollCommentRow = {
   author_user_id: string | null;
   parent_id: string | null;
   body: string | null;
+  media_url: string | null;
   created_at: string | null;
 };
 
@@ -207,6 +208,7 @@ function buildCommentTree(
       parentId: row.parent_id,
       authorUserId: row.author_user_id,
       body: row.body || "",
+      mediaUrl: row.media_url,
       createdAt: row.created_at,
       author: row.author_user_id ? authorMap.get(row.author_user_id) || null : null,
       authorDeleted: row.author_user_id === null,
@@ -541,7 +543,7 @@ export async function getPollDetail(slug: string, locale?: string | null) {
     loadPollQuestions(supabase, poll.id, viewer.user?.id ?? null, resultsVisible, locale),
     supabase
       .from("poll_comments")
-      .select("id, poll_id, author_user_id, parent_id, body, created_at")
+      .select("id, poll_id, author_user_id, parent_id, body, media_url, created_at")
       .eq("poll_id", poll.id)
       .order("created_at", { ascending: true }),
     viewer.user

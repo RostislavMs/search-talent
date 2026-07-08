@@ -292,6 +292,7 @@ export type AdminCommentRow = {
   id: string;
   kind: "article" | "project";
   body: string;
+  mediaUrl: string | null;
   createdAt: string;
   authorUserId: string;
   authorLabel: string;
@@ -325,7 +326,7 @@ export async function getAdminCommentsList(
     fetchArticleComments
       ? supabase
           .from("article_comments")
-          .select("id, article_id, author_user_id, body, created_at", {
+          .select("id, article_id, author_user_id, body, media_url, created_at", {
             count: "exact",
           })
           .order("created_at", { ascending: false })
@@ -336,6 +337,7 @@ export async function getAdminCommentsList(
             article_id: string;
             author_user_id: string;
             body: string;
+            media_url: string | null;
             created_at: string;
           }[],
           count: 0,
@@ -343,7 +345,7 @@ export async function getAdminCommentsList(
     fetchProjectComments
       ? supabase
           .from("project_comments")
-          .select("id, project_id, author_user_id, body, created_at", {
+          .select("id, project_id, author_user_id, body, media_url, created_at", {
             count: "exact",
           })
           .order("created_at", { ascending: false })
@@ -354,6 +356,7 @@ export async function getAdminCommentsList(
             project_id: string;
             author_user_id: string;
             body: string;
+            media_url: string | null;
             created_at: string;
           }[],
           count: 0,
@@ -365,6 +368,7 @@ export async function getAdminCommentsList(
     article_id: string;
     author_user_id: string;
     body: string;
+    media_url: string | null;
     created_at: string;
   };
   type ProjectCommentRow = {
@@ -372,6 +376,7 @@ export async function getAdminCommentsList(
     project_id: string;
     author_user_id: string;
     body: string;
+    media_url: string | null;
     created_at: string;
   };
 
@@ -434,6 +439,7 @@ export async function getAdminCommentsList(
         id: row.id,
         kind: "article",
         body: row.body,
+        mediaUrl: row.media_url,
         createdAt: row.created_at,
         authorUserId: row.author_user_id,
         authorLabel: authorLabel(profileMap.get(row.author_user_id)),
@@ -448,6 +454,7 @@ export async function getAdminCommentsList(
         id: row.id,
         kind: "project",
         body: row.body,
+        mediaUrl: row.media_url,
         createdAt: row.created_at,
         authorUserId: row.author_user_id,
         authorLabel: authorLabel(profileMap.get(row.author_user_id)),

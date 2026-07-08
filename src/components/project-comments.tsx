@@ -4,6 +4,8 @@ import Image from "next/image";
 import { startTransition, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import CommentDeleteButton from "@/components/comment-delete-button";
+import CommentGif from "@/components/ui/comment-gif";
+import GifPicker from "@/components/ui/gif-picker";
 import MentionText from "@/components/ui/mention-text";
 import MentionTextarea from "@/components/ui/mention-textarea";
 import ReactionPicker from "@/components/ui/reaction-picker";
@@ -18,6 +20,7 @@ type Comment = {
   author_user_id: string | null;
   parent_id: string | null;
   body: string;
+  media_url: string | null;
   created_at: string;
   author_deleted?: boolean;
   author: {
@@ -33,6 +36,7 @@ type ProjectCommentsProps = {
   isAuthenticated: boolean;
   viewerUserId: string | null;
   ownerUserId: string | null;
+  gifEnabled: boolean;
 };
 
 function pluralizeReplies(count: number, locale: string, hide: boolean) {
@@ -80,8 +84,11 @@ function CommentItem({
   replyingTo,
   replyBody,
   onReplyBodyChange,
+  replyMediaUrl,
+  onReplyMediaChange,
   onSubmitReply,
   submitting,
+  gifEnabled,
   dictionary,
   projectId,
   viewerUserId,
@@ -97,8 +104,11 @@ function CommentItem({
   replyingTo: string | null;
   replyBody: string;
   onReplyBodyChange: (value: string) => void;
+  replyMediaUrl: string | null;
+  onReplyMediaChange: (value: string | null) => void;
   onSubmitReply: () => void;
   submitting: boolean;
+  gifEnabled: boolean;
   dictionary: ReturnType<typeof useDictionary>;
   projectId: string;
   viewerUserId: string | null;
@@ -147,10 +157,14 @@ function CommentItem({
           </span>
         </header>
 
-        <MentionText
-          body={comment.body}
-          className="mt-0.5 block break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6"
-        />
+        {comment.body ? (
+          <MentionText
+            body={comment.body}
+            className="mt-0.5 block break-words whitespace-pre-line text-sm leading-snug text-[color:var(--foreground)] sm:mt-1 sm:leading-6"
+          />
+        ) : null}
+
+        {comment.media_url ? <CommentGif url={comment.media_url} /> : null}
 
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mt-2.5">
           <ReactionPicker
@@ -191,16 +205,34 @@ function CommentItem({
               rows={2}
               className="w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
             />
-            <div className="flex flex-wrap gap-2">
+            {replyMediaUrl ? (
+              <div className="relative inline-block">
+                <CommentGif url={replyMediaUrl} className="mt-0 block max-h-48 w-auto max-w-full rounded-xl border app-border" />
+                <button
+                  type="button"
+                  onClick={() => onReplyMediaChange(null)}
+                  aria-label={dictionary.commentGif.removeGif}
+                  className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+                >
+                  ×
+                </button>
+              </div>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 onClick={onSubmitReply}
-                disabled={submitting || !replyBody.trim()}
+                disabled={submitting || (!replyBody.trim() && !replyMediaUrl)}
                 size="sm"
               >
                 {submitting
                   ? dictionary.projectComments.sending
                   : dictionary.projectComments.send}
               </Button>
+              <GifPicker
+                enabled={gifEnabled}
+                onSelect={(gif) => onReplyMediaChange(gif.url)}
+                disabled={submitting}
+              />
               <Button
                 onClick={() => onReply(null)}
                 variant="ghost"
@@ -259,8 +291,11 @@ function CommentItem({
                     replyingTo={replyingTo}
                     replyBody={replyBody}
                     onReplyBodyChange={onReplyBodyChange}
+                    replyMediaUrl={replyMediaUrl}
+                    onReplyMediaChange={onReplyMediaChange}
                     onSubmitReply={onSubmitReply}
                     submitting={submitting}
+                    gifEnabled={gifEnabled}
                     dictionary={dictionary}
                     projectId={projectId}
                     viewerUserId={viewerUserId}
@@ -282,6 +317,7 @@ export default function ProjectComments({
   isAuthenticated,
   viewerUserId,
   ownerUserId,
+  gifEnabled,
 }: ProjectCommentsProps) {
   const dictionary = useDictionary();
   const router = useLocalizedRouter();
@@ -290,8 +326,10 @@ export default function ProjectComments({
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyBody, setReplyBody] = useState("");
+  const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -318,8 +356,9 @@ export default function ProjectComments({
 
   const submitComment = async (parentId: string | null = null) => {
     const text = parentId ? replyBody : body;
+    const media = parentId ? replyMediaUrl : mediaUrl;
 
-    if (!text.trim()) {
+    if (!text.trim() && !media) {
       return;
     }
 
@@ -330,7 +369,7 @@ export default function ProjectComments({
       `/api/projects/${projectId}/comments`,
       {
         method: "POST",
-        body: { body: text, parent_id: parentId },
+        body: { body: text, media_url: media, parent_id: parentId },
       },
     );
 
@@ -342,9 +381,11 @@ export default function ProjectComments({
 
     if (parentId) {
       setReplyBody("");
+      setReplyMediaUrl(null);
       setReplyingTo(null);
     } else {
       setBody("");
+      setMediaUrl(null);
     }
 
     const refreshResult = await apiFetch<{ comments?: Comment[] }>(
@@ -384,14 +425,34 @@ export default function ProjectComments({
             maxLength={4000}
             className="w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
           />
-          <Button
-            onClick={() => submitComment(null)}
-            disabled={submitting || !body.trim()}
-          >
-            {submitting
-              ? dictionary.projectComments.sending
-              : dictionary.projectComments.send}
-          </Button>
+          {mediaUrl ? (
+            <div className="relative inline-block">
+              <CommentGif url={mediaUrl} className="mt-0 block max-h-48 w-auto max-w-full rounded-xl border app-border" />
+              <button
+                type="button"
+                onClick={() => setMediaUrl(null)}
+                aria-label={dictionary.commentGif.removeGif}
+                className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+              >
+                ×
+              </button>
+            </div>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={() => submitComment(null)}
+              disabled={submitting || (!body.trim() && !mediaUrl)}
+            >
+              {submitting
+                ? dictionary.projectComments.sending
+                : dictionary.projectComments.send}
+            </Button>
+            <GifPicker
+              enabled={gifEnabled}
+              onSelect={(gif) => setMediaUrl(gif.url)}
+              disabled={submitting}
+            />
+          </div>
         </div>
       ) : (
         <p className="mt-4 text-sm app-muted">
@@ -419,12 +480,19 @@ export default function ProjectComments({
               depth={0}
               locale={locale}
               isAuthenticated={isAuthenticated}
-              onReply={setReplyingTo}
+              onReply={(id) => {
+                setReplyingTo(id);
+                setReplyBody("");
+                setReplyMediaUrl(null);
+              }}
               replyingTo={replyingTo}
               replyBody={replyBody}
               onReplyBodyChange={setReplyBody}
+              replyMediaUrl={replyMediaUrl}
+              onReplyMediaChange={setReplyMediaUrl}
               onSubmitReply={() => submitComment(replyingTo)}
               submitting={submitting}
+              gifEnabled={gifEnabled}
               dictionary={dictionary}
               projectId={projectId}
               viewerUserId={viewerUserId}

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import AuthorList from "@/components/author-list";
 import DeletePollButton from "@/components/delete-poll-button";
 import PollInteractions from "@/components/poll-interactions";
+import { isGifSearchConfigured } from "@/lib/gif/provider";
 import PollPinButton from "@/components/poll-pin-button";
 import PollVoting from "@/components/poll-voting";
 import RichTextRenderer from "@/components/rich-text-renderer";
@@ -255,6 +256,7 @@ export default async function PollDetailPage({
             isAuthenticated={Boolean(viewerUserId)}
             viewerUserId={viewerUserId ?? null}
             ownerUserId={poll.author?.userId ?? null}
+            gifEnabled={isGifSearchConfigured()}
           />
         </div>
       </div>

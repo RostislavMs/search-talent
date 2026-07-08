@@ -782,9 +782,15 @@ export const routeProjectIdSchema = z.object({
   id: z.string().uuid("Invalid project id"),
 });
 
-export const projectCommentPayloadSchema = z.object({
-  body: z.string().trim().min(1, "Comment is required").max(4000, "Comment is too long"),
-  parent_id: z.string().uuid().nullable().default(null),
-});
+export const projectCommentPayloadSchema = z
+  .object({
+    body: z.string().trim().max(4000, "Comment is too long").default(""),
+    media_url: z.string().url().max(2048).nullable().default(null),
+    parent_id: z.string().uuid().nullable().default(null),
+  })
+  .refine((data) => data.body.trim().length > 0 || Boolean(data.media_url), {
+    message: "Comment is required",
+    path: ["body"],
+  });
 
 export type ProjectPayload = z.infer<typeof projectPayloadSchema>;
