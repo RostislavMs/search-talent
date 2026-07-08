@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import PollCard from "@/components/poll-card";
+import InfiniteCardFeed from "@/components/infinite-card-feed";
 import { ButtonLink } from "@/components/ui/Button";
 import FormSelect from "@/components/ui/form-select";
 import { getCategoryDisplayName, sortArticleCategories } from "@/lib/articles";
@@ -177,11 +177,7 @@ export default async function PollsPage({
 
       <section className="mt-8">
         {feed.items.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {feed.items.map((poll) => (
-              <PollCard key={poll.id} poll={poll} locale={safeLocale} />
-            ))}
-          </div>
+          <InfiniteCardFeed kind="poll" items={feed.items} locale={safeLocale} />
         ) : (
           <p className="rounded-none sm:rounded-panel app-panel-dashed p-6 text-sm app-muted">{ui.empty}</p>
         )}

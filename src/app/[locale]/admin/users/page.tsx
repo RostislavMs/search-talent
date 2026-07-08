@@ -9,7 +9,7 @@ import {
   AdminCardList,
   AdminCardMeta,
 } from "@/components/admin/admin-mobile-cards";
-import { buttonStyles } from "@/components/ui/button-styles";
+import Pagination from "@/components/ui/pagination";
 import {
   getAdminUsersList,
   type AdminUserRow,
@@ -333,29 +333,13 @@ export default async function AdminUsersPage({
         )}
 
         {pageCount > 1 ? (
-          <nav className="mt-6 flex items-center justify-between gap-3 text-sm app-muted">
-            <span>
-              {copy.pagination.page} {result.page} {copy.pagination.of} {pageCount}
-            </span>
-            <div className="flex gap-2">
-              {result.page > 1 ? (
-                <Link
-                  href={buildPageHref(result.page - 1)}
-                  className={buttonStyles({ variant: "ghost", size: "sm" })}
-                >
-                  {copy.pagination.previous}
-                </Link>
-              ) : null}
-              {result.hasMore ? (
-                <Link
-                  href={buildPageHref(result.page + 1)}
-                  className={buttonStyles({ variant: "secondary", size: "sm" })}
-                >
-                  {copy.pagination.next}
-                </Link>
-              ) : null}
-            </div>
-          </nav>
+          <div className="mt-6 flex justify-center">
+            <Pagination
+              currentPage={Math.min(result.page, pageCount)}
+              totalPages={pageCount}
+              hrefFor={buildPageHref}
+            />
+          </div>
         ) : null}
       </section>
     </div>

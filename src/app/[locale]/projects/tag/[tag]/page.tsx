@@ -71,7 +71,7 @@ export default async function ProjectsByTagPage({
     scope: "projects",
     sort: "relevance",
     page: 1,
-    perPage: 10,
+    perPage: 12,
     skillIds: [technology.id],
   });
 

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ContentFilterBar from "@/components/admin/content-filter-bar";
 import ProjectsTableClient from "@/components/admin/projects-table-client";
-import { buttonStyles } from "@/components/ui/button-styles";
+import Pagination from "@/components/ui/pagination";
 import { getAdminProjectsList } from "@/lib/db/admin-content";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -260,30 +260,13 @@ export default async function AdminProjectsContentPage({
         )}
 
         {pageCount > 1 ? (
-          <nav className="mt-6 flex items-center justify-between gap-3 text-sm app-muted">
-            <span>
-              {dictionary.admin.users.pagination.page} {result.page}{" "}
-              {dictionary.admin.users.pagination.of} {pageCount}
-            </span>
-            <div className="flex gap-2">
-              {result.page > 1 ? (
-                <Link
-                  href={buildPageHref(result.page - 1)}
-                  className={buttonStyles({ variant: "ghost", size: "sm" })}
-                >
-                  {dictionary.admin.users.pagination.previous}
-                </Link>
-              ) : null}
-              {result.hasMore ? (
-                <Link
-                  href={buildPageHref(result.page + 1)}
-                  className={buttonStyles({ variant: "secondary", size: "sm" })}
-                >
-                  {dictionary.admin.users.pagination.next}
-                </Link>
-              ) : null}
-            </div>
-          </nav>
+          <div className="mt-6 flex justify-center">
+            <Pagination
+              currentPage={Math.min(result.page, pageCount)}
+              totalPages={pageCount}
+              hrefFor={buildPageHref}
+            />
+          </div>
         ) : null}
       </section>
     </div>

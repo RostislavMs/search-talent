@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ArticleCard from "@/components/article-card";
+import InfiniteCardFeed from "@/components/infinite-card-feed";
 import { ButtonLink } from "@/components/ui/Button";
 import FormSelect from "@/components/ui/form-select";
 import {
@@ -163,15 +163,11 @@ export default async function ArticlesPage({
 
       <section className="mt-8">
         {feed.items.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {feed.items.map((article) => (
-              <ArticleCard
-                key={article.id}
-                article={article}
-                locale={safeLocale}
-              />
-            ))}
-          </div>
+          <InfiniteCardFeed
+            kind="article"
+            items={feed.items}
+            locale={safeLocale}
+          />
         ) : (
           <p className="rounded-none sm:rounded-panel app-panel-dashed p-6 text-sm app-muted">
             {ui.empty}

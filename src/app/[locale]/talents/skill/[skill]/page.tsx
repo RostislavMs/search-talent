@@ -69,7 +69,7 @@ export default async function TalentsBySkillPage({
     scope: "creators",
     sort: "relevance",
     page: 1,
-    perPage: 10,
+    perPage: 12,
     skillIds: [technology.id],
   });
 
