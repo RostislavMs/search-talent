@@ -555,7 +555,7 @@ export default function DiscoveryPage({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("relevance");
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
+  const [perPage, setPerPage] = useState(12);
   const [countryId, setCountryId] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(
     initialCategoryId,
@@ -1749,9 +1749,9 @@ export default function DiscoveryPage({
               </p>
             )}
 
-            {resultCount > 10 && (
-              <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t app-border pt-6 sm:flex-row">
-                <label className="flex items-center gap-3 text-sm app-muted">
+            {resultCount > 12 && (
+              <div className="mt-8 flex flex-row flex-wrap items-center justify-between gap-3 border-t app-border pt-6 sm:gap-4">
+                <label className="flex items-center gap-2 text-sm app-muted sm:gap-3">
                   <span>{perPageLabel}</span>
                   <FormSelect
                     triggerClassName="min-w-[4.5rem]"
@@ -1761,9 +1761,9 @@ export default function DiscoveryPage({
                       setPage(1);
                     }}
                     options={[
-                      { value: "10", label: "10" },
-                      { value: "20", label: "20" },
-                      { value: "50", label: "50" },
+                      { value: "12", label: "12" },
+                      { value: "24", label: "24" },
+                      { value: "48", label: "48" },
                     ]}
                   />
                 </label>

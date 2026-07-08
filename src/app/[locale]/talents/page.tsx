@@ -66,7 +66,7 @@ export default async function LocalizedTalentsPage({
       scope: "creators",
       sort: "relevance",
       page: 1,
-      perPage: 10,
+      perPage: 12,
     }),
   ]);
 

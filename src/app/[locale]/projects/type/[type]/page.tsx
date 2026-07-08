@@ -95,7 +95,7 @@ export default async function ProjectsByTypePage({
     scope: "projects",
     sort: "relevance",
     page: 1,
-    perPage: 10,
+    perPage: 12,
     projectKind: kind,
   });
 

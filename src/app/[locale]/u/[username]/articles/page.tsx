@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import ArticleCard from "@/components/article-card";
 import DeleteArticleButton from "@/components/delete-article-button";
 import { ButtonLink } from "@/components/ui/Button";
+import Pagination from "@/components/ui/pagination";
 import { getCategoryDisplayName, type ArticleFeedItem } from "@/lib/articles";
 import { getDashboardArticles } from "@/lib/db/articles";
 import { getUserArticlesPage } from "@/lib/db/public";
@@ -10,7 +11,7 @@ import {
   isPublicModerationStatus,
   normalizeModerationStatus,
 } from "@/lib/moderation";
-import { isLocale } from "@/lib/i18n/config";
+import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata, getMetadataBase } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -169,7 +170,7 @@ export default async function UserArticlesPage({
   }
 
   if (isOwner) {
-    return renderOwnerView({ locale, username });
+    return renderOwnerView({ locale, username, page: requestedPage });
   }
 
   return renderPublicView({
@@ -183,9 +184,11 @@ export default async function UserArticlesPage({
 async function renderOwnerView({
   locale,
   username,
+  page,
 }: {
-  locale: string;
+  locale: Locale;
   username: string;
+  page: number;
 }) {
   const dashboard = await getDashboardArticles(locale);
   const ui = getOwnerUi(locale);
@@ -193,6 +196,22 @@ async function renderOwnerView({
   if (!dashboard) {
     notFound();
   }
+
+  const PER_PAGE = 12;
+  const totalPages = Math.max(1, Math.ceil(dashboard.items.length / PER_PAGE));
+  const safePage = Math.min(
+    Math.max(1, Number.isFinite(page) ? page : 1),
+    totalPages,
+  );
+  const pageItems = dashboard.items.slice(
+    (safePage - 1) * PER_PAGE,
+    safePage * PER_PAGE,
+  );
+
+  const buildPageHref = (nextPage: number) => {
+    const base = createLocalePath(locale, `/u/${username}/articles`);
+    return nextPage > 1 ? `${base}?page=${nextPage}` : base;
+  };
 
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
@@ -224,11 +243,11 @@ async function renderOwnerView({
 
       <section className="mt-6 sm:mt-8">
         {dashboard.items.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            {dashboard.items.map((item) => (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {pageItems.map((item) => (
               <article
                 key={item.id}
-                className="rounded-panel app-card p-5"
+                className="flex h-full flex-col rounded-panel app-card p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -272,7 +291,7 @@ async function renderOwnerView({
                   </div>
                 ) : null}
 
-                <div className="mt-5 flex flex-wrap gap-3">
+                <div className="mt-auto flex flex-wrap gap-3 pt-5">
                   <ButtonLink
                     href={`/articles/${item.slug}`}
                     variant="ghost"
@@ -311,6 +330,16 @@ async function renderOwnerView({
             </div>
           </div>
         )}
+
+        {totalPages > 1 ? (
+          <div className="mt-8 flex justify-center">
+            <Pagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              hrefFor={buildPageHref}
+            />
+          </div>
+        ) : null}
       </section>
     </main>
   );

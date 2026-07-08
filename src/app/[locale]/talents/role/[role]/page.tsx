@@ -69,7 +69,7 @@ export default async function TalentsByRolePage({
     scope: "creators",
     sort: "relevance",
     page: 1,
-    perPage: 10,
+    perPage: 12,
     categoryId: category.id,
   });
 

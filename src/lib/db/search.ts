@@ -235,9 +235,9 @@ export async function searchDiscovery(
   const minScore = params.minScore ?? null;
   const maxScore = params.maxScore ?? null;
   const perPageRaw = params.perPage ?? null;
-  const perPage = [10, 20, 50].includes(perPageRaw ?? 0)
+  const perPage = [12, 24, 48].includes(perPageRaw ?? 0)
     ? (perPageRaw as number)
-    : 10;
+    : 12;
   const pageRaw = params.page ?? null;
   const page = pageRaw && pageRaw > 0 ? pageRaw : 1;
 

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import FollowUnfollowButton from "@/components/follow-unfollow-button";
-import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
+import Pagination from "@/components/ui/pagination";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
@@ -208,8 +208,10 @@ export default async function FollowingPage({
   const offset = (safePage - 1) * PAGE_SIZE;
   const pagedEntries = entries.slice(offset, offset + PAGE_SIZE);
 
-  const hasPrev = safePage > 1;
-  const hasNext = safePage < totalPages;
+  const buildPageHref = (nextPage: number) => {
+    const base = createLocalePath(locale, "/dashboard/following");
+    return nextPage > 1 ? `${base}?page=${nextPage}` : base;
+  };
 
   const followedProfiles = followedUserIds
     .map((id) => profileMap.get(id))
@@ -391,36 +393,13 @@ export default async function FollowingPage({
         )}
 
         {totalPages > 1 && (
-          <nav
-            className="mt-8 flex items-center justify-between gap-3"
-            aria-label="Pagination"
-          >
-            {hasPrev ? (
-              <ButtonLink
-                href={`/dashboard/following?page=${safePage - 1}`}
-                variant="ghost"
-                size="sm"
-              >
-                ← {dictionary.bookmarks.previousPage}
-              </ButtonLink>
-            ) : (
-              <span />
-            )}
-            <span className="text-xs app-muted">
-              {dictionary.bookmarks.pageLabel} {safePage} / {totalPages}
-            </span>
-            {hasNext ? (
-              <ButtonLink
-                href={`/dashboard/following?page=${safePage + 1}`}
-                variant="ghost"
-                size="sm"
-              >
-                {dictionary.bookmarks.nextPage} →
-              </ButtonLink>
-            ) : (
-              <span />
-            )}
-          </nav>
+          <div className="mt-8 flex justify-center">
+            <Pagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              hrefFor={buildPageHref}
+            />
+          </div>
         )}
       </section>
 
