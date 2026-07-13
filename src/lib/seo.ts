@@ -490,8 +490,21 @@ export function buildArticleCategoryMetadata({
 /*  Schema.org JSON-LD helpers                                        */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Maps our two-letter locale to a BCP-47 language tag for schema.org
+ * `inLanguage`. Kept separate from the `uk_UA`/`en_US` form used for
+ * `og:locale` (Open Graph uses underscores, schema.org uses hyphens).
+ */
+export function toBcp47(locale: Locale) {
+  return locale === "uk" ? "uk-UA" : "en-US";
+}
+
 export function buildOrganizationSchema() {
   const siteUrl = getSiteUrl();
+  // `sameAs` (official social profiles) is intentionally omitted rather than
+  // emitted as an empty array: an empty `sameAs` adds nothing to the entity
+  // graph and Google's Rich Results test flags it. Add the platform's real
+  // social URLs here once they exist.
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -500,7 +513,6 @@ export function buildOrganizationSchema() {
     logo: `${siteUrl}/favicon.webp`,
     description:
       "SearchTalent — a community platform where developers, designers, and IT specialists publish portfolios, projects, and articles.",
-    sameAs: [],
   };
 }
 
@@ -511,6 +523,8 @@ export function buildWebSiteSchema() {
     "@type": "WebSite",
     name: "SearchTalent",
     url: siteUrl,
+    // The site publishes every public page in both English and Ukrainian.
+    inLanguage: ["en-US", "uk-UA"],
     description:
       "Community platform to discover IT talent, explore portfolios, and follow developers and designers.",
     potentialAction: {
@@ -643,16 +657,19 @@ export function buildProfilePageSchema({
   person,
   dateCreated,
   dateModified,
+  inLanguage,
 }: {
   url: string;
   person: ReturnType<typeof buildPersonSchema>;
   dateCreated: string | null;
   dateModified: string | null;
+  inLanguage?: string | null;
 }) {
   return {
     "@context": "https://schema.org",
     "@type": "ProfilePage",
     url,
+    ...(inLanguage ? { inLanguage } : {}),
     mainEntity: person,
     ...(dateCreated ? { dateCreated } : {}),
     ...(dateModified ? { dateModified } : {}),
@@ -671,6 +688,7 @@ export function buildProjectSchema({
   dateModified,
   demoUrl,
   codeRepository,
+  inLanguage,
 }: {
   title: string;
   description: string | null;
@@ -683,6 +701,7 @@ export function buildProjectSchema({
   dateModified?: string | null;
   demoUrl?: string | null;
   codeRepository?: string | null;
+  inLanguage?: string | null;
 }) {
   const creator = authorName
     ? {
@@ -704,6 +723,7 @@ export function buildProjectSchema({
     name: title,
     ...(description ? { description } : {}),
     url,
+    ...(inLanguage ? { inLanguage } : {}),
     ...(demoUrl ? { sameAs: demoUrl } : {}),
     ...(image ? { image } : {}),
     ...(creator ? { creator, author: creator } : {}),
@@ -728,6 +748,7 @@ export function buildArticleSchema({
   articleSection,
   keywords,
   wordCount,
+  inLanguage,
 }: {
   title: string;
   excerpt: string | null;
@@ -740,6 +761,7 @@ export function buildArticleSchema({
   articleSection?: string | null;
   keywords?: string[];
   wordCount?: number | null;
+  inLanguage?: string | null;
 }) {
   const siteUrl = getSiteUrl();
   const image = imageUrl
@@ -759,6 +781,7 @@ export function buildArticleSchema({
     ...(excerpt ? { description: excerpt } : {}),
     url,
     mainEntityOfPage: url,
+    ...(inLanguage ? { inLanguage } : {}),
     ...(image ? { image } : {}),
     ...(authorName
       ? {
@@ -861,6 +884,40 @@ export function buildBreadcrumbSchema(
       position: index + 1,
       name: item.name,
       item: item.url,
+    })),
+  };
+}
+
+/**
+ * A summary-page `ItemList` for browse/facet listings (talents, projects,
+ * articles). Each element is a `ListItem` whose `url` points at the entity's
+ * own detail page — the format Google documents for list pages that link to
+ * separate detail pages. Emit it only when there is at least one item so empty
+ * facet pages don't ship a useless `numberOfItems: 0` list.
+ */
+export function buildItemListSchema({
+  url,
+  name,
+  inLanguage,
+  items,
+}: {
+  url?: string;
+  name?: string;
+  inLanguage?: string | null;
+  items: Array<{ url: string; name?: string | null }>;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    ...(url ? { url } : {}),
+    ...(name ? { name } : {}),
+    ...(inLanguage ? { inLanguage } : {}),
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: item.url,
+      ...(item.name ? { name: item.name } : {}),
     })),
   };
 }

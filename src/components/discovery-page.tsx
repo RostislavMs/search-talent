@@ -118,6 +118,13 @@ type DiscoveryPageProps = {
    */
   hero?: DiscoveryHero;
   /**
+   * Seeds the text-search box (and, via the SSR seed below, the first page of
+   * results) from a `?q=` URL parameter. Used by `/talents` so the WebSite
+   * JSON-LD `SearchAction` target (`/talents?q={term}`) actually renders
+   * results for the term instead of the default listing.
+   */
+  initialQuery?: string;
+  /**
    * Server-rendered first page of results for the page's default query
    * (no user filters, page 1, relevance), matching the locked facet if any.
    * Seeding the state from these props puts real result cards in the SSR
@@ -527,6 +534,7 @@ export default function DiscoveryPage({
   initialSkillIds = [],
   hero,
   lockedFilter,
+  initialQuery,
   initialUsers,
   initialProjects,
   initialTotals,
@@ -552,7 +560,7 @@ export default function DiscoveryPage({
     skills: [],
     categories: [],
   });
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery ?? "");
   const [sort, setSort] = useState<Sort>("relevance");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(12);

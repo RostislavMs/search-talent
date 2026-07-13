@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
+import JsonLd from "@/components/json-ld";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import { getProfileCategoryBySlug } from "@/lib/db/marketing";
 import { getInitialDiscoveryResults } from "@/lib/db/search";
 import { isLocale, type Locale } from "@/lib/i18n/config";
-import { buildTalentCategoryMetadata } from "@/lib/seo";
+import {
+  buildItemListSchema,
+  buildTalentCategoryMetadata,
+  getSiteUrl,
+  toBcp47,
+} from "@/lib/seo";
 import { notFound } from "next/navigation";
 
 const DiscoveryPage = nextDynamic(() => import("@/components/discovery-page"), {
@@ -85,8 +91,26 @@ export default async function TalentsByRolePage({
         : `Public profiles and portfolios in the ${category.name} direction. Filter by skills, location, and experience.`,
   };
 
+  const siteUrl = getSiteUrl().replace(/\/$/, "");
+  const listItems = (initial?.users ?? [])
+    .filter((user) => user.username)
+    .map((user) => ({
+      url: `${siteUrl}/${locale}/u/${user.username}`,
+      name: user.name || user.username,
+    }));
+
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      {listItems.length > 0 && (
+        <JsonLd
+          data={buildItemListSchema({
+            url: `${siteUrl}/${locale}/talents/role/${role}`,
+            name: hero.title,
+            inLanguage: toBcp47(locale),
+            items: listItems,
+          })}
+        />
+      )}
       <DiscoveryPage
         mode="creators"
         lockedFilter={{ label: category.name, categoryId: category.id }}

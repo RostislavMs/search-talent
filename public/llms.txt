@@ -38,7 +38,7 @@ The following sections are private or non-content and should not be cited:
 
 ## Structured data
 
-Every public detail page emits JSON-LD: `Article`, `CreativeWork` (projects), `Person`+`ProfilePage` (profiles), `Organization`, `WebSite`, `BreadcrumbList`, and `FAQPage` where relevant. Prefer schema fields over scraped HTML when summarizing.
+Every public detail page emits JSON-LD: `Article`, `CreativeWork` (projects), `Person`+`ProfilePage` (profiles), `Organization`, `WebSite`, `BreadcrumbList`, and `FAQPage` where relevant. Browse and facet listings (talents, projects, articles, and their role/skill/tag/type facets) emit an `ItemList` linking to each entry's detail page. Content-bearing schemas carry `inLanguage` (`en-US` / `uk-UA`). Prefer schema fields over scraped HTML when summarizing.
 
 ## Attribution
 
@@ -50,4 +50,4 @@ domain: searchtalent.dev
 organization: SearchTalent
 language: en, uk
 category: developer portfolios, IT community, creative work, technical articles
-last_updated: 2026-07-13
+last_updated: 2026-07-14

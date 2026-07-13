@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
+import JsonLd from "@/components/json-ld";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import { getProjectKindDirectory } from "@/lib/db/marketing";
 import { getInitialDiscoveryResults } from "@/lib/db/search";
@@ -11,7 +12,7 @@ import {
   projectKinds,
   type ProjectKind,
 } from "@/lib/projects";
-import { buildMetadata } from "@/lib/seo";
+import { buildItemListSchema, buildMetadata, getSiteUrl, toBcp47 } from "@/lib/seo";
 import { notFound } from "next/navigation";
 
 const DiscoveryPage = dynamic(() => import("@/components/discovery-page"), {
@@ -111,8 +112,26 @@ export default async function ProjectsByTypePage({
         : `Public ${label.toLowerCase()} projects. Filter by technology, status, and rating.`,
   };
 
+  const siteUrl = getSiteUrl().replace(/\/$/, "");
+  const listItems = (initial?.projects ?? [])
+    .filter((project) => project.slug)
+    .map((project) => ({
+      url: `${siteUrl}/${locale}/projects/${project.slug}`,
+      name: project.title,
+    }));
+
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      {listItems.length > 0 && (
+        <JsonLd
+          data={buildItemListSchema({
+            url: `${siteUrl}/${locale}/projects/type/${kind}`,
+            name: hero.title,
+            inLanguage: toBcp47(locale),
+            items: listItems,
+          })}
+        />
+      )}
       <DiscoveryPage
         mode="projects"
         lockedFilter={{ label, kind }}
