@@ -70,6 +70,8 @@ export type ArticleDetail = ArticleFeedItem & {
   moderationStatus: string | null;
   moderationNote: string | null;
   content: string;
+  /** Last post-publish edit time; null until an already-published article is edited. */
+  editedAt: string | null;
   coverImageStoragePath: string | null;
   heroVideoStoragePath: string | null;
   currentUserLiked: boolean;

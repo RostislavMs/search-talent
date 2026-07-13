@@ -167,6 +167,9 @@ export default function PollComposer({
   const [uploadingCover, setUploadingCover] = useState(false);
   const isEditing = Boolean(editPoll?.id);
   const locked = Boolean(editPoll?.locked);
+  // Editing an already-published poll: relabel the actions so it's clear "Save
+  // changes" keeps it live and the secondary button unpublishes it to a draft.
+  const isPublished = isEditing && editPoll?.status === "published";
 
   const current = versions[activeLocale];
   const updateActive = (patch: Partial<LangVersion>) =>
@@ -222,6 +225,8 @@ export default function PollComposer({
         uploading: "Завантаження...",
         saveDraft: "Зберегти чернетку",
         publishNow: "Опублікувати",
+        saveChanges: "Зберегти зміни",
+        moveToDraft: "Перевести в чернетку",
         remove: "Прибрати",
         error: "Не вдалося зберегти опитування.",
         toastDraftSaved: "Опитування збережено як чернетку",
@@ -252,6 +257,8 @@ export default function PollComposer({
         uploading: "Uploading...",
         saveDraft: "Save draft",
         publishNow: "Publish now",
+        saveChanges: "Save changes",
+        moveToDraft: "Move to draft",
         remove: "Remove",
         error: "Could not save the poll.",
         toastDraftSaved: "Poll saved as a draft",
@@ -612,7 +619,11 @@ export default function PollComposer({
                 onClick={() => void savePoll("draft")}
                 className="w-full justify-center"
               >
-                {saving === "draft" ? ui.uploading : ui.saveDraft}
+                {saving === "draft"
+                  ? ui.uploading
+                  : isPublished
+                    ? ui.moveToDraft
+                    : ui.saveDraft}
               </Button>
               <Button
                 disabled={saving !== null}
@@ -620,7 +631,11 @@ export default function PollComposer({
                 onClick={() => void savePoll("published")}
                 className="w-full justify-center"
               >
-                {saving === "published" ? ui.uploading : ui.publishNow}
+                {saving === "published"
+                  ? ui.uploading
+                  : isPublished
+                    ? ui.saveChanges
+                    : ui.publishNow}
               </Button>
             </div>
           </div>

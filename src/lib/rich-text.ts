@@ -53,6 +53,42 @@ function stripZeroWidth(value: string) {
   return value.split(ZERO_WIDTH_SPACE).join("");
 }
 
+// Text blocks where a trailing <br> is browser filler, not content.
+const TEXT_BLOCK_TAGS = new Set([
+  "p",
+  "h3",
+  "blockquote",
+  "li",
+  "summary",
+  "figcaption",
+]);
+
+// Remove a trailing <br> (with any whitespace/&nbsp; around it) that
+// contentEditable leaves at the end of a block — e.g. <h3>Title<br></h3> or
+// <li>item<br></li>. Left in place it renders as a spurious empty line after the
+// block once the editor blurs and re-normalises. A lone <br> (a genuinely empty
+// line) is preserved: the caller's empty-block handling turns it into a clean
+// <p><br></p>.
+function stripTrailingBr(content: string): string {
+  const withoutTrailing = content.replace(
+    /(?:\s|&nbsp;|<br\s*\/?>)+$/gi,
+    (match) => (/<br/i.test(match) ? "" : match),
+  );
+  return withoutTrailing.trim().length > 0 ? withoutTrailing : content;
+}
+
+// True when a block's inner HTML carries no real content — only <br>, &nbsp; and
+// whitespace. Such a block is either a blank line the user typed or noise the
+// browser dropped in; the caller decides which based on whether a <br> is present.
+function htmlIsBlank(content: string): boolean {
+  return (
+    content
+      .replace(/<br\s*\/?>/gi, "")
+      .replace(/&nbsp;/gi, "")
+      .replace(/\s+/g, "") === ""
+  );
+}
+
 function normalizePlainTextToHtml(value: string) {
   const trimmed = value.trim();
 
@@ -99,7 +135,10 @@ function sanitizeNode(node: Node): string {
   // Only wrap in <p> if the div contains only inline content
   if (tag === "div") {
     const content = Array.from(element.childNodes).map(sanitizeNode).join("");
-    if (!content) return "";
+    // An empty <div> (or one holding only a filler <br>) is browser noise from
+    // focus/click — drop it so it never becomes a stray blank line. A deliberate
+    // blank line is a <p><br></p>, handled in the paragraph branch below.
+    if (htmlIsBlank(content)) return "";
     // If content already contains block-level tags, don't wrap in <p>
     if (/<(?:p|h3|ul|ol|li|blockquote|figure|iframe)[\s>]/i.test(content)) {
       return content;
@@ -174,6 +213,7 @@ function sanitizeNode(node: Node): string {
     if (!summaryHtml) {
       summaryHtml = "<summary></summary>";
     }
+    bodyHtml = stripTrailingBr(bodyHtml);
     if (!bodyHtml) {
       bodyHtml = "<p><br></p>";
     }
@@ -183,22 +223,28 @@ function sanitizeNode(node: Node): string {
     return `<details open>${summaryHtml}${bodyHtml}</details>`;
   }
 
-  const content = Array.from(element.childNodes).map(sanitizeNode).join("");
+  let content = Array.from(element.childNodes).map(sanitizeNode).join("");
 
-  if (!content && !["figure"].includes(tag)) {
-    // An empty paragraph is a deliberate blank line — keep it as a clean
-    // <p><br></p> instead of dropping it, so spacing the user added survives.
-    return tag === "p" ? "<p><br></p>" : "";
+  // Drop the trailing filler <br> browsers append inside an edited block so it
+  // doesn't survive normalisation as an empty line after the heading / item.
+  if (TEXT_BLOCK_TAGS.has(tag)) {
+    content = stripTrailingBr(content);
   }
 
   if (tag === "p") {
-    const stripped = content
-      .replace(/<br\s*\/?>/gi, "")
-      .replace(/&nbsp;/gi, "")
-      .replace(/\s+/g, "");
-    if (!stripped) {
-      return "<p><br></p>";
+    // Only a <p><br></p> — what pressing Enter on an empty line produces — is a
+    // deliberate blank line worth keeping. Any other empty-ish paragraph (truly
+    // empty, only &nbsp;/whitespace) is noise the browser leaves behind on
+    // focus/click, so drop it; otherwise clicking in and out of the editor keeps
+    // sprinkling blank lines between the blocks.
+    if (htmlIsBlank(content)) {
+      return /<br\s*\/?>/i.test(content) ? "<p><br></p>" : "";
     }
+    return `<p>${content}</p>`;
+  }
+
+  if (!content && !["figure"].includes(tag)) {
+    return "";
   }
 
   return `<${tag}>${content}</${tag}>`;
@@ -334,6 +380,25 @@ const TOP_LEVEL_BLOCKS = new Set([
 // <div> and <br> — that mix is what produced the uneven gaps between lines.
 // Empty lines are preserved as <p><br></p>.
 function normalizeTopLevelNodes(nodes: Node[]): string {
+  // Drop trailing filler <br> (and blank text) at the root: contentEditable
+  // leaves a bare <br> after the last block, which would otherwise become a
+  // spurious empty <p><br></p> line every time the editor blurs. A deliberate
+  // blank line the user typed is a <p><br></p> block, so it is untouched here.
+  const roots = [...nodes];
+  while (roots.length > 0) {
+    const last = roots[roots.length - 1];
+    const isBr =
+      last.nodeType === Node.ELEMENT_NODE &&
+      (last as HTMLElement).tagName.toLowerCase() === "br";
+    const isBlankText =
+      last.nodeType === Node.TEXT_NODE && !(last.textContent ?? "").trim();
+    if (isBr || isBlankText) {
+      roots.pop();
+    } else {
+      break;
+    }
+  }
+
   let html = "";
   let buffer: Node[] = [];
 
@@ -352,18 +417,18 @@ function normalizeTopLevelNodes(nodes: Node[]): string {
     return false;
   };
 
-  for (const node of nodes) {
+  for (const node of roots) {
     const isElement = node.nodeType === Node.ELEMENT_NODE;
     const tag = isElement ? (node as HTMLElement).tagName.toLowerCase() : "";
     if (isElement && TOP_LEVEL_BLOCKS.has(tag)) {
       flushParagraph();
       html += sanitizeNode(node);
     } else if (isElement && tag === "br") {
-      // A <br> directly at the root is a line break between paragraphs, not a
-      // soft break inside one.
-      if (!flushParagraph()) {
-        html += "<p><br></p>";
-      }
+      // A <br> between inline runs terminates the paragraph they belong to
+      // (flushed here). A bare <br> sitting between block elements is browser
+      // filler from focus/click — drop it instead of turning it into a blank
+      // line, so only real <p><br></p> paragraphs carry blank-line spacing.
+      flushParagraph();
     } else {
       buffer.push(node);
     }

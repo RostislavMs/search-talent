@@ -59,6 +59,7 @@ type PollRow = {
   pinned_until: string | null;
   closes_at: string | null;
   published_at: string | null;
+  edited_at: string | null;
   created_at: string | null;
   content_locale: string | null;
   translations: Record<string, Partial<PollLocalizedFields>> | null;
@@ -116,7 +117,7 @@ type ProfileSummaryRow = {
 };
 
 const POLL_COLUMNS =
-  "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, responses_count, pinned_until, closes_at, published_at, created_at, content_locale, translations";
+  "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, responses_count, pinned_until, closes_at, published_at, edited_at, created_at, content_locale, translations";
 
 function mapCategory(row: PollCategoryRow | null | undefined): PollCategory | null {
   if (!row) return null;
@@ -576,6 +577,7 @@ export async function getPollDetail(slug: string, locale?: string | null) {
     moderationStatus: poll.moderation_status,
     moderationNote: poll.moderation_note,
     content: localized.content || "",
+    editedAt: poll.edited_at,
     coverImageStoragePath: localized.cover_image_storage_path,
     currentUserLiked: Boolean(likeResponse.data),
     hasVoted,

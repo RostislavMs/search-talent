@@ -93,6 +93,7 @@ export default async function PollDetailPage({
         back: "Усі опитування",
         edit: "Редагувати",
         published: "Опубліковано",
+        updated: "Оновлено",
         category: "Категорія",
         draft: "Чернетка",
         moderatorNote: "Нотатка модератора",
@@ -101,6 +102,7 @@ export default async function PollDetailPage({
         back: "All polls",
         edit: "Edit",
         published: "Published",
+        updated: "Updated",
         category: "Category",
         draft: "Draft",
         moderatorNote: "Moderator note",
@@ -203,6 +205,11 @@ export default async function PollDetailPage({
             <span>
               {ui.published}: {formatArticleDate(poll.publishedAt || poll.createdAt, safeLocale)}
             </span>
+            {poll.editedAt ? (
+              <span>
+                {ui.updated}: {formatArticleDate(poll.editedAt, safeLocale)}
+              </span>
+            ) : null}
             <span>{getCategoryDisplayName(poll.category, safeLocale)}</span>
             <span>{getPollClosesLabel(poll.closesAt, safeLocale)}</span>
           </div>

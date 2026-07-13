@@ -118,7 +118,7 @@ export default async function NewArticlePage({
         </div>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-8 px-4 sm:px-0">
         <ArticleComposer
           locale={safeLocale}
           categories={dashboard.categories}

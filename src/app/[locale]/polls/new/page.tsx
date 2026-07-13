@@ -100,7 +100,7 @@ export default async function NewPollPage({
         </div>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-8 px-4 sm:px-0">
         <PollComposer locale={safeLocale} categories={categories} isAdmin={viewer.isAdmin} />
       </section>
     </main>

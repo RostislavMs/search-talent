@@ -44,7 +44,9 @@ export async function PUT(
 
   const { data: existing } = await context.supabase
     .from("polls")
-    .select("id, author_user_id, slug, moderation_status, followers_notified_at")
+    .select(
+      "id, author_user_id, slug, moderation_status, followers_notified_at, published_at",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -109,6 +111,16 @@ export async function PUT(
   }
 
   const result = data as { id: string; slug: string };
+
+  // Editing an already-published poll stamps a dedicated "edited" date. save_poll
+  // already preserves the original published_at (coalesce), so we only add the
+  // edit timestamp here — and only for a genuine post-publish edit.
+  if (existing.published_at) {
+    await context.supabase
+      .from("polls")
+      .update({ edited_at: new Date().toISOString() })
+      .eq("id", id);
+  }
 
   if (willRemove) {
     await autoRemoveContent({ table: "polls", id, note: screen.note });

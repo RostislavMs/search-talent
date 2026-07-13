@@ -84,6 +84,7 @@ export default function ArticleDetailView({
         deleteFailed: "Не вдалося видалити статтю.",
         by: "Автор",
         published: "Опубліковано",
+        updated: "Оновлено",
         draft: "Чернетка",
         category: "Категорія",
         noCategory: "Без категорії",
@@ -104,6 +105,7 @@ export default function ArticleDetailView({
         deleteFailed: "Could not delete the article.",
         by: "Author",
         published: "Published",
+        updated: "Updated",
         draft: "Draft",
         category: "Category",
         noCategory: "No category",
@@ -303,6 +305,11 @@ export default function ArticleDetailView({
                   locale,
                 )}
               </span>
+              {article.editedAt ? (
+                <span>
+                  {ui.updated}: {formatArticleDate(article.editedAt, locale)}
+                </span>
+              ) : null}
               <span>{getArticleReadingTime(article.content, locale)}</span>
               {!isNews && (
                 <span>
