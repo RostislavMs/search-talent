@@ -3,6 +3,14 @@ export const locales = ["uk", "en"] as const;
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = "uk";
+
+// The hreflang `x-default` target — deliberately NOT `defaultLocale`. The root
+// redirect sends every visitor whose Accept-Language lacks Ukrainian to /en
+// (see `detectPreferredLocale`), so English is the real fallback for unmatched
+// languages. `x-default` must mirror that behaviour, otherwise Google sees a
+// contradiction between what the sitemap declares and where the site sends users.
+export const xDefaultLocale: Locale = "en";
+
 export const localeCookieName = "locale";
 
 export function isLocale(value: string): value is Locale {
