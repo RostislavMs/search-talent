@@ -10,6 +10,12 @@ import MentionText from "@/components/ui/mention-text";
 import MentionTextarea from "@/components/ui/mention-textarea";
 import OptimizedImage from "@/components/ui/optimized-image";
 import ReactionPicker from "@/components/ui/reaction-picker";
+import {
+  CommentIcon,
+  EyeIcon,
+  LikeChip,
+  StatChip,
+} from "@/components/ui/content-stats";
 import { apiFetch } from "@/lib/api-client";
 import type { ReactionSummary } from "@/lib/constants/reactions";
 import { createLocalePath } from "@/lib/i18n/config";
@@ -532,23 +538,24 @@ export default function ArticleInteractions({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant={liked ? "primary" : "secondary"}
+      <div className="flex flex-wrap items-center gap-2">
+        <LikeChip
+          liked={liked}
+          count={likesCount}
           onClick={() => void toggleLike()}
           disabled={submittingLike}
-        >
-          {locale === "uk" ? "Подобається" : "Like"} ({likesCount})
-        </Button>
-        <span className="rounded-full app-panel px-4 py-2 text-sm app-muted">
-          {locale === "uk" ? "Перегляди" : "Views"}: {viewsCount}
-        </span>
-        <span className="rounded-full app-panel px-4 py-2 text-sm app-muted">
-          {locale === "uk" ? "Коментарі" : "Comments"}: {totalCommentCount}
-        </span>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
+          label={locale === "uk" ? "Подобається" : "Like"}
+        />
+        <StatChip
+          icon={<EyeIcon />}
+          count={viewsCount}
+          label={locale === "uk" ? "Перегляди" : "Views"}
+        />
+        <StatChip
+          icon={<CommentIcon />}
+          count={totalCommentCount}
+          label={locale === "uk" ? "Коментарі" : "Comments"}
+        />
         <ReactionPicker
           targetType="article"
           targetId={articleId}

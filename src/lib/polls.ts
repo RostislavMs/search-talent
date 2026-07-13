@@ -89,6 +89,8 @@ export type PollDetail = PollFeedItem & {
   moderationStatus: string | null;
   moderationNote: string | null;
   content: string;
+  /** Last post-publish edit time; null until an already-published poll is edited. */
+  editedAt: string | null;
   coverImageStoragePath: string | null;
   currentUserLiked: boolean;
   hasVoted: boolean;

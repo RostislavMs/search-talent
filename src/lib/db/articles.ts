@@ -59,6 +59,7 @@ type ArticleRow = {
   comments_count: number | null;
   pinned_until: string | null;
   published_at: string | null;
+  edited_at: string | null;
   created_at: string | null;
   content_locale: string | null;
   translations: Record<string, Partial<ArticleLocalizedFields>> | null;
@@ -478,7 +479,7 @@ export async function getArticleDetail(slug: string, locale?: string | null) {
   const { data: row } = await supabase
     .from("articles")
     .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at, content_locale, translations",
+      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, edited_at, created_at, content_locale, translations",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -572,6 +573,7 @@ export async function getArticleDetail(slug: string, locale?: string | null) {
     moderationStatus: article.moderation_status,
     moderationNote: article.moderation_note,
     content: localized.content || "",
+    editedAt: article.edited_at,
     coverImageStoragePath: localized.cover_image_storage_path,
     heroVideoStoragePath: localized.hero_video_storage_path,
     currentUserLiked: Boolean(currentLikeResponse.data),

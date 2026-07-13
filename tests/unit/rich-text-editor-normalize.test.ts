@@ -40,6 +40,76 @@ describe("normalizeRichTextForEditor (editor DOM path)", () => {
     );
   });
 
+  it("strips a trailing filler <br> left inside a heading", () => {
+    expect(normalizeRichTextForEditor("<h3>Heading<br></h3>")).toBe(
+      "<h3>Heading</h3>",
+    );
+  });
+
+  it("strips a trailing filler <br> left inside a paragraph", () => {
+    expect(normalizeRichTextForEditor("<p>text<br></p>")).toBe("<p>text</p>");
+  });
+
+  it("strips a trailing filler <br> from each list item", () => {
+    expect(
+      normalizeRichTextForEditor("<ul><li>a<br></li><li>b<br></li></ul>"),
+    ).toBe("<ul><li>a</li><li>b</li></ul>");
+  });
+
+  it("keeps a soft line break in the middle of a paragraph", () => {
+    expect(normalizeRichTextForEditor("<p>line1<br>line2<br></p>")).toBe(
+      "<p>line1<br>line2</p>",
+    );
+  });
+
+  it("drops a trailing bare <br> at the root instead of adding a blank line", () => {
+    expect(normalizeRichTextForEditor("<p>a</p><br>")).toBe("<p>a</p>");
+    expect(normalizeRichTextForEditor("<ul><li>a</li></ul><br>")).toBe(
+      "<ul><li>a</li></ul>",
+    );
+  });
+
+  it("drops an empty <div> the browser leaves between blocks", () => {
+    expect(
+      normalizeRichTextForEditor("<p>a</p><div><br></div><p>b</p>"),
+    ).toBe("<p>a</p><p>b</p>");
+  });
+
+  it("drops a bare <br> between blocks instead of adding a blank line", () => {
+    expect(normalizeRichTextForEditor("<h3>H</h3><br><p>b</p>")).toBe(
+      "<h3>H</h3><p>b</p>",
+    );
+  });
+
+  it("drops an &nbsp;-only paragraph inserted between blocks", () => {
+    expect(
+      normalizeRichTextForEditor("<p>a</p><p>&nbsp;</p><p>b</p>"),
+    ).toBe("<p>a</p><p>b</p>");
+  });
+
+  it("still keeps a real <p><br></p> blank line the user typed", () => {
+    expect(normalizeRichTextForEditor("<p>a</p><p><br></p><p>b</p>")).toBe(
+      "<p>a</p><p><br></p><p>b</p>",
+    );
+  });
+
+  it("is stable across repeated normalisation (focus/blur cycles)", () => {
+    const doc =
+      "<p>a</p><h3>H</h3><blockquote>q</blockquote><ul><li>x</li></ul>";
+    const once = normalizeRichTextForEditor(doc);
+    expect(normalizeRichTextForEditor(once)).toBe(once);
+  });
+
+  it("strips trailing filler <br> inside a spoiler body", () => {
+    expect(
+      normalizeRichTextForEditor(
+        "<details open><summary>Title</summary><ul><li>a<br></li><li>b</li></ul></details>",
+      ),
+    ).toBe(
+      "<details open><summary>Title</summary><ul><li>a</li><li>b</li></ul></details>",
+    );
+  });
+
   it("keeps a spoiler expanded and intact even when empty", () => {
     const result = normalizeRichTextForEditor(
       "<details><summary>Title</summary><p>Body</p></details>",

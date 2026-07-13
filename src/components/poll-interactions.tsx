@@ -8,6 +8,12 @@ import CommentGif from "@/components/ui/comment-gif";
 import FormTextarea from "@/components/ui/form-textarea";
 import GifPicker from "@/components/ui/gif-picker";
 import OptimizedImage from "@/components/ui/optimized-image";
+import {
+  CommentIcon,
+  EyeIcon,
+  LikeChip,
+  StatChip,
+} from "@/components/ui/content-stats";
 import { apiFetch } from "@/lib/api-client";
 import { createLocalePath } from "@/lib/i18n/config";
 import type { PollComment } from "@/lib/polls";
@@ -415,16 +421,24 @@ export default function PollInteractions({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant={liked ? "primary" : "secondary"} onClick={() => void toggleLike()} disabled={submittingLike}>
-          {isUk ? "Подобається" : "Like"} ({likesCount})
-        </Button>
-        <span className="rounded-full app-panel px-4 py-2 text-sm app-muted">
-          {isUk ? "Перегляди" : "Views"}: {viewsCount}
-        </span>
-        <span className="rounded-full app-panel px-4 py-2 text-sm app-muted">
-          {isUk ? "Коментарі" : "Comments"}: {totalCommentCount}
-        </span>
+      <div className="flex flex-wrap items-center gap-2">
+        <LikeChip
+          liked={liked}
+          count={likesCount}
+          onClick={() => void toggleLike()}
+          disabled={submittingLike}
+          label={isUk ? "Подобається" : "Like"}
+        />
+        <StatChip
+          icon={<EyeIcon />}
+          count={viewsCount}
+          label={isUk ? "Перегляди" : "Views"}
+        />
+        <StatChip
+          icon={<CommentIcon />}
+          count={totalCommentCount}
+          label={isUk ? "Коментарі" : "Comments"}
+        />
       </div>
 
       <section className="space-y-4">

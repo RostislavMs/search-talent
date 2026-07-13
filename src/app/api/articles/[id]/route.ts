@@ -43,7 +43,9 @@ export async function PUT(
 
   const { data: existing } = await context.supabase
     .from("articles")
-    .select("id, author_user_id, slug, moderation_status, followers_notified_at")
+    .select(
+      "id, author_user_id, slug, moderation_status, followers_notified_at, published_at",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -87,6 +89,10 @@ export async function PUT(
 
   const slug = await ensureUniqueArticleSlug(payload.title, id);
   const now = new Date().toISOString();
+  // Editing an already-published article stamps a dedicated "edited" date and
+  // preserves the ORIGINAL publish date (so "Опубліковано" doesn't silently jump
+  // to today). A first publish sets published_at and leaves edited_at null.
+  const wasPublished = Boolean(existing.published_at);
 
   const { data, error } = await context.supabase
     .from("articles")
@@ -106,7 +112,10 @@ export async function PUT(
         payload.content_locale,
       ),
       status: payload.status,
-      published_at: payload.status === "published" ? now : null,
+      published_at:
+        existing.published_at ??
+        (payload.status === "published" ? now : null),
+      edited_at: wasPublished ? now : null,
     })
     .eq("id", id)
     .select("id, slug")

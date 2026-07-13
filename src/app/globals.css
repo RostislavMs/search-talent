@@ -748,6 +748,17 @@ select {
   padding-right: 1rem;
 }
 
+/* A list directly in the spoiler body needs the 1rem body inset *plus* the
+   normal list indent (1.4rem) — otherwise the `details > :not(summary)` rule
+   above overrides the list's own padding and the bullets crowd the accent rail.
+   Same specificity as that rule, so source order (this being later) wins. */
+.rich-text-editor details > ul,
+.rich-text-renderer details > ul,
+.rich-text-editor details > ol,
+.rich-text-renderer details > ol {
+  padding-left: 2.4rem;
+}
+
 .rich-text-editor details[open] > :not(summary):first-of-type,
 .rich-text-renderer details[open] > :not(summary):first-of-type {
   margin-top: 0.9rem;
