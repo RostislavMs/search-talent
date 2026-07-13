@@ -18,6 +18,7 @@ import {
   getMetadataBase,
   isProfileIndexable,
   safeJsonLd,
+  toBcp47,
 } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -133,6 +134,7 @@ export default async function PublicProfilePage({
     person: personSchema,
     dateCreated: null,
     dateModified: null,
+    inLanguage: toBcp47(locale),
   });
 
   const breadcrumbSchema = buildBreadcrumbSchema([

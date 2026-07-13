@@ -3,6 +3,7 @@ import {
   buildArticleSchema,
   buildBreadcrumbSchema,
   buildFaqSchema,
+  buildItemListSchema,
   buildOrganizationSchema,
   buildPersonSameAs,
   buildPersonSchema,
@@ -11,6 +12,7 @@ import {
   buildWebSiteSchema,
   countWords,
   safeJsonLd,
+  toBcp47,
 } from "@/lib/seo";
 
 describe("safeJsonLd", () => {
@@ -183,6 +185,12 @@ describe("buildOrganizationSchema", () => {
     expect(schema.url).toBeTruthy();
     expect(schema.logo).toContain("favicon.webp");
   });
+
+  it("omits sameAs when there are no official profiles", () => {
+    const schema = buildOrganizationSchema();
+
+    expect(schema).not.toHaveProperty("sameAs");
+  });
 });
 
 describe("buildWebSiteSchema", () => {
@@ -192,8 +200,56 @@ describe("buildWebSiteSchema", () => {
     expect(schema["@context"]).toBe("https://schema.org");
     expect(schema["@type"]).toBe("WebSite");
     expect(schema.name).toBe("SearchTalent");
+    expect(schema.inLanguage).toEqual(["en-US", "uk-UA"]);
     expect(schema.potentialAction["@type"]).toBe("SearchAction");
     expect(schema.potentialAction.target.urlTemplate).toContain("{search_term_string}");
+  });
+});
+
+describe("toBcp47", () => {
+  it("maps locales to BCP-47 language tags", () => {
+    expect(toBcp47("uk")).toBe("uk-UA");
+    expect(toBcp47("en")).toBe("en-US");
+  });
+});
+
+describe("buildItemListSchema", () => {
+  it("builds a summary-page ItemList of detail-page URLs", () => {
+    const schema = buildItemListSchema({
+      url: "https://example.com/en/talents",
+      name: "Talents",
+      inLanguage: "en-US",
+      items: [
+        { url: "https://example.com/en/u/alice", name: "Alice" },
+        { url: "https://example.com/en/u/bob", name: "Bob" },
+      ],
+    });
+
+    expect(schema["@type"]).toBe("ItemList");
+    expect(schema.url).toBe("https://example.com/en/talents");
+    expect(schema.name).toBe("Talents");
+    expect(schema.inLanguage).toBe("en-US");
+    expect(schema.numberOfItems).toBe(2);
+    expect(schema.itemListElement).toHaveLength(2);
+    expect(schema.itemListElement[0]).toEqual({
+      "@type": "ListItem",
+      position: 1,
+      url: "https://example.com/en/u/alice",
+      name: "Alice",
+    });
+    expect(schema.itemListElement[1].position).toBe(2);
+  });
+
+  it("omits per-item name and optional top-level fields when absent", () => {
+    const schema = buildItemListSchema({
+      items: [{ url: "https://example.com/en/projects/x" }],
+    });
+
+    expect(schema).not.toHaveProperty("url");
+    expect(schema).not.toHaveProperty("name");
+    expect(schema).not.toHaveProperty("inLanguage");
+    expect(schema.numberOfItems).toBe(1);
+    expect(schema.itemListElement[0]).not.toHaveProperty("name");
   });
 });
 
@@ -327,6 +383,27 @@ describe("buildProfilePageSchema", () => {
 
     expect(schema).not.toHaveProperty("dateCreated");
     expect(schema).not.toHaveProperty("dateModified");
+    expect(schema).not.toHaveProperty("inLanguage");
+  });
+
+  it("includes inLanguage when provided", () => {
+    const person = buildPersonSchema({
+      name: "Test",
+      username: null,
+      headline: null,
+      avatarUrl: null,
+      skills: [],
+      url: "https://example.com",
+    });
+    const schema = buildProfilePageSchema({
+      url: "https://example.com/uk/u/test",
+      person,
+      dateCreated: null,
+      dateModified: null,
+      inLanguage: "uk-UA",
+    });
+
+    expect(schema.inLanguage).toBe("uk-UA");
   });
 });
 
@@ -357,6 +434,7 @@ describe("buildProjectSchema", () => {
     expect(schema.keywords).toBe("React, Node");
     expect(schema.codeRepository).toBe("https://github.com/john/project");
     expect(schema.sameAs).toBe("https://demo.example.com");
+    expect(schema).not.toHaveProperty("inLanguage");
   });
 
   it("omits optional fields when null", () => {
@@ -393,6 +471,7 @@ describe("buildArticleSchema", () => {
       articleSection: "Technology",
       keywords: ["react", "nextjs"],
       wordCount: 1500,
+      inLanguage: "en-US",
     });
 
     expect(schema["@type"]).toBe("Article");
@@ -403,6 +482,7 @@ describe("buildArticleSchema", () => {
     expect(schema.articleSection).toBe("Technology");
     expect(schema.keywords).toBe("react, nextjs");
     expect(schema.wordCount).toBe(1500);
+    expect(schema.inLanguage).toBe("en-US");
   });
 
   it("omits optional fields when null", () => {

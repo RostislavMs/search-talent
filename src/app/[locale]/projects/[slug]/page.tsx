@@ -31,6 +31,7 @@ import {
   getProjectNarrative,
   isProjectIndexable,
   safeJsonLd,
+  toBcp47,
 } from "@/lib/seo";
 import { getProjectKindLabel, normalizeProjectKind } from "@/lib/projects";
 import { toPlainText } from "@/lib/plain-text";
@@ -354,6 +355,7 @@ export default async function PublicProjectPage({
     dateModified: project.completed_on || null,
     demoUrl: project.project_url || null,
     codeRepository: project.repository_url || null,
+    inLanguage: toBcp47(locale),
   });
 
   const breadcrumbSchema = buildBreadcrumbSchema([

@@ -161,6 +161,7 @@ export default function ArticleDetailView({
     articleSection,
     keywords: articleKeywords,
     wordCount: countWords(articlePlainText),
+    inLanguage: isUkrainian ? "uk-UA" : "en-US",
   });
 
   const breadcrumbSchema = buildBreadcrumbSchema([

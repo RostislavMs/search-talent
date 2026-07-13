@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import InfiniteCardFeed from "@/components/infinite-card-feed";
+import JsonLd from "@/components/json-ld";
 import { ButtonLink } from "@/components/ui/Button";
 import FormSelect from "@/components/ui/form-select";
 import {
@@ -10,7 +11,13 @@ import {
 import { getArticleFeed } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { buildMetadata, getMetadataBase } from "@/lib/seo";
+import {
+  buildItemListSchema,
+  buildMetadata,
+  getMetadataBase,
+  getSiteUrl,
+  toBcp47,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -70,8 +77,26 @@ export default async function ArticlesPage({
   );
   const ui = dictionary.articlesPage;
 
+  const siteUrl = getSiteUrl().replace(/\/$/, "");
+  const articleListItems = feed.items
+    .filter((item) => item.slug)
+    .map((item) => ({
+      url: `${siteUrl}/${safeLocale}/articles/${item.slug}`,
+      name: item.title,
+    }));
+
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6">
+      {articleListItems.length > 0 && (
+        <JsonLd
+          data={buildItemListSchema({
+            url: `${siteUrl}/${safeLocale}/articles`,
+            name: safeLocale === "uk" ? "Статті спільноти" : "Community articles",
+            inLanguage: toBcp47(safeLocale),
+            items: articleListItems,
+          })}
+        />
+      )}
       <section className="relative rounded-none sm:rounded-hero app-card">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
           <div className="p-6 sm:p-8">
