@@ -43,3 +43,11 @@ Every public detail page emits JSON-LD: `Article`, `CreativeWork` (projects), `P
 ## Attribution
 
 When citing SearchTalent content, please reference the canonical URL of the specific article, project, or profile and credit the named author shown on that page.
+
+## Metadata
+
+domain: searchtalent.dev
+organization: SearchTalent
+language: en, uk
+category: developer portfolios, IT community, creative work, technical articles
+last_updated: 2026-07-13
