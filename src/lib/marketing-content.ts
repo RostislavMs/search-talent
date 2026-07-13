@@ -65,7 +65,7 @@ const marketingContent = {
         {
           question: "What makes SearchTalent different from a resume database?",
           answer:
-            "SearchTalent focuses on public project portfolios. Instead of scanning job titles alone, visitors can review real work, technology stacks, and delivery details before contacting a specialist.",
+            "SearchTalent focuses on public project portfolios. Instead of scanning job titles alone, visitors can review real work, technology stacks, and delivery details, then decide whose work to follow, learn from, or connect with.",
         },
         {
           question: "Who can create a profile on SearchTalent?",
@@ -92,6 +92,16 @@ const marketingContent = {
           answer:
             "Yes. Public project pages and technical articles let you document how you think, what you build, and how you communicate — that becomes the surface people remember you by.",
         },
+        {
+          question: "How does recognition work on SearchTalent?",
+          answer:
+            "Profiles and projects earn a community rating based on the depth of your work, profile completeness, and how the community responds over time. On top of that, badges are awarded automatically for milestones and achievements, so consistent contribution turns into visible recognition rather than just a number.",
+        },
+        {
+          question: "Is SearchTalent only about projects?",
+          answer:
+            "No. Alongside project portfolios you can publish articles, run community polls, and collaborate with others as co-authors on projects, articles, or polls. It is a space to share and discuss work, not just a static gallery.",
+        },
       ] satisfies MarketingFaqItem[],
       footerCtaTitle: "Build a portfolio that proves what you can do",
       footerCtaDescription:
@@ -100,7 +110,7 @@ const marketingContent = {
     talents: {
       title: "Discover IT Talents with Real Project Portfolios",
       intro: [
-        "SearchTalent helps the community discover IT talents through real project portfolios instead of relying only on resumes. Public profiles show how specialists present their work, which technologies they use, and what kinds of products they have built. That means a stronger first signal before any outreach begins.",
+        "SearchTalent helps the community discover IT talents through real project portfolios instead of relying only on resumes. Public profiles show how specialists present their work, which technologies they use, and what kinds of products they have built. That means a stronger first signal the moment you open a profile.",
         "On this page you can browse developers, designers, QA engineers, DevOps specialists, analysts, product people, and other IT professionals who publish public project evidence. Each profile is connected to actual work samples, technology stacks, and portfolio context — so it is easier to understand a creator's craft, scope of work, and the environments they have shipped inside.",
         "For visitors, that makes discovery more practical. Instead of filtering by buzzwords alone, you can compare role fit, project depth, tools, and visible outcomes in one place. For specialists, it creates a better surface for being recognised by what they have built. SearchTalent is designed to make talent discovery more transparent, more skill-based, and more useful for everyone in the community.",
       ],
@@ -118,7 +128,7 @@ const marketingContent = {
         {
           question: "What can I evaluate on a SearchTalent profile?",
           answer:
-            "You can review a specialist's role, skills, technology stack, portfolio projects, work preferences, and public profile information before contacting them.",
+            "You can review a specialist's role, skills, technology stack, portfolio projects, work preferences, and public profile information as you explore whose work to follow, learn from, or connect with.",
         },
         {
           question: "Does SearchTalent support browsing by role?",
@@ -238,7 +248,7 @@ const marketingContent = {
         {
           question: "Чим SearchTalent відрізняється від бази резюме?",
           answer:
-            "SearchTalent робить акцент на публічних портфоліо проєктів. Замість перегляду лише назв посад ви бачите реальні роботи, стек технологій і деталі реалізації до першого контакту.",
+            "SearchTalent робить акцент на публічних портфоліо проєктів. Замість перегляду лише назв посад ви бачите реальні роботи, стек технологій і деталі реалізації — і вирішуєте, чиї роботи читати, у кого вчитися та з ким налагодити звʼязок.",
         },
         {
           question: "Хто може створити профіль на SearchTalent?",
@@ -265,6 +275,16 @@ const marketingContent = {
           answer:
             "Так. Публічні проєкти й технічні статті дозволяють зафіксувати, як ви мислите, що створюєте та як комунікуєте — це і стає поверхнею, за якою вас запам'ятовують.",
         },
+        {
+          question: "Як працює визнання на SearchTalent?",
+          answer:
+            "Профілі та проєкти отримують рейтинг спільноти, що враховує глибину ваших робіт, заповненість профілю й реакцію спільноти з часом. А ще бейджі нараховуються автоматично за досягнення та етапи — тож послідовний внесок стає видимим визнанням, а не просто цифрою.",
+        },
+        {
+          question: "SearchTalent — це лише про проєкти?",
+          answer:
+            "Ні. Окрім портфоліо проєктів, ви можете публікувати статті, створювати опитування для спільноти й працювати над проєктами, статтями чи опитуваннями разом зі співавторами. Це простір, щоб ділитися роботами й обговорювати їх, а не статична галерея.",
+        },
       ] satisfies MarketingFaqItem[],
       footerCtaTitle: "Створіть портфоліо, яке доводить ваш рівень",
       footerCtaDescription:
@@ -273,7 +293,7 @@ const marketingContent = {
     talents: {
       title: "Відкривайте IT-фахівців з реальними портфоліо",
       intro: [
-        "SearchTalent допомагає спільноті знаходити IT-фахівців через реальні портфоліо проєктів, а не лише через резюме. Публічні профілі показують, як спеціаліст презентує свою роботу, якими технологіями користується та над якими продуктами вже працював. Це дає сильніший перший сигнал ще до того, як ти напишеш людині.",
+        "SearchTalent допомагає спільноті знаходити IT-фахівців через реальні портфоліо проєктів, а не лише через резюме. Публічні профілі показують, як спеціаліст презентує свою роботу, якими технологіями користується та над якими продуктами вже працював. Це дає сильніший перший сигнал, щойно ви відкриваєте профіль.",
         "На цій сторінці можна переглядати розробників, дизайнерів, QA-інженерів, DevOps-фахівців, аналітиків, product-спеціалістів та інших IT-професіоналів, які публікують свої кейси у відкритому доступі. Кожен профіль пов'язаний з реальними проєктами, стеком технологій і контекстом роботи, тому легше зрозуміти ремесло автора та середовища, в яких він працював.",
         "Для відвідувачів це означає практичніший пошук. Замість відбору лише за ключовими словами можна порівнювати релевантність ролі, глибину проєктів, інструменти та видимі результати в одному місці. Для самих авторів це краща модель видимості, де їх знаходять за тим, що вони реально зробили. SearchTalent створений для більш прозорого, навичкоорієнтованого пошуку талантів у спільноті.",
       ],
@@ -291,7 +311,7 @@ const marketingContent = {
         {
           question: "Що можна оцінити в профілі SearchTalent?",
           answer:
-            "У профілі можна переглянути роль фахівця, навички, стек технологій, проєкти, формат роботи та іншу публічну інформацію до першого контакту.",
+            "У профілі можна переглянути роль фахівця, навички, стек технологій, проєкти, формат роботи та іншу публічну інформацію, коли досліджуєте, чиї роботи читати, у кого вчитися та з ким налагодити звʼязок.",
         },
         {
           question: "Чи підтримує SearchTalent перегляд за ролями?",
