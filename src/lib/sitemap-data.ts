@@ -7,8 +7,8 @@ import {
 import { normalizeProjectKind } from "@/lib/projects";
 import {
   createLocalePath,
-  defaultLocale,
   locales,
+  xDefaultLocale,
   type Locale,
 } from "@/lib/i18n/config";
 import {
@@ -16,7 +16,20 @@ import {
   isProfileIndexable,
   isProjectIndexable,
 } from "@/lib/seo";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
+
+// Read-only Supabase client for the sitemap. It only reads public
+// (approved/published) rows, so it needs no auth cookies — and by not calling
+// `cookies()` it keeps the response free of per-user variance, which is what
+// lets the sitemap route be cached at the CDN instead of regenerated on every
+// hit. (The cookie-based `@/lib/supabase/server` client would force that.)
+function createSitemapClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } },
+  );
+}
 
 export const SITEMAP_IDS = [
   "static",
@@ -83,7 +96,11 @@ const staticRoutes: Array<{
   { path: "/cookies", changeFrequency: "yearly", priority: 0.3 },
 ];
 
-function buildEntry(
+// Emit one <url> entry per locale (not just the default). Google's hreflang
+// sitemap format requires every language version to have its own <loc> with the
+// full alternates set — a uk-only sitemap leaves the /en pages without lastmod
+// signals and reliant on in-page hreflang alone for discovery.
+function buildEntries(
   baseUrl: URL,
   route: string,
   options: {
@@ -91,34 +108,33 @@ function buildEntry(
     changeFrequency?: ChangeFrequency;
     priority?: number;
   } = {},
-): SitemapEntry {
-  return {
-    url: new URL(createLocalePath(locales[0], route), baseUrl).toString(),
+): SitemapEntry[] {
+  const alternates: SitemapEntry["alternates"] = [
+    ...locales.map((locale) => ({
+      locale,
+      href: new URL(createLocalePath(locale, route), baseUrl).toString(),
+    })),
+    {
+      locale: "x-default" as const,
+      href: new URL(createLocalePath(xDefaultLocale, route), baseUrl).toString(),
+    },
+  ];
+
+  return locales.map((locale) => ({
+    url: new URL(createLocalePath(locale, route), baseUrl).toString(),
     lastModified: options.lastModified,
     changeFrequency: options.changeFrequency,
     priority: options.priority,
-    alternates: [
-      ...locales.map((locale) => ({
-        locale,
-        href: new URL(createLocalePath(locale, route), baseUrl).toString(),
-      })),
-      {
-        locale: "x-default" as const,
-        href: new URL(
-          createLocalePath(defaultLocale, route),
-          baseUrl,
-        ).toString(),
-      },
-    ],
-  };
+    alternates,
+  }));
 }
 
 export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> {
   const baseUrl = getMetadataBase();
 
   if (id === "static") {
-    return staticRoutes.map((route) =>
-      buildEntry(baseUrl, route.path, {
+    return staticRoutes.flatMap((route) =>
+      buildEntries(baseUrl, route.path, {
         lastModified: STATIC_LASTMOD,
         changeFrequency: route.changeFrequency,
         priority: route.priority,
@@ -130,8 +146,8 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     const items = await getTechnologyDirectory(200);
     return items
       .filter((item) => item.count >= MIN_ITEMS_FOR_PROGRAMMATIC_PAGE)
-      .map((item) =>
-        buildEntry(baseUrl, `/projects/tag/${item.slug}`, {
+      .flatMap((item) =>
+        buildEntries(baseUrl, `/projects/tag/${item.slug}`, {
           changeFrequency: "weekly",
           priority: 0.5,
         }),
@@ -146,8 +162,8 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
           normalizeProjectKind(item.kind) !== null &&
           item.count >= MIN_PROJECT_TYPE_ITEMS_FOR_PAGE,
       )
-      .map((item) =>
-        buildEntry(baseUrl, `/projects/type/${item.kind}`, {
+      .flatMap((item) =>
+        buildEntries(baseUrl, `/projects/type/${item.kind}`, {
           changeFrequency: "weekly",
           priority: 0.5,
         }),
@@ -158,8 +174,8 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     const items = await getTalentSkillDirectory();
     return items
       .filter((item) => item.count >= MIN_TALENT_ITEMS_FOR_PAGE)
-      .map((item) =>
-        buildEntry(baseUrl, `/talents/skill/${item.slug}`, {
+      .flatMap((item) =>
+        buildEntries(baseUrl, `/talents/skill/${item.slug}`, {
           changeFrequency: "weekly",
           priority: 0.5,
         }),
@@ -170,15 +186,15 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     const items = await getProfileCategoryDirectory();
     return items
       .filter((item) => item.count >= MIN_TALENT_ITEMS_FOR_PAGE)
-      .map((item) =>
-        buildEntry(baseUrl, `/talents/role/${item.slug}`, {
+      .flatMap((item) =>
+        buildEntries(baseUrl, `/talents/role/${item.slug}`, {
           changeFrequency: "weekly",
           priority: 0.5,
         }),
       );
   }
 
-  const supabase = await createClient();
+  const supabase = createSitemapClient();
 
   if (id === "profiles") {
     const { data } = await supabase
@@ -209,8 +225,8 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
           bio: profile.bio,
         }),
       )
-      .map((profile) =>
-        buildEntry(baseUrl, `/u/${profile.username}`, {
+      .flatMap((profile) =>
+        buildEntries(baseUrl, `/u/${profile.username}`, {
           lastModified: new Date(profile.updated_at),
           changeFrequency: "weekly",
           priority: 0.7,
@@ -233,8 +249,8 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     // page metadata, via the shared predicate).
     return (data || [])
       .filter((project) => isProjectIndexable(project))
-      .map((project) =>
-        buildEntry(baseUrl, `/projects/${project.slug}`, {
+      .flatMap((project) =>
+        buildEntries(baseUrl, `/projects/${project.slug}`, {
           lastModified: new Date(project.updated_at),
           changeFrequency: "weekly",
           priority: 0.8,
@@ -251,8 +267,8 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
       .order("updated_at", { ascending: false })
       .limit(SITEMAP_PAGE_SIZE);
 
-    return (data || []).map((article) =>
-      buildEntry(baseUrl, `/articles/${article.slug}`, {
+    return (data || []).flatMap((article) =>
+      buildEntries(baseUrl, `/articles/${article.slug}`, {
         lastModified: new Date(article.updated_at),
         changeFrequency: "monthly",
         priority: 0.7,
@@ -269,8 +285,8 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
       .order("updated_at", { ascending: false })
       .limit(SITEMAP_PAGE_SIZE);
 
-    return (data || []).map((poll) =>
-      buildEntry(baseUrl, `/polls/${poll.slug}`, {
+    return (data || []).flatMap((poll) =>
+      buildEntries(baseUrl, `/polls/${poll.slug}`, {
         lastModified: new Date(poll.updated_at),
         changeFrequency: "weekly",
         priority: 0.6,

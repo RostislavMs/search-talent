@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import {
   createLocalePath,
-  defaultLocale,
   locales,
+  xDefaultLocale,
   type Locale,
 } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -77,7 +77,7 @@ export function buildMetadata({
           ]),
         ),
         "x-default": new URL(
-          createLocalePath(defaultLocale, pathname),
+          createLocalePath(xDefaultLocale, pathname),
           getMetadataBase(),
         ).toString(),
       },
