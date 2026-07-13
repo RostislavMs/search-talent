@@ -2206,8 +2206,24 @@ export const dictionaries = {
           a: "Absolutely. There is no limit on the number of projects you can publish. Each project gets its own public page with media, description, and community votes.",
         },
         {
+          q: "Can I write articles?",
+          a: "Yes. Besides projects, you can publish articles from your dashboard — write-ups, tutorials, or opinion pieces with rich formatting, images, and GIFs. Published articles appear in the Community section and on your public profile, and they count toward your contribution to the platform.",
+        },
+        {
+          q: "What are polls?",
+          a: "Polls let you ask the community a question — single-choice, multiple-choice, or a rating scale. Anyone can read the results, and signed-in members can cast their vote. Create one from your dashboard and it shows up in the Community section.",
+        },
+        {
+          q: "Can I collaborate with others?",
+          a: "Yes. When creating a project, article, or poll you can invite other members as co-authors. Each invited person confirms via notifications, and the work is published once everyone agrees. Co-authors are credited on the public page.",
+        },
+        {
           q: "How does the rating system work?",
-          a: "Community members can upvote or downvote profiles and projects. The ranking factors in project depth, profile completeness, community response, and recent activity.",
+          a: "Community members can upvote or downvote profiles and projects. The ranking factors in project depth, profile completeness, community response (using a Wilson score), recent activity with time decay, and earned badges. For the full breakdown of factors and weights, see the rating guide.",
+        },
+        {
+          q: "What are badges and how do I earn them?",
+          a: "Badges are awarded automatically for your activity and achievements — publishing your first project, completing your profile, verifying your email or GitHub, reaching the leaderboards, and more. They come in four categories with up to three tiers each, and together they can add up to +5 bonus points to your rating.",
         },
         {
           q: "Can I export my profile?",
@@ -2215,7 +2231,7 @@ export const dictionaries = {
         },
         {
           q: "How do I report inappropriate content?",
-          a: "Use the feedback page to report any content that violates the platform guidelines. Our moderation team reviews reports promptly.",
+          a: "Use the feedback page to report any content that violates the platform guidelines, and our moderation team reviews reports promptly. Content is also checked automatically when published — anything that trips our rules is placed under review before it appears publicly.",
         },
         {
           q: "What languages are supported?",
@@ -4449,8 +4465,24 @@ export const dictionaries = {
           a: "Звичайно. Немає обмежень на кількість проєктів. Кожен проєкт отримує власну публічну сторінку з медіа, описом та голосами спільноти.",
         },
         {
+          q: "Чи можу я писати статті?",
+          a: "Так. Окрім проєктів, ви можете публікувати статті з дашборду — огляди, туторіали чи авторські думки з форматуванням, зображеннями та GIF. Опубліковані статті зʼявляються в розділі «Спільнота» та на вашому публічному профілі й додаються до вашого внеску в платформу.",
+        },
+        {
+          q: "Що таке опитування?",
+          a: "Опитування дають змогу поставити спільноті запитання — з одним варіантом, кількома варіантами або шкалою оцінювання. Результати може бачити будь-хто, а голосувати можуть авторизовані учасники. Створіть опитування в дашборді — воно зʼявиться в розділі «Спільнота».",
+        },
+        {
+          q: "Чи можу я створювати роботи разом з іншими?",
+          a: "Так. Створюючи проєкт, статтю чи опитування, ви можете запросити інших учасників як співавторів. Кожен запрошений підтверджує участь через сповіщення, і робота публікується, коли всі погодяться. Співавтори зазначаються на публічній сторінці.",
+        },
+        {
           q: "Як працює система рейтингу?",
-          a: "Учасники спільноти можуть голосувати за профілі та проєкти. Рейтинг враховує глибину проєкту, заповненість профілю, реакцію спільноти та нещодавню активність.",
+          a: "Учасники спільноти можуть голосувати за профілі та проєкти. Рейтинг враховує глибину проєкту, заповненість профілю, реакцію спільноти (за оцінкою Вілсона), нещодавню активність із часовим спадом та здобуті бейджі. Повний перелік факторів і ваг дивіться у гайді по рейтингу.",
+        },
+        {
+          q: "Що таке бейджі і як їх отримати?",
+          a: "Бейджі нараховуються автоматично за вашу активність і досягнення — перший опублікований проєкт, заповнений профіль, підтверджені email чи GitHub, потрапляння в лідерборди тощо. Вони поділені на чотири категорії, кожен має до трьох рівнів, і разом вони можуть додати до +5 бонусних балів до вашого рейтингу.",
         },
         {
           q: "Чи можна експортувати профіль?",
@@ -4458,7 +4490,7 @@ export const dictionaries = {
         },
         {
           q: "Як повідомити про неприйнятний контент?",
-          a: "Скористайтеся сторінкою зворотного зв'язку, щоб повідомити про контент, який порушує правила платформи. Наша команда модерації оперативно розглядає звернення.",
+          a: "Скористайтеся сторінкою зворотного зв'язку, щоб повідомити про контент, який порушує правила платформи, — наша команда модерації оперативно розглядає звернення. Крім того, контент автоматично перевіряється під час публікації: якщо він порушує наші правила, його відправляють на перевірку до появи в загальному доступі.",
         },
         {
           q: "Які мови підтримуються?",

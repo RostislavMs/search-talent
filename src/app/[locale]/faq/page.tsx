@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import FaqAccordion from "@/components/faq-accordion";
 import { ButtonLink } from "@/components/ui/Button";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -50,7 +51,7 @@ export default async function FaqPage({
   );
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }}
@@ -75,31 +76,13 @@ export default async function FaqPage({
         </div>
       </section>
 
-      <section className="mt-8 space-y-4">
-        {dictionary.faqPage.items.map((item) => (
-          <details
-            key={item.q}
-            className="group rounded-panel app-card p-6 sm:p-8"
-          >
-            <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-lg font-semibold text-[color:var(--foreground)] [&::-webkit-details-marker]:hidden">
-              <span>{item.q}</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="mt-1 h-5 w-5 shrink-0 transition-transform group-open:rotate-180"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </summary>
-            <p className="mt-4 text-base leading-8 app-muted">{item.a}</p>
-          </details>
-        ))}
+      <section className="mt-2">
+        <FaqAccordion
+          items={dictionary.faqPage.items.map((item) => ({
+            question: item.q,
+            answer: item.a,
+          }))}
+        />
       </section>
     </main>
   );
