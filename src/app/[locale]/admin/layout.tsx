@@ -39,7 +39,7 @@ export default async function AdminLayout({
           </h1>
         </div>
         <Link
-          href={createLocalePath(locale, "/dashboard")}
+          href={createLocalePath(locale, "/my-space")}
           className={buttonStyles({ variant: "secondary" })}
         >
           {copy.shell.backToSite}

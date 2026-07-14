@@ -1128,11 +1128,11 @@ export default function DiscoveryPage({
               </ButtonLink>
             )}
             <ButtonLink
-              href="/dashboard"
+              href="/my-space"
               variant="ghost"
               className="border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
             >
-              {dictionary.search.dashboard}
+              {dictionary.search.mySpace}
             </ButtonLink>
           </div>
         </div>

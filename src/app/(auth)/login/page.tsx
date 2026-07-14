@@ -18,14 +18,14 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 export default function LoginPage() {
   const supabase = createClient();
   const dictionary = useDictionary();
-  const dashboardHref = useLocalizedHref("/dashboard");
+  const mySpaceHref = useLocalizedHref("/my-space");
 
   const buildOAuthCallbackUrl = () => {
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
     const callbackUrl = new URL("/api/auth/callback", baseUrl);
 
-    callbackUrl.searchParams.set("next", dashboardHref);
+    callbackUrl.searchParams.set("next", mySpaceHref);
 
     return callbackUrl.toString();
   };
@@ -77,7 +77,7 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.assign(dashboardHref);
+    window.location.assign(mySpaceHref);
   };
 
   const handleOAuthLogin = async (provider: "google" | "github") => {

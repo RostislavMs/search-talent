@@ -55,8 +55,8 @@ export default async function VerifyPage({
 
         <div className="mt-8 flex flex-wrap gap-3">
           <ButtonLink href="/login">{dictionary.auth.verify.login}</ButtonLink>
-          <ButtonLink href="/dashboard" variant="secondary">
-            {dictionary.auth.verify.openDashboard}
+          <ButtonLink href="/my-space" variant="secondary">
+            {dictionary.auth.verify.openMySpace}
           </ButtonLink>
           <ButtonLink href="/" variant="ghost">
             {dictionary.auth.verify.backHome}

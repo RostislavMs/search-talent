@@ -50,7 +50,7 @@ export async function updateSession(request: NextRequest) {
     ? (maybeLocale as Locale)
     : null;
 
-  if (!user && locale && section === "dashboard") {
+  if (!user && locale && (section === "my-space" || section === "analytics")) {
     const url = request.nextUrl.clone();
     url.pathname = createLocalePath(locale, "/login");
     return NextResponse.redirect(url);
@@ -61,7 +61,7 @@ export async function updateSession(request: NextRequest) {
   // user in to let them set a new password.)
   if (user && locale && (section === "login" || section === "signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = createLocalePath(locale, "/dashboard");
+    url.pathname = createLocalePath(locale, "/my-space");
     return NextResponse.redirect(url);
   }
 

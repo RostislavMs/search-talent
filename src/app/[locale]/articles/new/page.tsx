@@ -64,7 +64,7 @@ export default async function NewArticlePage({
   }
 
   if (!dashboard) {
-    redirect(createLocalePath(safeLocale, "/dashboard"));
+    redirect(createLocalePath(safeLocale, "/my-space"));
   }
 
   const supabase = await createClient();

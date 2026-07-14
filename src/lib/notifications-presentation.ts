@@ -158,14 +158,14 @@ export function buildNotificationHref(
   const base = `/${locale}`;
 
   // Moderation removals delete the underlying content, so deep-linking to it
-  // would 404. Send the owner to their dashboard where the decision (and any
+  // would 404. Send the owner to their space where the decision (and any
   // appeal path) is visible. Restrictions keep the content, so they fall
   // through to the normal target resolution below.
   if (
     item.type === "moderation_decision" &&
     item.metadata.moderationStatus === "removed"
   ) {
-    return `${base}/dashboard`;
+    return `${base}/my-space`;
   }
 
   // Co-author notifications carry the content type + slug in metadata.
@@ -224,7 +224,7 @@ export function buildNotificationHref(
       if (item.metadata.profileUsername) {
         return `${base}/u/${item.metadata.profileUsername}`;
       }
-      return `${base}/dashboard`;
+      return `${base}/my-space`;
     default:
       return `${base}/notifications`;
   }

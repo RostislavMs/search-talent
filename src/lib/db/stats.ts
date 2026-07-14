@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type EmbeddedCount = { count: number }[] | null;
 
-type DashboardProfileRow = {
+type StatsProfileRow = {
   id: string;
   username: string | null;
   name: string | null;
@@ -42,7 +42,7 @@ type DashboardProfileRow = {
   profile_work_experience: EmbeddedCount;
 };
 
-export type UserDashboardStats = {
+export type UserStats = {
   name: string | null;
   username: string | null;
   projectsCount: number;
@@ -56,7 +56,7 @@ export type UserDashboardStats = {
   articleViews: number;
 };
 
-export type DashboardStats = {
+export type PlatformStats = {
   siteTotals: {
     profiles: number;
     publicProfiles: number;
@@ -145,7 +145,7 @@ export type DashboardStats = {
 // Shape returned by the get_dashboard_activity() SQL RPC (heavy-table aggregates
 // computed in Postgres). The profile-derived breakdowns below are computed in JS
 // because they depend on the shared completeness formula and salary text parsing.
-type DashboardActivity = {
+type PlatformActivity = {
   projectsTotal: number;
   profilesTotal: number;
   publicProfilesTotal: number;
@@ -154,17 +154,17 @@ type DashboardActivity = {
   likes: number;
   dislikes: number;
   avgProjectScore: number;
-  monthlyActivity: DashboardStats["monthlyActivity"];
-  statusBreakdown: DashboardStats["statusBreakdown"];
-  topProjects: DashboardStats["topProjects"];
-  topSkills: DashboardStats["topSkills"];
+  monthlyActivity: PlatformStats["monthlyActivity"];
+  statusBreakdown: PlatformStats["statusBreakdown"];
+  topProjects: PlatformStats["topProjects"];
+  topSkills: PlatformStats["topSkills"];
 };
 
 function embeddedCount(relation: EmbeddedCount): number {
   return relation?.[0]?.count ?? 0;
 }
 
-export async function getDashboardStats(): Promise<DashboardStats> {
+export async function getPlatformStats(): Promise<PlatformStats> {
   const supabase = await createClient();
 
   // Heavy aggregates (votes / projects / skills / monthly / top lists) are
@@ -183,8 +183,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       supabase.from("profile_categories").select("id, name"),
     ]);
 
-  const activity = (activityResponse.data || {}) as Partial<DashboardActivity>;
-  const profiles = (profilesResponse.data || []) as unknown as DashboardProfileRow[];
+  const activity = (activityResponse.data || {}) as Partial<PlatformActivity>;
+  const profiles = (profilesResponse.data || []) as unknown as StatsProfileRow[];
   const countries = (countriesResponse.data || []) as Array<{ id: number; name: string }>;
   const categories = (categoriesResponse.data || []) as Array<{ id: number; name: string }>;
 
@@ -376,7 +376,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
-export async function getUserDashboardStats(userId: string): Promise<UserDashboardStats> {
+export async function getUserStats(userId: string): Promise<UserStats> {
   const supabase = await createClient();
 
   const [

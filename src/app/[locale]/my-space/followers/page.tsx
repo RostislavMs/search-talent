@@ -30,7 +30,7 @@ export async function generateMetadata({
 
   return buildMetadata({
     locale,
-    pathname: "/dashboard/followers",
+    pathname: "/my-space/followers",
     title: dictionary.follows.followersTitle,
     description: dictionary.follows.followersDescription,
     noindex: true,
@@ -126,7 +126,7 @@ export default async function FollowersPage({
   });
 
   const buildPageHref = (nextPage: number) => {
-    const base = createLocalePath(locale, "/dashboard/followers");
+    const base = createLocalePath(locale, "/my-space/followers");
     return nextPage > 1 ? `${base}?page=${nextPage}` : base;
   };
 
