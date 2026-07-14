@@ -202,6 +202,11 @@ select {
   display: grid;
   justify-items: center;
   color: #fcd34d;
+  /* Subtle glow on the highlighted word — text-shadow inherits to the active
+     span (hidden words are opacity:0, so their glow is invisible) and
+     cross-fades with the word. Kept faint on purpose. Purely cosmetic, so it
+     stays on under reduced motion. */
+  text-shadow: 0 0 12px rgba(252, 211, 77, 0.28);
 }
 
 @media (min-width: 640px) {
