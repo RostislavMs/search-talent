@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import logoImage from "../../public/logo.webp";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import HeaderNav from "@/components/header-nav";
@@ -38,9 +39,16 @@ export default function SiteHeader({
   initialCanPersistTheme,
 }: SiteHeaderProps) {
   const pathname = stripLocaleFromPathname(usePathname() || "/");
+  const headerRef = useRef<HTMLElement>(null);
   const profileMenuRef = useRef<HTMLDetailsElement>(null);
-  const mobileMenuRef = useRef<HTMLDetailsElement>(null);
+  const mobileProfileMenuRef = useRef<HTMLDetailsElement>(null);
   const communityMenuRef = useRef<HTMLDetailsElement>(null);
+  // The mobile navigation is a full-height right-side drawer that starts below
+  // the header. It is portalled to the body (the header's backdrop-blur creates
+  // a containing block that would otherwise trap a fixed-position child), so we
+  // track the header height to offset the drawer's top edge.
+  const [navOpen, setNavOpen] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const closeProfileMenu = () => {
     if (profileMenuRef.current) {
@@ -48,9 +56,9 @@ export default function SiteHeader({
     }
   };
 
-  const closeMobileMenu = () => {
-    if (mobileMenuRef.current) {
-      mobileMenuRef.current.open = false;
+  const closeMobileProfileMenu = () => {
+    if (mobileProfileMenuRef.current) {
+      mobileProfileMenuRef.current.open = false;
     }
   };
 
@@ -72,10 +80,10 @@ export default function SiteHeader({
         profileMenuRef.current.open = false;
       }
       if (
-        mobileMenuRef.current?.open &&
-        !mobileMenuRef.current.contains(target)
+        mobileProfileMenuRef.current?.open &&
+        !mobileProfileMenuRef.current.contains(target)
       ) {
-        mobileMenuRef.current.open = false;
+        mobileProfileMenuRef.current.open = false;
       }
       if (
         communityMenuRef.current?.open &&
@@ -90,12 +98,13 @@ export default function SiteHeader({
       if (profileMenuRef.current?.open) {
         profileMenuRef.current.open = false;
       }
-      if (mobileMenuRef.current?.open) {
-        mobileMenuRef.current.open = false;
+      if (mobileProfileMenuRef.current?.open) {
+        mobileProfileMenuRef.current.open = false;
       }
       if (communityMenuRef.current?.open) {
         communityMenuRef.current.open = false;
       }
+      setNavOpen(false);
     };
 
     document.addEventListener("mousedown", handlePointerDown);
@@ -111,9 +120,43 @@ export default function SiteHeader({
   // Close all menus when the route changes (e.g. after navigation).
   useEffect(() => {
     closeProfileMenu();
-    closeMobileMenu();
+    closeMobileProfileMenu();
     closeCommunityMenu();
+    // Deferred off the effect tick to avoid the set-state-in-effect lint rule
+    // (same pattern as notifications-bell). Still runs on every route change.
+    queueMicrotask(() => setNavOpen(false));
   }, [pathname]);
+
+  // Track the header height so the portalled nav drawer can start exactly below
+  // it, and keep it fresh as the sticky bar re-flows (e.g. breakpoint changes).
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const update = () => setHeaderHeight(el.getBoundingClientRect().height);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // While the full-height nav drawer is open: lock background scroll, and close
+  // it if the viewport grows to the desktop layout (where the drawer is hidden)
+  // so the scroll lock cannot get stranded.
+  useEffect(() => {
+    if (!navOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handleChange = () => {
+      if (mq.matches) setNavOpen(false);
+    };
+    mq.addEventListener("change", handleChange);
+    return () => {
+      document.body.style.overflow = previous;
+      mq.removeEventListener("change", handleChange);
+    };
+  }, [navOpen]);
+
   const articlesLabel =
     dictionary.nav.search === "Search" ? "Articles" : "Статті";
   const talentsLabel =
@@ -236,9 +279,22 @@ export default function SiteHeader({
         ? "text-[color:var(--background)]"
         : "text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]",
     ].join(" ");
+  // The two mobile triggers (navigation + profile) share one pill style so they
+  // line up with the notifications bell. Below 640px they collapse to a square
+  // icon-only button (no label); from 640px up the label appears alongside.
+  const mobileTriggerClasses = (active: boolean) =>
+    [
+      "inline-flex h-11 w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full border text-sm font-medium transition-colors duration-200 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)] sm:w-auto sm:px-3",
+      active
+        ? "border-transparent bg-[color:var(--foreground)] text-[color:var(--background)]"
+        : "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",
+    ].join(" ");
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[color:var(--border)] bg-[color:var(--surface)]/90 backdrop-blur">
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-40 border-b border-[color:var(--border)] bg-[color:var(--surface)]/90 backdrop-blur"
+    >
       <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-2 sm:px-6 sm:py-3">
         <LocalizedLink
           href="/"
@@ -428,79 +484,50 @@ export default function SiteHeader({
           )}
         </div>
 
-        {viewer ? (
-          <NotificationsBell mode="link" className="ml-auto lg:hidden" />
-        ) : null}
+        {/* Below lg the bar collapses to: logo · notifications · profile ·
+            menu. Profile stays a compact dropdown; navigation opens as a
+            full-height right-side drawer. Below 640px both triggers drop their
+            label and show only the icon. */}
+        <div className="ml-auto flex items-center gap-2 lg:hidden">
+          {viewer ? <NotificationsBell mode="link" /> : null}
 
-        <details
-          ref={mobileMenuRef}
-          className={viewer ? "relative lg:hidden" : "relative ml-auto lg:hidden"}
-        >
-          <summary
-            className={`${buttonStyles({
-              size: "sm",
-              variant: "secondary",
-            })} cursor-pointer list-none gap-2 [&::-webkit-details-marker]:hidden`}
-          >
-            <svg
-              aria-hidden="true"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            {dictionary.nav.menu}
-          </summary>
+          {viewer ? (
+            <details ref={mobileProfileMenuRef} className="relative">
+              <summary
+                className={mobileTriggerClasses(profileActive)}
+                aria-label={dictionary.nav.profile}
+              >
+                <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-[color:var(--surface-muted)] text-xs font-semibold text-[color:var(--foreground)]">
+                  {viewer.avatarUrl ? (
+                    <OptimizedImage
+                      src={viewer.avatarUrl}
+                      alt={dictionary.nav.profile}
+                      fill
+                      sizes="32px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span>{viewerInitial}</span>
+                  )}
+                </span>
+                <span className="hidden sm:inline">
+                  {dictionary.nav.profile}
+                </span>
+              </summary>
 
-          <div className="absolute right-0 mt-3 w-[min(22rem,calc(100vw-2rem))] max-h-[calc(100dvh-4.5rem)] overflow-y-auto overscroll-contain rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-3 shadow-2xl">
-            <div className="space-y-1">
-              {primaryLinks.map((link) => (
-                <NavLink
-                  key={link.href}
-                  href={link.href}
-                  label={link.label}
-                  mobile
-                  onClick={closeMobileMenu}
-                />
-              ))}
-            </div>
-
-            <div className="mt-3">
-              <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                {dictionary.nav.community}
-              </p>
-              <div className="space-y-1">
-                {communityLinks.map((link) => (
-                  <NavLink
-                    key={link.href}
-                    href={link.href}
-                    label={link.label}
-                    mobile
-                    onClick={closeMobileMenu}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {viewer ? (
-              <>
+              <div className="absolute right-0 mt-3 w-[min(17rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-4.5rem)] overflow-y-auto overscroll-contain rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-2 shadow-2xl">
                 <LocalizedLink
                   href={signedInAsHref}
-                  onClick={closeMobileMenu}
-                  className="mt-3 flex items-center gap-3 rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3 transition hover:ring-1 hover:ring-inset hover:ring-[color:var(--border)]"
+                  onClick={closeMobileProfileMenu}
+                  className="flex items-center gap-2.5 rounded-2xl bg-[color:var(--surface-muted)] px-3 py-2.5 transition hover:ring-1 hover:ring-inset hover:ring-[color:var(--border)]"
                 >
-                  <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] text-sm font-semibold text-[color:var(--foreground)]">
+                  <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] text-base font-semibold text-[color:var(--foreground)]">
                     {viewer.avatarUrl ? (
                       <OptimizedImage
                         src={viewer.avatarUrl}
                         alt={dictionary.nav.profile}
                         fill
-                        sizes="36px"
+                        sizes="44px"
                         className="object-cover"
                       />
                     ) : (
@@ -519,26 +546,23 @@ export default function SiteHeader({
                   </div>
                 </LocalizedLink>
 
-                <div className="mt-3">
-                  <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                    {dictionary.nav.profile}
-                  </p>
-                  <div className="space-y-1">
-                    {accountLinks.map((link) => (
-                      <LocalizedLink
-                        key={link.href}
-                        href={link.href}
-                        onClick={closeMobileMenu}
-                        className={menuLinkClasses(link.href === activeProfileMenuHref)}
-                      >
-                        {link.label}
-                      </LocalizedLink>
-                    ))}
-                  </div>
+                <div className="mt-2 space-y-1">
+                  {accountLinks.map((link) => (
+                    <LocalizedLink
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMobileProfileMenu}
+                      className={menuLinkClasses(
+                        link.href === activeProfileMenuHref,
+                      )}
+                    >
+                      {link.label}
+                    </LocalizedLink>
+                  ))}
                 </div>
 
                 {contentLinks.length > 0 ? (
-                  <div className="mt-3">
+                  <div className="mt-2">
                     <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
                       {dictionary.nav.content}
                     </p>
@@ -547,8 +571,10 @@ export default function SiteHeader({
                         <LocalizedLink
                           key={link.href}
                           href={link.href}
-                          onClick={closeMobileMenu}
-                          className={menuLinkClasses(link.href === activeProfileMenuHref)}
+                          onClick={closeMobileProfileMenu}
+                          className={menuLinkClasses(
+                            link.href === activeProfileMenuHref,
+                          )}
                         >
                           {link.label}
                         </LocalizedLink>
@@ -558,13 +584,15 @@ export default function SiteHeader({
                 ) : null}
 
                 {adminLinks.length > 0 ? (
-                  <div className="mt-3 space-y-1">
+                  <div className="mt-2 space-y-1">
                     {adminLinks.map((link) => (
                       <LocalizedLink
                         key={link.href}
                         href={link.href}
-                        onClick={closeMobileMenu}
-                        className={menuLinkClasses(link.href === activeProfileMenuHref)}
+                        onClick={closeMobileProfileMenu}
+                        className={menuLinkClasses(
+                          link.href === activeProfileMenuHref,
+                        )}
                       >
                         {link.label}
                       </LocalizedLink>
@@ -572,68 +600,134 @@ export default function SiteHeader({
                   </div>
                 ) : null}
 
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl border border-[color:var(--border)] p-3">
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                      {dictionary.language.switchLabel}
-                    </p>
-                    <LanguageSwitcher />
-                  </div>
-
-                  <div className="rounded-2xl border border-[color:var(--border)] p-3">
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                      {dictionary.theme.toggleLabel}
-                    </p>
-                    <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
-                  </div>
-                </div>
-
                 <div className="mt-3">
                   <LogoutButton className="w-full justify-center" />
                 </div>
-              </>
-            ) : (
-              <>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl border border-[color:var(--border)] p-3">
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                      {dictionary.language.switchLabel}
-                    </p>
-                    <LanguageSwitcher />
+              </div>
+            </details>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => setNavOpen((open) => !open)}
+            className={mobileTriggerClasses(navOpen)}
+            aria-label={dictionary.nav.menu}
+            aria-expanded={navOpen}
+          >
+            <svg
+              aria-hidden="true"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <span className="hidden sm:inline">{dictionary.nav.menu}</span>
+          </button>
+        </div>
+
+        {navOpen && typeof document !== "undefined"
+          ? createPortal(
+              <div className="lg:hidden">
+                <div
+                  className="fixed inset-x-0 bottom-0 z-40 bg-[color:var(--background)]/50 backdrop-blur-sm"
+                  style={{ top: headerHeight }}
+                  aria-hidden="true"
+                  onClick={() => setNavOpen(false)}
+                />
+
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={dictionary.nav.menu}
+                  className="fixed bottom-0 right-0 z-50 flex w-[min(16rem,80vw)] flex-col border-l border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl"
+                  style={{ top: headerHeight }}
+                >
+                  <div className="flex-1 overflow-y-auto overscroll-contain p-3">
+                    <div className="space-y-1">
+                      {primaryLinks.map((link) => (
+                        <NavLink
+                          key={link.href}
+                          href={link.href}
+                          label={link.label}
+                          mobile
+                          onClick={() => setNavOpen(false)}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                        {dictionary.nav.community}
+                      </p>
+                      <div className="space-y-1">
+                        {communityLinks.map((link) => (
+                          <NavLink
+                            key={link.href}
+                            href={link.href}
+                            label={link.label}
+                            mobile
+                            onClick={() => setNavOpen(false)}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="rounded-2xl border border-[color:var(--border)] p-3">
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                      {dictionary.theme.toggleLabel}
-                    </p>
-                    <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
+                  <div className="shrink-0 border-t border-[color:var(--border)] p-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-2xl border border-[color:var(--border)] p-3">
+                        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                          {dictionary.language.switchLabel}
+                        </p>
+                        <LanguageSwitcher />
+                      </div>
+
+                      <div className="rounded-2xl border border-[color:var(--border)] p-3">
+                        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                          {dictionary.theme.toggleLabel}
+                        </p>
+                        <ThemeToggle
+                          initialTheme={initialTheme}
+                          initialCanPersist={initialCanPersistTheme}
+                        />
+                      </div>
+                    </div>
+
+                    {viewer ? null : (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <LocalizedLink
+                          href="/login"
+                          onClick={() => setNavOpen(false)}
+                          className={buttonStyles({
+                            variant: "secondary",
+                            className: "justify-center",
+                          })}
+                        >
+                          {dictionary.nav.login}
+                        </LocalizedLink>
+
+                        <LocalizedLink
+                          href="/signup"
+                          onClick={() => setNavOpen(false)}
+                          className={buttonStyles({
+                            className: "justify-center",
+                          })}
+                        >
+                          {dictionary.nav.signup}
+                        </LocalizedLink>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <LocalizedLink
-                    href="/login"
-                    onClick={closeMobileMenu}
-                    className={buttonStyles({
-                      variant: "secondary",
-                      className: "justify-center",
-                    })}
-                  >
-                    {dictionary.nav.login}
-                  </LocalizedLink>
-
-                  <LocalizedLink
-                    href="/signup"
-                    onClick={closeMobileMenu}
-                    className={buttonStyles({ className: "justify-center" })}
-                  >
-                    {dictionary.nav.signup}
-                  </LocalizedLink>
-                </div>
-              </>
-            )}
-          </div>
-        </details>
+              </div>,
+              document.body,
+            )
+          : null}
       </div>
     </header>
   );
