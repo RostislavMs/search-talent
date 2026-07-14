@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildSanitizedPollTranslations } from "@/lib/poll-translations";
-import { ensureUniquePollSlug } from "@/lib/db/polls";
+import { ensureUniquePollSlug, getPollFeed } from "@/lib/db/polls";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { pollPayloadSchema } from "@/lib/validation/polls";
@@ -17,6 +17,22 @@ import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { inviteCoAuthors } from "@/lib/db/co-authors";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
+
+// Community feed for the `/polls` page. Listing filters (category, author,
+// sort) live in client state, not the URL — same pattern as /talents &
+// /projects — so filtering fetches here instead of navigating. The page SSRs
+// the default feed, so this route only serves user-driven filter changes.
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const feed = await getPollFeed({
+    categorySlug: searchParams.get("category") || null,
+    authorQuery: searchParams.get("author") || null,
+    sort: searchParams.get("sort") || null,
+    locale: searchParams.get("locale") || null,
+  });
+
+  return NextResponse.json({ items: feed.items });
+}
 
 export async function POST(request: Request) {
   const context = await getCurrentViewerRole();
