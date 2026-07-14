@@ -811,3 +811,21 @@ select {
   }
 }
 
+/* Theme swap uses the View Transitions API for a circle-spread reveal that
+   starts from the theme toggle. Disable the default cross-fade so only the
+   JS-driven clip-path runs, and keep the new snapshot above the old one so it
+   reveals cleanly on top. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 0;
+}
+
+::view-transition-new(root) {
+  z-index: 1;
+}
+

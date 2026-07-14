@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { type MouseEvent, useState, useSyncExternalStore } from "react";
 import {
   allowsCookieCategory,
   cookieConsentUpdatedEvent,
@@ -16,6 +16,14 @@ import {
 
 type ResolvedTheme = "light" | "dark";
 
+/**
+ * Not every browser types `startViewTransition` yet, so widen the Document
+ * locally instead of relying on the ambient lib version.
+ */
+type DocumentWithViewTransition = Document & {
+  startViewTransition?: (callback: () => void) => { ready: Promise<void> };
+};
+
 function canPersistThemePreference() {
   return allowsCookieCategory(getCookieConsentFromDocument(), "preferences");
 }
@@ -25,6 +33,48 @@ function subscribeToConsent(callback: () => void) {
   return () => {
     window.removeEventListener(cookieConsentUpdatedEvent, callback);
   };
+}
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+function SunIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
+
+function MoonIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+    </svg>
+  );
 }
 
 export default function ThemeToggle({
@@ -48,39 +98,112 @@ export default function ThemeToggle({
     () => initialCanPersist,
   );
 
+  const isDark = theme === "dark";
+
+  const applyTheme = (next: ResolvedTheme) => {
+    setTheme(next);
+    applyThemeToDocument(next);
+
+    if (canPersist) {
+      persistThemePreference(next);
+    } else {
+      clearThemePreferencePersistence();
+    }
+  };
+
+  const handleToggle = (event: MouseEvent<HTMLButtonElement>) => {
+    const next: ResolvedTheme = isDark ? "light" : "dark";
+
+    const doc = document as DocumentWithViewTransition;
+    const startViewTransition = doc.startViewTransition?.bind(doc);
+
+    // No View Transitions support (or reduced motion): swap instantly.
+    if (!startViewTransition || prefersReducedMotion()) {
+      applyTheme(next);
+      return;
+    }
+
+    // A circle that spreads from the centre of the toggle across the viewport.
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y),
+    );
+
+    const transition = startViewTransition(() => {
+      applyTheme(next);
+    });
+
+    transition.ready
+      .then(() => {
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${endRadius}px at ${x}px ${y}px)`,
+            ],
+          },
+          {
+            duration: 480,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            pseudoElement: "::view-transition-new(root)",
+          },
+        );
+      })
+      .catch(() => {
+        // The theme has already been applied inside the callback, so a failed
+        // clip-path animation only means the reveal was instant.
+      });
+  };
+
+  const label = `${dictionary.theme.toggleLabel}: ${
+    isDark ? dictionary.theme.light : dictionary.theme.dark
+  }`;
+
   return (
     <div className="inline-flex items-center gap-2">
-      <div className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] p-1">
-        {(["light", "dark"] as const).map((item) => {
-          const active = theme === item;
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isDark}
+        aria-label={label}
+        title={label}
+        onClick={handleToggle}
+        className="group relative inline-flex w-16 shrink-0 cursor-pointer items-center rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] p-1 transition-colors hover:bg-[color:var(--surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)] lg:w-12 lg:p-0.5"
+      >
+        {/* Faint day/night markers at each end of the track. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 text-[color:var(--muted-foreground)] lg:px-1.5"
+        >
+          <SunIcon className="h-3.5 w-3.5 opacity-50 lg:h-3 lg:w-3" />
+          <MoonIcon className="h-3.5 w-3.5 opacity-50 lg:h-3 lg:w-3" />
+        </span>
 
-          return (
-            <button
-              key={item}
-              type="button"
-              onClick={() => {
-                setTheme(item);
-                applyThemeToDocument(item);
-
-                if (canPersist) {
-                  persistThemePreference(item);
-                } else {
-                  clearThemePreferencePersistence();
-                }
-              }}
-              className={[
-                "cursor-pointer rounded-full px-3 py-2 text-xs font-medium transition-colors",
-                active
-                  ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
-                  : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
-              ].join(" ")}
-              aria-label={`${dictionary.theme.toggleLabel}: ${dictionary.theme[item]}`}
-            >
-              {dictionary.theme[item]}
-            </button>
-          );
-        })}
-      </div>
+        {/* Rolling knob: slides + spins once as it crosses, swapping its face. */}
+        <span
+          aria-hidden="true"
+          className={[
+            "relative z-10 flex size-8 items-center justify-center rounded-full bg-[color:var(--foreground)] text-[color:var(--background)] shadow-sm transition-transform duration-500 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none lg:size-6",
+            isDark ? "translate-x-[22px] rotate-[360deg] lg:translate-x-[18px]" : "translate-x-0 rotate-0",
+          ].join(" ")}
+        >
+          <SunIcon
+            className={[
+              "absolute h-4 w-4 transition-opacity duration-200 motion-reduce:transition-none lg:h-3.5 lg:w-3.5",
+              isDark ? "opacity-0" : "opacity-100",
+            ].join(" ")}
+          />
+          <MoonIcon
+            className={[
+              "absolute h-4 w-4 transition-opacity duration-200 motion-reduce:transition-none lg:h-3.5 lg:w-3.5",
+              isDark ? "opacity-100" : "opacity-0",
+            ].join(" ")}
+          />
+        </span>
+      </button>
 
       {!canPersist && (
         <span

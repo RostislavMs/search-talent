@@ -131,52 +131,59 @@ export default function SiteHeader({
   const communityActive =
     pathname.startsWith("/articles") || pathname.startsWith("/polls");
 
-  const headerExtraLinks = viewer
-    ? [{ href: "/dashboard", label: dictionary.nav.dashboard }]
-    : [];
-
-  const dropdownLinks = viewer
+  // The profile dropdown is split into groups: the account essentials
+  // (public profile, edit profile, dashboard) come first, then a "Content"
+  // group for the viewer's own projects/articles/polls, then admin.
+  const accountLinks = viewer
     ? [
         ...(viewer.username
           ? [
               {
-                href: `/u/${viewer.username}/projects`,
-                label: dictionary.nav.myProjects,
-              },
-              {
-                href: `/u/${viewer.username}/articles`,
-                label: dictionary.nav.myArticles,
-              },
-              {
-                href: `/u/${viewer.username}/polls`,
-                label: dictionary.nav.myPolls,
+                href: `/u/${viewer.username}`,
+                label: dictionary.nav.publicProfile,
               },
             ]
           : []),
-        ...(viewer.isAdmin
-          ? [{ href: "/admin", label: dictionary.nav.adminConsole }]
-          : []),
+        { href: "/profile/edit", label: dictionary.dashboard.editProfile },
+        { href: "/dashboard", label: dictionary.nav.dashboard },
       ]
     : [];
 
-  const mobileMenuLinks = [...headerExtraLinks, ...dropdownLinks];
-  const profileLinks = viewer
-    ? viewer.username
-      ? [
-          {
-            href: `/u/${viewer.username}`,
-            label: dictionary.nav.publicProfile,
-          },
-          { href: "/profile/edit", label: dictionary.dashboard.editProfile },
-        ]
-      : [{ href: "/profile/edit", label: dictionary.dashboard.editProfile }]
+  const contentLinks = viewer?.username
+    ? [
+        {
+          href: `/u/${viewer.username}/projects`,
+          label: dictionary.nav.myProjects,
+        },
+        {
+          href: `/u/${viewer.username}/articles`,
+          label: dictionary.nav.myArticles,
+        },
+        {
+          href: `/u/${viewer.username}/polls`,
+          label: dictionary.nav.myPolls,
+        },
+      ]
     : [];
+
+  const adminLinks = viewer?.isAdmin
+    ? [{ href: "/admin", label: dictionary.nav.adminConsole }]
+    : [];
+
+  // The "signed in as" card links to the viewer's own space — public profile
+  // when they have a username, otherwise the profile editor.
+  const signedInAsHref = viewer?.username
+    ? `/u/${viewer.username}`
+    : "/profile/edit";
+
   const profileActive =
     pathname.startsWith("/u/") ||
     pathname === "/profile/edit" ||
-    pathname.startsWith("/profile/edit/");
-  const profileMenuLinks = [...headerExtraLinks, ...dropdownLinks, ...profileLinks];
-  const activeProfileMenuHref = profileMenuLinks
+    pathname.startsWith("/profile/edit/") ||
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/");
+  const allProfileMenuLinks = [...accountLinks, ...contentLinks, ...adminLinks];
+  const activeProfileMenuHref = allProfileMenuLinks
     .filter(
       (link) =>
         pathname === link.href || pathname.startsWith(`${link.href}/`),
@@ -207,7 +214,7 @@ export default function SiteHeader({
     ].join(" ");
   const menuLinkClasses = (active: boolean) =>
     [
-      "flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+      "flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:rounded-2xl lg:px-4 lg:py-3",
       active
         ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
         : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
@@ -242,7 +249,7 @@ export default function SiteHeader({
 
         <nav className="hidden flex-1 items-center justify-center lg:flex">
           <HeaderNav
-            links={[...primaryLinks, ...headerExtraLinks]}
+            links={primaryLinks}
             trailingActive={communityActive}
             trailing={
               <details ref={communityMenuRef} className="relative">
@@ -254,7 +261,7 @@ export default function SiteHeader({
                     height="14"
                     viewBox="0 0 24 24"
                     fill="none"
-                    className="transition-transform"
+                    className="transition-transform duration-300 ease-out in-[[open]]:rotate-180"
                   >
                     <path
                       d="M6 9l6 6 6-6"
@@ -288,15 +295,15 @@ export default function SiteHeader({
           />
         </nav>
 
-        <div className="ml-auto flex items-center lg:ml-0">
+        {/* Language and theme sit together as one control row on desktop; on
+            mobile both move into the menu (below) to keep the bar clean. */}
+        <div className="hidden items-center gap-2 lg:flex">
           <LanguageSwitcher />
+          <ThemeToggle
+            initialTheme={initialTheme}
+            initialCanPersist={initialCanPersistTheme}
+          />
         </div>
-
-        {viewer ? (
-          <div className="hidden xl:flex">
-            <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
-          </div>
-        ) : null}
 
         {viewer ? (
           <div className="hidden lg:flex">
@@ -326,8 +333,12 @@ export default function SiteHeader({
                 </summary>
 
                 <div className="absolute right-0 mt-3 w-80 rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-3 shadow-2xl">
-                  <div className="rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
+                  <LocalizedLink
+                    href={signedInAsHref}
+                    onClick={closeProfileMenu}
+                    className="block rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3 transition hover:ring-1 hover:ring-inset hover:ring-[color:var(--border)]"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
                       {dictionary.nav.signedInAs}
                     </p>
                     <p className="mt-1 truncate text-sm font-medium text-[color:var(--foreground)]">
@@ -335,20 +346,10 @@ export default function SiteHeader({
                         viewer.email ||
                         dictionary.nav.profile}
                     </p>
-                  </div>
+                  </LocalizedLink>
 
                   <div className="mt-3 space-y-1">
-                    {profileLinks.map((link) => (
-                      <LocalizedLink
-                        key={`${link.href}-${link.label}`}
-                        href={link.href}
-                        onClick={closeProfileMenu}
-                        className={menuLinkClasses(link.href === activeProfileMenuHref)}
-                      >
-                        {link.label}
-                      </LocalizedLink>
-                    ))}
-                    {dropdownLinks.map((link) => (
+                    {accountLinks.map((link) => (
                       <LocalizedLink
                         key={link.href}
                         href={link.href}
@@ -360,12 +361,40 @@ export default function SiteHeader({
                     ))}
                   </div>
 
-                  <div className="mt-4 rounded-2xl border border-[color:var(--border)] p-4 xl:hidden">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
-                      {dictionary.theme.toggleLabel}
-                    </p>
-                    <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
-                  </div>
+                  {contentLinks.length > 0 ? (
+                    <div className="mt-3">
+                      <p className="mb-1 px-4 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                        {dictionary.nav.content}
+                      </p>
+                      <div className="space-y-1">
+                        {contentLinks.map((link) => (
+                          <LocalizedLink
+                            key={link.href}
+                            href={link.href}
+                            onClick={closeProfileMenu}
+                            className={menuLinkClasses(link.href === activeProfileMenuHref)}
+                          >
+                            {link.label}
+                          </LocalizedLink>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {adminLinks.length > 0 ? (
+                    <div className="mt-3 space-y-1">
+                      {adminLinks.map((link) => (
+                        <LocalizedLink
+                          key={link.href}
+                          href={link.href}
+                          onClick={closeProfileMenu}
+                          className={menuLinkClasses(link.href === activeProfileMenuHref)}
+                        >
+                          {link.label}
+                        </LocalizedLink>
+                      ))}
+                    </div>
+                  ) : null}
 
                   <div className="mt-4">
                     <LogoutButton className="w-full justify-center" />
@@ -375,8 +404,6 @@ export default function SiteHeader({
             </>
           ) : (
             <>
-              <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
-
               <LocalizedLink
                 href="/login"
                 className={buttonStyles({ variant: "ghost", size: "sm" })}
@@ -395,16 +422,31 @@ export default function SiteHeader({
         </div>
 
         {viewer ? (
-          <NotificationsBell mode="link" className="lg:hidden" />
+          <NotificationsBell mode="link" className="ml-auto lg:hidden" />
         ) : null}
 
-        <details ref={mobileMenuRef} className="relative lg:hidden">
+        <details
+          ref={mobileMenuRef}
+          className={viewer ? "relative lg:hidden" : "relative ml-auto lg:hidden"}
+        >
           <summary
             className={`${buttonStyles({
               size: "sm",
               variant: "secondary",
-            })} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
+            })} cursor-pointer list-none gap-2 [&::-webkit-details-marker]:hidden`}
           >
+            <svg
+              aria-hidden="true"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
             {dictionary.nav.menu}
           </summary>
 
@@ -422,7 +464,7 @@ export default function SiteHeader({
             </div>
 
             <div className="mt-3">
-              <p className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
+              <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
                 {dictionary.nav.community}
               </p>
               <div className="space-y-1">
@@ -440,50 +482,42 @@ export default function SiteHeader({
 
             {viewer ? (
               <>
-                <div className="mt-3 rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] text-sm font-semibold text-[color:var(--foreground)]">
-                      {viewer.avatarUrl ? (
-                        <OptimizedImage
-                          src={viewer.avatarUrl}
-                          alt={dictionary.nav.profile}
-                          fill
-                          sizes="36px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <span>{viewerInitial}</span>
-                      )}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-                        {dictionary.nav.signedInAs}
-                      </p>
-                      <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
-                        {viewer.displayName ||
-                          viewer.email ||
-                          dictionary.nav.profile}
-                      </p>
-                    </div>
+                <LocalizedLink
+                  href={signedInAsHref}
+                  onClick={closeMobileMenu}
+                  className="mt-3 flex items-center gap-3 rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3 transition hover:ring-1 hover:ring-inset hover:ring-[color:var(--border)]"
+                >
+                  <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] text-sm font-semibold text-[color:var(--foreground)]">
+                    {viewer.avatarUrl ? (
+                      <OptimizedImage
+                        src={viewer.avatarUrl}
+                        alt={dictionary.nav.profile}
+                        fill
+                        sizes="36px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <span>{viewerInitial}</span>
+                    )}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                      {dictionary.nav.signedInAs}
+                    </p>
+                    <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
+                      {viewer.displayName ||
+                        viewer.email ||
+                        dictionary.nav.profile}
+                    </p>
                   </div>
-                </div>
+                </LocalizedLink>
 
                 <div className="mt-3">
-                  <p className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
+                  <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
                     {dictionary.nav.profile}
                   </p>
                   <div className="space-y-1">
-                    {profileLinks.map((link) => (
-                      <LocalizedLink
-                        key={`${link.href}-${link.label}`}
-                        href={link.href}
-                        onClick={closeMobileMenu}
-                        className={menuLinkClasses(link.href === activeProfileMenuHref)}
-                      >
-                        {link.label}
-                      </LocalizedLink>
-                    ))}
-                    {mobileMenuLinks.map((link) => (
+                    {accountLinks.map((link) => (
                       <LocalizedLink
                         key={link.href}
                         href={link.href}
@@ -496,11 +530,55 @@ export default function SiteHeader({
                   </div>
                 </div>
 
-                <div className="mt-3 rounded-2xl border border-[color:var(--border)] p-3">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-eyebrow app-soft">
-                    {dictionary.theme.toggleLabel}
-                  </p>
-                  <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
+                {contentLinks.length > 0 ? (
+                  <div className="mt-3">
+                    <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                      {dictionary.nav.content}
+                    </p>
+                    <div className="space-y-1">
+                      {contentLinks.map((link) => (
+                        <LocalizedLink
+                          key={link.href}
+                          href={link.href}
+                          onClick={closeMobileMenu}
+                          className={menuLinkClasses(link.href === activeProfileMenuHref)}
+                        >
+                          {link.label}
+                        </LocalizedLink>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {adminLinks.length > 0 ? (
+                  <div className="mt-3 space-y-1">
+                    {adminLinks.map((link) => (
+                      <LocalizedLink
+                        key={link.href}
+                        href={link.href}
+                        onClick={closeMobileMenu}
+                        className={menuLinkClasses(link.href === activeProfileMenuHref)}
+                      >
+                        {link.label}
+                      </LocalizedLink>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-2xl border border-[color:var(--border)] p-3">
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                      {dictionary.language.switchLabel}
+                    </p>
+                    <LanguageSwitcher />
+                  </div>
+
+                  <div className="rounded-2xl border border-[color:var(--border)] p-3">
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                      {dictionary.theme.toggleLabel}
+                    </p>
+                    <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
+                  </div>
                 </div>
 
                 <div className="mt-3">
@@ -509,11 +587,20 @@ export default function SiteHeader({
               </>
             ) : (
               <>
-                <div className="mt-3 rounded-2xl border border-[color:var(--border)] p-3">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-eyebrow app-soft">
-                    {dictionary.theme.toggleLabel}
-                  </p>
-                  <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-2xl border border-[color:var(--border)] p-3">
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                      {dictionary.language.switchLabel}
+                    </p>
+                    <LanguageSwitcher />
+                  </div>
+
+                  <div className="rounded-2xl border border-[color:var(--border)] p-3">
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                      {dictionary.theme.toggleLabel}
+                    </p>
+                    <ThemeToggle initialTheme={initialTheme} initialCanPersist={initialCanPersistTheme} />
+                  </div>
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-2">

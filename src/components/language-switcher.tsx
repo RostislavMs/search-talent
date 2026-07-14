@@ -18,7 +18,7 @@ export default function LanguageSwitcher() {
   };
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] p-1">
+    <div className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] p-1 lg:p-0.5">
       {(["uk", "en"] as const).map((item) => {
         const active = locale === item;
 
@@ -27,7 +27,7 @@ export default function LanguageSwitcher() {
             key={item}
             href={buildTargetHref(item)}
             className={[
-              "rounded-full px-3 py-2 text-xs font-medium transition-colors",
+              "rounded-full px-3 py-2 text-xs font-medium transition-colors lg:px-2.5 lg:py-1",
               active
                 ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
                 : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
