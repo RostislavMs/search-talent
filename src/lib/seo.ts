@@ -526,7 +526,7 @@ export function buildWebSiteSchema() {
     // The site publishes every public page in both English and Ukrainian.
     inLanguage: ["en-US", "uk-UA"],
     description:
-      "Community platform to discover IT talent, explore portfolios, and follow developers and designers.",
+      "Community platform to discover specialists, explore portfolios, and follow developers and designers.",
     potentialAction: {
       "@type": "SearchAction",
       target: {

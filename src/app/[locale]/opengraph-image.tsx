@@ -17,8 +17,8 @@ export default async function Image({
   const isUk = safeLocale === "uk";
 
   const headline = isUk
-    ? "Платформа-спільнота для IT-талантів"
-    : "A community platform for IT talent";
+    ? "Платформа-спільнота для фахівців"
+    : "A community platform for specialists";
 
   return new ImageResponse(
     (

@@ -40,7 +40,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
   title: {
-    default: "SearchTalent — Discover IT Talent & Creative Portfolios",
+    default: "SearchTalent — Specialist Profiles & Creative Portfolios",
     template: "%s | SearchTalent",
   },
   description:

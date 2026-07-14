@@ -108,9 +108,9 @@ const marketingContent = {
         "Create a public SearchTalent profile, publish your real projects, and let your work speak for itself in front of a community that values craft.",
     },
     talents: {
-      title: "Discover IT Talents with Real Project Portfolios",
+      title: "Discover IT Specialists with Real Project Portfolios",
       intro: [
-        "SearchTalent helps the community discover IT talents through real project portfolios instead of relying only on resumes. Public profiles show how specialists present their work, which technologies they use, and what kinds of products they have built. That means a stronger first signal the moment you open a profile.",
+        "SearchTalent helps the community discover IT specialists through real project portfolios instead of relying only on resumes. Public profiles show how specialists present their work, which technologies they use, and what kinds of products they have built. That means a stronger first signal the moment you open a profile.",
         "On this page you can browse developers, designers, QA engineers, DevOps specialists, analysts, product people, and other IT professionals who publish public project evidence. Each profile is connected to actual work samples, technology stacks, and portfolio context — so it is easier to understand a creator's craft, scope of work, and the environments they have shipped inside.",
         "For visitors, that makes discovery more practical. Instead of filtering by buzzwords alone, you can compare role fit, project depth, tools, and visible outcomes in one place. For specialists, it creates a better surface for being recognised by what they have built. SearchTalent is designed to make talent discovery more transparent, more skill-based, and more useful for everyone in the community.",
       ],

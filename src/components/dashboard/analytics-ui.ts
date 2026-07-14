@@ -90,7 +90,7 @@ export function getDashboardUi(locale: Locale) {
         full_time: "Повна зайнятість",
         part_time: "Часткова зайнятість",
         contract: "Контракт",
-        freelance: "Фриланс",
+        freelance: "Фріланс",
         internship: "Стажування",
       },
       contactMethods: {
