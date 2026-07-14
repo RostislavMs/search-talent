@@ -78,7 +78,7 @@ export default async function ProfileEditPage({
 
   const publicProfileHref = profile.username
     ? `/u/${profile.username}`
-    : "/dashboard";
+    : "/my-space";
   const fallbackText = (profile.name || profile.username || user.email || "U")
     .slice(0, 1)
     .toUpperCase();

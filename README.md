@@ -45,10 +45,11 @@ search-talent/
 │   │   │   ├── u/[username]/         Public profile, /projects, /articles, /polls
 │   │   │   ├── profile/edit/         Profile editor (sections, presentation, GitHub link)
 │   │   │   ├── notifications/        Notifications inbox
-│   │   │   ├── dashboard/            Personal analytics
+│   │   │   ├── my-space/             Personal stats & quick actions
 │   │   │   │   ├── followers/        People who follow you
 │   │   │   │   ├── following/        Authors you follow + their feed
 │   │   │   │   └── saved/            Bookmarked profiles & projects
+│   │   │   ├── analytics/            Platform-wide analytics
 │   │   │   └── admin/                Admin console (gated by platform_admins)
 │   │   │       ├── audit/  content/{articles,projects,comments}/
 │   │   │       ├── feedback/  moderation/  users/
@@ -123,9 +124,9 @@ search-talent/
 ### Social graph
 
 - Follow / unfollow with email digest (Resend, optional).
-- `/dashboard/following` — personal feed of new articles & projects from followed authors.
-- `/dashboard/followers` — list of people who follow you.
-- Bookmarks for both profiles and projects in `/dashboard/saved`.
+- `/my-space/following` — personal feed of new articles & projects from followed authors.
+- `/my-space/followers` — list of people who follow you.
+- Bookmarks for both profiles and projects in `/my-space/saved`.
 - @mentions notify the mentioned user.
 
 ### Badges
@@ -184,10 +185,11 @@ search-talent/
 
 | Route | Description |
 | --- | --- |
-| `/dashboard` | Personal analytics & quick actions |
-| `/dashboard/followers` | People who follow the current user |
-| `/dashboard/following` | Feed of authors the user follows + manage list |
-| `/dashboard/saved` | Bookmarked profiles and projects |
+| `/my-space` | Personal stats & quick actions |
+| `/my-space/followers` | People who follow the current user |
+| `/my-space/following` | Feed of authors the user follows + manage list |
+| `/my-space/saved` | Bookmarked profiles and projects |
+| `/analytics` | Platform-wide analytics |
 | `/notifications` | Inbox |
 | `/profile/edit` | Profile editor (sections, presentation, GitHub link, account) |
 | `/projects/new`, `/projects/edit/[id]` | Project composer |

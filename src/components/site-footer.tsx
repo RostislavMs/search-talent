@@ -104,10 +104,10 @@ export default function SiteFooter({
             </p>
             <nav className="mt-3 flex flex-col gap-2 text-sm text-[color:var(--muted-foreground)]">
               <LocalizedLink
-                href={isSignedIn ? "/dashboard" : "/login"}
+                href={isSignedIn ? "/my-space" : "/login"}
                 className="hover:text-[color:var(--foreground)]"
               >
-                {isSignedIn ? dictionary.nav.dashboard : dictionary.nav.login}
+                {isSignedIn ? dictionary.nav.mySpace : dictionary.nav.login}
               </LocalizedLink>
               {!isSignedIn && (
                 <LocalizedLink
@@ -122,7 +122,7 @@ export default function SiteFooter({
                   href="/profile/edit"
                   className="hover:text-[color:var(--foreground)]"
                 >
-                  {dictionary.dashboard.editProfile}
+                  {dictionary.mySpace.editProfile}
                 </LocalizedLink>
               )}
             </nav>

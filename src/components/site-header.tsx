@@ -123,17 +123,21 @@ export default function SiteHeader({
     { href: "/talents", label: talentsLabel },
     { href: "/projects", label: dictionary.nav.projects },
   ];
-  // Community groups the content types (articles, polls) under one dropdown.
+  // Community groups the content types (articles, polls, news) under one
+  // dropdown.
   const communityLinks = [
     { href: "/articles", label: articlesLabel },
     { href: "/polls", label: dictionary.nav.polls },
+    { href: "/news", label: dictionary.nav.news },
   ];
   const communityActive =
-    pathname.startsWith("/articles") || pathname.startsWith("/polls");
+    pathname.startsWith("/articles") ||
+    pathname.startsWith("/polls") ||
+    pathname.startsWith("/news");
 
   // The profile dropdown is split into groups: the account essentials
-  // (public profile, edit profile, dashboard) come first, then a "Content"
-  // group for the viewer's own projects/articles/polls, then admin.
+  // (public profile, edit profile, my space, analytics) come first, then a
+  // "Content" group for the viewer's own projects/articles/polls, then admin.
   const accountLinks = viewer
     ? [
         ...(viewer.username
@@ -144,8 +148,9 @@ export default function SiteHeader({
               },
             ]
           : []),
-        { href: "/profile/edit", label: dictionary.dashboard.editProfile },
-        { href: "/dashboard", label: dictionary.nav.dashboard },
+        { href: "/profile/edit", label: dictionary.mySpace.editProfile },
+        { href: "/my-space", label: dictionary.nav.mySpace },
+        { href: "/analytics", label: dictionary.nav.analytics },
       ]
     : [];
 
@@ -180,8 +185,10 @@ export default function SiteHeader({
     pathname.startsWith("/u/") ||
     pathname === "/profile/edit" ||
     pathname.startsWith("/profile/edit/") ||
-    pathname === "/dashboard" ||
-    pathname.startsWith("/dashboard/");
+    pathname === "/my-space" ||
+    pathname.startsWith("/my-space/") ||
+    pathname === "/analytics" ||
+    pathname.startsWith("/analytics/");
   const allProfileMenuLinks = [...accountLinks, ...contentLinks, ...adminLinks];
   const activeProfileMenuHref = allProfileMenuLinks
     .filter(

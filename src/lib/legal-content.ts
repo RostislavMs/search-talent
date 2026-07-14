@@ -175,7 +175,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
         {
           title: "Your rights and deleting your account",
           paragraphs: [
-            "You can view and edit your account and profile data at any time from your dashboard, and export your profile as a PDF.",
+            "You can view and edit your account and profile data at any time from your profile settings, and export your profile as a PDF.",
             "You can delete your account from your profile settings. We email you a confirmation code, and you choose how deletion happens: full erasure removes your profile, projects, articles, comments, votes, and related data permanently; or you can keep your articles and comments as anonymous content attributed to a deleted user while the rest of your account is removed. In both cases your profile, projects, votes, likes, and saved data are deleted, and the action cannot be undone.",
           ],
         },
@@ -397,7 +397,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
         {
           title: "Ваші права та видалення акаунта",
           paragraphs: [
-            "Ви будь-коли можете переглянути й відредагувати дані акаунта та профілю в дашборді, а також експортувати профіль у PDF.",
+            "Ви будь-коли можете переглянути й відредагувати дані акаунта та профілю в налаштуваннях профілю, а також експортувати профіль у PDF.",
             "Видалити акаунт можна в налаштуваннях профілю. Ми надсилаємо код підтвердження на email, і ви обираєте спосіб видалення: повне видалення безповоротно прибирає профіль, проєкти, статті, коментарі, голоси та пов'язані дані; або ви можете залишити статті й коментарі як анонімний контент із підписом «Видалений користувач», а решту акаунта видалити. В обох випадках профіль, проєкти, голоси, лайки та збережені дані видаляються, і цю дію неможливо скасувати.",
           ],
         },

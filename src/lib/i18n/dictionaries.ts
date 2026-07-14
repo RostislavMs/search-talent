@@ -32,9 +32,11 @@ export const dictionaries = {
       home: "Home",
       projects: "Projects",
       search: "Search",
-      dashboard: "Dashboard",
+      mySpace: "My space",
+      analytics: "Analytics",
       community: "Community",
       polls: "Polls",
+      news: "News",
       myProjects: "My projects",
       myArticles: "My articles",
       myPolls: "My polls",
@@ -385,10 +387,15 @@ export const dictionaries = {
         description:
           "Official updates, releases, and announcements from the SearchTalent team.",
       },
-      dashboard: {
-        title: "Dashboard",
+      mySpace: {
+        title: "My Space",
         description:
-          "Your control panel — manage your portfolio, published projects, and view platform analytics.",
+          "Your personal space — manage your profile, projects, articles, polls, followers, and saved items in one place.",
+      },
+      analytics: {
+        title: "Platform Analytics",
+        description:
+          "Live community analytics — growth, directions, skills, geography, and salary insights across the platform.",
       },
       dashboardProjects: {
         title: "Manage Portfolio Projects",
@@ -408,7 +415,7 @@ export const dictionaries = {
       login: {
         title: "Log In",
         description:
-          "Sign in to SearchTalent to manage your portfolio, publish projects, and access your dashboard.",
+          "Sign in to SearchTalent to manage your portfolio, publish projects, and access your personal space.",
       },
       signup: {
         title: "Create Free Account — Join the Talent Community",
@@ -549,9 +556,9 @@ export const dictionaries = {
       eyebrow: "Talent discovery",
       title: "Search Portfolios, Profiles & Projects by Skills",
       description:
-        "Find portfolios and profiles by keywords, skills, or technologies — then dive into work or open your own dashboard.",
+        "Find portfolios and profiles by keywords, skills, or technologies — then dive into work or open your own space.",
       browseProjects: "Browse projects",
-      dashboard: "Dashboard",
+      mySpace: "My space",
       placeholder: "Search projects or users...",
       scopeAll: "Everything",
       scopeProjects: "Projects",
@@ -597,7 +604,7 @@ export const dictionaries = {
         workspace: {
           title: "Need your own space?",
           description:
-            "Head into the dashboard to create projects and complete your profile.",
+            "Head into your space to create projects and complete your profile.",
         },
       },
       results: "results",
@@ -1070,66 +1077,13 @@ export const dictionaries = {
       present: "Present",
       generating: "Generating…",
     },
-    dashboard: {
-      eyebrow: "Your workspace",
-      title: "Manage Your IT Portfolio & Track Project Performance",
-      shortTitle: "Dashboard",
-      backToDashboard: "Back to dashboard",
+    mySpace: {
+      title: "My Space",
       description:
-        "Manage your profile, track project performance, and view platform-wide analytics in one place.",
-      signedInAs: "Signed in as",
+        "Your content, audience, and quick actions in one place.",
       editProfile: "Edit profile",
-      manageProjects: "Manage projects",
-      viewPublicProfile: "View public profile",
-      openProfile: "Open profile",
-      profileStatus: "Profile status",
-      username: "Username",
-      usernameMissing: "not set yet",
-      publicPage: "Public page",
-      publicReady: "ready",
-      publicNeedsUsername: "needs a username",
-      completeProfile: "Complete profile",
-      projects: "Projects",
-      projectWorkspaceDescription:
-        "Keep creation, uploads, and public project pages linked from one workspace.",
-      openProjectWorkspace: "Open project workspace",
-      discovery: "Discovery",
-      discoveryDescription:
-        "Return to browsing public projects and profiles anytime.",
-      browseProjects: "Browse projects",
-      searchTalent: "Search talents",
-      analyticsEyebrow: "Live site activity",
-      creators: "Talents",
-      mediaFiles: "Media files",
-      communityVotes: "Community votes",
-      totalScore: "Total score",
-      activeTechnologies: "Active technologies",
-      growthLastMonths: "Growth over the last 6 months",
-      projectsPublished: "Projects published",
-      mediaUploaded: "Media uploaded",
-      votesCast: "Votes cast",
-      creatorsJoined: "Talents joined",
-      totalTrafficPulse: "Platform pulse",
-      totalTrafficDescription:
-        "These columns show how new profiles, projects, files, and votes change together month by month.",
-      projectStatusMix: "Project status mix",
-      contentFormats: "Content format mix",
-      audienceResponse: "Audience response",
-      strongestProjects: "Strongest projects right now",
-      technologyFootprint: "Technology footprint",
-      topTechnologies: "Top technologies across your projects",
-      profileReach: "Profile reach",
-      publicProfilesHint: "{count} already have public usernames.",
-      siteProjectsHint: "All public work currently indexed on the platform.",
-      mediaLibraryHint: "Images, videos, and files attached to published work.",
-      unknownStatus: "Not set",
-      mediaImages: "Images",
-      mediaVideos: "Videos",
-      updatedDaily: "Live from current site data",
-      noProjectsYet:
-        "There is not enough project data yet to build this chart.",
-      welcomeBack: "Welcome back",
-      myStats: "Your activity",
+      content: "Content",
+      audience: "Audience",
       myProjects: "My projects",
       myArticles: "My articles",
       myPolls: "My polls",
@@ -1137,15 +1091,21 @@ export const dictionaries = {
       following: "Following",
       bookmarks: "Saved",
       receivedLikes: "Likes received",
-      receivedDislikes: "Dislikes received",
       articleViews: "Article views",
+    },
+    analytics: {
+      title: "Analytics",
+      updatedDaily: "Live from current site data",
       platformOverview: "Platform overview",
       totalCreators: "Total creators",
       totalProjects: "Total projects",
-      totalVotes: "Total votes",
       profileCompletion: "Profile completion",
-      quickActions: "Quick actions",
-      noData: "No data yet",
+      siteProjectsHint: "All public work currently indexed on the platform.",
+      growthLastMonths: "Growth over the last 6 months",
+      projectsPublished: "Projects published",
+      creatorsJoined: "Talents joined",
+      noProjectsYet:
+        "There is not enough project data yet to build this chart.",
     },
     dashboardProjects: {
       eyebrow: "Project workspace",
@@ -1153,7 +1113,6 @@ export const dictionaries = {
       description:
         "Create a new project, upload media, and open the public page to see how visitors experience it.",
       yourProjects: "Your projects",
-      backToDashboard: "Back to dashboard",
       publicCatalog: "Public catalog",
       editProject: "Edit project",
       editProjectDescription:
@@ -1204,7 +1163,6 @@ export const dictionaries = {
       title: "Edit Your Professional IT Profile & Skills",
       description:
         "Update the public information that shapes your profile and helps people find you in search.",
-      backToDashboard: "Back to dashboard",
       backToProfile: "Back to profile",
       viewPublicProfile: "View public profile",
       profileNotFound: "Profile not found",
@@ -1322,11 +1280,11 @@ export const dictionaries = {
         eyebrow: "Check your inbox",
         title: "Verify your email",
         description:
-          "We sent you a verification link. Once you confirm the account, you can head into the dashboard and finish your profile.",
+          "We sent you a verification link. Once you confirm the account, you can head into your space and finish your profile.",
         login: "Log in",
-        openDashboard: "Open dashboard",
+        openMySpace: "Open my space",
         backHome: "Back to home",
-        hint: "SearchTalent checks your session when you open the dashboard, so after confirming the email you can simply return there and continue.",
+        hint: "SearchTalent checks your session when you open your space, so after confirming the email you can simply return there and continue.",
       },
       forgotPassword: {
         eyebrow: "Forgot your password?",
@@ -1387,7 +1345,6 @@ export const dictionaries = {
       browseProjects: "Browse projects",
       editProfile: "Edit profile",
       manageProjects: "Manage projects",
-      openDashboard: "Open dashboard",
       ownerView: "Your public profile",
       profileRating: "Profile rating",
       ratingHowItWorks: "How it works",
@@ -2200,7 +2157,7 @@ export const dictionaries = {
         },
         {
           q: "How do I create a public profile?",
-          a: "Sign up, go to your dashboard, and fill in your profile details — name, skills, experience, and contacts. Once you set a username, your public page becomes available.",
+          a: "Sign up, open your space, and fill in your profile details — name, skills, experience, and contacts. Once you set a username, your public page becomes available.",
         },
         {
           q: "Can I publish multiple projects?",
@@ -2208,11 +2165,11 @@ export const dictionaries = {
         },
         {
           q: "Can I write articles?",
-          a: "Yes. Besides projects, you can publish articles from your dashboard — write-ups, tutorials, or opinion pieces with rich formatting, images, and GIFs. Published articles appear in the Community section and on your public profile, and they count toward your contribution to the platform.",
+          a: "Yes. Besides projects, you can publish articles from your space — write-ups, tutorials, or opinion pieces with rich formatting, images, and GIFs. Published articles appear in the Community section and on your public profile, and they count toward your contribution to the platform.",
         },
         {
           q: "What are polls?",
-          a: "Polls let you ask the community a question — single-choice, multiple-choice, or a rating scale. Anyone can read the results, and signed-in members can cast their vote. Create one from your dashboard and it shows up in the Community section.",
+          a: "Polls let you ask the community a question — single-choice, multiple-choice, or a rating scale. Anyone can read the results, and signed-in members can cast their vote. Create one from your space and it shows up in the Community section.",
         },
         {
           q: "Can I collaborate with others?",
@@ -2240,7 +2197,7 @@ export const dictionaries = {
         },
         {
           q: "How do I delete my account?",
-          a: "Open your profile settings in the dashboard and use the \"Delete my account\" button at the bottom of the page. We will email you a confirmation code that is valid for 5 minutes. Before confirming, you can choose whether to delete everything — your profile, projects, articles, and comments are removed permanently — or to keep your articles and comments as anonymous content attributed to \"Deleted user\" while the rest of your account is removed. Either way, your profile, projects, votes, likes, and saved data are always deleted, and the action cannot be undone.",
+          a: "Open your profile settings and use the \"Delete my account\" button at the bottom of the page. We will email you a confirmation code that is valid for 5 minutes. Before confirming, you can choose whether to delete everything — your profile, projects, articles, and comments are removed permanently — or to keep your articles and comments as anonymous content attributed to \"Deleted user\" while the rest of your account is removed. Either way, your profile, projects, votes, likes, and saved data are always deleted, and the action cannot be undone.",
         },
       ],
     },
@@ -2317,9 +2274,11 @@ export const dictionaries = {
       home: "Головна",
       projects: "Проєкти",
       search: "Пошук",
-      dashboard: "Дашборд",
+      mySpace: "Мій простір",
+      analytics: "Аналітика",
       community: "Спільнота",
       polls: "Опитування",
+      news: "Новини",
       myProjects: "Мої проєкти",
       myArticles: "Мої статті",
       myPolls: "Мої опитування",
@@ -2670,10 +2629,15 @@ export const dictionaries = {
         description:
           "Офіційні оновлення, релізи та анонси від команди SearchTalent.",
       },
-      dashboard: {
-        title: "Дашборд",
+      mySpace: {
+        title: "Мій простір",
         description:
-          "Ваша панель керування — портфоліо, опубліковані проєкти та аналітика платформи.",
+          "Ваш особистий простір — керуйте профілем, проєктами, статтями, опитуваннями, підписниками та збереженим в одному місці.",
+      },
+      analytics: {
+        title: "Аналітика платформи",
+        description:
+          "Жива аналітика спільноти — динаміка, напрямки, навички, географія та зарплатні інсайти платформи.",
       },
       dashboardProjects: {
         title: "Керування портфоліо-проєктами",
@@ -2693,7 +2657,7 @@ export const dictionaries = {
       login: {
         title: "Увійти",
         description:
-          "Увійдіть у SearchTalent, щоб керувати портфоліо, публікувати проєкти й користуватися дашбордом.",
+          "Увійдіть у SearchTalent, щоб керувати портфоліо, публікувати проєкти й користуватися своїм простором.",
       },
       signup: {
         title: "Створити акаунт — приєднайтесь до спільноти талантів",
@@ -2834,9 +2798,9 @@ export const dictionaries = {
       eyebrow: "Пошук талантів",
       title: "Пошук Портфоліо, Профілів та Проєктів за Навичками",
       description:
-        "Знаходьте портфоліо та профілі авторів за ключовими словами, навичками чи технологіями — переглядайте роботи або переходьте у свій дашборд.",
+        "Знаходьте портфоліо та профілі авторів за ключовими словами, навичками чи технологіями — переглядайте роботи або переходьте у свій простір.",
       browseProjects: "Переглянути проєкти",
-      dashboard: "Дашборд",
+      mySpace: "Мій простір",
       placeholder: "Шукати проєкти або користувачів...",
       info: {
         projects: {
@@ -2852,7 +2816,7 @@ export const dictionaries = {
         workspace: {
           title: "Потрібен свій простір?",
           description:
-            "Перейдіть у дашборд, щоб створювати проєкти й заповнювати профіль.",
+            "Перейдіть у свій простір, щоб створювати проєкти й заповнювати профіль.",
         },
       },
       results: "результатів",
@@ -3327,67 +3291,13 @@ export const dictionaries = {
       present: "Зараз",
       generating: "Генерація…",
     },
-    dashboard: {
-      eyebrow: "Ваш простір",
-      title: "Керуйте Вашим IT-Портфоліо та Відстежуйте Ефективність Проєктів",
-      shortTitle: "Дашборд",
-      backToDashboard: "Назад у дашборд",
+    mySpace: {
+      title: "Мій простір",
       description:
-        "Керуйте профілем, відстежуйте ефективність проєктів і переглядайте аналітику платформи з одного місця.",
-      signedInAs: "Увійшли як",
+        "Ваш контент, аудиторія та швидкі дії в одному місці.",
       editProfile: "Редагувати профіль",
-      manageProjects: "Керувати проєктами",
-      viewPublicProfile: "Переглянути публічний профіль",
-      openProfile: "Відкрити профіль",
-      profileStatus: "Стан профілю",
-      username: "Username",
-      usernameMissing: "ще не задано",
-      publicPage: "Публічна сторінка",
-      publicReady: "готова",
-      publicNeedsUsername: "потрібно задати username",
-      completeProfile: "Заповнити профіль",
-      projects: "Проєкти",
-      projectWorkspaceDescription:
-        "Тримайте створення, завантаження та публічні сторінки проєктів пов'язаними в одному місці.",
-      openProjectWorkspace: "Відкрити робочу зону",
-      discovery: "Пошук",
-      discoveryDescription:
-        "У будь-який момент поверніться до перегляду публічних проєктів і профілів.",
-      browseProjects: "Переглянути проєкти",
-      searchTalent: "Шукати таланти",
-      analyticsEyebrow: "Жива активність сайту",
-      creators: "Фахівці",
-      mediaFiles: "Медіафайли",
-      communityVotes: "Голоси спільноти",
-      totalScore: "Загальний score",
-      activeTechnologies: "Активні технології",
-      growthLastMonths: "Динаміка за останні 6 місяців",
-      projectsPublished: "Опубліковані проєкти",
-      mediaUploaded: "Завантажені файли",
-      votesCast: "Віддані голоси",
-      creatorsJoined: "Нові фахівці",
-      totalTrafficPulse: "Пульс платформи",
-      totalTrafficDescription:
-        "Ці стовпчики показують, як по місяцях змінюється кількість нових профілів, проєктів, файлів і голосів.",
-      projectStatusMix: "Мікс статусів проєктів",
-      contentFormats: "Мікс форматів контенту",
-      audienceResponse: "Реакція аудиторії",
-      strongestProjects: "Найсильніші проєкти зараз",
-      technologyFootprint: "Технологічний слід",
-      topTechnologies: "Топ технологій у ваших проєктах",
-      profileReach: "Охоплення профілю",
-      publicProfilesHint: "{count} вже мають публічний username.",
-      siteProjectsHint: "Усі публічні роботи, які зараз індексує платформа.",
-      mediaLibraryHint:
-        "Зображення, відео та файли, прикріплені до опублікованих робіт.",
-      unknownStatus: "Не вказано",
-      mediaImages: "Зображення",
-      mediaVideos: "Відео",
-      updatedDaily: "Актуально за поточними даними сайту",
-      noProjectsYet:
-        "Поки недостатньо даних по проєктах, щоб побудувати цей блок.",
-      welcomeBack: "З поверненням",
-      myStats: "Ваша активність",
+      content: "Контент",
+      audience: "Аудиторія",
       myProjects: "Мої проєкти",
       myArticles: "Мої статті",
       myPolls: "Мої опитування",
@@ -3395,15 +3305,21 @@ export const dictionaries = {
       following: "Підписки",
       bookmarks: "Збережене",
       receivedLikes: "Отримані лайки",
-      receivedDislikes: "Отримані дизлайки",
       articleViews: "Перегляди статей",
+    },
+    analytics: {
+      title: "Аналітика",
+      updatedDaily: "Актуально за поточними даними сайту",
       platformOverview: "Огляд платформи",
       totalCreators: "Всього фахівців",
       totalProjects: "Всього проєктів",
-      totalVotes: "Всього голосів",
       profileCompletion: "Заповненість профілів",
-      quickActions: "Швидкі дії",
-      noData: "Ще немає даних",
+      siteProjectsHint: "Усі публічні роботи, які зараз індексує платформа.",
+      growthLastMonths: "Динаміка за останні 6 місяців",
+      projectsPublished: "Опубліковані проєкти",
+      creatorsJoined: "Нові фахівці",
+      noProjectsYet:
+        "Поки недостатньо даних по проєктах, щоб побудувати цей блок.",
     },
     dashboardProjects: {
       eyebrow: "Робоча зона проєктів",
@@ -3411,7 +3327,6 @@ export const dictionaries = {
       description:
         "Створюйте нові проєкти, завантажуйте медіа та відкривайте публічну сторінку, щоб побачити її очима відвідувачів.",
       yourProjects: "Ваші проєкти",
-      backToDashboard: "Назад у дашборд",
       publicCatalog: "Публічний каталог",
       editProject: "Редагувати проєкт",
       editProjectDescription:
@@ -3462,7 +3377,6 @@ export const dictionaries = {
       title: "Редагуйте Ваш Професійний IT-Профіль та Навички",
       description:
         "Оновлюйте публічну інформацію, яка формує ваш профіль і допомагає знаходити вас у пошуку.",
-      backToDashboard: "Назад у дашборд",
       backToProfile: "Назад до профілю",
       viewPublicProfile: "Переглянути публічний профіль",
       profileNotFound: "Профіль не знайдено",
@@ -3580,11 +3494,11 @@ export const dictionaries = {
         eyebrow: "Перевірте пошту",
         title: "Підтвердіть email",
         description:
-          "Ми надіслали лист із посиланням для підтвердження. Після підтвердження зможете перейти в дашборд і завершити налаштування профілю.",
+          "Ми надіслали лист із посиланням для підтвердження. Після підтвердження зможете перейти у свій простір і завершити налаштування профілю.",
         login: "Увійти",
-        openDashboard: "Відкрити дашборд",
+        openMySpace: "Відкрити мій простір",
         backHome: "На головну",
-        hint: "SearchTalent перевіряє вашу сесію при відкритті дашборда, тож після підтвердження email ви можете просто повернутися туди й продовжити.",
+        hint: "SearchTalent перевіряє вашу сесію при відкритті вашого простору, тож після підтвердження email ви можете просто повернутися туди й продовжити.",
       },
       forgotPassword: {
         eyebrow: "Забули пароль?",
@@ -3645,7 +3559,6 @@ export const dictionaries = {
       browseProjects: "Переглянути проєкти",
       editProfile: "Редагувати профіль",
       manageProjects: "Керувати проєктами",
-      openDashboard: "Відкрити дашборд",
       ownerView: "Ваш публічний профіль",
       profileRating: "Рейтинг профілю",
       ratingHowItWorks: "Як працює?",
@@ -4460,7 +4373,7 @@ export const dictionaries = {
         },
         {
           q: "Як створити публічний профіль?",
-          a: "Зареєструйтеся, перейдіть у дашборд і заповніть дані профілю — ім'я, навички, досвід, контакти. Коли ви задасте username, ваша публічна сторінка стане доступною.",
+          a: "Зареєструйтеся, відкрийте свій простір і заповніть дані профілю — ім'я, навички, досвід, контакти. Коли ви задасте username, ваша публічна сторінка стане доступною.",
         },
         {
           q: "Чи можу я публікувати кілька проєктів?",
@@ -4468,11 +4381,11 @@ export const dictionaries = {
         },
         {
           q: "Чи можу я писати статті?",
-          a: "Так. Окрім проєктів, ви можете публікувати статті з дашборду — огляди, туторіали чи авторські думки з форматуванням, зображеннями та GIF. Опубліковані статті зʼявляються в розділі «Спільнота» та на вашому публічному профілі й додаються до вашого внеску в платформу.",
+          a: "Так. Окрім проєктів, ви можете публікувати статті зі свого простору — огляди, туторіали чи авторські думки з форматуванням, зображеннями та GIF. Опубліковані статті зʼявляються в розділі «Спільнота» та на вашому публічному профілі й додаються до вашого внеску в платформу.",
         },
         {
           q: "Що таке опитування?",
-          a: "Опитування дають змогу поставити спільноті запитання — з одним варіантом, кількома варіантами або шкалою оцінювання. Результати може бачити будь-хто, а голосувати можуть авторизовані учасники. Створіть опитування в дашборді — воно зʼявиться в розділі «Спільнота».",
+          a: "Опитування дають змогу поставити спільноті запитання — з одним варіантом, кількома варіантами або шкалою оцінювання. Результати може бачити будь-хто, а голосувати можуть авторизовані учасники. Створіть опитування у своєму просторі — воно зʼявиться в розділі «Спільнота».",
         },
         {
           q: "Чи можу я створювати роботи разом з іншими?",
@@ -4500,7 +4413,7 @@ export const dictionaries = {
         },
         {
           q: "Як видалити акаунт?",
-          a: "Відкрийте налаштування профілю в дашборді й натисніть кнопку «Видалити акаунт» внизу сторінки. Ми надішлемо вам на пошту код підтвердження, який діє 5 хвилин. Перед підтвердженням ви можете обрати: видалити все — профіль, проєкти, статті та коментарі будуть прибрані назавжди — або залишити статті та коментарі анонімно з підписом «Видалений користувач», а решту акаунту видалити. У будь-якому випадку профіль, проєкти, голоси, лайки та збережені дані видаляються, і цю дію неможливо скасувати.",
+          a: "Відкрийте налаштування профілю й натисніть кнопку «Видалити акаунт» внизу сторінки. Ми надішлемо вам на пошту код підтвердження, який діє 5 хвилин. Перед підтвердженням ви можете обрати: видалити все — профіль, проєкти, статті та коментарі будуть прибрані назавжди — або залишити статті та коментарі анонімно з підписом «Видалений користувач», а решту акаунту видалити. У будь-якому випадку профіль, проєкти, голоси, лайки та збережені дані видаляються, і цю дію неможливо скасувати.",
         },
       ],
     },

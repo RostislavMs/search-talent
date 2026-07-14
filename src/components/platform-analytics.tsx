@@ -1,56 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ButtonLink } from "@/components/ui/Button";
-import type { DashboardStats, UserDashboardStats } from "@/lib/db/dashboard";
+import type { PlatformStats } from "@/lib/db/stats";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 import {
   formatCompactNumber,
   formatMonthLabel,
-  getDashboardUi,
-} from "@/components/dashboard/analytics-ui";
-function PersonalStatCard({
-  value,
-  label,
-  href,
-  accent,
-}: {
-  value: string;
-  label: string;
-  href: string;
-  accent: string;
-}) {
-  return (
-    <a
-      href={href}
-      className="group relative block rounded-2xl border app-border bg-[color:var(--surface)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-[0_18px_40px_rgba(2,6,23,0.18)]"
-    >
-      <svg
-        viewBox="0 0 16 16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="absolute right-4 top-4 h-4 w-4 app-soft transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[color:var(--foreground)]"
-        aria-hidden="true"
-      >
-        <path d="M6 3.5 10.5 8 6 12.5" />
-      </svg>
-      <div
-        className={`mb-3 h-1 w-10 rounded-full ${accent} transition-all duration-200 group-hover:w-16`}
-      />
-      <p className="text-2xl font-bold tracking-tight text-[color:var(--foreground)]">
-        {value}
-      </p>
-      <p className="mt-1 text-sm font-medium app-soft transition-colors group-hover:text-[color:var(--foreground)]">
-        {label}
-      </p>
-    </a>
-  );
-}
+  getStatsUi,
+} from "@/components/stats/stats-ui";
 
 function PlatformMetricCard({
   value,
@@ -82,7 +41,7 @@ function ActivityChart({
   dictionary,
   locale,
 }: {
-  items: DashboardStats["monthlyActivity"];
+  items: PlatformStats["monthlyActivity"];
   dictionary: Dictionary;
   locale: Locale;
 }) {
@@ -94,17 +53,17 @@ function ActivityChart({
   const series = [
     {
       key: "profiles",
-      label: dictionary.dashboard.creatorsJoined,
+      label: dictionary.analytics.creatorsJoined,
       color: "bg-sky-500",
       dot: "bg-sky-500",
-      value: (item: DashboardStats["monthlyActivity"][number]) => item.profiles,
+      value: (item: PlatformStats["monthlyActivity"][number]) => item.profiles,
     },
     {
       key: "projects",
-      label: dictionary.dashboard.projectsPublished,
+      label: dictionary.analytics.projectsPublished,
       color: "bg-emerald-500",
       dot: "bg-emerald-500",
-      value: (item: DashboardStats["monthlyActivity"][number]) => item.projects,
+      value: (item: PlatformStats["monthlyActivity"][number]) => item.projects,
     },
   ];
 
@@ -112,7 +71,7 @@ function ActivityChart({
     <section className="rounded-2xl app-card p-6">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
-          {dictionary.dashboard.growthLastMonths}
+          {dictionary.analytics.growthLastMonths}
         </h2>
         <div className="flex flex-wrap gap-4">
           {series.map((entry) => (
@@ -171,7 +130,7 @@ function ExpandableDistributionChart({
   title: string;
   items: Array<{ label: string; value: number }>;
   locale: Locale;
-  ui: ReturnType<typeof getDashboardUi>;
+  ui: ReturnType<typeof getStatsUi>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const maxValue = Math.max(...items.map((item) => item.value), 1);
@@ -236,10 +195,10 @@ function CompletionBands({
   locale,
   ui,
 }: {
-  items: DashboardStats["completionBreakdown"];
+  items: PlatformStats["completionBreakdown"];
   total: number;
   locale: Locale;
-  ui: ReturnType<typeof getDashboardUi>;
+  ui: ReturnType<typeof getStatsUi>;
 }) {
   const labels = {
     starter: ui.starter,
@@ -312,8 +271,8 @@ function SkillCloud({
   ui,
   dictionary,
 }: {
-  skills: DashboardStats["topSkills"];
-  ui: ReturnType<typeof getDashboardUi>;
+  skills: PlatformStats["topSkills"];
+  ui: ReturnType<typeof getStatsUi>;
   dictionary: Dictionary;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -324,7 +283,7 @@ function SkillCloud({
         <h2 className="font-display mb-2 text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {ui.skillsUniverse}
         </h2>
-        <p className="text-sm app-muted">{dictionary.dashboard.noProjectsYet}</p>
+        <p className="text-sm app-muted">{dictionary.analytics.noProjectsYet}</p>
       </section>
     );
   }
@@ -382,7 +341,7 @@ function SalaryByGroupChart({
   title: string;
   items: Array<{ label: string; avgSalary: number; count: number }>;
   locale: Locale;
-  ui: ReturnType<typeof getDashboardUi>;
+  ui: ReturnType<typeof getStatsUi>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const maxSalary = Math.max(...items.map((item) => item.avgSalary), 1);
@@ -448,20 +407,16 @@ function SalaryByGroupChart({
 
 /* ─── Main component ─── */
 
-export default function DashboardAnalytics({
+export default function PlatformAnalytics({
   dictionary,
   locale,
   stats,
-  userStats,
-  isAdmin,
 }: {
   dictionary: Dictionary;
   locale: Locale;
-  stats: DashboardStats;
-  userStats: UserDashboardStats;
-  isAdmin: boolean;
+  stats: PlatformStats;
 }) {
-  const ui = getDashboardUi(locale);
+  const ui = getStatsUi(locale);
   const publicProfilesRate =
     stats.siteTotals.profiles > 0
       ? Math.round((stats.siteTotals.publicProfiles / stats.siteTotals.profiles) * 100)
@@ -485,108 +440,26 @@ export default function DashboardAnalytics({
 
   return (
     <div className="space-y-6">
-      {/* ─── Quick actions (hidden on < lg; the same destinations are reachable
-           via the clickable stat cards and the global menu on small screens) ─── */}
-      <nav className="hidden flex-wrap gap-2 lg:flex">
-        <ButtonLink href="/profile/edit" size="sm">
-          {ui.editProfile}
-        </ButtonLink>
-        <ButtonLink href={userStats.username ? `/u/${userStats.username}/projects` : "/projects"} variant="secondary" size="sm">
-          {ui.manageProjects}
-        </ButtonLink>
-        <ButtonLink href="/articles/new" variant="secondary" size="sm">
-          {ui.writeArticle}
-        </ButtonLink>
-        <ButtonLink href="/polls/new" variant="secondary" size="sm">
-          {ui.createPoll}
-        </ButtonLink>
-        <ButtonLink href="/talents" variant="ghost" size="sm">
-          {ui.openSearch}
-        </ButtonLink>
-        <ButtonLink href="/dashboard/saved" variant="ghost" size="sm">
-          {ui.savedItems}
-        </ButtonLink>
-        <ButtonLink href="/dashboard/following" variant="ghost" size="sm">
-          {ui.followingAuthors}
-        </ButtonLink>
-        {isAdmin && (
-          <ButtonLink href="/admin" variant="ghost" size="sm">
-            {dictionary.nav.adminConsole}
-          </ButtonLink>
-        )}
-      </nav>
-
-      {/* ─── Personal stats ─── */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest app-soft">
-          {dictionary.dashboard.myStats}
-        </h2>
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
-          <PersonalStatCard
-            value={String(userStats.projectsCount)}
-            label={dictionary.dashboard.myProjects}
-            href={userStats.username ? `/${locale}/u/${userStats.username}/projects` : `/${locale}/projects`}
-            accent="bg-emerald-500"
-          />
-          <PersonalStatCard
-            value={String(userStats.articlesCount)}
-            label={dictionary.dashboard.myArticles}
-            href={userStats.username ? `/${locale}/u/${userStats.username}/articles` : `/${locale}/articles`}
-            accent="bg-violet-500"
-          />
-          <PersonalStatCard
-            value={String(userStats.pollsCount)}
-            label={dictionary.dashboard.myPolls}
-            href={userStats.username ? `/${locale}/u/${userStats.username}/polls` : `/${locale}/polls`}
-            accent="bg-indigo-500"
-          />
-          <PersonalStatCard
-            value={String(userStats.followersCount)}
-            label={dictionary.dashboard.followers}
-            href={`/${locale}/dashboard/followers`}
-            accent="bg-sky-500"
-          />
-          <PersonalStatCard
-            value={String(userStats.followingCount)}
-            label={dictionary.dashboard.following}
-            href={`/${locale}/dashboard/following`}
-            accent="bg-cyan-500"
-          />
-          <PersonalStatCard
-            value={String(userStats.bookmarksCount)}
-            label={dictionary.dashboard.bookmarks}
-            href={`/${locale}/dashboard/saved`}
-            accent="bg-amber-500"
-          />
-          <PersonalStatCard
-            value={String(userStats.receivedLikes)}
-            label={dictionary.dashboard.receivedLikes}
-            href={userStats.username ? `/${locale}/u/${userStats.username}/projects` : `/${locale}/projects`}
-            accent="bg-rose-500"
-          />
-        </div>
-      </section>
-
       {/* ─── Platform overview (without total votes) ─── */}
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest app-soft">
-          {dictionary.dashboard.platformOverview}
+          {dictionary.analytics.platformOverview}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <PlatformMetricCard
-            label={dictionary.dashboard.totalCreators}
+            label={dictionary.analytics.totalCreators}
             value={formatCompactNumber(stats.siteTotals.profiles, locale)}
             accent="bg-sky-500"
             hint={`${formatCompactNumber(stats.siteTotals.publicProfiles, locale)} ${ui.publicProfiles.toLowerCase()} (${publicProfilesRate}%)`}
           />
           <PlatformMetricCard
-            label={dictionary.dashboard.totalProjects}
+            label={dictionary.analytics.totalProjects}
             value={formatCompactNumber(stats.siteTotals.projects, locale)}
             accent="bg-emerald-500"
-            hint={dictionary.dashboard.siteProjectsHint}
+            hint={dictionary.analytics.siteProjectsHint}
           />
           <PlatformMetricCard
-            label={dictionary.dashboard.profileCompletion}
+            label={dictionary.analytics.profileCompletion}
             value={`${stats.siteTotals.avgProfileCompletion}%`}
             accent="bg-slate-500"
             hint={ui.profileReadiness}

@@ -32,7 +32,7 @@ export async function generateMetadata({
 
   return buildMetadata({
     locale,
-    pathname: "/dashboard/saved",
+    pathname: "/my-space/saved",
     title: dictionary.bookmarks.title,
     description: dictionary.bookmarks.description,
     noindex: true,
@@ -146,7 +146,7 @@ export default async function SavedItemsPage({
   );
 
   const buildPageHref = (nextPage: number) => {
-    const base = createLocalePath(locale, "/dashboard/saved");
+    const base = createLocalePath(locale, "/my-space/saved");
     return nextPage > 1 ? `${base}?page=${nextPage}` : base;
   };
 

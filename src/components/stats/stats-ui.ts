@@ -1,7 +1,7 @@
 import type { Locale } from "@/lib/i18n/config";
 
-// Number/date formatting and the bilingual UI string map for the dashboard
-// analytics view. Pure helpers extracted from dashboard-analytics.tsx.
+// Number/date formatting and the bilingual UI string map shared by the
+// My Space and Analytics stats views.
 
 export function formatCompactNumber(value: number, locale: Locale) {
   return new Intl.NumberFormat(locale === "uk" ? "uk-UA" : "en-US", {
@@ -19,7 +19,7 @@ export function formatMonthLabel(value: string, locale: Locale) {
   }).format(date);
 }
 
-export function getDashboardUi(locale: Locale) {
+export function getStatsUi(locale: Locale) {
   if (locale === "uk") {
     return {
       publicProfiles: "Публічні профілі",
@@ -39,12 +39,10 @@ export function getDashboardUi(locale: Locale) {
       likesLabel: "Лайки",
       dislikesLabel: "Дизлайки",
       editProfile: "Редагувати профіль",
-      manageProjects: "Керувати проєктами",
-      openSearch: "Пошук",
-      savedItems: "Збережене",
-      followingAuthors: "Підписки",
-      writeArticle: "Написати статтю",
-      createPoll: "Створити опитування",
+      create: "Створити",
+      createProject: "Проєкт",
+      createArticle: "Стаття",
+      createPoll: "Опитування",
       showMore: "Показати більше",
       showLess: "Згорнути",
       experienceDistribution: "Рівень досвіду",
@@ -121,12 +119,10 @@ export function getDashboardUi(locale: Locale) {
     likesLabel: "Likes",
     dislikesLabel: "Dislikes",
     editProfile: "Edit profile",
-    manageProjects: "Manage projects",
-    openSearch: "Search",
-    savedItems: "Saved",
-    followingAuthors: "Following",
-    writeArticle: "Write article",
-    createPoll: "Create poll",
+    create: "Create",
+    createProject: "Project",
+    createArticle: "Article",
+    createPoll: "Poll",
     showMore: "Show more",
     showLess: "Collapse",
     experienceDistribution: "Experience level",

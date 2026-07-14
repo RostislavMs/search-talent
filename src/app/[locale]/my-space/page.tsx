@@ -1,23 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import dynamic from "next/dynamic";
-import { getDashboardStats, getUserDashboardStats } from "@/lib/db/dashboard";
-
-const DashboardAnalytics = dynamic(
-  () => import("@/components/dashboard-analytics"),
-  {
-    loading: () => (
-      <div className="grid animate-pulse gap-8 lg:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={index}
-            className="h-64 rounded-2xl bg-[color:var(--surface-muted)]"
-          />
-        ))}
-      </div>
-    ),
-  },
-);
+import MySpaceStats from "@/components/my-space-stats";
+import { getUserStats } from "@/lib/db/stats";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
@@ -44,14 +28,14 @@ export async function generateMetadata({
 
   return buildMetadata({
     locale,
-    pathname: "/dashboard",
-    title: dictionary.metadata.dashboard.title,
-    description: dictionary.metadata.dashboard.description,
+    pathname: "/my-space",
+    title: dictionary.metadata.mySpace.title,
+    description: dictionary.metadata.mySpace.description,
     noindex: true,
   });
 }
 
-export default async function DashboardPage({
+export default async function MySpacePage({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -67,27 +51,25 @@ export default async function DashboardPage({
   }
 
   const dictionary = getDictionary(locale);
-  const [viewer, stats, userStats] = await Promise.all([
+  const [viewer, userStats] = await Promise.all([
     getCurrentViewerRole(),
-    getDashboardStats(),
-    getUserDashboardStats(user.id),
+    getUserStats(user.id),
   ]);
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
-          {dictionary.nav.dashboard}
+          {dictionary.mySpace.title}
         </h1>
         <p className="mt-1 text-sm app-muted">
-          {dictionary.dashboard.updatedDaily}
+          {dictionary.mySpace.description}
         </p>
       </div>
 
-      <DashboardAnalytics
+      <MySpaceStats
         dictionary={dictionary}
         locale={locale}
-        stats={stats}
         userStats={userStats}
         isAdmin={viewer.isAdmin}
       />

@@ -37,7 +37,7 @@ export async function requireAdmin(locale: Locale) {
   }
 
   if (!context.isAdmin) {
-    redirect(createLocalePath(locale, "/dashboard"));
+    redirect(createLocalePath(locale, "/my-space"));
   }
 
   return context;

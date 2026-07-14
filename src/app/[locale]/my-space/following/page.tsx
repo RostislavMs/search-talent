@@ -32,7 +32,7 @@ export async function generateMetadata({
 
   return buildMetadata({
     locale,
-    pathname: "/dashboard/following",
+    pathname: "/my-space/following",
     title: dictionary.follows.feedTitle,
     description: dictionary.follows.feedDescription,
     noindex: true,
@@ -209,7 +209,7 @@ export default async function FollowingPage({
   const pagedEntries = entries.slice(offset, offset + PAGE_SIZE);
 
   const buildPageHref = (nextPage: number) => {
-    const base = createLocalePath(locale, "/dashboard/following");
+    const base = createLocalePath(locale, "/my-space/following");
     return nextPage > 1 ? `${base}?page=${nextPage}` : base;
   };
 
