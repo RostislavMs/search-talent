@@ -51,6 +51,19 @@ export async function generateMetadata({
   });
 }
 
+/**
+ * Background tones for the three hero cards, ordered top → bottom so the stack
+ * fades from a darker card at the top to a lighter one at the bottom. `hover`
+ * is only applied to the interactive live cards, never the static fallbacks.
+ */
+type HeroCardTone = { base: string; hover: string };
+
+const HERO_CARD_TONES: readonly HeroCardTone[] = [
+  { base: "bg-black/45", hover: "hover:bg-black/55" },
+  { base: "bg-black/30", hover: "hover:bg-black/40" },
+  { base: "bg-black/20", hover: "hover:bg-black/30" },
+];
+
 type HeroLiveCardProps = {
   href: string;
   label: string;
@@ -60,6 +73,7 @@ type HeroLiveCardProps = {
   cta: string;
   avatarUrl?: string | null;
   avatarLabel?: string;
+  tone: HeroCardTone;
 };
 
 function HeroLiveCard({
@@ -71,11 +85,12 @@ function HeroLiveCard({
   cta,
   avatarUrl,
   avatarLabel,
+  tone,
 }: HeroLiveCardProps) {
   return (
     <LocalizedLink
       href={href}
-      className="group block rounded-2xl border border-white/10 bg-black/25 p-3 backdrop-blur transition hover:border-white/25 hover:bg-black/40 sm:p-4"
+      className={`group block rounded-2xl border border-white/10 ${tone.base} p-3 backdrop-blur transition hover:border-white/25 ${tone.hover} sm:p-4`}
     >
       <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
         {label}
@@ -123,9 +138,19 @@ function HeroLiveCard({
   );
 }
 
-function HeroFallbackCard({ label, text }: { label: string; text: string }) {
+function HeroFallbackCard({
+  label,
+  text,
+  tone,
+}: {
+  label: string;
+  text: string;
+  tone: HeroCardTone;
+}) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-black/20 p-3 backdrop-blur sm:p-4">
+    <article
+      className={`rounded-2xl border border-white/10 ${tone.base} p-3 backdrop-blur sm:p-4`}
+    >
       <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
         {label}
       </p>
@@ -170,27 +195,33 @@ export default async function LocalizedHomePage({
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
               {dictionary.home.eyebrow}
             </p>
-            <h1 className="font-display mt-3 max-w-3xl text-4xl font-medium leading-[1.05] tracking-tight sm:mt-4 md:text-5xl lg:text-6xl">
+            <h1 className="font-display mt-4 max-w-3xl text-4xl font-medium leading-[1.05] tracking-tight sm:mt-5 md:text-5xl lg:text-6xl">
               {dictionary.home.titleLead}{" "}
               <RotatingWord words={dictionary.home.titleWords} />
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:mt-4 sm:text-base sm:leading-8">
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/80 sm:mt-5 sm:text-base sm:leading-8">
               {dictionary.home.description}
             </p>
-            <ul className="mt-3 grid w-full grid-cols-2 justify-items-center gap-x-3 gap-y-2 text-xs font-medium text-white/70 sm:mt-4 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-items-stretch sm:gap-x-2.5 sm:gap-y-1.5 sm:text-sm">
+            {/*
+              Feature roadmap: the highlights read as a left-to-right journey
+              (Portfolio → … → Rating) linked by simple brand arrows. Labels are
+              plain text — deliberately not chips/buttons — and the arrows are
+              decorative, so nothing here carries a hover state.
+            */}
+            <ol className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-sm font-medium text-white/80 sm:mt-7 sm:justify-start sm:gap-x-2.5 sm:text-base">
               {dictionary.home.descriptionHighlights.map((item, index) => (
-                <li key={item} className="flex items-center gap-2.5">
+                <li key={item} className="flex items-center gap-x-2 sm:gap-x-2.5">
                   {index > 0 ? (
-                    <span aria-hidden="true" className="hidden text-white/30 sm:inline">
-                      ·
+                    <span aria-hidden="true" className="text-brand">
+                      →
                     </span>
                   ) : null}
-                  {item}
+                  <span>{item}</span>
                 </li>
               ))}
-            </ul>
+            </ol>
 
-            <div className="mt-6 flex w-full flex-col gap-2 sm:mt-8 sm:w-auto sm:flex-row sm:flex-wrap sm:gap-3 lg:mt-auto lg:pt-8">
+            <div className="mt-8 flex w-full flex-col items-center gap-3 sm:mt-10 sm:w-auto sm:flex-row sm:flex-wrap sm:items-stretch lg:mt-auto lg:pt-8">
               <ButtonLink
                 href={isSignedIn ? "/projects/new" : "/signup"}
                 size="lg"
@@ -200,14 +231,18 @@ export default async function LocalizedHomePage({
                   ? dictionary.home.ctaPublishProject
                   : dictionary.home.ctaCreateProfile}
               </ButtonLink>
-              <ButtonLink
+              <LocalizedLink
                 href="/projects"
-                variant="secondary"
-                size="lg"
-                className="w-full sm:w-auto"
+                className="group inline-flex w-full items-center justify-center gap-1.5 rounded-full px-5 py-3 text-base font-medium text-white/75 transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:w-auto"
               >
                 {dictionary.home.ctaViewProjects}
-              </ButtonLink>
+                <span
+                  aria-hidden="true"
+                  className="inline-block transition-transform duration-200 group-hover:translate-x-1"
+                >
+                  →
+                </span>
+              </LocalizedLink>
             </div>
           </div>
 
@@ -264,11 +299,13 @@ async function HeroLiveCards({
           cta={dictionary.home.cards.topTalent.cta}
           avatarUrl={topCreator.avatar_url}
           avatarLabel={topCreator.name || topCreator.username}
+          tone={HERO_CARD_TONES[0]}
         />
       ) : (
         <HeroFallbackCard
           label={dictionary.home.cards.topTalent.label}
           text={dictionary.home.cards.topTalent.fallback}
+          tone={HERO_CARD_TONES[0]}
         />
       )}
 
@@ -284,11 +321,13 @@ async function HeroLiveCards({
           }
           meta={`${topProject.rating} ${dictionary.home.leaderboardScore}`}
           cta={dictionary.home.cards.topProject.cta}
+          tone={HERO_CARD_TONES[1]}
         />
       ) : (
         <HeroFallbackCard
           label={dictionary.home.cards.topProject.label}
           text={dictionary.home.cards.topProject.fallback}
+          tone={HERO_CARD_TONES[1]}
         />
       )}
 
@@ -305,11 +344,13 @@ async function HeroLiveCards({
             locale,
           )}
           cta={dictionary.home.cards.freshArticle.cta}
+          tone={HERO_CARD_TONES[2]}
         />
       ) : (
         <HeroFallbackCard
           label={dictionary.home.cards.freshArticle.label}
           text={dictionary.home.cards.freshArticle.fallback}
+          tone={HERO_CARD_TONES[2]}
         />
       )}
     </>
