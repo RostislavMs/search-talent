@@ -355,9 +355,9 @@ export const dictionaries = {
     },
     metadata: {
       home: {
-        title: "Discover IT Talent — Projects, Portfolios & Articles",
+        title: "Specialist Profiles, Projects & Professional Portfolios",
         description:
-          "Community platform where developers, designers, and IT specialists publish portfolios, projects, and articles — and grow through community ratings.",
+          "SearchTalent is a professional platform where developers, designers, video editors, and other digital specialists publish portfolios, projects, and articles, build their reputation, and unlock new opportunities.",
       },
       search: {
         title: "Search Talent & IT Projects by Skills",
@@ -365,19 +365,19 @@ export const dictionaries = {
           "Search across public portfolios and projects by skills, technologies, and keywords. Discover relevant creators and inspiring work on SearchTalent.",
       },
       talents: {
-        title: "Discover IT Talent — Profiles & Portfolios",
+        title: "IT Specialist Profiles & Portfolios",
         description:
-          "Browse public profiles of developers, designers, and IT specialists with real project portfolios, technology stacks, and visible proof of work.",
+          "Browse public profiles of developers, designers, and other IT specialists. Explore their portfolios, technologies, experience, and real completed projects.",
       },
       projects: {
         title: "Real IT Projects & Creator Portfolios",
         description:
-          "Explore real IT project portfolios with screenshots, stacks, and public creator context. Discover shipped work and follow the creators behind it.",
+          "Browse real IT projects with screenshots, technologies, descriptions, and author profiles. Discover new work and follow specialists.",
       },
       articles: {
         title: "Tech Articles, Guides & Case Studies",
         description:
-          "Case studies, technical guides, and industry insights from the SearchTalent community of developers and designers.",
+          "Read technical articles, practical guides, case studies, and firsthand experience from SearchTalent authors on development, design, careers, and modern technology.",
       },
       news: {
         title: "Platform News & Announcements",
@@ -422,7 +422,7 @@ export const dictionaries = {
       creatorProfile: {
         title: "Creator Profile & Portfolio",
         description:
-          "View this creator's skills, experience, portfolio projects, and contacts. Discover and follow IT talent on SearchTalent.",
+          "View this creator's skills, experience, portfolio projects, and contacts. Discover and follow specialists on SearchTalent.",
       },
       projectDetail: {
         title: "Portfolio Project",
@@ -430,9 +430,9 @@ export const dictionaries = {
           "Project details — screenshots, technologies, team info, and community feedback. Explore creator portfolios on SearchTalent.",
       },
       about: {
-        title: "About Us — IT Talent Community",
+        title: "About SearchTalent — an IT Specialist Community",
         description:
-          "Learn about SearchTalent — an open community for IT specialists to build portfolios, showcase projects, and connect with peers.",
+          "SearchTalent is an open community of IT specialists where you can build a professional portfolio, publish projects, share knowledge, and unlock new opportunities.",
       },
       ratingGuide: {
         title: "How the Rating Works — Full Guide",
@@ -457,10 +457,10 @@ export const dictionaries = {
     },
     home: {
       eyebrow: "Talent platform & creative portfolios",
-      titleLead: "Discover IT talent by their",
+      titleLead: "Find specialists by their",
       titleWords: ["projects", "portfolios", "skills", "articles"],
       description:
-        "A community of IT creators — share projects, articles, and polls, and earn recognition for real contributions.",
+        "Publish projects, showcase your skills, build your reputation, and unlock new opportunities.",
       descriptionHighlights: [
         "Portfolios",
         "Projects with stacks",
@@ -469,8 +469,9 @@ export const dictionaries = {
         "Co-authorship",
         "Rating & badges",
       ],
-      browseProjects: "Browse portfolios",
-      searchCreators: "Discover talent",
+      ctaCreateProfile: "Create profile",
+      ctaPublishProject: "Publish project",
+      ctaViewProjects: "Browse projects",
       topProjectsCta: "Open top projects",
       topCreatorsCta: "Open top talents",
       cards: {
@@ -2639,9 +2640,9 @@ export const dictionaries = {
     },
     metadata: {
       home: {
-        title: "Знаходьте IT-таланти — проєкти, портфоліо та статті",
+        title: "Профілі спеціалістів, проєкти та професійне портфоліо",
         description:
-          "SearchTalent — платформа-спільнота, де IT-фахівці публікують портфоліо, проєкти та статті й зростають у рейтингу спільноти.",
+          "SearchTalent — професійна платформа, де розробники, дизайнери, монтажери та інші digital-фахівці публікують портфоліо, проєкти й статті, будують репутацію та знаходять нові можливості.",
       },
       search: {
         title: "Пошук талантів та IT-проєктів за навичками",
@@ -2649,19 +2650,19 @@ export const dictionaries = {
           "Шукайте серед портфоліо та проєктів за навичками, технологіями і ключовими словами. Відкривайте релевантних авторів і надихаючу роботу на SearchTalent.",
       },
       talents: {
-        title: "Пошук IT-талантів — профілі та портфоліо",
+        title: "Профілі IT-спеціалістів та портфоліо",
         description:
-          "Переглядайте публічні профілі розробників, дизайнерів та IT-фахівців з реальними портфоліо проєктів, стеком технологій і видимими доказами роботи.",
+          "Переглядайте публічні профілі розробників, дизайнерів та інших IT-фахівців. Досліджуйте їхні портфоліо, технології, досвід і реальні виконані проєкти.",
       },
       projects: {
         title: "Реальні IT-проєкти та портфоліо авторів",
         description:
-          "Переглядайте реальні IT-проєкти зі скриншотами, стеком технологій і публічним контекстом автора. Досліджуйте виконані роботи та підписуйтесь на авторів.",
+          "Переглядайте реальні IT-проєкти зі скриншотами, технологіями, описом і профілями авторів. Відкривайте нові роботи та підписуйтеся на спеціалістів.",
       },
       articles: {
         title: "Технічні статті, гайди та кейси спільноти",
         description:
-          "Кейси, технічні гайди та інсайти IT-індустрії від спільноти розробників і дизайнерів SearchTalent.",
+          "Читайте технічні статті, практичні гайди, кейси та досвід авторів SearchTalent про розробку, дизайн, кар'єру й сучасні технології.",
       },
       news: {
         title: "Новини та анонси платформи",
@@ -2706,7 +2707,7 @@ export const dictionaries = {
       creatorProfile: {
         title: "Профіль автора та портфоліо",
         description:
-          "Перегляньте навички, досвід, портфоліо-проєкти та контакти автора. Знаходьте та підписуйтесь на IT-таланти на SearchTalent.",
+          "Перегляньте навички, досвід, портфоліо-проєкти та контакти автора. Знаходьте та підписуйтесь на фахівців на SearchTalent.",
       },
       projectDetail: {
         title: "Портфоліо-проєкт",
@@ -2714,9 +2715,9 @@ export const dictionaries = {
           "Деталі проєкту — скріншоти, технології, команда та оцінки спільноти. Перегляньте портфоліо авторів на SearchTalent.",
       },
       about: {
-        title: "Про нас — спільнота IT-талантів",
+        title: "Про SearchTalent — спільнота IT-фахівців",
         description:
-          "Дізнайтеся більше про SearchTalent — відкриту спільноту IT-фахівців, де можна створити портфоліо, публікувати проєкти та знаходити колег.",
+          "SearchTalent — відкрита спільнота IT-фахівців, де можна створити професійне портфоліо, публікувати проєкти, ділитися знаннями та знаходити нові можливості.",
       },
       ratingGuide: {
         title: "Як працює рейтинг — повний гайд",
@@ -2741,10 +2742,10 @@ export const dictionaries = {
     },
     home: {
       eyebrow: "Платформа талантів та креативних портфоліо",
-      titleLead: "Знаходьте IT-таланти за",
+      titleLead: "Знайдіть фахівців за",
       titleWords: ["проєктами", "портфоліо", "навичками", "статтями"],
       description:
-        "Спільнота IT-творців: діліться проєктами, статтями й опитуваннями — і здобувайте визнання за реальний внесок.",
+        "Публікуйте проєкти, демонструйте навички, будуйте репутацію та відкривайте нові можливості.",
       descriptionHighlights: [
         "Портфоліо",
         "Проєкти зі стеком",
@@ -2753,8 +2754,9 @@ export const dictionaries = {
         "Співавторство",
         "Рейтинг і бейджі",
       ],
-      browseProjects: "Переглянути портфоліо",
-      searchCreators: "Відкрити таланти",
+      ctaCreateProfile: "Створити профіль",
+      ctaPublishProject: "Опублікувати проєкт",
+      ctaViewProjects: "Переглянути проєкти",
       topProjectsCta: "Відкрити топ проєктів",
       topCreatorsCta: "Відкрити топ талантів",
       cards: {
@@ -3138,7 +3140,7 @@ export const dictionaries = {
       contributionHint:
         "Опишіть, що ви особисто зробили. README описує проєкт; це описує вас.",
       contributionPlaceholder:
-        "Напр.: спроектував схему БД, написав OAuth-flow, налаштував CI…",
+        "Напр.: спроєктував схему БД, написав OAuth-flow, налаштував CI…",
       motivationLabel: "Чому ви це зробили",
       motivationHint:
         "Історія за проєктом — який біль ви розв'язали, що вас зачепило.",
@@ -4361,7 +4363,7 @@ export const dictionaries = {
       employmentTypeFullTime: "Повна зайнятість",
       employmentTypePartTime: "Часткова зайнятість",
       employmentTypeContract: "Контракт",
-      employmentTypeFreelance: "Фриланс",
+      employmentTypeFreelance: "Фріланс",
       employmentTypeInternship: "Стажування",
       workFormatRemote: "Віддалено",
       workFormatHybrid: "Гібридно",

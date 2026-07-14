@@ -388,7 +388,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
         },
         creators: {
           eyebrow: "Профілі талантів",
-          title: "Пошук IT-талантів — профілі та портфоліо",
+          title: "Пошук IT-спеціалістів — профілі та портфоліо",
           description:
             "Переглядайте публічні профілі та портфоліо IT-спеціалістів. Відбирайте авторів за навичками, локацією, досвідом і напрямком роботи — без зайвих проєктних результатів.",
           placeholder: "Шукайте таланти, ролі або навички...",
@@ -494,7 +494,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       },
       creators: {
         eyebrow: "Talent profiles",
-        title: "Discover IT Talent — Profiles & Portfolios",
+        title: "Discover IT Specialists — Profiles & Portfolios",
         description:
           "Explore public profiles and portfolios of IT specialists. Filter by skills, location, experience, and work format to discover the right creators — no project noise in the results.",
         placeholder: "Search talents, roles, or skills...",

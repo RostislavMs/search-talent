@@ -23,12 +23,19 @@ export async function generateMetadata({
   const locale = await getLocaleValue(params);
   const dictionary = getDictionary(locale);
 
-  return buildMetadata({
+  const metadata = buildMetadata({
     locale,
     pathname: "/about",
     title: dictionary.metadata.about.title,
     description: dictionary.metadata.about.description,
   });
+
+  // The About title already names SearchTalent ("Про SearchTalent …"), so the
+  // root "%s | SearchTalent" template would repeat the brand. Pin it as an
+  // absolute title to keep the brand appearing exactly once.
+  metadata.title = { absolute: dictionary.metadata.about.title };
+
+  return metadata;
 }
 
 export default async function AboutPage({

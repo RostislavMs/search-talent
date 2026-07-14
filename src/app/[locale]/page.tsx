@@ -16,6 +16,7 @@ import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
 import { buildProjectPath } from "@/lib/projects";
+import { getCurrentUser } from "@/lib/supabase/current-user";
 import {
   buildMetadata,
   buildOrganizationSchema,
@@ -140,6 +141,7 @@ export default async function LocalizedHomePage({
 }) {
   const locale = (await getLocaleValue(params)) as Locale;
   const dictionary = getDictionary(locale);
+  const isSignedIn = Boolean(await getCurrentUser());
 
   const organizationSchema = buildOrganizationSchema();
   const webSiteSchema = buildWebSiteSchema();
@@ -189,8 +191,14 @@ export default async function LocalizedHomePage({
             </ul>
 
             <div className="mt-6 flex w-full flex-col gap-2 sm:mt-8 sm:w-auto sm:flex-row sm:flex-wrap sm:gap-3 lg:mt-auto lg:pt-8">
-              <ButtonLink href="/talents" size="lg" className="w-full sm:w-auto">
-                {dictionary.home.searchCreators}
+              <ButtonLink
+                href={isSignedIn ? "/projects/new" : "/signup"}
+                size="lg"
+                className="w-full sm:w-auto"
+              >
+                {isSignedIn
+                  ? dictionary.home.ctaPublishProject
+                  : dictionary.home.ctaCreateProfile}
               </ButtonLink>
               <ButtonLink
                 href="/projects"
@@ -198,7 +206,7 @@ export default async function LocalizedHomePage({
                 size="lg"
                 className="w-full sm:w-auto"
               >
-                {dictionary.home.browseProjects}
+                {dictionary.home.ctaViewProjects}
               </ButtonLink>
             </div>
           </div>
