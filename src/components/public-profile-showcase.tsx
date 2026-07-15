@@ -27,6 +27,7 @@ import {
   getProfileHeroOverlay,
   getProfileSectionCardStyle,
   getProfileTextScale,
+  getReadableTextColor,
   isDefaultProfileTheme,
   withAlpha,
   type ProfilePresentation,
@@ -211,7 +212,10 @@ function getThemeStyle(presentation: ProfilePresentation) {
     "--brand-strong": `color-mix(in srgb, ${accent} 85%, #000)`,
     "--brand-soft": withAlpha(accent, 0.16),
     "--brand-on-soft": accent,
-    "--brand-foreground": presentation.surfaceColor,
+    // Legible label for accent-coloured controls, derived from the accent
+    // itself — not the background colour — so changing the profile background
+    // never recolours button/badge text (e.g. the "Edit profile" button).
+    "--brand-foreground": getReadableTextColor(accent),
     "--brand-ring": withAlpha(accent, 0.34),
     "--ring": accent,
     "--brand-hero": `linear-gradient(135deg, ${accent} 0%, color-mix(in srgb, ${accent} 70%, #000) 100%)`,
