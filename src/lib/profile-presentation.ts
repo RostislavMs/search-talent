@@ -461,6 +461,37 @@ export function withAlpha(hex: string, alpha: number) {
 }
 
 /**
+ * Pick a legible text colour (near-black or near-white) for content that sits
+ * on top of `hex`. Used for accent-coloured controls (buttons, badges) so their
+ * label stays readable regardless of which accent the owner picks — decoupled
+ * from any background colour so tuning the backdrop never changes button text.
+ */
+export function getReadableTextColor(hex: string) {
+  const normalized = hex.replace("#", "");
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((part) => `${part}${part}`)
+          .join("")
+      : normalized;
+  const parsed = Number.parseInt(value, 16);
+
+  if (Number.isNaN(parsed)) {
+    return "#0b1120";
+  }
+
+  const r = (parsed >> 16) & 255;
+  const g = (parsed >> 8) & 255;
+  const b = parsed & 255;
+  // Perceived brightness (YIQ). Bright accents get dark text, dark accents get
+  // light text.
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+  return brightness >= 150 ? "#0b1120" : "#f8fafc";
+}
+
+/**
  * The hero "stage" background. The backdrop is controlled entirely by its own
  * dedicated colours (gradient pair / solid colour), independent of the
  * hero/card/accent role colours — so tuning the palette never disturbs the

@@ -39,6 +39,7 @@ import {
   getProfileHeroOverlay,
   getProfileSectionCardStyle,
   getProfileTextScale,
+  getReadableTextColor,
   normalizeProfilePresentation,
   normalizeProfileSettings,
   normalizeSectionOrder,
@@ -444,13 +445,21 @@ const editorDataSections = [
   "contacts",
 ] as const;
 
-const editorMetaSections = ["appearance", "visibility"] as const;
+// The former single "appearance" tab is split into focused sub-tabs so each one
+// stays short and can carry its own dedicated preview.
+const editorStyleSections = [
+  "theme",
+  "background",
+  "cards",
+  "blocks",
+  "visibility",
+] as const;
 
 const editorAccountSections = ["integrations", "deletion"] as const;
 
 type EditorSectionId =
   | (typeof editorDataSections)[number]
-  | (typeof editorMetaSections)[number]
+  | (typeof editorStyleSections)[number]
   | (typeof editorAccountSections)[number];
 
 function ControlGroup({
@@ -549,7 +558,7 @@ export default function ProfileForm({
           description:
             "\u0417\u0430\u0434\u0430\u0439\u0442\u0435 \u0432\u043b\u0430\u0441\u043d\u0443 \u043f\u0430\u043b\u0456\u0442\u0440\u0443, \u0448\u0440\u0438\u0444\u0442, \u0444\u043e\u043d \u0456 \u043f\u043e\u0440\u044f\u0434\u043e\u043a \u0431\u043b\u043e\u043a\u0456\u0432, \u0449\u043e\u0431 \u043f\u0443\u0431\u043b\u0456\u0447\u043d\u0438\u0439 \u043f\u0440\u043e\u0444\u0456\u043b\u044c \u0432\u0438\u0433\u043b\u044f\u0434\u0430\u0432 \u044f\u043a \u0432\u0430\u0448 \u043e\u0441\u043e\u0431\u0438\u0441\u0442\u0438\u0439 \u043f\u0440\u043e\u0441\u0442\u0456\u0440.",
           accentColor: "\u0410\u043a\u0446\u0435\u043d\u0442",
-          surfaceColor: "\u041a\u043e\u043b\u0456\u0440 hero",
+          surfaceColor: "\u041a\u043e\u043b\u0456\u0440 \u0444\u043e\u043d\u0443",
           panelColor:
             "\u041a\u043e\u043b\u0456\u0440 \u043a\u0430\u0440\u0442\u043e\u043a",
           textColor:
@@ -614,9 +623,25 @@ export default function ProfileForm({
           groups: {
             colors: "\u041a\u043e\u043b\u044c\u043e\u0440\u0438",
             typography: "\u0422\u0438\u043f\u043e\u0433\u0440\u0430\u0444\u0456\u043a\u0430",
-            background: "\u0424\u043e\u043d hero",
-            sectionBackground: "\u0424\u043e\u043d \u0441\u0435\u043a\u0446\u0456\u0439",
             layout: "\u0420\u043e\u0437\u043a\u043b\u0430\u0434\u043a\u0430",
+            profileBackground: "\u0424\u043e\u043d \u043f\u0440\u043e\u0444\u0456\u043b\u044e",
+            background: "\u0411\u0430\u043d\u0435\u0440 (hero)",
+            sectionBackground: "\u0424\u043e\u043d \u0441\u0435\u043a\u0446\u0456\u0439",
+          },
+          panelHint:
+            "\u041a\u043e\u043b\u0456\u0440 \u0432\u043a\u043b\u0430\u0434\u0435\u043d\u0438\u0445 \u0431\u043b\u043e\u043a\u0456\u0432 \u0443\u0441\u0435\u0440\u0435\u0434\u0438\u043d\u0456 \u0441\u0435\u043a\u0446\u0456\u0439 (\u043d\u0430\u043f\u0440\u0438\u043a\u043b\u0430\u0434, \u043a\u0430\u0440\u0442\u043a\u0438 \u0434\u043e\u0441\u0432\u0456\u0434\u0443 \u0447\u0438 \u043a\u043e\u043d\u0442\u0430\u043a\u0442\u0456\u0432).",
+          tabs: {
+            themeTitle: "\u0422\u0435\u043c\u0430 \u043f\u0440\u043e\u0444\u0456\u043b\u044e",
+            themeDescription:
+              "\u041a\u043e\u043b\u044c\u043e\u0440\u0438, \u0448\u0440\u0438\u0444\u0442 \u0456 \u0440\u043e\u0437\u043c\u0456\u0440 \u0442\u0435\u043a\u0441\u0442\u0443 \u2014 \u0431\u0430\u0437\u043e\u0432\u0430 \u043f\u0430\u043b\u0456\u0442\u0440\u0430 \u043f\u0440\u043e\u0444\u0456\u043b\u044e.",
+            backgroundTitle: "\u0424\u043e\u043d",
+            backgroundDescription:
+              "\u0422\u043b\u043e \u0432\u0441\u0456\u0454\u0457 \u0441\u0442\u043e\u0440\u0456\u043d\u043a\u0438 \u0442\u0430 \u0431\u0430\u043d\u0435\u0440 (hero) \u0443\u0433\u043e\u0440\u0456 \u043f\u0440\u043e\u0444\u0456\u043b\u044e.",
+            cardsTitle: "\u041a\u0430\u0440\u0442\u043a\u0438",
+            cardsDescription:
+              "\u0421\u0442\u0438\u043b\u044c \u0441\u0435\u043a\u0446\u0456\u0439, \u0444\u043e\u043d \u0441\u0435\u043a\u0446\u0456\u0439 \u0456 \u043a\u043e\u043b\u0456\u0440 \u0432\u043a\u043b\u0430\u0434\u0435\u043d\u0438\u0445 \u043a\u0430\u0440\u0442\u043e\u043a.",
+            blocksTitle: "\u0411\u043b\u043e\u043a\u0438",
+            blocksDescription: "\u041f\u043e\u0440\u044f\u0434\u043e\u043a \u0456 \u0448\u0438\u0440\u0438\u043d\u0430 \u0431\u043b\u043e\u043a\u0456\u0432 \u043d\u0430 \u043f\u0443\u0431\u043b\u0456\u0447\u043d\u0456\u0439 \u0441\u0442\u043e\u0440\u0456\u043d\u0446\u0456.",
           },
         }
       : {
@@ -624,7 +649,7 @@ export default function ProfileForm({
           description:
             "Shape how your public page feels: pick colors, typography, background, and the order of sections so the profile looks like your own space.",
           accentColor: "Accent",
-          surfaceColor: "Hero color",
+          surfaceColor: "Background color",
           panelColor: "Card color",
           textColor: "Primary text",
           mutedColor: "Secondary text",
@@ -675,9 +700,26 @@ export default function ProfileForm({
           groups: {
             colors: "Colors",
             typography: "Typography",
-            background: "Hero background",
-            sectionBackground: "Sections background",
             layout: "Layout",
+            profileBackground: "Profile background",
+            background: "Hero banner",
+            sectionBackground: "Sections background",
+          },
+          panelHint:
+            "Colour of the nested blocks inside sections (e.g. experience or contact cards).",
+          tabs: {
+            themeTitle: "Profile theme",
+            themeDescription:
+              "Colors, font, and text size — the base palette of your profile.",
+            backgroundTitle: "Background",
+            backgroundDescription:
+              "The whole-page backdrop and the hero banner at the top of your profile.",
+            cardsTitle: "Cards",
+            cardsDescription:
+              "Section style, section background, and the colour of nested cards.",
+            blocksTitle: "Blocks",
+            blocksDescription:
+              "The order and width of blocks on your public page.",
           },
         };
   const presentationExtrasUi =
@@ -761,7 +803,10 @@ export default function ProfileForm({
           certificates: "Сертифікати",
           qa: "Q&A",
           contacts: "Контакти",
-          appearance: "Вигляд",
+          theme: "Тема",
+          background: "Фон",
+          cards: "Картки",
+          blocks: "Блоки",
           visibility: "Видимість",
           integrations: "Інтеграції",
           deletion: "Безпека",
@@ -781,7 +826,10 @@ export default function ProfileForm({
           certificates: "Certificates",
           qa: "Q&A",
           contacts: "Contacts",
-          appearance: "Appearance",
+          theme: "Theme",
+          background: "Background",
+          cards: "Cards",
+          blocks: "Blocks",
           visibility: "Visibility",
           integrations: "Integrations",
           deletion: "Security",
@@ -890,6 +938,14 @@ export default function ProfileForm({
   >(profile.work_experience || []);
   const [activeSection, setActiveSection] = useState<EditorSectionId>("basic");
   const [navModalOpen, setNavModalOpen] = useState(false);
+  // Which nav groups are expanded. Collapsing keeps the sidebar short; the
+  // group holding the active section is always shown (see renderNav) so the
+  // current location never hides.
+  const [openNavGroups, setOpenNavGroups] = useState<Record<string, boolean>>({
+    content: true,
+    style: false,
+    account: false,
+  });
   const [saving, setSaving] = useState(false);
   const [uploadingCertificateId, setUploadingCertificateId] = useState<
     string | null
@@ -1864,35 +1920,79 @@ export default function ProfileForm({
     }
   });
 
-  const navGroups: { caption: string; ids: readonly EditorSectionId[] }[] = [
-    { caption: sectionNavUi.contentGroup, ids: editorDataSections },
-    { caption: sectionNavUi.styleGroup, ids: editorMetaSections },
-    { caption: sectionNavUi.accountGroup, ids: editorAccountSections },
+  const navGroups: {
+    id: string;
+    caption: string;
+    ids: readonly EditorSectionId[];
+  }[] = [
+    { id: "content", caption: sectionNavUi.contentGroup, ids: editorDataSections },
+    { id: "style", caption: sectionNavUi.styleGroup, ids: editorStyleSections },
+    {
+      id: "account",
+      caption: sectionNavUi.accountGroup,
+      ids: editorAccountSections,
+    },
   ];
 
   const renderNav = (onPick?: () => void) => (
-    <nav className="flex flex-col gap-5">
-      {navGroups.map((group) => (
-        <div key={group.caption} className="flex flex-col gap-1">
-          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-eyebrow app-soft">
-            {group.caption}
-          </p>
-          {group.ids.map((id) => (
+    <nav className="flex flex-col gap-3">
+      {navGroups.map((group) => {
+        // Force the active section's group open so the current selection is
+        // always visible, no matter the stored toggle state.
+        const expanded =
+          Boolean(openNavGroups[group.id]) ||
+          (group.ids as readonly EditorSectionId[]).includes(activeSection);
+
+        return (
+          <div key={group.id} className="flex flex-col">
             <button
-              key={id}
               type="button"
-              onClick={() => {
-                setActiveSection(id);
-                onPick?.();
-              }}
-              aria-current={activeSection === id ? "page" : undefined}
-              className={navItemClass(activeSection === id)}
+              onClick={() =>
+                setOpenNavGroups((prev) => ({
+                  ...prev,
+                  [group.id]: !expanded,
+                }))
+              }
+              aria-expanded={expanded}
+              className="flex w-full cursor-pointer items-center justify-between gap-2 border-b app-border px-1 pb-2 text-left text-[13px] font-semibold uppercase tracking-eyebrow text-[color:var(--foreground)] transition-opacity hover:opacity-70"
             >
-              {sectionNavUi[id]}
+              <span>{group.caption}</span>
+              <svg
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                aria-hidden="true"
+                className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                  expanded ? "" : "-rotate-90"
+                }`}
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
+                  clipRule="evenodd"
+                />
+              </svg>
             </button>
-          ))}
-        </div>
-      ))}
+            {expanded && (
+              <div className="mt-1 flex flex-col gap-1">
+                {group.ids.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setActiveSection(id);
+                      onPick?.();
+                    }}
+                    aria-current={activeSection === id ? "page" : undefined}
+                    className={navItemClass(activeSection === id)}
+                  >
+                    {sectionNavUi[id]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </nav>
   );
 
@@ -2089,7 +2189,7 @@ export default function ProfileForm({
 
       <section
         className={
-          activeSection === "appearance"
+          activeSection === "theme"
             ? "space-y-5 rounded-panel app-panel p-5"
             : "hidden"
         }
@@ -2097,10 +2197,10 @@ export default function ProfileForm({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
-              {customizationUi.title}
+              {customizationUi.tabs.themeTitle}
             </h2>
             <p className="mt-2 text-sm leading-6 app-muted">
-              {customizationUi.description}
+              {customizationUi.tabs.themeDescription}
             </p>
           </div>
           <Button
@@ -2113,93 +2213,57 @@ export default function ProfileForm({
           </Button>
         </div>
 
+        {/* Palette-only preview: text + accent on the profile's base
+            background, so colours/font/scale read clearly with no photo or
+            card treatment (those live on the Background/Cards tabs). */}
         <div
-          className="relative overflow-hidden rounded-panel border border-white/10 p-5"
+          className="rounded-panel border border-white/10 p-5"
           style={{
-            background: getProfileHeroBackground(presentation),
+            backgroundColor: presentation.surfaceColor,
             color: presentation.textColor,
             fontFamily: previewFontFamily,
           }}
         >
-          {presentation.backgroundUrl &&
-            presentation.backgroundMode === "image" && (
-              <OptimizedImage
-                src={presentation.backgroundUrl}
-                alt=""
-                fill
-                sizes="(max-width: 768px) 100vw, 720px"
-                className="object-cover"
-              />
-            )}
-          {presentation.backgroundUrl &&
-            presentation.backgroundMode === "video" && (
-              <video
-                src={presentation.backgroundUrl}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            )}
-          {presentation.backgroundUrl &&
-            (presentation.backgroundMode === "image" ||
-              presentation.backgroundMode === "video") && (
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: getProfileHeroOverlay(presentation),
-                }}
-              />
-            )}
-          <div
-            className="relative rounded-3xl p-5"
+          <p
+            className="text-xs font-semibold uppercase tracking-eyebrow"
+            style={{ color: presentation.mutedColor }}
+          >
+            {customizationUi.preview}
+          </p>
+          <h3
+            className="mt-3 font-semibold"
             style={{
-              ...getProfileSectionCardStyle(presentation),
-              textAlign: presentation.heroAlignment,
+              fontSize: `${1.9 * previewScale.heading}rem`,
+              lineHeight: 1.1,
             }}
           >
-            <p
-              className="text-xs font-semibold uppercase tracking-eyebrow"
-              style={{ color: presentation.mutedColor }}
-            >
-              {customizationUi.preview}
-            </p>
-            <h3
-              className="mt-3 font-semibold"
-              style={{
-                fontSize: `${2.1 * previewScale.heading}rem`,
-                lineHeight: 1.05,
-              }}
-            >
-              {form.name || form.username || "Your profile"}
-            </h3>
-            <p
-              className="mt-3 max-w-2xl"
-              style={{
-                color: presentation.mutedColor,
-                fontSize: `${1 * previewScale.body}rem`,
-              }}
-            >
-              {form.headline ||
-                (locale === "uk"
-                  ? "\u0422\u0443\u0442 \u0431\u0443\u0434\u0435 \u0432\u0438\u0434\u043d\u043e, \u044f\u043a \u0432\u0438\u0433\u043b\u044f\u0434\u0430\u0442\u0438\u043c\u0435 \u0432\u0430\u0448 hero-\u0431\u043b\u043e\u043a."
-                  : "This shows how your hero section will feel on the public page.")}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {["About", "Projects", "Contacts"].map((item) => (
-                <span
-                  key={item}
-                  className="rounded-full px-3 py-1 text-xs font-medium"
-                  style={{
-                    backgroundColor: presentation.accentColor,
-                    color: presentation.surfaceColor,
-                  }}
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
+            {form.name || form.username || "Your profile"}
+          </h3>
+          <p
+            className="mt-2 max-w-2xl"
+            style={{
+              color: presentation.mutedColor,
+              fontSize: `${previewScale.body}rem`,
+            }}
+          >
+            {form.headline ||
+              (locale === "uk"
+                ? "\u041a\u0456\u043b\u044c\u043a\u0430 \u0441\u043b\u0456\u0432 \u043f\u0440\u043e \u0432\u0430\u0441 \u2014 \u0449\u043e\u0431 \u043f\u043e\u0431\u0430\u0447\u0438\u0442\u0438 \u0448\u0440\u0438\u0444\u0442 \u0456 \u043a\u043e\u043b\u044c\u043e\u0440\u0438 \u0442\u0435\u043a\u0441\u0442\u0443."
+                : "A line about you \u2014 to preview the font and text colours.")}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {["About", "Projects", "Contacts"].map((item) => (
+              <span
+                key={item}
+                className="rounded-full px-3 py-1 text-xs font-medium"
+                style={{
+                  backgroundColor: presentation.accentColor,
+                  color: getReadableTextColor(presentation.accentColor),
+                }}
+              >
+                {item}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -2208,12 +2272,10 @@ export default function ProfileForm({
             title={customizationUi.groups.colors}
             className="lg:col-span-2"
           >
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {(
                 [
                   ["accentColor", customizationUi.accentColor],
-                  ["surfaceColor", customizationUi.surfaceColor],
-                  ["panelColor", customizationUi.panelColor],
                   ["textColor", customizationUi.textColor],
                   ["mutedColor", customizationUi.mutedColor],
                 ] as const
@@ -2233,7 +2295,10 @@ export default function ProfileForm({
             </div>
           </ControlGroup>
 
-          <ControlGroup title={customizationUi.groups.typography}>
+          <ControlGroup
+            title={customizationUi.groups.typography}
+            className="lg:col-span-2"
+          >
             <div className="space-y-5">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-[color:var(--foreground)]">
@@ -2290,62 +2355,129 @@ export default function ProfileForm({
               </div>
             </div>
           </ControlGroup>
+        </div>
+      </section>
 
-          <ControlGroup title={customizationUi.groups.layout}>
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-[color:var(--foreground)]">
-                  {customizationUi.cardStyle}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {profileCardStyles.map((cardStyle) => (
-                    <Button
-                      key={cardStyle}
-                      variant={
-                        presentation.cardStyle === cardStyle
-                          ? "primary"
-                          : "secondary"
-                      }
-                      size="sm"
-                      onClick={() =>
-                        updatePresentation(
-                          "cardStyle",
-                          cardStyle as ProfileCardStyle,
-                        )
-                      }
-                    >
-                      {customizationUi.cards[cardStyle]}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+      <section
+        className={
+          activeSection === "background"
+            ? "space-y-5 rounded-panel app-panel p-5"
+            : "hidden"
+        }
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
+              {customizationUi.tabs.backgroundTitle}
+            </h2>
+            <p className="mt-2 text-sm leading-6 app-muted">
+              {customizationUi.tabs.backgroundDescription}
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void resetCustomization()}
+            title={draftUi.resetCustomizationHint}
+          >
+            {draftUi.resetCustomization}
+          </Button>
+        </div>
 
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-[color:var(--foreground)]">
-                  {customizationUi.heroAlignment}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {profileHeroAlignments.map((heroAlignment) => (
-                    <Button
-                      key={heroAlignment}
-                      variant={
-                        presentation.heroAlignment === heroAlignment
-                          ? "primary"
-                          : "secondary"
-                      }
-                      size="sm"
-                      onClick={() =>
-                        updatePresentation(
-                          "heroAlignment",
-                          heroAlignment as ProfileHeroAlignment,
-                        )
-                      }
-                    >
-                      {customizationUi.alignments[heroAlignment]}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+        {/* Mini-page preview: the page backdrop (surface) with the hero banner
+            sitting on it, so the two background layers and hero alignment read
+            at a glance. Section cards live on the Cards tab. */}
+        <div
+          className="rounded-panel border app-border p-3"
+          style={{ backgroundColor: presentation.surfaceColor }}
+        >
+          <p
+            className="px-1 pb-2 text-xs font-semibold uppercase tracking-eyebrow"
+            style={{ color: presentation.mutedColor }}
+          >
+            {customizationUi.preview}
+          </p>
+          <div
+            className="relative h-52 overflow-hidden rounded-2xl sm:h-64"
+            style={{ background: getProfileHeroBackground(presentation) }}
+          >
+            {presentation.backgroundUrl &&
+              presentation.backgroundMode === "image" && (
+                <OptimizedImage
+                  src={presentation.backgroundUrl}
+                  alt=""
+                  fill
+                  sizes="(max-width: 768px) 100vw, 640px"
+                  className="object-cover"
+                />
+              )}
+            {presentation.backgroundUrl &&
+              presentation.backgroundMode === "video" && (
+                <video
+                  src={presentation.backgroundUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+            {presentation.backgroundUrl &&
+              (presentation.backgroundMode === "image" ||
+                presentation.backgroundMode === "video") && (
+                <div
+                  className="absolute inset-0"
+                  style={{ background: getProfileHeroOverlay(presentation) }}
+                />
+              )}
+            <div
+              className={`absolute inset-x-0 bottom-0 flex flex-col gap-1 p-3 ${
+                presentation.heroAlignment === "center"
+                  ? "items-center text-center"
+                  : "items-start"
+              }`}
+            >
+              <span
+                className="font-semibold"
+                style={{
+                  color: presentation.textColor,
+                  fontFamily: previewFontFamily,
+                }}
+              >
+                {form.name || form.username || "Your profile"}
+              </span>
+              <span
+                className="text-xs font-medium"
+                style={{ color: presentation.mutedColor }}
+              >
+                {customizationUi.groups.background}
+              </span>
+            </div>
+          </div>
+          <p
+            className="px-1 pt-2 text-[11px]"
+            style={{ color: presentation.mutedColor }}
+          >
+            {customizationUi.groups.profileBackground}
+          </p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+          <ControlGroup
+            title={customizationUi.groups.profileBackground}
+            className="lg:col-span-2"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <ColorField
+                label={customizationUi.surfaceColor}
+                value={presentation.surfaceColor}
+                onChange={(value) =>
+                  updatePresentation(
+                    "surfaceColor",
+                    value as ProfilePresentation["surfaceColor"],
+                  )
+                }
+              />
             </div>
           </ControlGroup>
 
@@ -2487,6 +2619,138 @@ export default function ProfileForm({
           </ControlGroup>
 
           <ControlGroup
+            title={customizationUi.heroAlignment}
+            className="lg:col-span-2"
+          >
+            <div className="flex flex-wrap gap-2">
+              {profileHeroAlignments.map((heroAlignment) => (
+                <Button
+                  key={heroAlignment}
+                  variant={
+                    presentation.heroAlignment === heroAlignment
+                      ? "primary"
+                      : "secondary"
+                  }
+                  size="sm"
+                  onClick={() =>
+                    updatePresentation(
+                      "heroAlignment",
+                      heroAlignment as ProfileHeroAlignment,
+                    )
+                  }
+                >
+                  {customizationUi.alignments[heroAlignment]}
+                </Button>
+              ))}
+            </div>
+          </ControlGroup>
+        </div>
+      </section>
+
+      <section
+        className={
+          activeSection === "cards"
+            ? "space-y-5 rounded-panel app-panel p-5"
+            : "hidden"
+        }
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
+              {customizationUi.tabs.cardsTitle}
+            </h2>
+            <p className="mt-2 text-sm leading-6 app-muted">
+              {customizationUi.tabs.cardsDescription}
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void resetCustomization()}
+            title={draftUi.resetCustomizationHint}
+          >
+            {draftUi.resetCustomization}
+          </Button>
+        </div>
+
+        {/* Preview: two section cards on the page backdrop, each with a nested
+            panel — so card style, section background and inner-card colour are
+            all visible together (they interact on the real profile). */}
+        <div
+          className="rounded-panel border app-border p-4"
+          style={{ backgroundColor: presentation.surfaceColor }}
+        >
+          <p
+            className="px-1 pb-3 text-xs font-semibold uppercase tracking-eyebrow"
+            style={{ color: presentation.mutedColor }}
+          >
+            {customizationUi.preview}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[0, 1].map((index) => (
+              <div
+                key={index}
+                className="rounded-2xl p-4"
+                style={{
+                  ...getProfileSectionCardStyle(presentation),
+                  fontFamily: previewFontFamily,
+                }}
+              >
+                <div
+                  className="mb-3 h-1.5 w-12 rounded-full"
+                  style={{ backgroundColor: presentation.accentColor }}
+                />
+                <p
+                  className="text-sm font-semibold"
+                  style={{ color: presentation.textColor }}
+                >
+                  {customizationUi.groups.sectionBackground}
+                </p>
+                <div
+                  className="mt-3 rounded-xl p-3"
+                  style={{ backgroundColor: presentation.panelColor }}
+                >
+                  <p
+                    className="text-xs"
+                    style={{ color: presentation.mutedColor }}
+                  >
+                    {customizationUi.panelColor}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+          <ControlGroup
+            title={customizationUi.cardStyle}
+            className="lg:col-span-2"
+          >
+            <div className="flex flex-wrap gap-2">
+              {profileCardStyles.map((cardStyle) => (
+                <Button
+                  key={cardStyle}
+                  variant={
+                    presentation.cardStyle === cardStyle
+                      ? "primary"
+                      : "secondary"
+                  }
+                  size="sm"
+                  onClick={() =>
+                    updatePresentation(
+                      "cardStyle",
+                      cardStyle as ProfileCardStyle,
+                    )
+                  }
+                >
+                  {customizationUi.cards[cardStyle]}
+                </Button>
+              ))}
+            </div>
+          </ControlGroup>
+
+          <ControlGroup
             title={customizationUi.groups.sectionBackground}
             className="lg:col-span-2"
           >
@@ -2554,6 +2818,54 @@ export default function ProfileForm({
               )}
             </div>
           </ControlGroup>
+
+          <ControlGroup
+            title={customizationUi.panelColor}
+            className="lg:col-span-2"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <ColorField
+                label={customizationUi.panelColor}
+                value={presentation.panelColor}
+                onChange={(value) =>
+                  updatePresentation(
+                    "panelColor",
+                    value as ProfilePresentation["panelColor"],
+                  )
+                }
+              />
+            </div>
+            <p className="mt-3 text-xs app-muted">
+              {customizationUi.panelHint}
+            </p>
+          </ControlGroup>
+        </div>
+      </section>
+
+      <section
+        className={
+          activeSection === "blocks"
+            ? "space-y-5 rounded-panel app-panel p-5"
+            : "hidden"
+        }
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
+              {customizationUi.tabs.blocksTitle}
+            </h2>
+            <p className="mt-2 text-sm leading-6 app-muted">
+              {customizationUi.tabs.blocksDescription}
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void resetCustomization()}
+            title={draftUi.resetCustomizationHint}
+          >
+            {draftUi.resetCustomization}
+          </Button>
         </div>
 
         <div>
