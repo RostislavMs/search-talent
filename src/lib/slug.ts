@@ -13,9 +13,13 @@ const CYRILLIC_TO_LATIN: Record<string, string> = {
 };
 
 export function transliterateCyrillic(value: string): string {
+  // Look up the lowercased char so uppercase Cyrillic (e.g. "П") maps too — the
+  // table only holds lowercase keys. Non-Cyrillic chars pass through unchanged.
+  // Slug callers lowercase the whole string anyway, so the lowercase result is
+  // fine; direct callers get a lowercase transliteration for Cyrillic input.
   let out = "";
   for (const char of value) {
-    out += CYRILLIC_TO_LATIN[char] ?? char;
+    out += CYRILLIC_TO_LATIN[char.toLowerCase()] ?? char;
   }
   return out;
 }
