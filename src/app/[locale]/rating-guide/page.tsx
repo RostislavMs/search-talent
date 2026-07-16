@@ -284,12 +284,12 @@ function getCopy(locale: Locale): GuideCopy {
             accent: "sky",
           },
           {
-            weight: "0% (місяць: 7%)",
+            weight: "0% (30 днів: 6%)",
             title: "Свіжість",
             whatCounts:
-              "У all-time таблиці не враховується. У місячній — впливає на 7% і поступово згасає за кілька тижнів.",
+              "У all-time таблиці не враховується. У таблиці за останні 30 днів — важить 6% і поступово згасає за кілька тижнів. Рахується за датою вашого найновішого проєкту.",
             howToImprove:
-              "Ціль — місячний топ? Публікуйте щось нове регулярно. Для all-time свіжість не критична.",
+              "Ціль — топ за 30 днів? Публікуйте щось нове регулярно. Для all-time свіжість не критична.",
             Icon: ClockIcon,
             accent: "rose",
           },
@@ -341,12 +341,12 @@ function getCopy(locale: Locale): GuideCopy {
             accent: "amber",
           },
           {
-            weight: "10% (місяць: 23%)",
+            weight: "10% (30 днів: 15%)",
             title: "Свіжість",
             whatCounts:
-              "Чим довше проєкт без оновлень, тим менше вага свіжості. У місячній таблиці значення майже втричі сильніше.",
+              "Рахується за датою публікації проєкту: чим він старіший, тим менша ця вага. У таблиці за останні 30 днів свіжість важить приблизно в 1.5 раза сильніше, ніж у all-time.",
             howToImprove:
-              "Оновлюйте проєкт — нове медіа, новий опис, виправлення — і він знову молодий для формули.",
+              "Свіжість згасає сама й залежить від дати публікації, а не правок. Ціль — топ за 30 днів? Публікуйте нові проєкти регулярно.",
             Icon: ClockIcon,
             accent: "rose",
           },
@@ -388,7 +388,7 @@ function getCopy(locale: Locale): GuideCopy {
       boards: {
         title: "Дві таблиці",
         description:
-          "All-time зберігає історію, monthly дає шанс новачкам. Якщо ваш рейтинг низький у all-time — це не означає, що ви не можете потрапити в monthly top-10 цього місяця.",
+          "All-time зберігає історію, топ за 30 днів дає шанс новачкам. Якщо ваш рейтинг низький у all-time — це не означає, що ви не можете потрапити в топ за останні 30 днів.",
         items: [
           {
             name: "All-time",
@@ -396,8 +396,8 @@ function getCopy(locale: Locale): GuideCopy {
             Icon: TrophyIcon,
           },
           {
-            name: "За місяць",
-            text: "Сильніше важить свіжість, старі голоси швидше згасають. Новачки мають реальний шанс потрапити в monthly top-10 — достатньо стабільної активності кілька тижнів.",
+            name: "Останні 30 днів",
+            text: "Сильніше важить свіжість, старі голоси швидше згасають. Новачки мають реальний шанс потрапити в топ за 30 днів — достатньо стабільної активності кілька тижнів.",
             Icon: CalendarIcon,
           },
         ],
@@ -504,12 +504,12 @@ function getCopy(locale: Locale): GuideCopy {
           accent: "sky",
         },
         {
-          weight: "0% (monthly: 7%)",
+          weight: "0% (last 30 days: 6%)",
           title: "Freshness",
           whatCounts:
-            "Not counted in the all-time board. In the monthly one — it weighs 7% and decays over a few weeks.",
+            "Not counted in the all-time board. In the last-30-days one it weighs 6% and decays over a few weeks. It's measured from the date of your newest project.",
           howToImprove:
-            "Aiming for monthly top-10? Publish something new regularly. For all-time, freshness isn't critical.",
+            "Aiming for the 30-day top-10? Publish something new regularly. For all-time, freshness isn't critical.",
           Icon: ClockIcon,
           accent: "rose",
         },
@@ -560,12 +560,12 @@ function getCopy(locale: Locale): GuideCopy {
           accent: "amber",
         },
         {
-          weight: "10% (monthly: 23%)",
+          weight: "10% (last 30 days: 15%)",
           title: "Freshness",
           whatCounts:
-            "The longer the project sits without updates, the lower this weight. The monthly board weighs freshness almost three times stronger.",
+            "Measured from the project's publish date: the older it is, the lower this weight. The 30-day board weighs freshness about 1.5× stronger than the all-time one.",
           howToImprove:
-            "Update the project — new media, refreshed description, fixes — and it's young again for the formula.",
+            "Freshness is set by the publish date and fades on its own — not by edits. Aiming for the 30-day board? Publish new projects regularly.",
           Icon: ClockIcon,
           accent: "rose",
         },
@@ -607,7 +607,7 @@ function getCopy(locale: Locale): GuideCopy {
     boards: {
       title: "Two boards",
       description:
-        "All-time keeps the history, monthly gives newcomers a shot. A low all-time rating doesn't lock you out of monthly top-10.",
+        "All-time keeps the history, the last-30-days board gives newcomers a shot. A low all-time rating doesn't lock you out of the 30-day top-10.",
       items: [
         {
           name: "All-time",
@@ -615,8 +615,8 @@ function getCopy(locale: Locale): GuideCopy {
           Icon: TrophyIcon,
         },
         {
-          name: "This month",
-          text: "Freshness weighs more, old votes fade faster. Newcomers have a real shot at monthly top-10 — a few weeks of steady activity is enough.",
+          name: "Last 30 days",
+          text: "Freshness weighs more, old votes fade faster. Newcomers have a real shot at the 30-day top-10 — a few weeks of steady activity is enough.",
           Icon: CalendarIcon,
         },
       ],

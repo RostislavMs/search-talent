@@ -6,7 +6,6 @@ import { dbRateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { profileVoteSchema } from "@/lib/validation/vote";
-import { getWilsonScore } from "@/lib/leaderboards";
 
 function getProfileVoteErrorMessage(message: string) {
   if (message.includes("Could not find the table 'public.profile_votes'")) {
@@ -133,16 +132,9 @@ export async function POST(request: Request) {
 
   const summary = await getProfileVoteSummary(supabase, profileId, user.id);
 
-  // Persist a lightweight score (Wilson-based, 0-100 scale) so search can
-  // sort profiles by rating without recomputing the full leaderboard score.
-  const wilsonScore = Math.round(
-    getWilsonScore(summary.likes, summary.dislikes) * 100,
-  );
-  await supabase
-    .from("profiles")
-    .update({ score: wilsonScore })
-    .eq("id", profileId);
-
+  // The persisted profiles.score (Wilson, 0-100) is maintained by a database
+  // trigger now — see supabase/32_rating_score_triggers.sql. The previous
+  // client-side write here was silently dropped by RLS (owner-or-admin).
   revalidateTag(LEADERBOARDS_CACHE_TAG, "max");
 
   return NextResponse.json({ success: true, ...summary });

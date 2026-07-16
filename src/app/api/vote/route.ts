@@ -6,7 +6,6 @@ import { dbRateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { projectVoteSchema } from "@/lib/validation/vote";
-import { getWilsonScore } from "@/lib/leaderboards";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -111,20 +110,10 @@ export async function POST(request: Request) {
 
   const summary = await getProjectVoteSummary(supabase, projectId, user.id);
 
-  // Persist a Wilson-based score (0-100 scale) so search sorting reflects
-  // vote confidence, not just raw likes minus dislikes.
-  const wilsonScore = Math.round(
-    getWilsonScore(summary.likes, summary.dislikes) * 100,
-  );
-  const { error: scoreError } = await supabase
-    .from("projects")
-    .update({ score: wilsonScore })
-    .eq("id", projectId);
-
-  if (scoreError) {
-    return NextResponse.json({ error: scoreError.message }, { status: 400 });
-  }
-
+  // The persisted projects.score (Wilson, 0-100) is maintained by a database
+  // trigger now — see supabase/32_rating_score_triggers.sql. The previous
+  // client-side write here was silently dropped by RLS (owner-or-admin), so
+  // scores only ever moved when an admin voted.
   revalidateTag(LEADERBOARDS_CACHE_TAG, "max");
 
   return NextResponse.json({ success: true, ...summary });
