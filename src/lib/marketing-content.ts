@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n/config";
+import { slugify } from "@/lib/slug";
 
 export type MarketingFaqItem = {
   question: string;
@@ -379,16 +380,7 @@ export function getMarketingContent(locale: Locale) {
 }
 
 export function slugifySegment(value: string) {
-  return (
-    value
-      .trim()
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[^a-z0-9\s-]+/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "") || "item"
-  );
+  return slugify(value, "item");
 }
 
 export function getTalentRoleIntro(locale: Locale, role: string) {

@@ -1,3 +1,5 @@
+import { slugify } from "@/lib/slug";
+
 export const pollStatuses = ["draft", "published"] as const;
 export const pollSortOptions = ["recent", "popular", "discussed"] as const;
 export const pollQuestionTypes = ["single", "multiple", "rating"] as const;
@@ -136,16 +138,7 @@ export function normalizePollQuestionType(value: unknown): PollQuestionType {
 }
 
 export function slugifyPollTitle(value: string) {
-  return (
-    value
-      .trim()
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[^a-z0-9\s-]+/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "") || "poll"
-  );
+  return slugify(value, "poll");
 }
 
 export function isPollClosed(closesAt: string | null): boolean {

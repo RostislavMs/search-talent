@@ -88,7 +88,14 @@ export async function PUT(
       : CLEAN_MODERATION_RESULT;
   const willRemove = screen.flagged && existing.moderation_status === "approved";
 
-  const slug = await ensureUniquePollSlug(payload.title, id);
+  // Keep the slug — and therefore the public URL — stable once a poll has been
+  // published. Regenerating it from an edited title would 404 every shared /
+  // indexed link. Drafts have no public URL yet, so they still pick up a fresh
+  // slug (including on the edit that first publishes them).
+  const slug =
+    existing.published_at && existing.slug
+      ? existing.slug
+      : await ensureUniquePollSlug(payload.title, id);
 
   const { data, error } = await context.supabase.rpc("save_poll", {
     p_payload: buildSavePollPayload(payload, {

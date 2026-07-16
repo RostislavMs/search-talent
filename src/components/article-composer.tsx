@@ -446,11 +446,22 @@ export default function ArticleComposer({
       }
     }
 
-    // Pick the primary (canonical) version. Prefer the author's site language;
-    // otherwise use whichever language was actually filled in.
-    const primaryLocale: ArticleLocale = filledLocales.includes(siteLocale)
-      ? siteLocale
-      : filledLocales[0];
+    // Pick the primary (canonical) version. When editing, keep the article's
+    // original primary language — otherwise saving from the other UI language
+    // would flip content_locale (and the slug, for a not-yet-published draft)
+    // to the wrong language. For a new article, or when the original primary
+    // was cleared, fall back to the site language / first filled version.
+    const existingPrimary: ArticleLocale | null = editArticle
+      ? editArticle.contentLocale === "en"
+        ? "en"
+        : "uk"
+      : null;
+    const primaryLocale: ArticleLocale =
+      existingPrimary && filledLocales.includes(existingPrimary)
+        ? existingPrimary
+        : filledLocales.includes(siteLocale)
+          ? siteLocale
+          : filledLocales[0];
 
     const toPayload = (version: LangVersion) => ({
       title: version.title,

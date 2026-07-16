@@ -356,9 +356,22 @@ export default function PollComposer({
       }
     }
 
-    const primaryLocale: PollLocale = filledLocales.includes(siteLocale)
-      ? siteLocale
-      : filledLocales[0];
+    // When editing, keep the poll's original primary language — otherwise
+    // saving from the other UI language would flip content_locale (and the
+    // slug, for a not-yet-published draft) to the wrong language. For a new
+    // poll, or when the original primary was cleared, fall back to the site
+    // language / first filled version.
+    const existingPrimary: PollLocale | null = editPoll
+      ? editPoll.contentLocale === "en"
+        ? "en"
+        : "uk"
+      : null;
+    const primaryLocale: PollLocale =
+      existingPrimary && filledLocales.includes(existingPrimary)
+        ? existingPrimary
+        : filledLocales.includes(siteLocale)
+          ? siteLocale
+          : filledLocales[0];
 
     const toPayload = (version: LangVersion) => ({
       title: version.title,
