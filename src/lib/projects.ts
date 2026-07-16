@@ -1,3 +1,5 @@
+import { transliterateCyrillic } from "@/lib/slug";
+
 export const projectStatuses = [
   "planning",
   "in_progress",
@@ -87,56 +89,6 @@ export function normalizeProjectVisibilityStatus(
     : "published";
 }
 
-const transliterationMap: Record<string, string> = {
-  а: "a",
-  б: "b",
-  в: "v",
-  г: "h",
-  ґ: "g",
-  д: "d",
-  е: "e",
-  є: "ye",
-  ж: "zh",
-  з: "z",
-  и: "y",
-  і: "i",
-  ї: "yi",
-  й: "i",
-  к: "k",
-  л: "l",
-  м: "m",
-  н: "n",
-  о: "o",
-  п: "p",
-  р: "r",
-  с: "s",
-  т: "t",
-  у: "u",
-  ф: "f",
-  х: "kh",
-  ц: "ts",
-  ч: "ch",
-  ш: "sh",
-  щ: "shch",
-  ь: "",
-  ю: "yu",
-  я: "ya",
-  ё: "yo",
-  ы: "y",
-  э: "e",
-  ъ: "",
-};
-
-function transliterate(value: string) {
-  return value
-    .split("")
-    .map((character) => {
-      const lowerCharacter = character.toLowerCase();
-      return transliterationMap[lowerCharacter] ?? character;
-    })
-    .join("");
-}
-
 function cleanText(value: unknown) {
   if (typeof value !== "string") {
     return null;
@@ -179,7 +131,7 @@ function cleanSkillIds(value: unknown) {
 }
 
 export function slugify(text: string) {
-  return transliterate(text)
+  return transliterateCyrillic(text)
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[^\w\s-]/g, "")
