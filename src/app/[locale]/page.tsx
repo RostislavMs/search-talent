@@ -283,8 +283,12 @@ async function HeroLiveCards({
     getLeaderboards(),
     getLatestArticles(4, locale),
   ]);
-  const topCreator = leaderboards.creators.all[0];
-  const topProject = leaderboards.projects.all[0];
+  // Hero highlights the last-30-days leaders, not all-time: the all-time #1 is
+  // almost always the same person, so the recent boards keep the hero rotating
+  // and reward current activity. Falls back to all-time only if a board is
+  // somehow empty (both are built from the same set, so this is defensive).
+  const topCreator = leaderboards.creators.month[0] ?? leaderboards.creators.all[0];
+  const topProject = leaderboards.projects.month[0] ?? leaderboards.projects.all[0];
   const topArticle = latestArticles[0];
 
   return (

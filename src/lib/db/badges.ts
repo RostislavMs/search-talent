@@ -184,13 +184,40 @@ export async function getBadgeCountsForUsers(
     return result;
   }
 
-  const { data } = await supabase
-    .from("user_badges")
-    .select("user_id")
-    .in("user_id", userIds);
+  // Chunk the id list so the `?user_id=in.(...)` URL never blows past request
+  // limits, and page each chunk so the PostgREST 1000-row cap never silently
+  // drops badge rows (which would zero out the rating bonus at scale).
+  const ID_CHUNK_SIZE = 200;
+  const PAGE_SIZE = 1000;
 
-  for (const row of (data || []) as Array<{ user_id: string }>) {
-    result.set(row.user_id, (result.get(row.user_id) ?? 0) + 1);
+  for (let i = 0; i < userIds.length; i += ID_CHUNK_SIZE) {
+    const chunk = userIds.slice(i, i + ID_CHUNK_SIZE);
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("user_badges")
+        .select("user_id")
+        .in("user_id", chunk)
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) {
+        // Don't fail the caller (leaderboard/ranking) over a badge count —
+        // just stop paging this chunk and move on with what we have.
+        break;
+      }
+
+      const rows = (data || []) as Array<{ user_id: string }>;
+      for (const row of rows) {
+        result.set(row.user_id, (result.get(row.user_id) ?? 0) + 1);
+      }
+
+      if (rows.length < PAGE_SIZE) {
+        break;
+      }
+
+      from += PAGE_SIZE;
+    }
   }
 
   return result;

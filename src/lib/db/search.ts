@@ -1,12 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getCreatorRatings } from "@/lib/db/leaderboards";
-import {
-  calculateProjectRating,
-  getProjectCompletenessScore,
-  isWithinTimeframe,
-} from "@/lib/leaderboards";
+import { getCreatorRatings, getProjectRatings } from "@/lib/db/leaderboards";
 import type { ProjectKind } from "@/lib/projects";
 import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
@@ -33,12 +28,6 @@ type ProjectRow = {
   problem: string | null;
   solution: string | null;
   results: string | null;
-};
-
-type VoteRow = {
-  project_id: string;
-  value: number;
-  created_at: string | null;
 };
 
 type ProfileRow = {
@@ -120,6 +109,55 @@ function getRelationName(
   }
 
   return relation?.name || null;
+}
+
+type Rangeable<T> = {
+  range: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>;
+};
+
+/**
+ * Fetch every row matching an `in(ids)` lookup without hitting two silent
+ * limits: the request-URL length (chunk the id list) and PostgREST's 1000-row
+ * response cap (page each chunk). Both would otherwise truncate quietly once
+ * the candidate set / related rows grow past a few hundred, dropping media,
+ * skills or languages and skewing the results.
+ */
+async function fetchAllByIds<T>(
+  ids: Array<string | number>,
+  build: (chunk: Array<string | number>) => Rangeable<T>,
+): Promise<T[]> {
+  const ID_CHUNK_SIZE = 200;
+  const PAGE_SIZE = 1000;
+  const out: T[] = [];
+
+  for (let i = 0; i < ids.length; i += ID_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + ID_CHUNK_SIZE);
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await build(chunk).range(from, from + PAGE_SIZE - 1);
+
+      if (error) {
+        // A missing lookup degrades the card (no skills chip, etc.) but must
+        // not blow up the whole search response.
+        break;
+      }
+
+      const rows = data ?? [];
+      out.push(...rows);
+
+      if (rows.length < PAGE_SIZE) {
+        break;
+      }
+
+      from += PAGE_SIZE;
+    }
+  }
+
+  return out;
 }
 
 function matchesQuery(value: string | null | undefined, query: string) {
@@ -257,7 +295,7 @@ export async function searchDiscovery(
   // min/max is on the composite rating and is applied in JS below. Both entities
   // are always queried so the inactive tab's `totals` count stays accurate; the
   // response zeroes the array the active scope does not need.
-  const [projectsResponse, profilesResponse, creatorRatings] = await Promise.all([
+  const [projectsResponse, profilesResponse, creatorRatings, projectRatings] = await Promise.all([
     supabase
       .rpc("search_projects", {
         p_q: q || null,
@@ -294,9 +332,12 @@ export async function searchDiscovery(
       .select(
         "id, user_id, username, name, headline, avatar_url, country_id, city, category_id, experience_level, employment_types, work_formats, score, created_at",
       ),
-    // Composite all-time creator rating per profile id — same value the
-    // homepage leaderboard shows. Shares the leaderboard cache.
+    // Composite all-time creator + project ratings keyed by id — the exact
+    // values the homepage leaderboard shows. Sharing the leaderboard cache
+    // means search rows carry the same rating as /home and cost nothing extra,
+    // and we no longer refetch every candidate's votes to recompute it here.
     getCreatorRatings(),
+    getProjectRatings(),
   ]);
 
   const rawProjects = (projectsResponse.data || []) as ProjectRow[];
@@ -307,88 +348,84 @@ export async function searchDiscovery(
   const countryIds = [...new Set(rawProfiles.map((profile) => profile.country_id).filter(Boolean))] as number[];
   const categoryIds = [...new Set(rawProfiles.map((profile) => profile.category_id).filter(Boolean))] as number[];
 
+  // Related rows for display / relevance. Project vote totals and media
+  // recency are NOT fetched here anymore: the rating shown and sorted on comes
+  // straight from the leaderboard's composite `projectRatings` map (same as
+  // creators), so votes never need to be paged into this request. Everything
+  // below is chunked + paged (fetchAllByIds) so nothing truncates at scale.
   const [
-    ownerProfilesResponse,
-    projectSkillsResponse,
-    profileSkillsResponse,
-    profileLanguagesResponse,
-    mediaResponse,
-    votesResponse,
-    countriesResponse,
-    categoriesResponse,
+    ownerProfiles,
+    projectSkills,
+    profileSkills,
+    profileLanguages,
+    media,
+    countries,
+    categories,
   ] = await Promise.all([
-    projectOwnerIds.length > 0
-      ? supabase
+    fetchAllByIds<{ user_id: string; username: string | null; name: string | null }>(
+      projectOwnerIds,
+      (chunk) =>
+        supabase
           .from("profiles")
           .select("user_id, username, name")
-          .in("user_id", projectOwnerIds)
-      : Promise.resolve({ data: [] }),
-    projectIds.length > 0
-      ? supabase
+          .in("user_id", chunk) as unknown as Rangeable<{
+          user_id: string;
+          username: string | null;
+          name: string | null;
+        }>,
+    ),
+    fetchAllByIds<ProjectSkillRow>(
+      projectIds,
+      (chunk) =>
+        supabase
           .from("project_skills")
-          .select(
-            `
-            project_id,
-            skill_id,
-            skills (
-              name
-            )
-          `,
-          )
-          .in("project_id", projectIds)
-      : Promise.resolve({ data: [] }),
-    profileIds.length > 0
-      ? supabase
+          .select(`project_id, skill_id, skills ( name )`)
+          .in("project_id", chunk) as unknown as Rangeable<ProjectSkillRow>,
+    ),
+    fetchAllByIds<ProfileSkillRow>(
+      profileIds,
+      (chunk) =>
+        supabase
           .from("profile_skills")
-          .select(
-            `
-            profile_id,
-            skill_id,
-            skills (
-              name
-            )
-          `,
-          )
-          .in("profile_id", profileIds)
-      : Promise.resolve({ data: [] }),
-    profileIds.length > 0
-      ? supabase
+          .select(`profile_id, skill_id, skills ( name )`)
+          .in("profile_id", chunk) as unknown as Rangeable<ProfileSkillRow>,
+    ),
+    fetchAllByIds<ProfileLanguageRow>(
+      profileIds,
+      (chunk) =>
+        supabase
           .from("profile_languages")
           .select("profile_id, language_id")
-          .in("profile_id", profileIds)
-      : Promise.resolve({ data: [] }),
-    projectIds.length > 0
-      ? supabase
+          .in("profile_id", chunk) as unknown as Rangeable<ProfileLanguageRow>,
+    ),
+    fetchAllByIds<{ project_id: string }>(
+      projectIds,
+      (chunk) =>
+        supabase
           .from("project_media")
-          .select("project_id, created_at")
-          .in("project_id", projectIds)
-      : Promise.resolve({ data: [] }),
-    projectIds.length > 0
-      ? supabase
-          .from("votes")
-          .select("project_id, value, created_at")
-          .in("project_id", projectIds)
-      : Promise.resolve({ data: [] }),
-    countryIds.length > 0
-      ? supabase
+          .select("project_id")
+          .in("project_id", chunk) as unknown as Rangeable<{ project_id: string }>,
+    ),
+    fetchAllByIds<CountryRow>(
+      countryIds,
+      (chunk) =>
+        supabase
           .from("countries")
           .select("id, name")
-          .in("id", countryIds)
-      : Promise.resolve({ data: [] }),
-    categoryIds.length > 0
-      ? supabase
+          .in("id", chunk) as unknown as Rangeable<CountryRow>,
+    ),
+    fetchAllByIds<CategoryRow>(
+      categoryIds,
+      (chunk) =>
+        supabase
           .from("profile_categories")
           .select("id, name")
-          .in("id", categoryIds)
-      : Promise.resolve({ data: [] }),
+          .in("id", chunk) as unknown as Rangeable<CategoryRow>,
+    ),
   ]);
 
   const ownerMap = new Map<string, { username: string | null; name: string | null }>();
-  for (const row of (ownerProfilesResponse.data || []) as Array<{
-    user_id: string;
-    username: string | null;
-    name: string | null;
-  }>) {
+  for (const row of ownerProfiles) {
     ownerMap.set(row.user_id, {
       username: row.username,
       name: row.name,
@@ -396,7 +433,7 @@ export async function searchDiscovery(
   }
 
   const projectSkillsMap = new Map<string, Array<{ id: number; name: string }>>();
-  for (const row of (projectSkillsResponse.data || []) as ProjectSkillRow[]) {
+  for (const row of projectSkills) {
     const name = getRelationName(row.skills);
 
     if (!name) {
@@ -409,7 +446,7 @@ export async function searchDiscovery(
   }
 
   const profileSkillsMap = new Map<string, Array<{ id: number; name: string }>>();
-  for (const row of (profileSkillsResponse.data || []) as ProfileSkillRow[]) {
+  for (const row of profileSkills) {
     const name = getRelationName(row.skills);
 
     if (!name) {
@@ -422,7 +459,7 @@ export async function searchDiscovery(
   }
 
   const profileLanguageIdsMap = new Map<string, number[]>();
-  for (const row of (profileLanguagesResponse.data || []) as ProfileLanguageRow[]) {
+  for (const row of profileLanguages) {
     if (!row.language_id) {
       continue;
     }
@@ -433,55 +470,20 @@ export async function searchDiscovery(
   }
 
   const mediaCountByProject = new Map<string, number>();
-  const recentMediaCountByProject = new Map<string, number>();
-  for (const row of (mediaResponse.data || []) as Array<{
-    project_id: string;
-    created_at: string | null;
-  }>) {
+  for (const row of media) {
     mediaCountByProject.set(
       row.project_id,
       (mediaCountByProject.get(row.project_id) || 0) + 1,
     );
-
-    if (isWithinTimeframe(row.created_at, "month")) {
-      recentMediaCountByProject.set(
-        row.project_id,
-        (recentMediaCountByProject.get(row.project_id) || 0) + 1,
-      );
-    }
-  }
-
-  const voteTotalsByProject = new Map<
-    string,
-    { likes: number; dislikes: number; recentLikes: number; recentDislikes: number }
-  >();
-  for (const row of (votesResponse.data || []) as VoteRow[]) {
-    const totals =
-      voteTotalsByProject.get(row.project_id) ||
-      { likes: 0, dislikes: 0, recentLikes: 0, recentDislikes: 0 };
-
-    if (row.value === 1) {
-      totals.likes += 1;
-      if (isWithinTimeframe(row.created_at, "month")) {
-        totals.recentLikes += 1;
-      }
-    } else if (row.value === -1) {
-      totals.dislikes += 1;
-      if (isWithinTimeframe(row.created_at, "month")) {
-        totals.recentDislikes += 1;
-      }
-    }
-
-    voteTotalsByProject.set(row.project_id, totals);
   }
 
   const countryMap = new Map<number, string>();
-  for (const row of (countriesResponse.data || []) as CountryRow[]) {
+  for (const row of countries) {
     countryMap.set(row.id, row.name);
   }
 
   const categoryMap = new Map<number, string>();
-  for (const row of (categoriesResponse.data || []) as CategoryRow[]) {
+  for (const row of categories) {
     categoryMap.set(row.id, row.name);
   }
 
@@ -490,56 +492,13 @@ export async function searchDiscovery(
       const owner = ownerMap.get(project.owner_id);
       const technologies = projectSkillsMap.get(project.id) || [];
       const mediaCount = mediaCountByProject.get(project.id) || 0;
-      const recentMediaCount = recentMediaCountByProject.get(project.id) || 0;
-      const votes =
-        voteTotalsByProject.get(project.id) ||
-        { likes: 0, dislikes: 0, recentLikes: 0, recentDislikes: 0 };
 
-      // Match the homepage leaderboard: composite rating built from
-      // community trust + completeness + media + tech + freshness.
-      // The persisted `score` column is Wilson-only and updates only on
-      // a vote, so it would diverge from /home/top-rated otherwise.
-      const hasKindMetadata =
-        project.kind != null &&
-        project.kind_metadata != null &&
-        typeof project.kind_metadata === "object" &&
-        !Array.isArray(project.kind_metadata) &&
-        Object.prototype.hasOwnProperty.call(
-          project.kind_metadata,
-          project.kind,
-        );
-
-      const completenessScore = getProjectCompletenessScore({
-        description: project.description,
-        role: project.role,
-        status: project.project_status,
-        teamSize: project.team_size,
-        projectUrl: project.project_url,
-        repositoryUrl: project.repository_url,
-        startedOn: project.started_on,
-        completedOn: project.completed_on,
-        problem: project.problem,
-        solution: project.solution,
-        results: project.results,
-        coverUrl: project.cover_url,
-        mediaCount,
-        technologyCount: technologies.length,
-        hasKindMetadata,
-        kind: project.kind,
-      });
-
-      const rating = calculateProjectRating({
-        timeframe: "all",
-        likes: votes.likes,
-        dislikes: votes.dislikes,
-        recentLikes: votes.recentLikes,
-        recentDislikes: votes.recentDislikes,
-        mediaCount,
-        recentMediaCount,
-        technologyCount: technologies.length,
-        completenessScore,
-        createdAt: project.created_at,
-      });
+      // Rating shown + sorted on is the leaderboard's composite all-time rating
+      // (community trust + completeness + media + tech + freshness), looked up
+      // from the shared cache so it always equals the /home and /top-* value.
+      // Falls back to the persisted Wilson score for a freshly published
+      // project not yet in the current leaderboard snapshot.
+      const rating = projectRatings[project.id] ?? project.score ?? 0;
 
       return {
         ...project,
@@ -566,7 +525,7 @@ export async function searchDiscovery(
     .filter((project) => {
       // Facet + text filters (status, kind, skills, hasMedia, q) run in SQL via
       // search_projects. Only the composite-rating range is applied here,
-      // because that rating is computed in JS to match the homepage leaderboard.
+      // because that rating comes from the leaderboard map (not the SQL score).
       if (typeof minScore === "number" && (project.score ?? 0) < minScore) {
         return false;
       }

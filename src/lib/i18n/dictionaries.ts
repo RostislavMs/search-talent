@@ -484,7 +484,7 @@ export const dictionaries = {
       cards: {
         eyebrow: "Live now",
         topTalent: {
-          label: "Top talent",
+          label: "Trending creator",
           cta: "View profile",
           fallback: "Be the first to climb the leaderboard.",
         },
@@ -520,7 +520,7 @@ export const dictionaries = {
       topProjectsDescription:
         "Ranked by community votes, completeness, media quality, and recent activity — not just a like counter.",
       allTime: "All time",
-      thisMonth: "This month",
+      thisMonth: "Last 30 days",
       leaderboardScore: "rating",
       leaderboardEmpty:
         "There is not enough signal yet to build this leaderboard.",
@@ -548,7 +548,7 @@ export const dictionaries = {
         momentum: {
           title: "Recent momentum",
           description:
-            "Monthly boards highlight fresh uploads, new votes, and current traction.",
+            "The last-30-days board highlights fresh uploads, new votes, and current traction.",
         },
       },
     },
@@ -2726,7 +2726,7 @@ export const dictionaries = {
       cards: {
         eyebrow: "Зараз у спільноті",
         topTalent: {
-          label: "Топ-творець",
+          label: "Трендовий творець",
           cta: "Дивитись профіль",
           fallback: "Стань першим у рейтингу.",
         },
@@ -2762,7 +2762,7 @@ export const dictionaries = {
       topProjectsDescription:
         "У топі опиняються проєкти, які добре оформлені, мають сильну подачу й викликають помітний інтерес аудиторії.",
       allTime: "За весь час",
-      thisMonth: "За місяць",
+      thisMonth: "Останні 30 днів",
       leaderboardScore: "рейтинг",
       leaderboardEmpty:
         "Поки недостатньо сигналів, щоб побудувати цей лідерборд.",
@@ -2790,7 +2790,7 @@ export const dictionaries = {
         momentum: {
           title: "Свіжий імпульс",
           description:
-            "Місячний топ підсвічує нові завантаження, нові голоси та актуальний інтерес аудиторії.",
+            "Топ за 30 днів підсвічує нові завантаження, нові голоси та актуальний інтерес аудиторії.",
         },
       },
     },
