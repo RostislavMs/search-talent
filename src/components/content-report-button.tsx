@@ -20,13 +20,38 @@ type ContentReportButtonProps = {
   targetType: ReportTargetType;
   targetId: string;
   isAuthenticated: boolean;
+  /**
+   * When true, the trigger is rendered as a compact flag icon (no text label)
+   * — used by the minimized community-rating row. The report modal itself is
+   * unchanged.
+   */
+  iconOnly?: boolean;
 };
+
+function FlagIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path d="M4 21V4" />
+      <path d="M4 4h11l-1.6 3.5L15 11H4" />
+    </svg>
+  );
+}
 
 export default function ContentReportButton({
   copy,
   targetType,
   targetId,
   isAuthenticated,
+  iconOnly = false,
 }: ContentReportButtonProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -38,7 +63,22 @@ export default function ContentReportButton({
 
   const reportCopy = copy.report;
 
+  const triggerLabel =
+    targetType === "project" ? reportCopy.buttonProject : reportCopy.buttonProfile;
+
   if (!isAuthenticated) {
+    if (iconOnly) {
+      return (
+        <LocalizedLink
+          href="/login"
+          aria-label={triggerLabel}
+          title={triggerLabel}
+          className={buttonStyles({ variant: "ghost", size: "sm" })}
+        >
+          <FlagIcon />
+        </LocalizedLink>
+      );
+    }
     return (
       <LocalizedLink
         href="/login"
@@ -75,11 +115,21 @@ export default function ContentReportButton({
 
   return (
     <>
-      <Button variant="ghost" size="sm" onClick={() => setIsOpen(true)}>
-        {targetType === "project"
-          ? reportCopy.buttonProject
-          : reportCopy.buttonProfile}
-      </Button>
+      {iconOnly ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsOpen(true)}
+          aria-label={triggerLabel}
+          title={triggerLabel}
+        >
+          <FlagIcon />
+        </Button>
+      ) : (
+        <Button variant="ghost" size="sm" onClick={() => setIsOpen(true)}>
+          {triggerLabel}
+        </Button>
+      )}
 
       {isOpen && (
         <div className="fixed inset-0 z-[70] flex items-end bg-black/45 px-4 py-4 sm:items-center sm:px-6">

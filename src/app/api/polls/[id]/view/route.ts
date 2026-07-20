@@ -29,9 +29,11 @@ export async function POST(
     return NextResponse.json({ error: "Poll not found" }, { status: 404 });
   }
 
-  // Atomic, RLS-safe increment via SECURITY DEFINER RPC — anon viewers never
-  // write to the polls table directly.
-  const { data: viewsCount, error } = await supabase.rpc("increment_poll_views", {
+  // One view per authenticated user: the SECURITY DEFINER RPC dedupes via the
+  // poll_views table and bumps the denormalized counter only on a viewer's
+  // first view. Anonymous viewers are not counted; author self-views are
+  // filtered out client-side.
+  const { data: viewsCount, error } = await supabase.rpc("record_poll_view", {
     p_poll_id: id,
   });
 

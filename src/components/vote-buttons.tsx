@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import ContentReportButton from "@/components/content-report-button";
 import { Button } from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api-client";
@@ -14,6 +14,7 @@ type VoteButtonsProps = {
   initialVote: VoteValue;
   initialLikes: number;
   initialDislikes: number;
+  initialViews: number;
   isAuthenticated: boolean;
   isOwner: boolean;
 };
@@ -53,11 +54,56 @@ function getOptimisticVoteState(state: VoteState, nextValue: 1 | -1): VoteState 
   };
 }
 
+function ThumbUpIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="h-4 w-4 shrink-0"
+      aria-hidden="true"
+    >
+      <path d="M2 21h2.5a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H2v10Zm5.5-10.5 4.2-7a1.4 1.4 0 0 1 2.6.7V8h5.1a1.7 1.7 0 0 1 1.7 2l-1.3 8.2a2 2 0 0 1-2 1.7H7.5V10.5Z" />
+    </svg>
+  );
+}
+
+function ThumbDownIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="h-4 w-4 shrink-0"
+      aria-hidden="true"
+    >
+      <path d="M22 3h-2.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1H22V3Zm-5.5 10.5-4.2 7a1.4 1.4 0 0 1-2.6-.7V16H4.6a1.7 1.7 0 0 1-1.7-2l1.3-8.2a2 2 0 0 1 2-1.7h10.3v9.4Z" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4 shrink-0"
+      aria-hidden="true"
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 export default function VoteButtons({
   projectId,
   initialVote,
   initialLikes,
   initialDislikes,
+  initialViews,
   isAuthenticated,
   isOwner,
 }: VoteButtonsProps) {
@@ -67,11 +113,30 @@ export default function VoteButtons({
   const router = useLocalizedRouter();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [views, setViews] = useState(initialViews);
   const [voteState, setVoteState] = useState<VoteState>({
     likes: initialLikes,
     dislikes: initialDislikes,
     currentVote: initialVote,
   });
+
+  // Record one view per authenticated user (server dedupes via project_views).
+  // The owner's own visits and anonymous visitors are never counted; the
+  // localStorage flag just avoids re-POSTing on every navigation in a session.
+  useEffect(() => {
+    if (!isAuthenticated || isOwner) return;
+    const storageKey = `project-viewed:${projectId}`;
+    if (window.localStorage.getItem(storageKey)) return;
+    void apiFetch<{ viewsCount?: number | null }>(
+      `/api/projects/${projectId}/view`,
+      { method: "POST" },
+    ).then((result) => {
+      if (result.ok && typeof result.data.viewsCount === "number") {
+        setViews(result.data.viewsCount);
+        window.localStorage.setItem(storageKey, "1");
+      }
+    });
+  }, [projectId, isAuthenticated, isOwner]);
 
   const vote = async (value: 1 | -1) => {
     if (!isAuthenticated) {
@@ -122,86 +187,86 @@ export default function VoteButtons({
   };
 
   return (
-    <section className="rounded-panel app-panel p-5">
-      <div>
-        <h2 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
-          {dictionary.projectPage.community}
-        </h2>
-        <p className="mt-1 text-sm app-muted">
-          {voteState.likes} {dictionary.projectPage.likes} / {voteState.dislikes}{" "}
-          {dictionary.projectPage.dislikes}
-        </p>
-      </div>
+    <section className="rounded-panel app-panel p-4">
+      <h2 className="font-display text-sm font-semibold tracking-tight text-[color:var(--foreground)]">
+        {dictionary.projectPage.community}
+      </h2>
 
       {isOwner ? (
-        <p className="mt-3 text-sm app-muted">
-          {dictionary.projectPage.ownerVoteHint}
-        </p>
+        <>
+          <div className="mt-3 flex items-center gap-2 text-sm app-muted">
+            <span className="inline-flex items-center gap-1.5 rounded-full border app-border bg-[color:var(--surface)] px-3 py-1.5">
+              <ThumbUpIcon />
+              <span className="tabular-nums">{voteState.likes}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border app-border bg-[color:var(--surface)] px-3 py-1.5">
+              <ThumbDownIcon />
+              <span className="tabular-nums">{voteState.dislikes}</span>
+            </span>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border app-border bg-[color:var(--surface)] px-3 py-1.5"
+              title={dictionary.projectPage.views}
+              aria-label={`${dictionary.projectPage.views}: ${views}`}
+            >
+              <EyeIcon />
+              <span className="tabular-nums">{views}</span>
+            </span>
+          </div>
+          <p className="mt-2 text-xs app-muted">
+            {dictionary.projectPage.ownerVoteHint}
+          </p>
+        </>
       ) : (
         <>
-          <div className="mt-4 flex flex-wrap gap-2 sm:gap-3">
+          <div className="mt-3 flex items-center gap-2">
             <Button
               onClick={() => vote(1)}
               disabled={loading}
               variant={voteState.currentVote === 1 ? "primary" : "secondary"}
+              size="sm"
               aria-pressed={voteState.currentVote === 1}
               aria-label={`${dictionary.projectPage.likeProject} (${voteState.likes})`}
               className="gap-1.5"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="h-4 w-4 shrink-0"
-                aria-hidden="true"
-              >
-                <path d="M2 21h2.5a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H2v10Zm5.5-10.5 4.2-7a1.4 1.4 0 0 1 2.6.7V8h5.1a1.7 1.7 0 0 1 1.7 2l-1.3 8.2a2 2 0 0 1-2 1.7H7.5V10.5Z" />
-              </svg>
-              <span className="hidden sm:inline">
-                {dictionary.projectPage.likeProject}{" "}
-              </span>
-              ({voteState.likes})
+              <ThumbUpIcon />
+              <span className="tabular-nums">{voteState.likes}</span>
             </Button>
 
             <Button
               onClick={() => vote(-1)}
               disabled={loading}
               variant={voteState.currentVote === -1 ? "primary" : "ghost"}
+              size="sm"
               aria-pressed={voteState.currentVote === -1}
               aria-label={`${dictionary.projectPage.dislikeProject} (${voteState.dislikes})`}
               className="gap-1.5"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="h-4 w-4 shrink-0"
-                aria-hidden="true"
-              >
-                <path d="M22 3h-2.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1H22V3Zm-5.5 10.5-4.2 7a1.4 1.4 0 0 1-2.6-.7V16H4.6a1.7 1.7 0 0 1-1.7-2l1.3-8.2a2 2 0 0 1 2-1.7h10.3v9.4Z" />
-              </svg>
-              <span className="hidden sm:inline">
-                {dictionary.projectPage.dislikeProject}{" "}
-              </span>
-              ({voteState.dislikes})
+              <ThumbDownIcon />
+              <span className="tabular-nums">{voteState.dislikes}</span>
             </Button>
 
-            <ContentReportButton
-              copy={moderationCopy}
-              targetType="project"
-              targetId={projectId}
-              isAuthenticated={isAuthenticated}
-            />
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border app-border bg-[color:var(--surface)] px-3 py-2 text-sm app-muted"
+              title={dictionary.projectPage.views}
+              aria-label={`${dictionary.projectPage.views}: ${views}`}
+            >
+              <EyeIcon />
+              <span className="tabular-nums">{views}</span>
+            </span>
+
+            <div className="ml-auto flex">
+              <ContentReportButton
+                copy={moderationCopy}
+                targetType="project"
+                targetId={projectId}
+                isAuthenticated={isAuthenticated}
+                iconOnly
+              />
+            </div>
           </div>
 
-          <p className="mt-3 text-sm app-muted">
-            {voteState.currentVote === 1
-              ? dictionary.projectPage.voteStateLiked
-              : voteState.currentVote === -1
-                ? dictionary.projectPage.voteStateDisliked
-                : dictionary.projectPage.voteStateIdle}
-          </p>
-
           {errorMessage && (
-            <p className="mt-3 text-sm text-rose-500" role="alert">
+            <p className="mt-2 text-sm text-rose-500" role="alert">
               {errorMessage}
             </p>
           )}

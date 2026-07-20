@@ -459,23 +459,30 @@ export default function ArticleInteractions({
   const [submittingLike, setSubmittingLike] = useState(false);
   const totalCommentCount = countComments(comments);
 
+  // One view per authenticated user (server dedupes via article_views). The
+  // author's own visits and anonymous readers are never counted; localStorage
+  // just avoids re-POSTing on every navigation within a session.
   useEffect(() => {
+    if (!isAuthenticated || (ownerUserId && viewerUserId === ownerUserId)) {
+      return;
+    }
+
     const storageKey = `article-viewed:${articleId}`;
 
     if (window.localStorage.getItem(storageKey)) {
       return;
     }
 
-    void apiFetch<{ viewsCount?: number }>(
+    void apiFetch<{ viewsCount?: number | null }>(
       `/api/articles/${articleId}/view`,
       { method: "POST" },
     ).then((result) => {
-      if (result.ok && result.data.viewsCount) {
+      if (result.ok && typeof result.data.viewsCount === "number") {
         setViewsCount(result.data.viewsCount);
         window.localStorage.setItem(storageKey, "1");
       }
     });
-  }, [articleId]);
+  }, [articleId, isAuthenticated, viewerUserId, ownerUserId]);
 
   const toggleLike = async () => {
     if (!isAuthenticated) {

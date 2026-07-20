@@ -29,6 +29,7 @@ import {
 import type { ContentAuthor } from "@/lib/co-authors";
 import { getProfileVoteSummary } from "@/lib/db/profile-votes";
 import { getProjectVoteSummary } from "@/lib/db/project-votes";
+import { getProjectViewsCount } from "@/lib/db/project-views";
 import { getCreatorRatings, getProjectRatings } from "@/lib/db/leaderboards";
 import {
   applyViewerCustomizationPreference,
@@ -152,6 +153,8 @@ export type PublicProjectPageData = {
   // Composite project rating (0-100) — same value as the homepage / search.
   // Null when the project is not ranked yet (falls back to net votes in the UI).
   rating: number | null;
+  /** Denormalized per-user view count (0 until the views migration is applied). */
+  viewsCount: number;
   isAuthenticated: boolean;
   isOwner: boolean;
   isBookmarked: boolean;
@@ -282,8 +285,14 @@ export async function getPublicProjectPageData(
     return null;
   }
 
-  const [ownerResponse, skillsResponse, mediaResponse, voteSummary, bookmarkResponse] =
-    await Promise.all([
+  const [
+    ownerResponse,
+    skillsResponse,
+    mediaResponse,
+    voteSummary,
+    viewsCount,
+    bookmarkResponse,
+  ] = await Promise.all([
       supabase
         .from("profiles")
         .select(
@@ -311,6 +320,7 @@ export async function getPublicProjectPageData(
         .order("sort_index", { ascending: true })
         .order("created_at", { ascending: true }),
       getProjectVoteSummary(supabase, typedProject.id, user?.id),
+      getProjectViewsCount(supabase, typedProject.id),
       user
         ? supabase
             .from("bookmarks")
@@ -387,6 +397,7 @@ export async function getPublicProjectPageData(
     ),
     voteSummary,
     rating: projectRatings[typedProject.id] ?? null,
+    viewsCount,
     isAuthenticated: Boolean(user),
     isOwner,
     isBookmarked: Boolean(bookmarkResponse.data),
