@@ -209,6 +209,13 @@ export default function CoverCropEditor({
     }
   };
 
+  // objectUrl is only ever a blob: URL we minted from the picked File via
+  // URL.createObjectURL — never remote or user-authored text. Gating the scheme
+  // makes that invariant explicit so a hostile string could never reach the
+  // <img> src, even if the state were somehow set elsewhere.
+  const previewSrc =
+    objectUrl && objectUrl.startsWith("blob:") ? objectUrl : undefined;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
@@ -267,10 +274,10 @@ export default function CoverCropEditor({
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
           >
-            {objectUrl ? (
+            {previewSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={objectUrl}
+                src={previewSrc}
                 alt=""
                 draggable={false}
                 className="pointer-events-none absolute max-w-none select-none"
