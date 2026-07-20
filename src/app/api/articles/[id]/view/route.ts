@@ -26,11 +26,11 @@ export async function POST(
     return NextResponse.json({ error: "Article not found" }, { status: 404 });
   }
 
-  // Atomic, RLS-safe increment. Anonymous viewers can no longer write to the articles
-  // table directly (articles_update_compat is now author/admin only), so the count is
-  // bumped through a SECURITY DEFINER RPC that only ever touches views_count on a
-  // publicly visible article. This also fixes the previous lost-update race.
-  const { data: viewsCount, error } = await supabase.rpc("increment_article_views", {
+  // One view per authenticated user: the SECURITY DEFINER RPC dedupes via the
+  // article_views table and bumps the denormalized counter only on a viewer's
+  // first view. Anonymous viewers are not counted (the RPC echoes the current
+  // total for them). Author self-views are filtered out client-side.
+  const { data: viewsCount, error } = await supabase.rpc("record_article_view", {
     p_article_id: id,
   });
 

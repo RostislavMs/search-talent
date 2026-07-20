@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useDictionary } from "@/lib/i18n/client";
 import {
   detectVideoEmbed,
@@ -141,15 +141,18 @@ function GalleryItem({
   const isPortrait = aspectRatio < PORTRAIT_THRESHOLD;
 
   // The <article> owns the sizing box; tiles fill it (absolute inset-0).
-  //  - single: centered hero, capped width (narrower for portrait).
+  //  - single: centered hero. Width is capped by BOTH a max width and the
+  //    viewport height (via aspect ratio) so a tall/square single item can
+  //    never grow past the fold — the old width-only cap let portrait/near-
+  //    square images overflow the screen vertically.
   //  - duo: fills its grid cell (portrait capped + centered).
   //  - rows: full width on mobile (stacked), fixed height on sm+ so mixed
   //    portrait/landscape items line up as even, justified rows.
   let sizeClass: string;
+  const sizeStyle: CSSProperties = { aspectRatio };
   if (layout === "single") {
-    sizeClass = isPortrait
-      ? "mx-auto w-full max-w-88"
-      : "mx-auto w-full max-w-3xl";
+    sizeClass = "mx-auto";
+    sizeStyle.width = `min(100%, 48rem, calc(72vh * ${aspectRatio.toFixed(4)}))`;
   } else if (layout === "duo") {
     sizeClass = isPortrait ? "mx-auto w-full max-w-88" : "w-full";
   } else {
@@ -162,7 +165,7 @@ function GalleryItem({
   return (
     <article
       className={`relative overflow-hidden rounded-panel border app-border ${surface} ${sizeClass}`}
-      style={{ aspectRatio }}
+      style={sizeStyle}
     >
       {embed ? (
         <button

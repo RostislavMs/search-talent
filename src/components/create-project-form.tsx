@@ -94,6 +94,7 @@ import {
   WritingDetailsFields,
 } from "@/components/project-form/kind-fields";
 import VideoCoverPicker from "@/components/project-form/video-cover-picker";
+import CoverCropEditor from "@/components/project-form/cover-crop-editor";
 import { blobToFile, captureVideoPoster } from "@/lib/video-poster";
 import { toPlainText } from "@/lib/plain-text";
 
@@ -398,6 +399,8 @@ export default function CreateProjectForm({
   );
   const [linkInput, setLinkInput] = useState("");
   const [coverPickerFile, setCoverPickerFile] = useState<File | null>(null);
+  // A freshly-picked cover image waiting to be framed in the crop editor.
+  const [coverEditorFile, setCoverEditorFile] = useState<File | null>(null);
   const [pendingCover, setPendingCover] = useState<PendingCover | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -758,14 +761,12 @@ export default function CreateProjectForm({
     });
   }, []);
 
-  const addCoverFrame = useCallback(
-    (blob: Blob) => {
-      setCoverPickerFile(null);
-      setCoverImage(blobToFile(blob, `cover-${crypto.randomUUID()}.webp`));
-      toast.success(dictionary.forms.mediaCoverFrameAdded);
-    },
-    [dictionary.forms.mediaCoverFrameAdded, setCoverImage, toast],
-  );
+  const addCoverFrame = useCallback((blob: Blob) => {
+    setCoverPickerFile(null);
+    // A frame captured from a clip is framed in the crop editor before it
+    // becomes the pending cover — same flow as a manually uploaded image.
+    setCoverEditorFile(blobToFile(blob, `cover-${crypto.randomUUID()}.webp`));
+  }, []);
 
   const moveMediaItem = useCallback((fromIndex: number, toIndex: number) => {
     setMediaItems((prev) => {
@@ -1705,6 +1706,11 @@ export default function CreateProjectForm({
             currentCoverUrl={project?.cover_url ?? null}
             pendingCover={pendingCover}
             onUploadCover={() => coverInputRef.current?.click()}
+            onEditCover={() => {
+              if (pendingCover?.kind === "file") {
+                setCoverEditorFile(pendingCover.file);
+              }
+            }}
             onClearCover={clearCover}
             allowDownloads={form.allowDownloads}
             onToggleAllowDownloads={(value) =>
@@ -1790,7 +1796,8 @@ export default function CreateProjectForm({
           const file = event.target.files?.[0];
           event.target.value = "";
           if (file) {
-            setCoverImage(file);
+            // Frame/crop before it becomes the pending cover.
+            setCoverEditorFile(file);
           }
         }}
         className="sr-only"
@@ -1803,6 +1810,18 @@ export default function CreateProjectForm({
           dictionary={dictionary}
           onCancel={() => setCoverPickerFile(null)}
           onConfirm={(blob) => void addCoverFrame(blob)}
+        />
+      ) : null}
+
+      {coverEditorFile ? (
+        <CoverCropEditor
+          file={coverEditorFile}
+          dictionary={dictionary}
+          onCancel={() => setCoverEditorFile(null)}
+          onConfirm={(cropped) => {
+            setCoverImage(cropped);
+            setCoverEditorFile(null);
+          }}
         />
       ) : null}
 
@@ -2876,6 +2895,7 @@ function StepMedia({
   currentCoverUrl,
   pendingCover,
   onUploadCover,
+  onEditCover,
   onClearCover,
   allowDownloads,
   onToggleAllowDownloads,
@@ -2895,6 +2915,7 @@ function StepMedia({
   currentCoverUrl: string | null;
   pendingCover: PendingCover | null;
   onUploadCover: () => void;
+  onEditCover: () => void;
   onClearCover: () => void;
   allowDownloads: boolean;
   onToggleAllowDownloads: (value: boolean) => void;
@@ -2909,6 +2930,10 @@ function StepMedia({
       : pendingCover?.kind === "clear"
         ? null
         : currentCoverUrl;
+  // Only a pending local file can be re-framed in the crop editor — a saved
+  // remote cover would taint the export canvas (cross-origin). This is what
+  // makes an auto-generated video poster editable.
+  const canEditCover = pendingCover?.kind === "file";
 
   return (
     <div className="space-y-5">
@@ -2932,6 +2957,11 @@ function StepMedia({
                 ? dictionary.forms.coverReplaceButton
                 : dictionary.forms.coverUploadButton}
             </Button>
+            {canEditCover ? (
+              <Button type="button" variant="ghost" onClick={onEditCover}>
+                {dictionary.forms.coverEditButton}
+              </Button>
+            ) : null}
             {coverPreview ? (
               <Button type="button" variant="ghost" onClick={onClearCover}>
                 {dictionary.forms.coverRemoveButton}
@@ -2939,16 +2969,18 @@ function StepMedia({
             ) : null}
           </div>
         </div>
-        <div className="relative mt-4 aspect-[16/10] w-full max-w-md overflow-hidden rounded-2xl bg-[color:var(--surface-muted)]">
+        <div className="mt-4 flex min-h-[8rem] w-full max-w-md items-center justify-center overflow-hidden rounded-2xl bg-[color:var(--surface-muted)]">
           {coverPreview ? (
+            // Shown at the cover's real aspect so the author sees exactly what
+            // they framed (portrait / square / landscape), not a re-cropped box.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={coverPreview}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover"
+              className="max-h-64 w-full object-contain"
             />
           ) : (
-            <div className="flex h-full items-center justify-center px-6 text-center text-sm app-muted">
+            <div className="flex h-32 items-center justify-center px-6 text-center text-sm app-muted">
               {dictionary.forms.coverAutoHint}
             </div>
           )}
