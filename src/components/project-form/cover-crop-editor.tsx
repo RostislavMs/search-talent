@@ -46,9 +46,9 @@ export default function CoverCropEditor({
 
   const stageWrapRef = useRef<HTMLDivElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [avail, setAvail] = useState<{ w: number; h: number }>({
     w: 320,
@@ -59,10 +59,11 @@ export default function CoverCropEditor({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
 
-  // Load the picked file once; keep the decoded element around for export.
+  // Decode the picked file into an off-DOM <img> we keep for both the preview
+  // and the export. The object URL is only ever assigned to this detached image
+  // and revoked on cleanup — it is never bound to a DOM element attribute.
   useEffect(() => {
     const url = URL.createObjectURL(file);
-    setObjectUrl(url);
     const img = new Image();
     img.onload = () => {
       imgRef.current = img;
@@ -71,6 +72,26 @@ export default function CoverCropEditor({
     img.src = url;
     return () => URL.revokeObjectURL(url);
   }, [file]);
+
+  // Paint the decoded image into the preview canvas. Using a canvas (instead of
+  // an <img src>) keeps the picked file out of any DOM URL/HTML attribute; the
+  // canvas is then positioned/scaled with CSS just like an image would be. The
+  // intrinsic size is capped so a huge photo doesn't allocate a giant bitmap.
+  useEffect(() => {
+    const img = imgRef.current;
+    const canvas = canvasRef.current;
+    if (!img || !canvas || !natural) return;
+
+    const MAX_PREVIEW = 1280;
+    const scale = Math.min(1, MAX_PREVIEW / Math.max(natural.w, natural.h));
+    canvas.width = Math.max(1, Math.round(natural.w * scale));
+    canvas.height = Math.max(1, Math.round(natural.h * scale));
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  }, [natural]);
 
   // Track the space available to the stage so the frame scales to the modal.
   useEffect(() => {
@@ -209,13 +230,6 @@ export default function CoverCropEditor({
     }
   };
 
-  // objectUrl is only ever a blob: URL we minted from the picked File via
-  // URL.createObjectURL — never remote or user-authored text. Gating the scheme
-  // makes that invariant explicit so a hostile string could never reach the
-  // <img> src, even if the state were somehow set elsewhere.
-  const previewSrc =
-    objectUrl && objectUrl.startsWith("blob:") ? objectUrl : undefined;
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
@@ -274,13 +288,10 @@ export default function CoverCropEditor({
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
           >
-            {previewSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={previewSrc}
-                alt=""
-                draggable={false}
-                className="pointer-events-none absolute max-w-none select-none"
+            {natural ? (
+              <canvas
+                ref={canvasRef}
+                className="pointer-events-none absolute select-none"
                 style={{
                   left: STAGE_MARGIN + offset.x,
                   top: STAGE_MARGIN + offset.y,
