@@ -104,27 +104,34 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="mx-auto max-w-md px-4 py-16">
-      <section className="rounded-hero app-card p-8">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] app-soft">
+    <main className="mx-auto max-w-md px-0 py-0 sm:px-4 sm:py-16">
+      <section className="rounded-none sm:rounded-hero app-card px-4 py-6 sm:p-8">
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
             {dictionary.auth.login.eyebrow}
           </p>
-          <ButtonLink href="/" variant="ghost" size="sm">
+          <ButtonLink
+            href="/"
+            variant="ghost"
+            size="sm"
+            className="shrink-0 whitespace-nowrap"
+          >
             {dictionary.auth.home}
           </ButtonLink>
         </div>
 
-        <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+        <h1 className="font-display mt-3 text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:mt-4 sm:text-3xl">
           {dictionary.auth.login.title}
         </h1>
 
-        <p className="mt-3 app-muted">{dictionary.auth.login.description}</p>
+        <p className="mt-3 text-sm leading-6 app-muted sm:text-base">
+          {dictionary.auth.login.description}
+        </p>
 
         <form
           onSubmit={handleLogin}
           noValidate
-          className="mt-8 flex flex-col gap-4"
+          className="mt-6 flex flex-col gap-4 sm:mt-8"
         >
           <div className="flex flex-col gap-2">
             <label

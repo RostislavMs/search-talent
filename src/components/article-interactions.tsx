@@ -578,8 +578,8 @@ export default function ArticleInteractions({
           </h2>
           <p className="mt-2 text-sm app-muted">
             {locale === "uk"
-              ? "Можна залишати коментарі та відповідати в треді."
-              : "Leave a comment and reply in threads."}
+              ? "Діліться думками та відповідайте на коментарі інших."
+              : "Share your thoughts and reply to other comments."}
           </p>
         </div>
 

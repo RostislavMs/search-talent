@@ -699,26 +699,26 @@ export default function SiteHeader({
                     </div>
 
                     {viewer ? null : (
-                      <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="mt-2 grid grid-cols-1 gap-2">
+                        <LocalizedLink
+                          href="/signup"
+                          onClick={() => setNavOpen(false)}
+                          className={buttonStyles({
+                            className: "w-full justify-center whitespace-nowrap",
+                          })}
+                        >
+                          {dictionary.nav.signup}
+                        </LocalizedLink>
+
                         <LocalizedLink
                           href="/login"
                           onClick={() => setNavOpen(false)}
                           className={buttonStyles({
                             variant: "secondary",
-                            className: "justify-center",
+                            className: "w-full justify-center whitespace-nowrap",
                           })}
                         >
                           {dictionary.nav.login}
-                        </LocalizedLink>
-
-                        <LocalizedLink
-                          href="/signup"
-                          onClick={() => setNavOpen(false)}
-                          className={buttonStyles({
-                            className: "justify-center",
-                          })}
-                        >
-                          {dictionary.nav.signup}
                         </LocalizedLink>
                       </div>
                     )}

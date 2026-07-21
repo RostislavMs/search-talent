@@ -594,7 +594,7 @@ export default function RichTextComposer({
 
   /* ---- toolbar actions ---- */
   const applyBlock = useCallback(
-    (tag: "P" | "H3" | "BLOCKQUOTE") => {
+    (tag: "P" | "H2" | "BLOCKQUOTE") => {
       exec("formatBlock", tag);
       setBlocksOpen(false);
     },
@@ -700,7 +700,7 @@ export default function RichTextComposer({
 
       const block = findEnclosingBlock(sel.anchorNode, el, [
         "BLOCKQUOTE",
-        "H3",
+        "H2",
       ]);
       if (!block) return false;
 
@@ -902,7 +902,7 @@ export default function RichTextComposer({
 
       const block = findEnclosingBlock(sel.anchorNode, el, [
         "P",
-        "H3",
+        "H2",
         "BLOCKQUOTE",
       ]);
       if (!block) return false;
@@ -1156,7 +1156,7 @@ export default function RichTextComposer({
                           <span className="w-6 text-center text-base text-[color:var(--muted-foreground)]">¶</span>
                           {ui.paragraph}
                         </button>
-                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H3")}>
+                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H2")}>
                           <span className="w-6 text-center text-sm font-bold text-[color:var(--muted-foreground)]">H</span>
                           {ui.heading}
                         </button>

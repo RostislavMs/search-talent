@@ -175,13 +175,14 @@ export default function ProfileVoteButtons({
         </p>
       ) : (
         <>
-          <div className="mt-4 flex flex-wrap gap-2 sm:gap-3">
+          <div className="mt-3 flex items-center gap-2">
             <Button
               onClick={() => vote(1)}
               disabled={loading}
               variant={voteState.currentVote === 1 ? "primary" : "secondary"}
               aria-pressed={voteState.currentVote === 1}
               aria-label={`${dictionary.creatorProfile.rateProfileUp} (${voteState.likes})`}
+              title={dictionary.creatorProfile.rateProfileUp}
               className="gap-1.5"
             >
               <svg
@@ -192,10 +193,7 @@ export default function ProfileVoteButtons({
               >
                 <path d="M2 21h2.5a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H2v10Zm5.5-10.5 4.2-7a1.4 1.4 0 0 1 2.6.7V8h5.1a1.7 1.7 0 0 1 1.7 2l-1.3 8.2a2 2 0 0 1-2 1.7H7.5V10.5Z" />
               </svg>
-              <span className="hidden sm:inline">
-                {dictionary.creatorProfile.rateProfileUp}{" "}
-              </span>
-              ({voteState.likes})
+              {voteState.likes}
             </Button>
 
             <Button
@@ -204,6 +202,7 @@ export default function ProfileVoteButtons({
               variant={voteState.currentVote === -1 ? "primary" : "ghost"}
               aria-pressed={voteState.currentVote === -1}
               aria-label={`${dictionary.creatorProfile.rateProfileDown} (${voteState.dislikes})`}
+              title={dictionary.creatorProfile.rateProfileDown}
               className="gap-1.5"
             >
               <svg
@@ -214,27 +213,19 @@ export default function ProfileVoteButtons({
               >
                 <path d="M22 3h-2.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1H22V3Zm-5.5 10.5-4.2 7a1.4 1.4 0 0 1-2.6-.7V16H4.6a1.7 1.7 0 0 1-1.7-2l1.3-8.2a2 2 0 0 1 2-1.7h10.3v9.4Z" />
               </svg>
-              <span className="hidden sm:inline">
-                {dictionary.creatorProfile.rateProfileDown}{" "}
-              </span>
-              ({voteState.dislikes})
+              {voteState.dislikes}
             </Button>
 
-            <ContentReportButton
-              copy={moderationCopy}
-              targetType="profile"
-              targetId={profileId}
-              isAuthenticated={isAuthenticated}
-            />
+            <div className="ml-auto">
+              <ContentReportButton
+                copy={moderationCopy}
+                targetType="profile"
+                targetId={profileId}
+                isAuthenticated={isAuthenticated}
+                iconOnly
+              />
+            </div>
           </div>
-
-          <p className="mt-3 text-sm app-muted">
-            {voteState.currentVote === 1
-              ? dictionary.creatorProfile.ratingStateLiked
-              : voteState.currentVote === -1
-                ? dictionary.creatorProfile.ratingStateDisliked
-                : dictionary.creatorProfile.ratingStateIdle}
-          </p>
 
           {errorMessage && (
             <p className="mt-3 text-sm text-rose-500" role="alert">

@@ -523,6 +523,10 @@ export default function PublicProfileShowcase({
             </div>
           </section>
 
+          <div className="xl:hidden">
+            <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} rating={profileRating} isAuthenticated={isAuthenticated} isOwner={isOwner} className="mt-4 rounded-panel bg-[color:var(--surface-muted)] p-4 sm:mt-6 sm:p-5" />
+          </div>
+
           {profile.username ? (
             <div className="mt-4 sm:mt-6">
               <ProfileAiSummaryPublic
@@ -531,10 +535,6 @@ export default function PublicProfileShowcase({
               />
             </div>
           ) : null}
-
-          <div className="xl:hidden">
-            <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} rating={profileRating} isAuthenticated={isAuthenticated} isOwner={isOwner} className="mt-4 rounded-panel bg-[color:var(--surface-muted)] p-5 sm:mt-6" />
-          </div>
 
           <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-12">
             {visibleSections.map((section) => (
