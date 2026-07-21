@@ -105,15 +105,17 @@ export default async function PollsPage({
           empty: ui.empty,
         }}
       >
-        <div className="p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-eyebrow text-[color:var(--brand-strong)]">
+        <div className="p-4 sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
             {ui.eyebrow}
           </p>
-          <h1 className="font-display mt-4 text-4xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-5xl">
+          <h1 className="font-display mt-2 text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:mt-4 sm:text-5xl">
             {ui.title}
           </h1>
-          <p className="mt-5 max-w-3xl text-base leading-8 app-muted">{ui.description}</p>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <p className="mt-3 max-w-3xl text-sm leading-6 app-muted sm:mt-5 sm:text-base sm:leading-8">
+            {ui.description}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3 sm:mt-6">
             <ButtonLink href="/polls/new" className="w-full sm:w-auto">
               {ui.createPoll}
             </ButtonLink>

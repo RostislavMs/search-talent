@@ -41,8 +41,8 @@ describe("normalizeRichTextForEditor (editor DOM path)", () => {
   });
 
   it("strips a trailing filler <br> left inside a heading", () => {
-    expect(normalizeRichTextForEditor("<h3>Heading<br></h3>")).toBe(
-      "<h3>Heading</h3>",
+    expect(normalizeRichTextForEditor("<h2>Heading<br></h2>")).toBe(
+      "<h2>Heading</h2>",
     );
   });
 
@@ -76,8 +76,8 @@ describe("normalizeRichTextForEditor (editor DOM path)", () => {
   });
 
   it("drops a bare <br> between blocks instead of adding a blank line", () => {
-    expect(normalizeRichTextForEditor("<h3>H</h3><br><p>b</p>")).toBe(
-      "<h3>H</h3><p>b</p>",
+    expect(normalizeRichTextForEditor("<h2>H</h2><br><p>b</p>")).toBe(
+      "<h2>H</h2><p>b</p>",
     );
   });
 

@@ -41,7 +41,7 @@ export default function ArticleTableOfContents({
       const container = document.getElementById(targetId);
       if (!container) return;
 
-      const nodes = Array.from(container.querySelectorAll<HTMLElement>("h3"));
+      const nodes = Array.from(container.querySelectorAll<HTMLElement>("h2"));
       const collected = nodes.map((node, index) => {
         const text = node.textContent?.trim() || `${index + 1}`;
         if (!node.id) {

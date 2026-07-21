@@ -11,7 +11,7 @@ const allowedTags = new Set([
   "em",
   "figure",
   "figcaption",
-  "h3",
+  "h2",
   "hr",
   "iframe",
   "img",
@@ -26,14 +26,15 @@ const allowedTags = new Set([
 const tagAliases: Record<string, string> = {
   b: "strong",
   i: "em",
-  // Collapse every heading level onto the single supported <h3>, so a heading
-  // pasted from elsewhere (e.g. a Markdown preview emits <h1>/<h2>) stays a
-  // heading instead of being flattened to plain paragraph text.
-  h1: "h3",
-  h2: "h3",
-  h4: "h3",
-  h5: "h3",
-  h6: "h3",
+  // Collapse every heading level onto the single supported <h2>, so a heading
+  // pasted from elsewhere (e.g. a Markdown preview emits <h1>/<h3>) stays a
+  // heading instead of being flattened to plain paragraph text. <h2> is the
+  // body's top section level, sitting one step below the page <h1> title.
+  h1: "h2",
+  h3: "h2",
+  h4: "h2",
+  h5: "h2",
+  h6: "h2",
 };
 
 function escapeHtml(value: string) {
@@ -56,7 +57,7 @@ function stripZeroWidth(value: string) {
 // Text blocks where a trailing <br> is browser filler, not content.
 const TEXT_BLOCK_TAGS = new Set([
   "p",
-  "h3",
+  "h2",
   "blockquote",
   "li",
   "summary",
@@ -64,7 +65,7 @@ const TEXT_BLOCK_TAGS = new Set([
 ]);
 
 // Remove a trailing <br> (with any whitespace/&nbsp; around it) that
-// contentEditable leaves at the end of a block — e.g. <h3>Title<br></h3> or
+// contentEditable leaves at the end of a block — e.g. <h2>Title<br></h2> or
 // <li>item<br></li>. Left in place it renders as a spurious empty line after the
 // block once the editor blurs and re-normalises. A lone <br> (a genuinely empty
 // line) is preserved: the caller's empty-block handling turns it into a clean
@@ -140,7 +141,7 @@ function sanitizeNode(node: Node): string {
     // blank line is a <p><br></p>, handled in the paragraph branch below.
     if (htmlIsBlank(content)) return "";
     // If content already contains block-level tags, don't wrap in <p>
-    if (/<(?:p|h3|ul|ol|li|blockquote|figure|iframe)[\s>]/i.test(content)) {
+    if (/<(?:p|h2|ul|ol|li|blockquote|figure|iframe)[\s>]/i.test(content)) {
       return content;
     }
     return `<p>${content}</p>`;
@@ -259,7 +260,7 @@ const ALLOWED_TAGS = [
   "em",
   "figure",
   "figcaption",
-  "h3",
+  "h2",
   "hr",
   "iframe",
   "img",
@@ -272,11 +273,13 @@ const ALLOWED_TAGS = [
   "ul",
 ];
 
-// Collapse unsupported heading levels onto the single supported <h3>. Mirrors
+// Collapse unsupported heading levels onto the single supported <h2>. Mirrors
 // the `tagAliases` map used by the DOM-walking editor normaliser so the string
-// (server / render / paste) path keeps pasted <h1>/<h2> headings as headings.
+// (server / render / paste) path keeps pasted <h1>/<h3> headings as headings.
+// This also promotes legacy stored <h3> body content to <h2> at render time, so
+// section headings sit one level under the page <h1> instead of skipping <h2>.
 function normalizeHeadingLevels(html: string): string {
-  return html.replace(/<(\/?)(?:h1|h2|h4|h5|h6)(\b[^>]*)>/gi, "<$1h3$2>");
+  return html.replace(/<(\/?)(?:h1|h3|h4|h5|h6)(\b[^>]*)>/gi, "<$1h2$2>");
 }
 
 const ALLOWED_ATTR = [
@@ -365,7 +368,16 @@ const TOP_LEVEL_BLOCKS = new Set([
   // turns it into a <p>, so treat it as a block separator rather than buffering
   // it as inline (which would nest paragraphs).
   "div",
+  // All heading levels count as blocks: the editor produces <h2>, but pasted or
+  // legacy content may carry other levels. sanitizeNode aliases them onto <h2>,
+  // but this check runs on the raw tag, so it must recognise every level or a
+  // pasted <h1>/<h3> would be buffered as inline and wrapped in a stray <p>.
+  "h1",
+  "h2",
   "h3",
+  "h4",
+  "h5",
+  "h6",
   "blockquote",
   "ul",
   "ol",

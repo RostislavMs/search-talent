@@ -71,13 +71,18 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="mx-auto max-w-md px-4 py-16">
-      <section className="rounded-hero app-card p-8">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] app-soft">
+    <main className="mx-auto max-w-md px-0 py-0 sm:px-4 sm:py-16">
+      <section className="rounded-none sm:rounded-hero app-card px-4 py-6 sm:p-8">
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
             {dictionary.auth.forgotPassword.eyebrow}
           </p>
-          <ButtonLink href="/" variant="ghost" size="sm">
+          <ButtonLink
+            href="/"
+            variant="ghost"
+            size="sm"
+            className="shrink-0 whitespace-nowrap"
+          >
             {dictionary.auth.home}
           </ButtonLink>
         </div>

@@ -41,19 +41,19 @@ export default async function VerifyPage({
   const dictionary = getDictionary(locale);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-16">
-      <section className="rounded-hero app-card p-8 sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
+    <main className="mx-auto max-w-3xl px-0 py-0 sm:px-4 sm:py-16">
+      <section className="rounded-none sm:rounded-hero app-card px-4 py-6 sm:p-10">
+        <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
           {dictionary.auth.verify.eyebrow}
         </p>
-        <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+        <h1 className="font-display mt-3 text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:mt-4 sm:text-3xl">
           {dictionary.auth.verify.title}
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-8 app-muted">
+        <p className="mt-3 max-w-2xl text-sm leading-6 app-muted sm:mt-4 sm:text-base sm:leading-8">
           {dictionary.auth.verify.description}
         </p>
 
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">
           <ButtonLink href="/login">{dictionary.auth.verify.login}</ButtonLink>
           <ButtonLink href="/my-space" variant="secondary">
             {dictionary.auth.verify.openMySpace}

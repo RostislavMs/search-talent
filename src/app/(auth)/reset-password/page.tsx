@@ -133,9 +133,9 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <main className="mx-auto max-w-md px-4 py-16">
-      <section className="rounded-hero app-card p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.25em] app-soft">
+    <main className="mx-auto max-w-md px-0 py-0 sm:px-4 sm:py-16">
+      <section className="rounded-none sm:rounded-hero app-card px-4 py-6 sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
           {dictionary.auth.resetPassword.eyebrow}
         </p>
 

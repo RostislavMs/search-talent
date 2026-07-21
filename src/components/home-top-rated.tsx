@@ -254,10 +254,10 @@ export default function HomeTopRated({
               <LocalizedLink
                 key={project.id}
                 href={buildProjectPath(project.id, project.slug)}
-                className="group rounded-2xl border app-border bg-[color:var(--surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-3"
+                className="group overflow-hidden rounded-2xl border app-border bg-[color:var(--surface)] p-0 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-3"
               >
                 <div className="flex flex-col gap-3 md:grid md:grid-cols-[12rem_minmax(0,1fr)] md:items-stretch md:gap-4">
-                  <div className="relative h-44 w-full overflow-hidden rounded-2xl border app-border bg-[color:var(--surface-muted)] sm:h-52 md:h-full md:min-h-[8.5rem]">
+                  <div className="relative h-44 w-full overflow-hidden rounded-none border-0 app-border bg-[color:var(--surface-muted)] sm:h-52 sm:rounded-2xl sm:border md:h-full md:min-h-[8.5rem]">
                     <div
                       className={`font-display absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-xs font-semibold shadow-sm ${
                         index < 3
@@ -284,7 +284,7 @@ export default function HomeTopRated({
                     )}
                   </div>
 
-                  <div className="flex min-w-0 flex-col justify-center">
+                  <div className="flex min-w-0 flex-col justify-center px-3 pb-3 sm:p-0">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="truncate text-base font-semibold text-[color:var(--foreground)]">

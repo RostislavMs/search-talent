@@ -169,18 +169,18 @@ export default function FeedFilterBrowser({
                 />
               </div>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="cursor-pointer rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-950 shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-950 shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                   {ui.apply}
                 </button>
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="cursor-pointer rounded-full border border-white/16 bg-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/16"
+                  className="inline-flex w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-full border border-white/16 bg-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/16 sm:w-auto"
                 >
                   {ui.reset}
                 </button>

@@ -125,8 +125,10 @@ export default function ArticleDetailView({
   // Only surface the table of contents when the article actually has a few
   // headings to jump between — otherwise it would reserve sidebar space for
   // nothing and narrow the reading column.
+  // Match both the current <h2> body heading and legacy stored <h3> (promoted to
+  // <h2> at render time), so the TOC still appears for older articles.
   const headingCount = article.content
-    ? (article.content.match(/<h3[\s>]/gi)?.length ?? 0)
+    ? (article.content.match(/<h[23][\s>]/gi)?.length ?? 0)
     : 0;
   const showTableOfContents = headingCount >= 2;
 

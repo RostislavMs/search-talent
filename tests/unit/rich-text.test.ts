@@ -111,25 +111,33 @@ describe("sanitizeRichTextHtml (server path)", () => {
     expect(result).toMatch(/<blockquote>/i);
   });
 
-  it("collapses unsupported heading levels onto <h3>", () => {
+  it("collapses unsupported heading levels onto <h2>", () => {
     const result = sanitizeRichTextHtml(
-      "<h1>Title</h1><h2>Section</h2><h4>Minor</h4>",
+      "<h1>Title</h1><h3>Section</h3><h4>Minor</h4>",
     );
 
     expect(result).not.toMatch(/<h1\b/i);
-    expect(result).not.toMatch(/<h2\b/i);
+    expect(result).not.toMatch(/<h3\b/i);
     expect(result).not.toMatch(/<h4\b/i);
-    expect(result.match(/<h3\b/gi)?.length).toBe(3);
+    expect(result.match(/<h2\b/gi)?.length).toBe(3);
     expect(result).toContain("Title");
     expect(result).toContain("Section");
     expect(result).toContain("Minor");
   });
 
-  it("keeps existing <h3> headings untouched", () => {
-    const result = sanitizeRichTextHtml("<h3>Kept</h3>");
+  it("keeps existing <h2> headings untouched", () => {
+    const result = sanitizeRichTextHtml("<h2>Kept</h2>");
 
-    expect(result).toMatch(/<h3\b/i);
+    expect(result).toMatch(/<h2\b/i);
     expect(result).toContain("Kept");
+  });
+
+  it("promotes legacy stored <h3> body headings to <h2>", () => {
+    const result = sanitizeRichTextHtml("<h3>Legacy section</h3>");
+
+    expect(result).toMatch(/<h2\b/i);
+    expect(result).not.toMatch(/<h3\b/i);
+    expect(result).toContain("Legacy section");
   });
 
   it("keeps <hr> dividers", () => {

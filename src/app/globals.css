@@ -578,13 +578,27 @@ select {
   margin-bottom: 0;
 }
 
-.rich-text-editor h3,
-.rich-text-renderer h3 {
-  margin: 0 0 1rem;
+.rich-text-editor h2,
+.rich-text-renderer h2 {
+  margin: 2rem 0 0.85rem;
   color: var(--rich-text-accent, var(--foreground));
-  font-size: 1.25rem;
+  font-size: 1.6rem;
   font-weight: 700;
+  line-height: 1.25;
   letter-spacing: -0.02em;
+}
+
+@media (min-width: 640px) {
+  .rich-text-editor h2,
+  .rich-text-renderer h2 {
+    font-size: 1.75rem;
+  }
+}
+
+/* No runaway gap above a heading that opens the document. */
+.rich-text-editor h2:first-child,
+.rich-text-renderer h2:first-child {
+  margin-top: 0;
 }
 
 .rich-text-editor blockquote,
