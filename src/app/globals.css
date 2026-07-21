@@ -99,11 +99,7 @@ body {
   background: transparent;
   color: var(--foreground);
   font-family:
-    var(--font-body),
-    "Segoe UI",
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+    var(--font-body), "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   font-feature-settings:
     "ss01" on,
     "cv11" on;
@@ -116,11 +112,7 @@ body {
 .font-display,
 [class~="font-display"] {
   font-family:
-    var(--font-display),
-    "Iowan Old Style",
-    "Apple Garamond",
-    Georgia,
-    serif;
+    var(--font-display), "Iowan Old Style", "Apple Garamond", Georgia, serif;
   font-feature-settings:
     "kern" on,
     "liga" on,
@@ -634,7 +626,6 @@ select {
   color: var(--foreground);
 }
 
-
 .rich-text-editor a,
 .rich-text-renderer a {
   color: var(--foreground);
@@ -842,4 +833,3 @@ select {
 ::view-transition-new(root) {
   z-index: 1;
 }
-
