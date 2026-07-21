@@ -1,4 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
+﻿import DOMPurify from "isomorphic-dompurify";
 
 export { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 
@@ -101,6 +101,203 @@ function normalizePlainTextToHtml(value: string) {
     .split(/\n{2,}/)
     .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
     .join("");
+}
+
+// Private-use sentinels wrap protected inline-code spans while the emphasis /
+// link rules run, so their contents are never touched and can't collide with
+// real text (unlike a digit-based placeholder). Removed again on restore.
+const CODE_SENTINEL_OPEN = String.fromCharCode(0xe000);
+const CODE_SENTINEL_CLOSE = String.fromCharCode(0xe001);
+
+/**
+ * Inline Markdown → HTML for a single line/segment: `code`, **bold**, *italic*
+ * and [text](url) links. Code spans are stashed first so the emphasis rules skip
+ * their contents; everything else is escaped before the (trusted) tags we emit
+ * are added. Output is always re-sanitised by the caller.
+ */
+export function inlineMarkdownToHtml(text: string): string {
+  const codes: string[] = [];
+  let out = text.replace(/`([^`]+)`/g, (_m, code: string) => {
+    codes.push(code);
+    return `${CODE_SENTINEL_OPEN}${codes.length - 1}${CODE_SENTINEL_CLOSE}`;
+  });
+  out = escapeHtml(out);
+  out = out.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+  out = out.replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
+  out = out.replace(
+    /\[([^\]]+)\]\(([^)\s]+)\)/g,
+    (_m, label: string, url: string) => `<a href="${url}">${label}</a>`,
+  );
+  out = out.replace(
+    new RegExp(`${CODE_SENTINEL_OPEN}(\\d+)${CODE_SENTINEL_CLOSE}`, "g"),
+    (_m, i: string) => `<code>${escapeHtml(codes[Number(i)] ?? "")}</code>`,
+  );
+  return out;
+}
+
+/**
+ * Block-level Markdown → HTML for pasted plain-text drafts. Covers only what the
+ * editor supports — headings (any level → <h2>), blockquotes, bullet / ordered
+ * lists, horizontal rules and blank-line paragraphs — plus inline marks. Raw HTML
+ * lines (e.g. the <details> spoiler blocks the drafts use) pass through untouched.
+ * This is NOT a security boundary: the result must be run through
+ * sanitizeRichTextHtml / normalizeRichTextForEditor before it reaches any DOM.
+ */
+export function markdownToHtml(md: string): string {
+  const lines = md.replace(/\r\n?/g, "\n").split("\n");
+  const html: string[] = [];
+  let listType: "ul" | "ol" | null = null;
+  let paragraph: string[] = [];
+  let quote: string[] = [];
+
+  const closeList = () => {
+    if (listType) {
+      html.push(`</${listType}>`);
+      listType = null;
+    }
+  };
+  const flushParagraph = () => {
+    if (paragraph.length) {
+      html.push(`<p>${inlineMarkdownToHtml(paragraph.join(" "))}</p>`);
+      paragraph = [];
+    }
+  };
+  const flushQuote = () => {
+    if (quote.length) {
+      html.push(
+        `<blockquote>${inlineMarkdownToHtml(quote.join(" "))}</blockquote>`,
+      );
+      quote = [];
+    }
+  };
+  const flushAll = () => {
+    flushParagraph();
+    flushQuote();
+    closeList();
+  };
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+
+    if (!trimmed) {
+      flushAll();
+      continue;
+    }
+    // Raw HTML line (spoilers, etc.) — emit verbatim, let the sanitiser validate.
+    if (/^<\/?[a-z][a-z0-9]*(\s|>|\/|$)/i.test(trimmed)) {
+      flushAll();
+      html.push(trimmed);
+      continue;
+    }
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      flushAll();
+      html.push("<hr>");
+      continue;
+    }
+    const heading = trimmed.match(/^#{1,6}\s+(.*)$/);
+    if (heading) {
+      flushAll();
+      html.push(`<h2>${inlineMarkdownToHtml(heading[1].trim())}</h2>`);
+      continue;
+    }
+    const bq = trimmed.match(/^>\s?(.*)$/);
+    if (bq) {
+      flushParagraph();
+      closeList();
+      quote.push(bq[1]);
+      continue;
+    }
+    // A non-quote line ends any open blockquote.
+    flushQuote();
+    const ul = trimmed.match(/^[-*+]\s+(.*)$/);
+    if (ul) {
+      flushParagraph();
+      if (listType !== "ul") {
+        closeList();
+        html.push("<ul>");
+        listType = "ul";
+      }
+      html.push(`<li>${inlineMarkdownToHtml(ul[1])}</li>`);
+      continue;
+    }
+    const ol = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (ol) {
+      flushParagraph();
+      if (listType !== "ol") {
+        closeList();
+        html.push("<ol>");
+        listType = "ol";
+      }
+      html.push(`<li>${inlineMarkdownToHtml(ol[1])}</li>`);
+      continue;
+    }
+    // Plain prose — accumulate into the current paragraph.
+    closeList();
+    paragraph.push(trimmed);
+  }
+
+  flushAll();
+  return html.join("");
+}
+
+/**
+ * Whether pasted plain text carries actual Markdown SYNTAX (heading / list /
+ * quote / rule / inline marks / a raw HTML block), as opposed to just prose. The
+ * paste handler treats this as the strong signal that the text is a Markdown
+ * source to rebuild — and prefers it over any text/html on the clipboard, because
+ * editors and "source" previews put literal `## …` on BOTH the plain-text and the
+ * HTML flavour, and only the plain text is cleanly parseable. Deliberately does
+ * NOT fire on "just multiple paragraphs": rendered sources (real <h1>/<h2> tags)
+ * carry no syntax markers, so they fall through to the HTML path instead.
+ */
+export function hasMarkdownSyntax(text: string): boolean {
+  return (
+    /(^|\n)\s{0,3}#{1,6}\s/.test(text) || // heading
+    /(^|\n)\s{0,3}[-*+]\s/.test(text) || // bullet list
+    /(^|\n)\s{0,3}\d+\.\s/.test(text) || // ordered list
+    /(^|\n)\s{0,3}>\s/.test(text) || // blockquote
+    /(^|\n)\s{0,3}(-{3,}|\*{3,}|_{3,})\s*(\n|$)/.test(text) || // rule
+    /<(?:details|summary|h[1-6]|ul|ol|blockquote)\b/i.test(text) || // raw HTML block
+    /\*\*[^*\n]+\*\*/.test(text) || // bold
+    /`[^`\n]+`/.test(text) || // inline code
+    /\[[^\]\n]+\]\([^)\s]+\)/.test(text) // link
+  );
+}
+
+/**
+ * Pull the meaningful markup out of a clipboard `text/html` payload. When you
+ * copy from a rendered source (e.g. a Markdown preview) the browser wraps the
+ * selection in a full <html>…</html> shell — Chrome/Edge also add
+ * <!--StartFragment-->…<!--EndFragment--> markers plus a <style>/<head> block
+ * from the source. We slice out the fragment and drop that noise so the
+ * sanitiser sees just the copied blocks (real <h1>/<h2> headings, lists, …),
+ * which then normalise to the editor's allowlist instead of being flattened to
+ * plain text by the browser's default contentEditable paste.
+ */
+export function extractClipboardHtmlFragment(html: string): string {
+  const marked = html.match(
+    /<!--\s*StartFragment\s*-->([\s\S]*?)<!--\s*EndFragment\s*-->/i,
+  );
+  const fragment = marked ? marked[1] : html;
+  return fragment
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<head[\s\S]*?<\/head>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<\/?(?:html|body|meta|title|link)\b[^>]*>/gi, "")
+    .trim();
+}
+
+/**
+ * Whether a clipboard HTML fragment carries block-level structure worth
+ * normalising ourselves (headings, lists, rules, or more than one paragraph).
+ * A small inline fragment (a styled word or two) returns false so the editor
+ * keeps the browser's default paste and never wraps it in its own paragraph.
+ */
+export function htmlFragmentHasBlocks(fragment: string): boolean {
+  if (/<(?:h[1-6]|ul|ol|blockquote|hr|pre|table|details)\b/i.test(fragment)) {
+    return true;
+  }
+  return (fragment.match(/<p[\s>]/gi)?.length ?? 0) > 1;
 }
 
 const youtubeEmbedPattern = /^https:\/\/www\.youtube(?:-nocookie)?\.com\/embed\/[\w-]+$/;

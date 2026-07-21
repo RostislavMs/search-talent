@@ -25,9 +25,13 @@ function slugify(text: string, index: number) {
 export default function ArticleTableOfContents({
   targetId,
   title,
+  variant = "sidebar",
 }: {
   targetId: string;
   title: string;
+  /** "sidebar" is the sticky desktop rail; "mobile" is a collapsed-by-default
+   * disclosure rendered inline after the cover image on small screens. */
+  variant?: "sidebar" | "mobile";
 }) {
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -92,7 +96,54 @@ export default function ArticleTableOfContents({
     target.scrollIntoView({ behavior: "smooth", block: "start" });
     setActiveId(id);
     window.history.replaceState(null, "", `#${id}`);
+    // Collapse the mobile disclosure once a section is picked (no-op in the
+    // sidebar variant, where there is no enclosing <details>).
+    event.currentTarget.closest("details")?.removeAttribute("open");
   };
+
+  const items = headings.map((heading) => {
+    const isActive = heading.id === activeId;
+    return (
+      <li key={heading.id}>
+        <a
+          href={`#${heading.id}`}
+          onClick={(event) => handleClick(event, heading.id)}
+          aria-current={isActive ? "location" : undefined}
+          className={[
+            "-ml-px block border-l-2 py-1.5 pl-4 text-sm leading-snug transition",
+            isActive
+              ? "border-[color:var(--brand)] font-medium text-[color:var(--foreground)]"
+              : "border-transparent app-muted hover:border-[color:var(--border)] hover:text-[color:var(--foreground)]",
+          ].join(" ")}
+        >
+          {heading.text}
+        </a>
+      </li>
+    );
+  });
+
+  if (variant === "mobile") {
+    return (
+      <details className="group rounded-panel app-card">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-xs font-semibold uppercase tracking-eyebrow app-soft [&::-webkit-details-marker]:hidden">
+          {title}
+          <svg
+            aria-hidden
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="h-4 w-4 shrink-0 transition group-open:rotate-180"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </summary>
+        <ul className="space-y-1 border-l app-border px-5 pb-5">{items}</ul>
+      </details>
+    );
+  }
 
   return (
     <nav
@@ -102,28 +153,7 @@ export default function ArticleTableOfContents({
       <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
         {title}
       </p>
-      <ul className="mt-3 space-y-1 border-l app-border">
-        {headings.map((heading) => {
-          const isActive = heading.id === activeId;
-          return (
-            <li key={heading.id}>
-              <a
-                href={`#${heading.id}`}
-                onClick={(event) => handleClick(event, heading.id)}
-                aria-current={isActive ? "location" : undefined}
-                className={[
-                  "-ml-px block border-l-2 py-1.5 pl-4 text-sm leading-snug transition",
-                  isActive
-                    ? "border-[color:var(--brand)] font-medium text-[color:var(--foreground)]"
-                    : "border-transparent app-muted hover:border-[color:var(--border)] hover:text-[color:var(--foreground)]",
-                ].join(" ")}
-              >
-                {heading.text}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+      <ul className="mt-3 space-y-1 border-l app-border">{items}</ul>
     </nav>
   );
 }

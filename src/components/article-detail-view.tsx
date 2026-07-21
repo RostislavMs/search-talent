@@ -350,6 +350,18 @@ export default function ArticleDetailView({
             </video>
           ) : null}
 
+          {/* Mobile / tablet get a collapsed-by-default contents block right
+              after the cover; the sticky sidebar below takes over from lg up. */}
+          {showTableOfContents ? (
+            <div className="px-6 pt-6 sm:px-8 sm:pt-8 lg:hidden">
+              <ArticleTableOfContents
+                variant="mobile"
+                targetId="article-body"
+                title={ui.tableOfContents}
+              />
+            </div>
+          ) : null}
+
           <div className="grid gap-8 p-6 sm:p-8">
             <section id="article-body" className="space-y-6">
               <RichTextRenderer content={article.content} accentColor="#f97316" />

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  extractClipboardHtmlFragment,
   extractPlainTextFromRichText,
   extractYouTubeVideoId,
+  hasMarkdownSyntax,
+  htmlFragmentHasBlocks,
+  inlineMarkdownToHtml,
+  markdownToHtml,
   sanitizeRichTextHtml,
 } from "@/lib/rich-text";
 
@@ -221,6 +226,171 @@ describe("extractYouTubeVideoId", () => {
   it("returns null for non-YouTube URLs", () => {
     expect(extractYouTubeVideoId("https://example.com/video")).toBeNull();
     expect(extractYouTubeVideoId("not a url at all")).toBeNull();
+  });
+});
+
+describe("inlineMarkdownToHtml", () => {
+  it("converts bold, italic and inline code", () => {
+    expect(inlineMarkdownToHtml("**bold** and *italic* and `code`")).toBe(
+      "<strong>bold</strong> and <em>italic</em> and <code>code</code>",
+    );
+  });
+
+  it("converts links and keeps the href", () => {
+    expect(inlineMarkdownToHtml("see [docs](https://example.com/a)")).toBe(
+      'see <a href="https://example.com/a">docs</a>',
+    );
+  });
+
+  it("does not touch markup-looking characters inside code spans", () => {
+    expect(inlineMarkdownToHtml("run `a < b && c`")).toBe(
+      "run <code>a &lt; b &amp;&amp; c</code>",
+    );
+  });
+
+  it("escapes stray angle brackets in plain text", () => {
+    expect(inlineMarkdownToHtml("a < b > c")).toBe("a &lt; b &gt; c");
+  });
+
+  it("does not mistake spaced digits for a code placeholder", () => {
+    expect(inlineMarkdownToHtml("levels 3 4 5 matter")).toBe(
+      "levels 3 4 5 matter",
+    );
+  });
+});
+
+describe("markdownToHtml", () => {
+  it("turns ## lines into <h2> (any level collapses to h2)", () => {
+    expect(markdownToHtml("## Title")).toBe("<h2>Title</h2>");
+    expect(markdownToHtml("# Title")).toBe("<h2>Title</h2>");
+    expect(markdownToHtml("#### Title")).toBe("<h2>Title</h2>");
+  });
+
+  it("wraps blank-line-separated paragraphs", () => {
+    expect(markdownToHtml("First para.\n\nSecond para.")).toBe(
+      "<p>First para.</p><p>Second para.</p>",
+    );
+  });
+
+  it("builds bullet and ordered lists", () => {
+    expect(markdownToHtml("- one\n- two")).toBe(
+      "<ul><li>one</li><li>two</li></ul>",
+    );
+    expect(markdownToHtml("1. one\n2. two")).toBe(
+      "<ol><li>one</li><li>two</li></ol>",
+    );
+  });
+
+  it("builds blockquotes and horizontal rules", () => {
+    expect(markdownToHtml("> quoted line")).toBe(
+      "<blockquote>quoted line</blockquote>",
+    );
+    expect(markdownToHtml("---")).toBe("<hr>");
+  });
+
+  it("passes raw <details> spoiler blocks through, wrapping their body", () => {
+    const md = "<details>\n<summary>More</summary>\n\nHidden body.\n\n</details>";
+    expect(markdownToHtml(md)).toBe(
+      "<details><summary>More</summary><p>Hidden body.</p></details>",
+    );
+  });
+
+  it("survives the sanitizer as real blocks (end-to-end)", () => {
+    const md = [
+      "## Heading",
+      "",
+      "A paragraph with a [link](https://searchtalent.dev/uk/talents/role).",
+      "",
+      "- first",
+      "- second",
+      "",
+      "> a quote",
+    ].join("\n");
+    const stored = sanitizeRichTextHtml(markdownToHtml(md));
+
+    expect(stored).toContain("<h2>Heading</h2>");
+    expect(stored).toContain("<ul>");
+    expect(stored).toContain("<blockquote>");
+    expect(stored).toContain(
+      'href="https://searchtalent.dev/uk/talents/role"',
+    );
+    // The link is turned into a real anchor, not left as literal "[link](...)".
+    expect(stored).not.toContain("[link]");
+  });
+});
+
+describe("hasMarkdownSyntax", () => {
+  it("detects block and inline Markdown markers", () => {
+    expect(hasMarkdownSyntax("## Heading")).toBe(true);
+    expect(hasMarkdownSyntax("- a\n- b")).toBe(true);
+    expect(hasMarkdownSyntax("1. a")).toBe(true);
+    expect(hasMarkdownSyntax("> quote")).toBe(true);
+    expect(hasMarkdownSyntax("---")).toBe(true);
+    expect(hasMarkdownSyntax("<details>")).toBe(true);
+    expect(hasMarkdownSyntax("a **bold** word")).toBe(true);
+    expect(hasMarkdownSyntax("some `code` here")).toBe(true);
+    expect(hasMarkdownSyntax("see [docs](https://x.dev/a)")).toBe(true);
+  });
+
+  it("does NOT fire on plain prose, even multi-paragraph", () => {
+    // Rendered sources carry no syntax markers — they take the HTML path.
+    expect(hasMarkdownSyntax("Heading text\n\nA rendered paragraph.")).toBe(
+      false,
+    );
+    expect(hasMarkdownSyntax("just a word")).toBe(false);
+    expect(hasMarkdownSyntax("https://example.com/page")).toBe(false);
+    expect(hasMarkdownSyntax("prices: 2 * 3 * 4 items")).toBe(false);
+  });
+});
+
+describe("extractClipboardHtmlFragment", () => {
+  it("slices out the StartFragment/EndFragment selection (Chrome/Edge)", () => {
+    const clipboard =
+      "<html><body>\n<!--StartFragment--><h2>Heading</h2><p>Body</p><!--EndFragment-->\n</body></html>";
+    expect(extractClipboardHtmlFragment(clipboard)).toBe(
+      "<h2>Heading</h2><p>Body</p>",
+    );
+  });
+
+  it("drops <head>/<style>/wrapper noise when there is no fragment marker", () => {
+    const clipboard =
+      "<html><head><style>h2{color:red}</style></head><body><h2>Title</h2></body></html>";
+    expect(extractClipboardHtmlFragment(clipboard)).toBe("<h2>Title</h2>");
+  });
+});
+
+describe("htmlFragmentHasBlocks", () => {
+  it("is true for headings, lists and multi-paragraph fragments", () => {
+    expect(htmlFragmentHasBlocks("<h1>Title</h1>")).toBe(true);
+    expect(htmlFragmentHasBlocks("<ul><li>a</li></ul>")).toBe(true);
+    expect(htmlFragmentHasBlocks("<p>one</p><p>two</p>")).toBe(true);
+  });
+
+  it("is false for a small inline fragment", () => {
+    expect(htmlFragmentHasBlocks("<b>word</b>")).toBe(false);
+    expect(htmlFragmentHasBlocks("<p>one paragraph</p>")).toBe(false);
+    expect(htmlFragmentHasBlocks("just text")).toBe(false);
+  });
+});
+
+describe("preview paste → real headings (end-to-end)", () => {
+  it("keeps pasted <h1>/<h3> as <h2> instead of flattening to text", () => {
+    // What a Markdown-preview copy puts on the clipboard.
+    const clipboard =
+      "<html><body><!--StartFragment-->" +
+      "<h1>Big title</h1><p>Intro paragraph.</p>" +
+      "<h3>Subsection</h3><ul><li>point one</li><li>point two</li></ul>" +
+      "<!--EndFragment--></body></html>";
+
+    const fragment = extractClipboardHtmlFragment(clipboard);
+    expect(htmlFragmentHasBlocks(fragment)).toBe(true);
+
+    const stored = sanitizeRichTextHtml(fragment);
+    expect(stored).toContain("<h2>Big title</h2>");
+    expect(stored).toContain("<h2>Subsection</h2>");
+    expect(stored).toContain("<ul>");
+    // No heading levels survive other than the supported <h2>.
+    expect(stored).not.toMatch(/<h[13456]\b/);
   });
 });
 

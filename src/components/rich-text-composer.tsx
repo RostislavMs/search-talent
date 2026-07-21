@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useCallback,
@@ -11,8 +11,12 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import {
+  extractClipboardHtmlFragment,
   extractPlainTextFromRichText,
   extractYouTubeVideoId,
+  hasMarkdownSyntax,
+  htmlFragmentHasBlocks,
+  markdownToHtml,
   normalizeRichTextForEditor,
 } from "@/lib/rich-text";
 
@@ -107,6 +111,18 @@ function cls(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(" ");
 }
 
+// Escape user-supplied strings before they go into an insertHTML fragment, so a
+// typed link text like "A < B" or a URL with `&` can't break out of the anchor.
+// The value is re-sanitised by normalizeRichTextForEditor afterwards, but keeping
+// the fragment well-formed here avoids the browser mangling it on insert.
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 const btnBase =
   "inline-flex h-9 min-w-9 items-center justify-center rounded-lg border px-2.5 text-sm font-medium transition select-none";
 const btnIdle =
@@ -154,17 +170,22 @@ function findEnclosingBlock(
 function InlinePopover({
   kind,
   locale,
+  initialText,
   onSubmit,
   onClose,
 }: {
   kind: "link" | "youtube";
   locale: string;
-  onSubmit: (value: string) => void;
+  /** Pre-fill for the link-text field (the current selection's text, if any). */
+  initialText?: string;
+  onSubmit: (value: string, text?: string) => void;
   onClose: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isUk = locale === "uk";
+  const isLink = kind === "link";
 
   const label =
     kind === "link"
@@ -174,6 +195,12 @@ function InlinePopover({
       : isUk
         ? "Посилання на YouTube"
         : "YouTube link";
+
+  const textLabel = isUk ? "Текст посилання (необов'язково)" : "Link text (optional)";
+  const textPlaceholder = isUk ? "напр. каталог ролей" : "e.g. role catalog";
+  const hintText = isUk
+    ? "Порожній текст → вставиться саме посилання. Виділіть слова перед відкриттям, щоб зробити їх посиланням."
+    : "Empty text → the URL itself is inserted. Select words before opening to turn them into a link.";
 
   const placeholderText =
     kind === "link" ? "https://example.com" : "https://youtube.com/watch?v=...";
@@ -199,8 +226,16 @@ function InlinePopover({
 
   const handleSubmit = () => {
     const val = inputRef.current?.value.trim();
-    if (val) onSubmit(val);
+    if (val) onSubmit(val, isLink ? (textRef.current?.value ?? "") : undefined);
     onClose();
+  };
+
+  const onFieldKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit();
+    }
+    if (e.key === "Escape") onClose();
   };
 
   return (
@@ -208,6 +243,21 @@ function InlinePopover({
       ref={containerRef}
       className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-80 rounded-2xl border app-border bg-[color:var(--surface)] p-3 shadow-2xl"
     >
+      {isLink && (
+        <>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider app-soft">
+            {textLabel}
+          </p>
+          <input
+            ref={textRef}
+            type="text"
+            defaultValue={initialText ?? ""}
+            placeholder={textPlaceholder}
+            className="mb-3 w-full rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] outline-none focus:border-[color:var(--ring)]"
+            onKeyDown={onFieldKeyDown}
+          />
+        </>
+      )}
       <p className="mb-2 text-xs font-semibold uppercase tracking-wider app-soft">
         {label}
       </p>
@@ -217,13 +267,7 @@ function InlinePopover({
           type="url"
           placeholder={placeholderText}
           className="flex-1 rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] outline-none focus:border-[color:var(--ring)]"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleSubmit();
-            }
-            if (e.key === "Escape") onClose();
-          }}
+          onKeyDown={onFieldKeyDown}
         />
         <button
           type="button"
@@ -233,6 +277,9 @@ function InlinePopover({
           {submitLabel}
         </button>
       </div>
+      {isLink && (
+        <p className="mt-2 text-xs leading-snug app-soft">{hintText}</p>
+      )}
     </div>
   );
 }
@@ -645,11 +692,76 @@ export default function RichTextComposer({
   );
 
   const handleLinkSubmit = useCallback(
-    (href: string) => {
+    (href: string, text?: string) => {
       if (!/^https?:\/\//i.test(href)) return;
-      exec("createLink", href);
+      const el = editorRef.current;
+      if (!el) return;
+
+      const range = savedRangeRef.current;
+      const hasSelection = !!(
+        range &&
+        !range.collapsed &&
+        el.contains(range.startContainer)
+      );
+      const selectionText = hasSelection && range ? range.toString().trim() : "";
+      const trimmed = (text ?? "").trim();
+
+      // A live selection with no (or unchanged) link text keeps the old
+      // behaviour: wrap it via createLink, which preserves any inline formatting
+      // inside the selection.
+      if (hasSelection && (trimmed === "" || trimmed === selectionText)) {
+        exec("createLink", href);
+        return;
+      }
+
+      // Otherwise drop in a fresh anchor. The typed text becomes the link label;
+      // if it's left empty, the URL itself is the label. Any selection is
+      // replaced. normalizeRichTextForEditor then forces target/rel + validates
+      // the href, so the stored/moderated markup stays safe.
+      const visible = trimmed || href;
+      insertHtml(`<a href="${escapeHtml(href)}">${escapeHtml(visible)}</a>`);
     },
-    [exec],
+    [exec, insertHtml],
+  );
+
+  // Pasting a whole article should keep its structure — headings as headings,
+  // lists as lists — instead of collapsing to plain paragraphs. Order matters:
+  //  1. Raw Markdown text FIRST. A .md file, a code editor (VS Code) or a
+  //     "source" preview put literal `## …` on BOTH the plain-text and the HTML
+  //     clipboard flavour; only the plain text parses cleanly, so whenever the
+  //     text carries Markdown syntax we rebuild from it and ignore the HTML.
+  //  2. Otherwise, rendered HTML (real <h1>/<h2> tags copied from a rendered
+  //     page): the browser's default contentEditable paste tends to flatten
+  //     headings to plain text, so we normalise the clipboard HTML ourselves
+  //     (which maps <h1>/<h3> → <h2> and strips junk) and insert real blocks.
+  // Small inline pastes (a styled word, a bare URL) match neither and keep the
+  // browser default, so a fragment is never wrapped in its own paragraph.
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLDivElement>) => {
+      const clipboard = e.clipboardData;
+      if (!clipboard) return;
+      const html = clipboard.getData("text/html");
+      const text = clipboard.getData("text/plain");
+
+      let clean = "";
+      if (text && text.trim() && hasMarkdownSyntax(text)) {
+        clean = normalizeRichTextForEditor(markdownToHtml(text));
+      } else if (html && html.trim()) {
+        const fragment = extractClipboardHtmlFragment(html);
+        if (!htmlFragmentHasBlocks(fragment)) return;
+        clean = normalizeRichTextForEditor(fragment);
+      }
+
+      if (!clean) return;
+
+      e.preventDefault();
+      savedRangeRef.current = saveSelection();
+      insertHtml(clean);
+      // Tidy the DOM into the clean block structure straight away, so pasted
+      // headings/lists render properly without waiting for a blur.
+      normalizeEditorDom();
+    },
+    [insertHtml, normalizeEditorDom],
   );
 
   const handleYouTubeSubmit = useCallback(
@@ -1326,6 +1438,11 @@ export default function RichTextComposer({
             <InlinePopover
               kind={popover}
               locale={locale}
+              initialText={
+                popover === "link"
+                  ? (savedRangeRef.current?.toString() ?? "")
+                  : ""
+              }
               onSubmit={
                 popover === "link" ? handleLinkSubmit : handleYouTubeSubmit
               }
@@ -1391,6 +1508,7 @@ export default function RichTextComposer({
             }}
             onKeyDown={handleKeyDown}
             onKeyUp={trackSelection}
+            onPaste={handlePaste}
             onMouseDown={handleEditorMouseDown}
             onClick={handleEditorClick}
             onMouseUp={trackSelection}

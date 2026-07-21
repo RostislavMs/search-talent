@@ -538,59 +538,11 @@ export default function ArticleComposer({
 
   return (
     <div className="space-y-6">
-      <div
-        className={cx(
-          "flex flex-col gap-4 sm:flex-row sm:items-center",
-          showHeading ? "sm:justify-between" : "sm:justify-end",
-        )}
-      >
-        {showHeading ? (
-          <h2 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
-            {ui.pageTitle}
-          </h2>
-        ) : null}
-
-        <div className="flex w-full flex-col items-start gap-1.5 sm:w-auto sm:items-end">
-          <div
-            className="flex w-full items-center gap-1 rounded-full border app-border bg-[color:var(--surface-muted)] p-1 sm:inline-flex sm:w-auto"
-            role="tablist"
-            aria-label={ui.languageLabel}
-          >
-            {LOCALES.map((loc) => {
-              const active = loc === activeLocale;
-              const filled = versionHasContent(versions[loc]);
-
-              return (
-                <button
-                  key={loc}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setActiveLocale(loc)}
-                  className={cx(
-                    "inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition sm:flex-none sm:justify-start",
-                    active
-                      ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-sm"
-                      : "app-muted hover:text-[color:var(--foreground)]",
-                  )}
-                >
-                  {LOCALE_NAMES[loc]}
-                  <span
-                    aria-hidden
-                    className={cx(
-                      "h-1.5 w-1.5 rounded-full transition",
-                      filled ? "bg-orange-400" : "bg-transparent",
-                    )}
-                  />
-                </button>
-              );
-            })}
-          </div>
-          <p className="max-w-sm text-xs leading-5 app-soft sm:text-right">
-            {ui.languageHint}
-          </p>
-        </div>
-      </div>
+      {showHeading ? (
+        <h2 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+          {ui.pageTitle}
+        </h2>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <section className="order-2 space-y-5 xl:order-1">
@@ -624,6 +576,45 @@ export default function ArticleComposer({
 
         <aside className="order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)] xl:order-2 xl:sticky xl:top-20 xl:self-start">
           <div className="space-y-5 p-5">
+            <div className="flex flex-col gap-1.5">
+              <div
+                className="flex w-full items-center gap-1 rounded-full border app-border bg-[color:var(--surface-muted)] p-1"
+                role="tablist"
+                aria-label={ui.languageLabel}
+              >
+                {LOCALES.map((loc) => {
+                  const active = loc === activeLocale;
+                  const filled = versionHasContent(versions[loc]);
+
+                  return (
+                    <button
+                      key={loc}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setActiveLocale(loc)}
+                      className={cx(
+                        "inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
+                        active
+                          ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-sm"
+                          : "app-muted hover:text-[color:var(--foreground)]",
+                      )}
+                    >
+                      {LOCALE_NAMES[loc]}
+                      <span
+                        aria-hidden
+                        className={cx(
+                          "h-1.5 w-1.5 rounded-full transition",
+                          filled ? "bg-orange-400" : "bg-transparent",
+                        )}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs leading-5 app-soft">{ui.languageHint}</p>
+            </div>
+
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                 {ui.sidebarTitle}
