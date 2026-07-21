@@ -279,12 +279,28 @@ export function extractClipboardHtmlFragment(html: string): string {
     /<!--\s*StartFragment\s*-->([\s\S]*?)<!--\s*EndFragment\s*-->/i,
   );
   const fragment = marked ? marked[1] : html;
-  return fragment
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<head[\s\S]*?<\/head>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<\/?(?:html|body|meta|title|link)\b[^>]*>/gi, "")
+  return [
+    /<!--[\s\S]*?-->/g,
+    /<head[\s\S]*?<\/head>/gi,
+    /<style[\s\S]*?<\/style>/gi,
+    /<\/?(?:html|body|meta|title|link)\b[^>]*>/gi,
+  ]
+    .reduce(stripUntilStable, fragment)
     .trim();
+}
+
+// Apply a removal pattern repeatedly until the string stops changing. A single
+// pass is not enough because overlapping/nested markup (e.g. `<!--<!-- -->-->`
+// or `<sty<style>…</sty</style>le>`) can reassemble a fresh `<!--`/`<style` once
+// the inner match is cut out — so we loop until a pass removes nothing.
+function stripUntilStable(input: string, pattern: RegExp): string {
+  let current = input;
+  let previous: string;
+  do {
+    previous = current;
+    current = current.replace(pattern, "");
+  } while (current !== previous);
+  return current;
 }
 
 /**
