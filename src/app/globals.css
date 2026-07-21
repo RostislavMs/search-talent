@@ -550,6 +550,15 @@ select {
   color: var(--muted-foreground);
 }
 
+/* Long unbreakable tokens (a URL used as inline-link text, a long code span, a
+   glued word) must wrap instead of forcing the column wider than the viewport —
+   otherwise the article body overflows horizontally on mobile. */
+.rich-text-editor,
+.rich-text-renderer {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
 .rich-text-editor p,
 .rich-text-renderer p {
   margin: 0 0 1rem;
