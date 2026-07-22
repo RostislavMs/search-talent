@@ -38,7 +38,7 @@
     "autoprefixer": "^10.4.27",
     "browser-image-compression": "^2.0.2",
     "isomorphic-dompurify": "2.26.0",
-    "next": "16.2.6",
+    "next": "16.2.11",
     "postcss": "^8.5.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
