@@ -8,6 +8,13 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # Vercel enforces a supply-chain `minimumReleaseAge` policy at install time
+    # (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION). Without a cooldown, Dependabot
+    # proposes same-day releases (e.g. @aws-sdk/* publishes daily) that are still
+    # "too fresh" for the policy, so the Vercel build fails every rebase. A 7-day
+    # cooldown keeps every proposed version comfortably past the policy window.
+    cooldown:
+      default-days: 7
     groups:
       dev-dependencies:
         dependency-type: development
