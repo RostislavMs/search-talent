@@ -185,19 +185,22 @@ describe("normalizeProfilePresentation", () => {
     expect(result.backgroundUrl).toBe("https://example.com/bg.jpg");
   });
 
-  it("returns null for invalid backgroundUrl", () => {
+  it("auto-prefixes a bare host with https for backgroundUrl", () => {
     const result = normalizeProfilePresentation({
       backgroundUrl: "not-valid",
     });
 
-    // Should auto-prefix https and try to parse
-    expect(result.backgroundUrl).not.toBeNull();
+    expect(result.backgroundUrl).toBe("https://not-valid");
+  });
 
-    const result2 = normalizeProfilePresentation({
-      backgroundUrl: "",
-    });
-
-    expect(result2.backgroundUrl).toBeNull();
+  it("returns null for empty or unparseable backgroundUrl", () => {
+    expect(
+      normalizeProfilePresentation({ backgroundUrl: "" }).backgroundUrl,
+    ).toBeNull();
+    // "https://" has no host, so URL parsing throws and we fall back to null.
+    expect(
+      normalizeProfilePresentation({ backgroundUrl: "https://" }).backgroundUrl,
+    ).toBeNull();
   });
 
   it("returns null for non-string backgroundUrl", () => {

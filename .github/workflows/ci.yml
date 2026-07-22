@@ -18,12 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # pnpm version comes from the "packageManager" field in package.json.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - name: Install deps
         run: pnpm install --frozen-lockfile
@@ -59,12 +58,11 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
     steps:
       - uses: actions/checkout@v4
+      # pnpm version comes from the "packageManager" field in package.json.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - name: Install deps
         run: pnpm install --frozen-lockfile
@@ -76,18 +74,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # pnpm version comes from the "packageManager" field in package.json.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - name: Install deps
         run: pnpm install --frozen-lockfile
       - name: Audit production dependencies
-        run: pnpm audit --prod --audit-level high
-        continue-on-error: true
+        # Blocks CI only on CRITICAL prod advisories (currently none). High/
+        # moderate are transitive (next→sharp, supabase→ws) with no app-level
+        # fix and are handled via Dependabot PRs, so they must not gate merges.
+        run: pnpm audit --prod --audit-level critical
 
   dependency-review:
     name: dependency review

@@ -53,7 +53,7 @@ const embedFrameHosts = [
   "https://app.spline.design",
 ];
 
-function buildContentSecurityPolicy(): string {
+export function buildContentSecurityPolicy(): string {
   const supabase = supabaseOrigin();
   const supabaseHosts = supabase ? [supabase] : [];
   // Supabase Realtime uses a wss: endpoint derived from the REST URL.

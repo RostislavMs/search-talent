@@ -5,6 +5,15 @@ import { getCreatorRatings, getProjectRatings } from "@/lib/db/leaderboards";
 import type { ProjectKind } from "@/lib/projects";
 import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
+import {
+  getProfileRelevanceScore,
+  getProjectRelevanceScore,
+  normalizePage,
+  normalizePerPage,
+  pageOffset,
+  profileComparator,
+  projectComparator,
+} from "@/lib/search-ranking";
 
 type ProjectRow = {
   id: string;
@@ -160,88 +169,6 @@ async function fetchAllByIds<T>(
   return out;
 }
 
-function matchesQuery(value: string | null | undefined, query: string) {
-  if (!value) {
-    return false;
-  }
-
-  return value.toLowerCase().includes(query);
-}
-
-function getProjectRelevanceScore(
-  project: {
-    title: string;
-    description: string | null;
-    ownerName: string | null;
-    ownerUsername: string | null;
-    technologies: string[];
-  },
-  query: string,
-) {
-  if (!query) {
-    return 0;
-  }
-
-  let score = 0;
-
-  if (matchesQuery(project.title, query)) {
-    score += project.title.toLowerCase() === query ? 12 : 8;
-  }
-
-  if (matchesQuery(project.description, query)) {
-    score += 4;
-  }
-
-  if (matchesQuery(project.ownerName, query) || matchesQuery(project.ownerUsername, query)) {
-    score += 2;
-  }
-
-  if (project.technologies.some((item) => matchesQuery(item, query))) {
-    score += 3;
-  }
-
-  return score;
-}
-
-function getProfileRelevanceScore(
-  profile: {
-    username: string;
-    name: string | null;
-    headline: string | null;
-    technologies: string[];
-    countryName: string | null;
-  },
-  query: string,
-) {
-  if (!query) {
-    return 0;
-  }
-
-  let score = 0;
-
-  if (matchesQuery(profile.username, query)) {
-    score += profile.username.toLowerCase() === query ? 12 : 8;
-  }
-
-  if (matchesQuery(profile.name, query)) {
-    score += 6;
-  }
-
-  if (matchesQuery(profile.headline, query)) {
-    score += 4;
-  }
-
-  if (matchesQuery(profile.countryName, query)) {
-    score += 2;
-  }
-
-  if (profile.technologies.some((item) => matchesQuery(item, query))) {
-    score += 3;
-  }
-
-  return score;
-}
-
 /**
  * Core discovery search. Runs every facet filter + text query in SQL (the
  * search_projects / search_profiles RPCs) and computes the composite
@@ -272,12 +199,8 @@ export async function searchDiscovery(
   const hasAvatar = params.hasAvatar ?? false;
   const minScore = params.minScore ?? null;
   const maxScore = params.maxScore ?? null;
-  const perPageRaw = params.perPage ?? null;
-  const perPage = [12, 24, 48].includes(perPageRaw ?? 0)
-    ? (perPageRaw as number)
-    : 12;
-  const pageRaw = params.page ?? null;
-  const page = pageRaw && pageRaw > 0 ? pageRaw : 1;
+  const perPage = normalizePerPage(params.perPage ?? null);
+  const page = normalizePage(params.page ?? null);
 
   const activeSort = sort === "rating" || sort === "newest" ? sort : "relevance";
   // Candidate ordering for the SQL pre-filter: newest rows for the "newest"
@@ -596,27 +519,6 @@ export async function searchDiscovery(
       return true;
     });
 
-  const projectSorters = {
-    relevance: (left: (typeof projects)[number], right: (typeof projects)[number]) =>
-      right.relevance - left.relevance || (right.score ?? 0) - (left.score ?? 0),
-    rating: (left: (typeof projects)[number], right: (typeof projects)[number]) =>
-      (right.score ?? 0) - (left.score ?? 0) || right.relevance - left.relevance,
-    newest: (left: (typeof projects)[number], right: (typeof projects)[number]) =>
-      new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime(),
-  } as const;
-
-  const profileSorters = {
-    relevance: (left: (typeof users)[number], right: (typeof users)[number]) =>
-      right.relevance - left.relevance ||
-      (right.score ?? 0) - (left.score ?? 0) ||
-      (left.name || left.username).localeCompare(right.name || right.username),
-    rating: (left: (typeof users)[number], right: (typeof users)[number]) =>
-      (right.score ?? 0) - (left.score ?? 0) ||
-      right.relevance - left.relevance,
-    newest: (left: (typeof users)[number], right: (typeof users)[number]) =>
-      new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime(),
-  } as const;
-
   const totals = {
     projects: projects.length,
     users: users.length,
@@ -624,12 +526,12 @@ export async function searchDiscovery(
 
   // `totals` above holds the full filtered counts; here we return just the
   // requested page so the client can render numbered pagination.
-  const offset = (page - 1) * perPage;
+  const offset = pageOffset(page, perPage);
   projects = projects
-    .sort(projectSorters[activeSort])
+    .sort(projectComparator(activeSort))
     .slice(offset, offset + perPage);
   users = users
-    .sort(profileSorters[activeSort])
+    .sort(profileComparator(activeSort))
     .slice(offset, offset + perPage);
 
   return {
