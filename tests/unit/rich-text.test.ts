@@ -394,3 +394,72 @@ describe("preview paste → real headings (end-to-end)", () => {
   });
 });
 
+// Adversarial XSS regressions. These pin the behavior of the DOMPurify config
+// + custom hooks against bypasses that motivated the sanitizer (the historical
+// slash-attribute img, obfuscated schemes, mXSS, and iframe host-spoofing).
+describe("sanitizeRichTextHtml — adversarial XSS", () => {
+  it("neutralizes the historical slash-separated img/onerror bypass", () => {
+    // <img/src=x/onerror=...> — the exact vector that broke the old regex pass.
+    const result = sanitizeRichTextHtml(`<img/src=x/onerror=alert(1)>`);
+    expect(result).not.toMatch(/onerror/i);
+    expect(result).not.toMatch(/alert/i);
+  });
+
+  it("drops obfuscated javascript: schemes (whitespace, tab, entity, case)", () => {
+    const vectors = [
+      `<a href="  javascript:alert(1)">a</a>`,
+      `<a href="java\tscript:alert(1)">b</a>`,
+      `<a href="java&#115;cript:alert(1)">c</a>`,
+      `<a href="JaVaScRiPt:alert(1)">d</a>`,
+      `<a href="javascript&#58;alert(1)">e</a>`,
+    ];
+    for (const html of vectors) {
+      const result = sanitizeRichTextHtml(html);
+      // The dangerous href is stripped, so no executable scheme survives.
+      expect(result).not.toMatch(/javascript\s*:/i);
+      expect(result).not.toMatch(/alert/i);
+    }
+  });
+
+  it("neutralizes mutation-XSS payloads (svg/math/template/noscript)", () => {
+    const vectors = [
+      `<svg><style><img src=x onerror=alert(1)></style></svg>`,
+      `<math><mtext><table><mglyph><style><img src=x onerror=alert(1)>`,
+      `<template><img src=x onerror=alert(1)></template>`,
+      `<noscript><p title="</noscript><img src=x onerror=alert(1)>">`,
+    ];
+    for (const html of vectors) {
+      const result = sanitizeRichTextHtml(html);
+      expect(result).not.toMatch(/onerror/i);
+      expect(result).not.toMatch(/<script\b/i);
+    }
+  });
+
+  it("rejects iframe srcs that spoof the YouTube host", () => {
+    const vectors = [
+      `<iframe src="https://www.youtube.com@evil.com/embed/x"></iframe>`,
+      `<iframe src="https://www.youtube.com.evil.com/embed/x"></iframe>`,
+      `<iframe src="https://evil.com/www.youtube.com/embed/x"></iframe>`,
+    ];
+    for (const html of vectors) {
+      const result = sanitizeRichTextHtml(html);
+      expect(result).not.toMatch(/<iframe\b/i);
+      expect(result).not.toMatch(/evil\.com/);
+    }
+  });
+
+  it("confines an svg data-URI payload to the img src (inert, not live markup)", () => {
+    const result = sanitizeRichTextHtml(
+      `<img src="data:image/svg+xml,<svg onload=alert(1)>">`,
+    );
+    // The data:image/ src is intentionally allowed, and an SVG loaded via <img>
+    // cannot execute script. The property we pin: the <svg>/onload text lives
+    // ONLY inside the src attribute value, never as a real element/attribute.
+    // Blank the src value; nothing dangerous may remain in the actual markup.
+    const withoutSrcValue = result.replace(/src="[^"]*"/i, 'src=""');
+    expect(withoutSrcValue).not.toMatch(/<svg\b/i);
+    expect(withoutSrcValue).not.toMatch(/onload/i);
+    expect(withoutSrcValue).not.toMatch(/<script\b/i);
+  });
+});
+

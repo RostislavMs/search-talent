@@ -7,8 +7,7 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { getModerationCopy } from "@/lib/moderation-copy";
-
-type VoteValue = 1 | -1 | null;
+import { getOptimisticVoteState, type VoteState, type VoteValue } from "@/lib/vote-state";
 
 type ProfileVoteButtonsProps = {
   profileId: string;
@@ -22,41 +21,6 @@ type ProfileVoteButtonsProps = {
   isOwner: boolean;
   className?: string;
 };
-
-type VoteState = {
-  likes: number;
-  dislikes: number;
-  currentVote: VoteValue;
-};
-
-function getOptimisticVoteState(state: VoteState, nextValue: 1 | -1): VoteState {
-  let likes = state.likes;
-  let dislikes = state.dislikes;
-
-  if (state.currentVote === 1) {
-    likes -= 1;
-  }
-
-  if (state.currentVote === -1) {
-    dislikes -= 1;
-  }
-
-  const currentVote = state.currentVote === nextValue ? null : nextValue;
-
-  if (currentVote === 1) {
-    likes += 1;
-  }
-
-  if (currentVote === -1) {
-    dislikes += 1;
-  }
-
-  return {
-    likes,
-    dislikes,
-    currentVote,
-  };
-}
 
 export default function ProfileVoteButtons({
   profileId,
