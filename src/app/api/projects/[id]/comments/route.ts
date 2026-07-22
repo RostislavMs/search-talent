@@ -6,6 +6,7 @@ import {
   routeProjectIdSchema,
 } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
+import { dbRateLimit } from "@/lib/rate-limit";
 import { dispatchCommentSideEffects } from "@/lib/db/comment-events";
 import { getReactionsForTargets } from "@/lib/db/reactions";
 import { isAllowedGifUrl } from "@/lib/gif/provider";
@@ -131,6 +132,13 @@ export async function POST(
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Throttle comment creation: without this, one account can loop-post
+  // comments to flood the DB and spam notifications at a targeted user.
+  const limited = await dbRateLimit(supabase, `comment:${user.id}`, 10, 60_000);
+  if (limited) {
+    return limited;
   }
 
   const parsed = await parseJsonRequest(request, projectCommentPayloadSchema);
