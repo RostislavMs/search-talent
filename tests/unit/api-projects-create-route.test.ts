@@ -8,6 +8,11 @@ import {
 
 const { holder } = vi.hoisted(() => ({ holder: { mock: null as SupabaseMock | null } }));
 
+vi.mock("@/lib/rate-limit", () => ({
+  dbRateLimit: vi.fn(async () => null),
+  rateLimit: vi.fn(() => null),
+}));
+
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => holder.mock!.client) }));
 vi.mock("@/lib/projects", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/projects")>()),
@@ -29,6 +34,8 @@ vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") 
 vi.mock("@/lib/db/co-authors", () => ({ inviteCoAuthors: vi.fn() }));
 
 import { POST } from "@/app/api/projects/route";
+import { NextResponse } from "next/server";
+import { dbRateLimit } from "@/lib/rate-limit";
 import { screenContentForModeration } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { inviteCoAuthors } from "@/lib/db/co-authors";
@@ -64,6 +71,16 @@ afterEach(() => {
   holder.mock = null;
   vi.clearAllMocks();
   vi.mocked(screenContentForModeration).mockReturnValue({ flagged: false, note: "" } as never);
+});
+
+describe("POST /api/projects — rate limiting", () => {
+  it("429 when the content-creation rate limit trips", async () => {
+    setMock(authUser, okResolver);
+    vi.mocked(dbRateLimit).mockResolvedValueOnce(
+      NextResponse.json({ error: "Too many" }, { status: 429 }),
+    );
+    expect((await POST(req())).status).toBe(429);
+  });
 });
 
 describe("POST /api/projects", () => {

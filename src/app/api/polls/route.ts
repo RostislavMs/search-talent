@@ -5,6 +5,7 @@ import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { pollPayloadSchema } from "@/lib/validation/polls";
 import { parseJsonRequest } from "@/lib/validation/request";
+import { dbRateLimit } from "@/lib/rate-limit";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildSavePollPayload } from "@/lib/db/save-poll-payload";
 import {
@@ -39,6 +40,18 @@ export async function POST(request: Request) {
 
   if (!context.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Throttle content creation (shared across projects/articles/polls) to stop a
+  // single account from flooding the public feeds and follower notifications.
+  const limited = await dbRateLimit(
+    context.supabase,
+    `create-content:${context.user.id}`,
+    5,
+    60_000,
+  );
+  if (limited) {
+    return limited;
   }
 
   const parsed = await parseJsonRequest(request, pollPayloadSchema);

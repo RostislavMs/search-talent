@@ -8,6 +8,11 @@ import {
 
 const { holder } = vi.hoisted(() => ({ holder: { mock: null as SupabaseMock | null } }));
 
+vi.mock("@/lib/rate-limit", () => ({
+  dbRateLimit: vi.fn(async () => null),
+  rateLimit: vi.fn(() => null),
+}));
+
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => holder.mock!.client) }));
 vi.mock("@/lib/moderation-server", () => ({ getCurrentViewerRole: vi.fn() }));
 vi.mock("@/lib/db/comment-events", () => ({ dispatchCommentSideEffects: vi.fn() }));
@@ -21,6 +26,8 @@ vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") 
 
 import { POST } from "@/app/api/articles/[id]/comments/route";
 import { DELETE } from "@/app/api/articles/[id]/comments/[commentId]/route";
+import { NextResponse } from "next/server";
+import { dbRateLimit } from "@/lib/rate-limit";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { dispatchCommentSideEffects } from "@/lib/db/comment-events";
 import { deleteCommentAuthorized } from "@/lib/db/comment-moderation";
@@ -67,6 +74,16 @@ afterEach(() => {
   vi.clearAllMocks();
   vi.mocked(isAllowedGifUrl).mockReturnValue(true);
   vi.mocked(screenContentForModeration).mockReturnValue({ flagged: false, note: "" } as never);
+});
+
+describe("POST /api/articles/[id]/comments — rate limiting", () => {
+  it("429 when the comment rate limit trips", async () => {
+    setMock(authUser, publishedResolver);
+    vi.mocked(dbRateLimit).mockResolvedValueOnce(
+      NextResponse.json({ error: "Too many" }, { status: 429 }),
+    );
+    expect((await POST(postReq({ body: "hi" }), params())).status).toBe(429);
+  });
 });
 
 describe("POST /api/articles/[id]/comments", () => {

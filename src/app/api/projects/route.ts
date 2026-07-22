@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateUniqueProjectSlug } from "@/lib/projects";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { createClient } from "@/lib/supabase/server";
+import { dbRateLimit } from "@/lib/rate-limit";
 import { projectPayloadSchema } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { getIntegrationForUser } from "@/lib/db/github-integrations";
@@ -29,6 +30,18 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Throttle content creation (shared across projects/articles/polls) to stop a
+  // single account from flooding the public feeds and follower notifications.
+  const limited = await dbRateLimit(
+    supabase,
+    `create-content:${user.id}`,
+    5,
+    60_000,
+  );
+  if (limited) {
+    return limited;
   }
 
   const parsed = await parseJsonRequest(request, projectPayloadSchema);
