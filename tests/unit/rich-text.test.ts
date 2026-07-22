@@ -444,7 +444,9 @@ describe("sanitizeRichTextHtml — adversarial XSS", () => {
     for (const html of vectors) {
       const result = sanitizeRichTextHtml(html);
       expect(result).not.toMatch(/<iframe\b/i);
-      expect(result).not.toMatch(/evil\.com/);
+      // Plain substring check (not a regex) — the spoof host must not survive
+      // anywhere in the output.
+      expect(result).not.toContain("evil.com");
     }
   });
 
