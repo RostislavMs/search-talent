@@ -29,7 +29,17 @@ export async function proxy(request: NextRequest) {
       pathname,
     );
 
-    return applySecurityHeaders(NextResponse.redirect(redirectUrl));
+    // This redirect is content-negotiated: its target depends on the
+    // `Accept-Language` header and the `locale` cookie. Next.js otherwise labels
+    // middleware redirects `Cache-Control: public`, which lets a shared cache
+    // (CDN/proxy/browser) store one locale's redirect for `/` and replay it for
+    // every visitor — the "everyone lands on /uk" bug. Keep it out of shared
+    // caches and declare what it varies on.
+    const redirect = NextResponse.redirect(redirectUrl);
+    redirect.headers.set("Cache-Control", "private, no-store");
+    redirect.headers.set("Vary", "Accept-Language, Cookie");
+
+    return applySecurityHeaders(redirect);
   }
 
   const response = await updateSession(request);
