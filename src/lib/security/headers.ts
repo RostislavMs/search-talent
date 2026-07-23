@@ -85,6 +85,8 @@ export function buildContentSecurityPolicy(): string {
       // Plerdy click/heatmap analytics (consent-gated). main.js loads from
       // a.plerdy.com and may pull helpers from other plerdy subdomains.
       "https://*.plerdy.com",
+      // Google Analytics (gtag.js, consent-gated) bootstraps from GTM.
+      "https://www.googletagmanager.com",
     ],
     "style-src": ["'self'", "'unsafe-inline'"],
     "img-src": [
@@ -101,8 +103,18 @@ export function buildContentSecurityPolicy(): string {
       "https://api.resend.com",
       "https://vitals.vercel-insights.com",
       "https://analytics.ahrefs.com",
-      // Plerdy beacons/heatmap payloads post back to its API subdomains.
+      // Plerdy beacons/heatmap payloads post back to its API subdomains over
+      // both HTTPS (beacons) and WebSocket (session/video recorder). Without
+      // the wss: entry the recorder socket is blocked pre-connect and the
+      // script floods the console with "WebSocket is already in CLOSING or
+      // CLOSED state".
       "https://*.plerdy.com",
+      "wss://*.plerdy.com",
+      // Google Analytics collect endpoints (region-aware) + GTM.
+      "https://www.google-analytics.com",
+      "https://*.google-analytics.com",
+      "https://*.analytics.google.com",
+      "https://www.googletagmanager.com",
       ...supabaseHosts,
       ...supabaseWs,
       ...r2ConnectHosts,
