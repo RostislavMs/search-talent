@@ -4,6 +4,7 @@ import {
   allowsCookieCategory,
   type CookieConsent,
 } from "@/lib/cookie-consent";
+import { getActivePopup, type ActivePopup } from "@/lib/db/popups";
 import { ensureProfileForUser } from "@/lib/db/profile";
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
@@ -61,15 +62,18 @@ export async function getAppShellData(locale: Locale): Promise<{
   initialCanPersistTheme: boolean;
   isSignedIn: boolean;
   viewer: AppViewer;
+  activePopup: ActivePopup | null;
 }> {
   noStore();
 
   const supabase = await createClient();
-  const [{ data: auth }, initialConsent, initialTheme] = await Promise.all([
-    supabase.auth.getUser(),
-    getCookieConsentFromCookies(),
-    getThemeFromCookies(),
-  ]);
+  const [{ data: auth }, initialConsent, initialTheme, activePopup] =
+    await Promise.all([
+      supabase.auth.getUser(),
+      getCookieConsentFromCookies(),
+      getThemeFromCookies(),
+      getActivePopup(supabase, locale),
+    ]);
 
   const user = auth.user;
 
@@ -101,5 +105,6 @@ export async function getAppShellData(locale: Locale): Promise<{
     initialCanPersistTheme: allowsCookieCategory(initialConsent, "preferences"),
     isSignedIn: Boolean(user),
     viewer,
+    activePopup,
   };
 }

@@ -81,6 +81,7 @@ export default async function AdminFeedbackPage({
           email: "Email",
           submittedAt: "Надіслано",
           openProfile: "Відкрити профіль",
+          attachments: "Вкладення",
           dismiss: copy.dismiss,
           dismissing: "Видалення...",
           confirmTitle: "Прибрати відгук?",
@@ -96,6 +97,7 @@ export default async function AdminFeedbackPage({
           email: "Email",
           submittedAt: "Submitted",
           openProfile: "Open profile",
+          attachments: "Attachments",
           dismiss: copy.dismiss,
           dismissing: "Removing...",
           confirmTitle: "Dismiss feedback?",
@@ -176,6 +178,7 @@ export default async function AdminFeedbackPage({
               email={entry.email}
               authorUsername={entry.authorUsername}
               authorDisplayName={entry.authorDisplayName}
+              attachments={entry.attachments}
               profileHref={
                 entry.authorUsername
                   ? createLocalePath(locale, `/u/${entry.authorUsername}`)
@@ -191,6 +194,7 @@ export default async function AdminFeedbackPage({
                   ] || entry.category,
                 submittedAt: feedbackUiCopy.submittedAt,
                 openProfile: feedbackUiCopy.openProfile,
+                attachments: feedbackUiCopy.attachments,
                 dismiss: feedbackUiCopy.dismiss,
                 dismissing: feedbackUiCopy.dismissing,
                 confirmTitle: feedbackUiCopy.confirmTitle,

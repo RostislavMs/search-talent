@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import CookieConsentBanner from "@/components/cookie-consent-banner";
 import SiteFooter from "@/components/site-footer";
 import SiteHeader from "@/components/site-header";
+import SitePopup from "@/components/site-popup";
 import { ToastProvider } from "@/components/ui/toast";
 import { getAppShellData } from "@/lib/app-shell";
 import type { Locale } from "@/lib/i18n/config";
@@ -20,6 +21,7 @@ export default async function AppShell({
     initialCanPersistTheme,
     isSignedIn,
     viewer,
+    activePopup,
   } = await getAppShellData(locale);
 
   return (
@@ -33,6 +35,7 @@ export default async function AppShell({
       <div className="flex-1">{children}</div>
       <SiteFooter dictionary={dictionary} isSignedIn={isSignedIn} />
       <CookieConsentBanner initialConsent={initialConsent} />
+      <SitePopup popup={activePopup} />
     </ToastProvider>
   );
 }
