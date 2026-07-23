@@ -74,15 +74,23 @@ export function switchLocalePathname(pathname: string, locale: Locale) {
 export function detectPreferredLocale(
   acceptLanguageHeader: string | null,
 ): Locale {
+  // English is the fallback for anyone who does not explicitly prefer
+  // Ukrainian — including header-less requests (crawlers, social-preview bots,
+  // and other clients that send no `Accept-Language`). This mirrors the
+  // hreflang `x-default` target (see `xDefaultLocale`). Returning the site's
+  // internal `defaultLocale` (uk) here instead sent every header-less visitor —
+  // and, once a shared cache stored that redirect, real users too — to /uk.
   if (!acceptLanguageHeader) {
-    return defaultLocale;
+    return xDefaultLocale;
   }
 
-  const normalized = acceptLanguageHeader.toLowerCase();
+  // Match the *language* subtag only, so `uk` / `uk-UA` map to Ukrainian while a
+  // region like `en-UK` (a common mis-spelling of `en-GB`) stays English. A
+  // plain `.includes("uk")` matched that region too and mislabelled the visitor.
+  const prefersUkrainian = acceptLanguageHeader.split(",").some((range) => {
+    const tag = (range.split(";")[0] ?? "").trim().toLowerCase();
+    return tag === "uk" || tag.startsWith("uk-");
+  });
 
-  if (normalized.includes("uk")) {
-    return "uk";
-  }
-
-  return "en";
+  return prefersUkrainian ? "uk" : xDefaultLocale;
 }
