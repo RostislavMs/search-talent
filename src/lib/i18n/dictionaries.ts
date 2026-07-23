@@ -619,6 +619,8 @@ export const dictionaries = {
       title: "Tech Articles, Guides & Case Studies",
       description:
         "A dedicated space for technical guides, case studies, and industry insights. Read what is new, discover active writers, and jump into deeper discussions.",
+      filterSearch: "Search",
+      searchPlaceholder: "Search articles by keyword",
       filterCategory: "Category",
       filterAuthor: "Author",
       filterSort: "Sort",
@@ -2139,21 +2141,49 @@ export const dictionaries = {
       eyebrow: "About the platform",
       title: "About SearchTalent",
       description:
-        "SearchTalent is an open platform for IT specialists to showcase their work, build public portfolios, and connect with the IT community.",
+        "SearchTalent is an open community platform where IT specialists build public portfolios, publish projects and articles, and get recognized through community ratings — all in one fast, minimalist space.",
+      pillarsTitle: "The platform at a glance",
+      pillars: [
+        {
+          title: "Public profiles",
+          text: "A clean, fast public page for your skills, experience, links, and contacts — customizable and exportable as a PDF resume.",
+        },
+        {
+          title: "Project portfolios",
+          text: "Publish real work with images, video, tech stacks, and case studies. Every project gets its own page and community votes.",
+        },
+        {
+          title: "Community knowledge",
+          text: "Articles, polls, and platform news live in one Community hub — share write-ups, gather opinions, and follow active authors.",
+        },
+        {
+          title: "Recognition",
+          text: "A transparent rating built from community votes and badges, so strong work surfaces through search and leaderboards.",
+        },
+      ],
       missionTitle: "Our mission",
       missionText:
         "We believe every developer, designer, and specialist deserves a clean, fast way to present their skills and projects to the world. SearchTalent gives you a public profile, a project portfolio, community feedback, and discovery tools — all in one place.",
       featuresTitle: "What you can do",
       features: [
-        "Create a detailed public profile with skills, experience, and contacts",
-        "Publish portfolio projects with media, tech stacks, and case studies",
-        "Get discovered through search, ratings, and community votes",
-        "Follow authors and stay updated on new publications",
-        "Export your profile as a PDF resume",
+        "Build a customizable public profile with skills, experience, links, and a PDF resume export",
+        "Publish portfolio projects with images, video, tech stacks, and case studies",
+        "Write articles and create polls — on your own or as a co-author with other members",
+        "Earn a community rating and badges through upvotes and steady contribution",
+        "Get discovered via search, topic pages, ratings, and leaderboards",
+        "Follow authors, react and comment, and stay updated on new work",
       ],
+      communityTitle: "Community & quality",
+      communityText:
+        "Ratings, badges, and leaderboards reward genuine contribution, while lightweight moderation keeps the feeds clean and trustworthy. Reactions, comments, and following turn portfolios into a living community rather than a static gallery.",
       openSourceTitle: "Built in the open",
       openSourceText:
-        "SearchTalent started as a university project and continues to grow with community input. Feedback and ideas are always welcome.",
+        "SearchTalent started as a university project and keeps growing with community input. Feedback and ideas are always welcome.",
+      ctaTitle: "Ready to show your work?",
+      ctaText:
+        "Create a free profile, publish your first project, and join the conversation.",
+      ctaPrimary: "Create your profile",
+      ctaSecondary: "Explore talents",
       backToHome: "Back to home",
     },
     faqPage: {
@@ -2843,6 +2873,8 @@ export const dictionaries = {
       title: "Технічні статті, гайди та кейси спільноти",
       description:
         "Простір для технічних гайдів, кейсів та інсайтів індустрії. Читайте оновлення, відстежуйте активних авторів і переходьте до обговорень.",
+      filterSearch: "Пошук",
+      searchPlaceholder: "Пошук статей за словами",
       filterCategory: "Категорія",
       filterAuthor: "Автор",
       filterSort: "Сортування",
@@ -4367,21 +4399,49 @@ export const dictionaries = {
       eyebrow: "Про платформу",
       title: "Про SearchTalent",
       description:
-        "SearchTalent — відкрита платформа для IT-фахівців, де можна демонструвати свої роботи, створювати публічні портфоліо та спілкуватися зі спільнотою IT.",
+        "SearchTalent — відкрита платформа-спільнота, де IT-фахівці створюють публічні портфоліо, публікують проєкти та статті й отримують визнання завдяки рейтингу спільноти — усе в одному швидкому та мінімалістичному просторі.",
+      pillarsTitle: "Платформа коротко",
+      pillars: [
+        {
+          title: "Публічні профілі",
+          text: "Чиста та швидка публічна сторінка з навичками, досвідом, посиланнями й контактами — з кастомізацією та експортом у PDF-резюме.",
+        },
+        {
+          title: "Портфоліо проєктів",
+          text: "Публікуйте реальні роботи із зображеннями, відео, стеком технологій та кейсами. Кожен проєкт має власну сторінку й голоси спільноти.",
+        },
+        {
+          title: "Знання спільноти",
+          text: "Статті, опитування та новини платформи зібрані в розділі «Спільнота» — діліться матеріалами, збирайте думки та стежте за авторами.",
+        },
+        {
+          title: "Визнання",
+          text: "Прозорий рейтинг на основі голосів спільноти та бейджів, тож сильні роботи помітні через пошук і лідерборди.",
+        },
+      ],
       missionTitle: "Наша місія",
       missionText:
         "Ми віримо, що кожен розробник, дизайнер та фахівець заслуговує на зручний і швидкий спосіб представити свої навички та проєкти світу. SearchTalent дає вам публічний профіль, портфоліо проєктів, зворотний зв'язок від спільноти та інструменти пошуку — все в одному місці.",
       featuresTitle: "Що ви можете робити",
       features: [
-        "Створити детальний публічний профіль із навичками, досвідом та контактами",
-        "Публікувати портфоліо-проєкти з медіа, стеком технологій та кейсами",
-        "Бути знайденим через пошук, рейтинги та голоси спільноти",
-        "Стежити за авторами та отримувати оновлення про нові публікації",
-        "Експортувати профіль у форматі PDF-резюме",
+        "Створити кастомізований публічний профіль із навичками, досвідом, посиланнями та експортом PDF-резюме",
+        "Публікувати портфоліо-проєкти із зображеннями, відео, стеком технологій та кейсами",
+        "Писати статті та створювати опитування — самостійно або у співавторстві з іншими учасниками",
+        "Отримувати рейтинг спільноти та бейджі за голоси й постійний внесок",
+        "Бути знайденим через пошук, тематичні сторінки, рейтинги та лідерборди",
+        "Стежити за авторами, реагувати й коментувати та отримувати оновлення про нові роботи",
       ],
+      communityTitle: "Спільнота та якість",
+      communityText:
+        "Рейтинги, бейджі та лідерборди винагороджують справжній внесок, а легка модерація тримає стрічки чистими й надійними. Реакції, коментарі та підписки перетворюють портфоліо на живу спільноту, а не статичну галерею.",
       openSourceTitle: "Створено відкрито",
       openSourceText:
         "SearchTalent розпочався як університетський проєкт і продовжує розвиватися завдяки відгукам спільноти. Ідеї та пропозиції завжди вітаються.",
+      ctaTitle: "Готові показати свої роботи?",
+      ctaText:
+        "Створіть безкоштовний профіль, опублікуйте перший проєкт і долучайтеся до спільноти.",
+      ctaPrimary: "Створити профіль",
+      ctaSecondary: "Переглянути таланти",
       backToHome: "На головну",
     },
     faqPage: {

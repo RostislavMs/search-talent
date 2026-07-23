@@ -53,6 +53,8 @@ export default async function PollsPage({
         description:
           "Інтерактивні опитування спільноти: голосуйте, переглядайте результати та діліться думкою. Створіть власне опитування з різними типами питань.",
         createPoll: "Створити опитування",
+        filterSearch: "Пошук",
+        searchPlaceholder: "Пошук опитувань за словами",
         filterCategory: "Категорія",
         filterAuthor: "Автор",
         filterSort: "Сортування",
@@ -71,6 +73,8 @@ export default async function PollsPage({
         description:
           "Interactive community polls: vote, see results, and share your opinion. Create your own poll with different question types.",
         createPoll: "Create a poll",
+        filterSearch: "Search",
+        searchPlaceholder: "Search polls by keyword",
         filterCategory: "Category",
         filterAuthor: "Author",
         filterSort: "Sort",
@@ -92,6 +96,8 @@ export default async function PollsPage({
         initialItems={feed.items}
         categoryOptions={categoryOptions}
         ui={{
+          filterSearch: ui.filterSearch,
+          searchPlaceholder: ui.searchPlaceholder,
           filterCategory: ui.filterCategory,
           filterAuthor: ui.filterAuthor,
           filterSort: ui.filterSort,

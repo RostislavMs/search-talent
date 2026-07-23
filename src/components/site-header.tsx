@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import logoImage from "../../public/logo.webp";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import HeaderNav from "@/components/header-nav";
+import HeaderScrollProgress from "@/components/header-scroll-progress";
 import NavLink from "@/components/nav-link";
 import LogoutButton from "@/components/logout-button";
 import LanguageSwitcher from "@/components/language-switcher";
@@ -729,6 +730,8 @@ export default function SiteHeader({
             )
           : null}
       </div>
+
+      <HeaderScrollProgress />
     </header>
   );
 }

@@ -7,6 +7,7 @@ import ArticlePinButton from "@/components/article-pin-button";
 import ArticleTableOfContents from "@/components/article-table-of-contents";
 import ReportArticleButton from "@/components/report-article-button";
 import RichTextRenderer from "@/components/rich-text-renderer";
+import ScrollToTopButton from "@/components/scroll-to-top-button";
 import { ButtonLink } from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import ShareButton from "@/components/ui/share-button";
@@ -391,6 +392,9 @@ export default function ArticleDetailView({
           </aside>
         ) : null}
       </div>
+      <ScrollToTopButton
+        label={getDictionary(isUkrainian ? "uk" : "en").common.scrollToTop}
+      />
     </main>
   );
 }

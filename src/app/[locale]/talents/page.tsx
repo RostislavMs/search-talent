@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import BrowseFacets from "@/components/browse-facets";
 import JsonLd from "@/components/json-ld";
+import ScrollToTopButton from "@/components/scroll-to-top-button";
 import SeoFaqSection from "@/components/seo-faq-section";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import {
@@ -61,6 +62,7 @@ export default async function LocalizedTalentsPage({
 }) {
   const locale = (await getLocaleValue(params)) as Locale;
   const marketing = getMarketingContent(locale);
+  const dictionary = getDictionary(locale);
 
   // The WebSite JSON-LD `SearchAction` sends visitors here as
   // `/talents?q={term}` (Google's sitelinks searchbox). Seed the SSR results
@@ -153,6 +155,7 @@ export default async function LocalizedTalentsPage({
         />
         <SeoFaqSection title={marketing.talents.faqTitle} items={marketing.talents.faq} />
       </div>
+      <ScrollToTopButton label={dictionary.common.scrollToTop} />
     </main>
   );
 }

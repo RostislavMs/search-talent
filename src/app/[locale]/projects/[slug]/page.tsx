@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import BookmarkButton from "@/components/bookmark-button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import ProjectComments from "@/components/project-comments";
+import ScrollToTopButton from "@/components/scroll-to-top-button";
 import { isGifSearchConfigured } from "@/lib/gif/provider";
 import RelatedProjects from "@/components/related-projects";
 import { ProjectCardGridSkeleton } from "@/components/skeletons/card-skeletons";
@@ -800,6 +801,7 @@ export default async function PublicProjectPage({
           dictionary={dictionary}
         />
       </Suspense>
+      <ScrollToTopButton label={dictionary.common.scrollToTop} />
     </main>
   );
 }

@@ -28,6 +28,7 @@ export async function GET(request: Request) {
   const feed = await getPollFeed({
     categorySlug: searchParams.get("category") || null,
     authorQuery: searchParams.get("author") || null,
+    search: searchParams.get("search") || null,
     sort: searchParams.get("sort") || null,
     locale: searchParams.get("locale") || null,
   });
