@@ -46,43 +46,65 @@ export default async function AboutPage({
   const locale = await getLocaleValue(params);
   const dictionary = getDictionary(locale);
 
+  const about = dictionary.aboutPage;
+
   return (
-    <main className="mx-auto max-w-4xl px-0 py-10 sm:px-6">
+    <main className="mx-auto max-w-5xl px-0 py-10 sm:px-6">
       <section className="rounded-none sm:rounded-hero app-card p-8 sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.aboutPage.eyebrow}
+              {about.eyebrow}
             </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
-              {dictionary.aboutPage.title}
+            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
+              {about.title}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
-              {dictionary.aboutPage.description}
+              {about.description}
             </p>
           </div>
 
-          <ButtonLink href="/" variant="ghost">
-            {dictionary.aboutPage.backToHome}
+          <ButtonLink href="/" variant="ghost" className="shrink-0">
+            {about.backToHome}
           </ButtonLink>
         </div>
       </section>
 
       <section className="mt-8 rounded-none sm:rounded-hero app-card p-6 sm:p-8">
         <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
-          {dictionary.aboutPage.missionTitle}
+          {about.pillarsTitle}
         </h2>
-        <p className="mt-4 text-base leading-8 app-muted">
-          {dictionary.aboutPage.missionText}
-        </p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          {about.pillars.map((pillar, index) => (
+            <div
+              key={pillar.title}
+              className="rounded-2xl border app-border p-5 sm:p-6"
+            >
+              <p className="text-xs font-semibold tracking-eyebrow text-[color:var(--brand-strong)]">
+                {String(index + 1).padStart(2, "0")}
+              </p>
+              <h3 className="font-display mt-2 text-lg font-medium tracking-tight text-[color:var(--foreground)]">
+                {pillar.title}
+              </h3>
+              <p className="mt-2 text-sm leading-7 app-muted">{pillar.text}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:p-8">
         <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
-          {dictionary.aboutPage.featuresTitle}
+          {about.missionTitle}
         </h2>
-        <ul className="mt-4 space-y-3">
-          {dictionary.aboutPage.features.map((feature) => (
+        <p className="mt-4 text-base leading-8 app-muted">{about.missionText}</p>
+      </section>
+
+      <section className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:p-8">
+        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+          {about.featuresTitle}
+        </h2>
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+          {about.features.map((feature) => (
             <li
               key={feature}
               className="flex items-start gap-3 text-base leading-7 app-muted"
@@ -94,6 +116,48 @@ export default async function AboutPage({
         </ul>
       </section>
 
+      <section className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:p-8">
+        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+          {about.communityTitle}
+        </h2>
+        <p className="mt-4 text-base leading-8 app-muted">
+          {about.communityText}
+        </p>
+      </section>
+
+      <section className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:p-8">
+        <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+          {about.openSourceTitle}
+        </h2>
+        <p className="mt-4 text-base leading-8 app-muted">
+          {about.openSourceText}
+        </p>
+      </section>
+
+      <section className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+              {about.ctaTitle}
+            </h2>
+            <p className="mt-2 max-w-xl text-base leading-8 app-muted">
+              {about.ctaText}
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:shrink-0 sm:flex-row">
+            <ButtonLink href="/signup" className="w-full sm:w-auto">
+              {about.ctaPrimary}
+            </ButtonLink>
+            <ButtonLink
+              href="/talents"
+              variant="secondary"
+              className="w-full sm:w-auto"
+            >
+              {about.ctaSecondary}
+            </ButtonLink>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

@@ -5,6 +5,7 @@ import PinProjectToggle from "@/components/pin-project-toggle";
 import ProjectCard from "@/components/project-card";
 import { ButtonLink } from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/optimized-image";
+import Pagination from "@/components/ui/pagination";
 import { getMyProjectsPage } from "@/lib/db/projects";
 import { getUserProjectsPage } from "@/lib/db/public";
 import {
@@ -133,7 +134,7 @@ export default async function UserProjectsPage({
     return renderOwnerView({ locale, username, page: requestedPage, dictionary });
   }
 
-  return renderPublicView({ username, page: requestedPage, dictionary });
+  return renderPublicView({ locale, username, page: requestedPage, dictionary });
 }
 
 async function renderOwnerView({
@@ -275,34 +276,19 @@ async function renderOwnerView({
               })}
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-              <span className="text-sm app-muted">
-                {dictionary.dashboardProjects.pageLabel} {result.currentPage} /{" "}
-                {result.totalPages}
-              </span>
-
-              <div className="flex gap-3">
-                {result.currentPage > 1 && (
-                  <ButtonLink
-                    href={`/u/${username}/projects?page=${result.currentPage - 1}`}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    {dictionary.dashboardProjects.previousPage}
-                  </ButtonLink>
-                )}
-
-                {result.currentPage < result.totalPages && (
-                  <ButtonLink
-                    href={`/u/${username}/projects?page=${result.currentPage + 1}`}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    {dictionary.dashboardProjects.nextPage}
-                  </ButtonLink>
-                )}
+            {result.totalPages > 1 ? (
+              <div className="mt-8 flex justify-center">
+                <Pagination
+                  currentPage={result.currentPage}
+                  totalPages={result.totalPages}
+                  hrefFor={(targetPage) =>
+                    `/${locale}/u/${username}/projects${
+                      targetPage > 1 ? `?page=${targetPage}` : ""
+                    }`
+                  }
+                />
               </div>
-            </div>
+            ) : null}
           </>
         ) : (
           <div className="mt-6 rounded-panel app-panel-dashed p-6">
@@ -325,10 +311,12 @@ async function renderOwnerView({
 }
 
 async function renderPublicView({
+  locale,
   username,
   page,
   dictionary,
 }: {
+  locale: string;
   username: string;
   page: number;
   dictionary: ReturnType<typeof getDictionary>;
@@ -387,36 +375,19 @@ async function renderPublicView({
               ))}
             </div>
 
-            {result.totalPages > 1 && (
-              <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm app-muted">
-                  {dictionary.dashboardProjects.pageLabel} {result.currentPage} /{" "}
-                  {result.totalPages}
-                </span>
-
-                <div className="flex gap-3">
-                  {result.currentPage > 1 && (
-                    <ButtonLink
-                      href={`/u/${username}/projects?page=${result.currentPage - 1}`}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      {dictionary.dashboardProjects.previousPage}
-                    </ButtonLink>
-                  )}
-
-                  {result.currentPage < result.totalPages && (
-                    <ButtonLink
-                      href={`/u/${username}/projects?page=${result.currentPage + 1}`}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      {dictionary.dashboardProjects.nextPage}
-                    </ButtonLink>
-                  )}
-                </div>
+            {result.totalPages > 1 ? (
+              <div className="mt-8 flex justify-center">
+                <Pagination
+                  currentPage={result.currentPage}
+                  totalPages={result.totalPages}
+                  hrefFor={(targetPage) =>
+                    `/${locale}/u/${username}/projects${
+                      targetPage > 1 ? `?page=${targetPage}` : ""
+                    }`
+                  }
+                />
               </div>
-            )}
+            ) : null}
           </>
         ) : (
           <div className="rounded-none sm:rounded-panel app-card p-6">

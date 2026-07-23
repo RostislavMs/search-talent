@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import PollCard from "@/components/poll-card";
 import DeletePollButton from "@/components/delete-poll-button";
 import { ButtonLink } from "@/components/ui/Button";
+import Pagination from "@/components/ui/pagination";
 import { getCategoryDisplayName } from "@/lib/articles";
 import { getPollClosesLabel } from "@/lib/polls";
 import { getDashboardPolls } from "@/lib/db/polls";
@@ -270,9 +271,6 @@ async function renderPublicView({
   const heading = locale === "uk" ? "Опитування" : "Polls";
   const empty = locale === "uk" ? "Ще немає опублікованих опитувань." : "No published polls yet.";
   const backToProfile = dictionary.creatorProfile.backToProfile;
-  const previous = dictionary.dashboardProjects.previousPage;
-  const next = dictionary.dashboardProjects.nextPage;
-  const pageLabel = dictionary.dashboardProjects.pageLabel;
 
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
@@ -306,32 +304,16 @@ async function renderPublicView({
             </div>
 
             {result.totalPages > 1 ? (
-              <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm app-muted">
-                  {pageLabel} {result.currentPage} / {result.totalPages}
-                </span>
-
-                <div className="flex gap-3">
-                  {result.currentPage > 1 ? (
-                    <ButtonLink
-                      href={`/u/${username}/polls?page=${result.currentPage - 1}`}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      {previous}
-                    </ButtonLink>
-                  ) : null}
-
-                  {result.currentPage < result.totalPages ? (
-                    <ButtonLink
-                      href={`/u/${username}/polls?page=${result.currentPage + 1}`}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      {next}
-                    </ButtonLink>
-                  ) : null}
-                </div>
+              <div className="mt-8 flex justify-center">
+                <Pagination
+                  currentPage={result.currentPage}
+                  totalPages={result.totalPages}
+                  hrefFor={(targetPage) =>
+                    `/${locale}/u/${username}/polls${
+                      targetPage > 1 ? `?page=${targetPage}` : ""
+                    }`
+                  }
+                />
               </div>
             ) : null}
           </>

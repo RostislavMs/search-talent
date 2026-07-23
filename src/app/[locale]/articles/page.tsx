@@ -98,6 +98,8 @@ export default async function ArticlesPage({
         initialItems={feed.items}
         categoryOptions={categoryOptions}
         ui={{
+          filterSearch: ui.filterSearch,
+          searchPlaceholder: ui.searchPlaceholder,
           filterCategory: ui.filterCategory,
           filterAuthor: ui.filterAuthor,
           filterSort: ui.filterSort,

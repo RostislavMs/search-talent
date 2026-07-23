@@ -16,6 +16,7 @@ import { isPublicModerationStatus } from "@/lib/moderation";
 import { createClient } from "@/lib/supabase/server";
 import { getReactionsForTargets } from "@/lib/db/reactions";
 import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
+import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 
 // Shape of a single language version, both as stored in the `translations`
 // jsonb column and as accepted from the API payload.
@@ -330,6 +331,7 @@ export async function getArticleCategories() {
 export async function getArticleFeed(params?: {
   categorySlug?: string | null;
   authorQuery?: string | null;
+  search?: string | null;
   sort?: string | null;
   locale?: string | null;
 }) {
@@ -455,17 +457,39 @@ export async function getArticleFeed(params?: {
       );
     });
 
+  // Free-text keyword search runs in JS over the already-localized feed items
+  // (title/excerpt/body), so it matches exactly what the reader sees in the
+  // active locale. Every whitespace-separated term must appear somewhere in the
+  // article — an AND match — which keeps multi-word queries precise. Like the
+  // author filter above, this narrows within the 60-row feed window rather than
+  // re-querying, so it stays a cheap, in-place refinement.
+  const searchQuery = params?.search?.trim().toLowerCase();
+  const matchedItems = searchQuery
+    ? items.filter((item) => {
+        const haystack = [
+          item.title,
+          item.excerpt ?? "",
+          item.content ? extractPlainTextFromRichText(item.content) : "",
+        ]
+          .join(" ")
+          .toLowerCase();
+        return searchQuery
+          .split(/\s+/)
+          .every((word) => haystack.includes(word));
+      })
+    : items;
+
   const coAuthorsMap = await loadAcceptedCoAuthorsMap(
     supabase,
     "article",
-    items.map((item) => item.id),
+    matchedItems.map((item) => item.id),
   );
-  for (const item of items) {
+  for (const item of matchedItems) {
     item.coAuthors = coAuthorsMap.get(item.id) ?? [];
   }
 
   return {
-    items,
+    items: matchedItems,
     categories,
     viewerUserId: viewer.user?.id || null,
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { type MouseEvent, useState, useSyncExternalStore } from "react";
+import { type MouseEvent, useSyncExternalStore } from "react";
 import {
   allowsCookieCategory,
   cookieConsentUpdatedEvent,
@@ -11,6 +11,7 @@ import type { Theme } from "@/lib/theme";
 import {
   applyThemeToDocument,
   clearThemePreferencePersistence,
+  getThemeFromDocument,
   persistThemePreference,
 } from "@/lib/theme-client";
 
@@ -33,6 +34,20 @@ function subscribeToConsent(callback: () => void) {
   return () => {
     window.removeEventListener(cookieConsentUpdatedEvent, callback);
   };
+}
+
+// The single source of truth for the active theme is the `data-theme` attribute
+// on <html>. Observing it (rather than keeping local state seeded from a prop)
+// keeps every toggle instance in sync — including the mobile-drawer toggle,
+// which remounts each time the menu opens and would otherwise re-seed from a
+// stale server prop and appear stuck on one theme.
+function subscribeToTheme(callback: () => void) {
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  return () => observer.disconnect();
 }
 
 function prefersReducedMotion() {
@@ -91,7 +106,14 @@ export default function ThemeToggle({
   initialCanPersist: boolean;
 }) {
   const dictionary = useDictionary();
-  const [theme, setTheme] = useState<ResolvedTheme>(initialTheme);
+  // Read the live theme from <html data-theme> so the switch always reflects the
+  // real, current theme — not a prop captured at mount. SSR/hydration use the
+  // server-computed `initialTheme` to avoid a mismatch, then it syncs on mount.
+  const theme = useSyncExternalStore(
+    subscribeToTheme,
+    getThemeFromDocument,
+    () => initialTheme,
+  );
   const canPersist = useSyncExternalStore(
     subscribeToConsent,
     canPersistThemePreference,
@@ -101,7 +123,8 @@ export default function ThemeToggle({
   const isDark = theme === "dark";
 
   const applyTheme = (next: ResolvedTheme) => {
-    setTheme(next);
+    // Updating the document attribute triggers the MutationObserver above, which
+    // re-renders this (and every other) toggle — no local state needed.
     applyThemeToDocument(next);
 
     if (canPersist) {

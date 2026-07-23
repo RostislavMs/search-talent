@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import BrowseFacets from "@/components/browse-facets";
 import JsonLd from "@/components/json-ld";
+import ScrollToTopButton from "@/components/scroll-to-top-button";
 import SeoFaqSection from "@/components/seo-faq-section";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import {
@@ -148,6 +149,7 @@ export default async function LocalizedProjectsPage({
         />
         <SeoFaqSection title={marketing.projects.faqTitle} items={marketing.projects.faq} />
       </div>
+      <ScrollToTopButton label={dictionary.common.scrollToTop} />
     </main>
   );
 }

@@ -34,7 +34,7 @@ export default function ScrollToTopButton({
       onClick={scrollToTop}
       aria-label={label}
       title={label}
-      className={`fixed bottom-5 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border app-border bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-lg transition duration-200 hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:bottom-8 sm:right-8 ${
+      className={`fixed bottom-5 right-5 z-40 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border app-border bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-lg transition duration-200 hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:bottom-8 sm:right-8 ${
         visible
           ? "pointer-events-auto opacity-100"
           : "pointer-events-none translate-y-2 opacity-0"
