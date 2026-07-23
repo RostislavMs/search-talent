@@ -22,6 +22,7 @@ type Props = {
     users: string;
     moderation: string;
     audit: string;
+    popups: string;
   };
   contentLabels: {
     articles: string;
@@ -70,6 +71,7 @@ export default function AdminSidebar({
       items: [
         { href: "/admin/moderation", label: labels.moderation, icon: "⚑" },
         { href: "/admin/feedback", label: feedbackLabel, icon: "✉" },
+        { href: "/admin/popups", label: labels.popups, icon: "◍" },
         { href: "/admin/audit", label: labels.audit, icon: "≡" },
       ],
     },

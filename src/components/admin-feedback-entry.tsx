@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import OptimizedImage from "@/components/ui/optimized-image";
 import { apiFetch } from "@/lib/api-client";
+import type { FeedbackAttachment } from "@/lib/db/feedback";
 
 type AdminFeedbackEntryProps = {
   id: string;
@@ -18,6 +20,7 @@ type AdminFeedbackEntryProps = {
   authorUsername: string | null;
   authorDisplayName: string | null;
   profileHref: string | null;
+  attachments: FeedbackAttachment[];
   copy: {
     anonymous: string;
     from: string;
@@ -25,6 +28,7 @@ type AdminFeedbackEntryProps = {
     category: string;
     submittedAt: string;
     openProfile: string;
+    attachments: string;
     dismiss: string;
     dismissing: string;
     confirmTitle: string;
@@ -46,6 +50,7 @@ export default function AdminFeedbackEntry({
   authorUsername,
   authorDisplayName,
   profileHref,
+  attachments,
   copy,
 }: AdminFeedbackEntryProps) {
   const router = useRouter();
@@ -92,6 +97,34 @@ export default function AdminFeedbackEntry({
           <p className="mt-4 whitespace-pre-line text-base leading-7 text-[color:var(--foreground)]">
             {message}
           </p>
+
+          {attachments.length > 0 ? (
+            <div className="mt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
+                {copy.attachments}
+              </p>
+              <ul className="flex flex-wrap gap-3">
+                {attachments.map((item) => (
+                  <li key={item.url}>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative block h-24 w-24 overflow-hidden rounded-2xl border app-border bg-[color:var(--surface-muted)] transition hover:opacity-90"
+                    >
+                      <OptimizedImage
+                        src={item.url}
+                        alt={item.name || "attachment"}
+                        fill
+                        sizes="96px"
+                        className="object-cover"
+                      />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           <div className="mt-4 flex flex-wrap gap-4 text-sm app-muted">
             <span>

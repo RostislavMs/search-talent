@@ -8,6 +8,9 @@ import {
 
 const { holder } = vi.hoisted(() => ({ holder: { mock: null as SupabaseMock | null } }));
 
+// The route pulls in `@/lib/storage/r2` (for isR2Url), which is server-only.
+// Stub the guard so it imports under Node; isR2Url itself runs for real.
+vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => holder.mock!.client) }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => null) }));
 
@@ -67,5 +70,52 @@ describe("POST /api/feedback", () => {
   it("500 when the insert fails", async () => {
     setMock(authUser, () => ({ error: { message: "db down" } }));
     expect((await POST(req(valid))).status).toBe(500);
+  });
+});
+
+describe("POST /api/feedback — attachments", () => {
+  const r2Url = "https://pub-test.r2.dev/feedback/u/shot.webp";
+
+  it("401 when an anonymous user includes attachments", async () => {
+    setMock(null, () => ({ error: null }));
+    const res = await POST(
+      req({ ...valid, attachments: [{ url: r2Url }] }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("400 when a signed-in user includes a non-R2 attachment", async () => {
+    setMock(authUser, () => ({ error: null }));
+    const res = await POST(
+      req({ ...valid, attachments: [{ url: "https://evil.com/x.webp" }] }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("400 when more than five attachments are provided", async () => {
+    setMock(authUser, () => ({ error: null }));
+    const attachments = Array.from({ length: 6 }, (_, i) => ({
+      url: `${r2Url}?i=${i}`,
+    }));
+    expect((await POST(req({ ...valid, attachments }))).status).toBe(400);
+  });
+
+  it("saves R2 attachments from a signed-in user", async () => {
+    const mock = setMock(authUser, () => ({ error: null }));
+    const res = await POST(
+      req({
+        ...valid,
+        attachments: [
+          { url: r2Url, contentType: "image/webp", name: "shot.webp" },
+        ],
+      }),
+    );
+    expect(res.status).toBe(200);
+    const insert = mock.calls.find(
+      (c) => c.table === "feedback" && c.verb === "insert",
+    );
+    expect(
+      (insert?.payload as { attachments: unknown[] }).attachments,
+    ).toHaveLength(1);
   });
 });

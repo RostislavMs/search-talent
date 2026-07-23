@@ -20,6 +20,7 @@ const SCOPES = [
   "profile-background",
   "avatar",
   "profile-cover",
+  "feedback",
 ] as const;
 
 type Scope = (typeof SCOPES)[number];
@@ -44,6 +45,7 @@ const MAX_BYTES: Record<Scope, number> = {
   "profile-background": 25 * 1024 * 1024,
   avatar: 10 * 1024 * 1024,
   "profile-cover": 15 * 1024 * 1024,
+  feedback: 10 * 1024 * 1024,
 };
 
 const ALLOWED_MIME_PREFIX: Record<Scope, string[]> = {
@@ -55,6 +57,7 @@ const ALLOWED_MIME_PREFIX: Record<Scope, string[]> = {
   "profile-background": ["image/", "video/"],
   avatar: ["image/"],
   "profile-cover": ["image/"],
+  feedback: ["image/"],
 };
 
 const requestSchema = z.object({
@@ -100,6 +103,8 @@ function buildKey(scope: Scope, ownerId: string, fileName: string, projectId?: s
       return `avatars/${ownerId}/avatar`;
     case "profile-cover":
       return `covers/${ownerId}/cover`;
+    case "feedback":
+      return `feedback/${ownerId}/${stamp}-${safeName}`;
   }
 }
 

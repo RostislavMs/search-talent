@@ -62,6 +62,7 @@ export const dictionaries = {
         users: "Users",
         moderation: "Moderation",
         audit: "Audit log",
+        popups: "Popups",
       },
       overview: {
         title: "Platform overview",
@@ -285,6 +286,60 @@ export const dictionaries = {
         },
         unknown: "Unknown",
       },
+      popups: {
+        title: "Popups",
+        description:
+          "Site-wide popups such as a delayed feedback / bug-report nudge. Only one popup can be active at a time; it appears on every page after the configured delay.",
+        createButton: "New popup",
+        emptyState: "No popups yet. Create one to get started.",
+        activeBadge: "Active",
+        inactiveBadge: "Draft",
+        activate: "Activate",
+        deactivate: "Deactivate",
+        edit: "Edit",
+        deleteButton: "Delete",
+        save: "Save",
+        saving: "Saving…",
+        cancel: "Cancel",
+        activeHint:
+          "Activating this popup automatically deactivates any other active popup.",
+        newPopupTitle: "New popup",
+        editPopupTitle: "Edit popup",
+        kindMessage: "Message / announcement",
+        kindFeedback: "Feedback (bug report)",
+        delayUnit: "s delay",
+        fields: {
+          kind: "Type",
+          isActive: "Active",
+          delaySeconds: "Delay before showing (seconds)",
+          delayHint: "0–600 seconds after the page loads.",
+          titleEn: "Title (EN)",
+          titleUk: "Title (UK)",
+          bodyEn: "Text (EN)",
+          bodyUk: "Text (UK)",
+          ctaLabelEn: "Button label (EN)",
+          ctaLabelUk: "Button label (UK)",
+          ctaHref: "Button link",
+          ctaHint:
+            "Relative path (e.g. /articles) or a full https:// URL. Message popups only.",
+        },
+        confirmDeleteTitle: "Delete popup?",
+        confirmDeleteMessage:
+          "This permanently removes the popup. This action cannot be undone.",
+        confirmDeleteButton: "Delete",
+        errorFallback: "Operation failed. Please try again.",
+        messageEmptyError:
+          "Add a title, text, or button so the announcement has something to show.",
+        sections: {
+          behavior: "Type & behaviour",
+          content: "Content",
+          button: "Button",
+        },
+        preview: {
+          label: "Preview",
+          emptyHint: "Fill in the fields to see a preview.",
+        },
+      },
     },
     footer: {
       description:
@@ -327,6 +382,15 @@ export const dictionaries = {
         "Reserved for future campaigns, attribution, or third-party promotion tools. This category stays off unless you allow it.",
       themeSessionOnly:
         "Theme changes work for this visit, but they are not saved until you allow preference cookies.",
+    },
+    sitePopup: {
+      regionLabel: "Notice",
+      close: "Close",
+      dismiss: "Not now",
+      feedbackCta: "Leave feedback",
+      feedbackDefaultTitle: "Found a bug or have an idea?",
+      feedbackDefaultBody:
+        "Help make SearchTalent better — share feedback, report an issue, or suggest an idea. It only takes a minute.",
     },
     common: {
       project: "Project",
@@ -2266,6 +2330,14 @@ export const dictionaries = {
       successDescription:
         "Your feedback has been received. We review every submission and will reach out if we need more details.",
       sendAnother: "Send another",
+      attachTitle: "Attachments (optional)",
+      attachAction: "Add images",
+      attachHint: "PNG, JPG or WebP — up to 5 images.",
+      attachSignInHint: "Sign in to attach screenshots.",
+      attachUploading: "Uploading…",
+      attachRemove: "Remove image",
+      attachTooMany: "You can attach up to 5 images.",
+      attachFailed: "Could not upload the image. Please try again.",
     },
     contactsPage: {
       eyebrow: "Get in touch",
@@ -2346,6 +2418,7 @@ export const dictionaries = {
         users: "Користувачі",
         moderation: "Модерація",
         audit: "Журнал дій",
+        popups: "Попапи",
       },
       overview: {
         title: "Огляд платформи",
@@ -2569,6 +2642,60 @@ export const dictionaries = {
         },
         unknown: "Невідомо",
       },
+      popups: {
+        title: "Попапи",
+        description:
+          "Попапи на всьому сайті — наприклад, відкладена підказка «знайшли баг / залиште відгук». Активним може бути лише один попап; він з'являється на кожній сторінці після заданої затримки.",
+        createButton: "Новий попап",
+        emptyState: "Попапів ще немає. Створіть перший, щоб почати.",
+        activeBadge: "Активний",
+        inactiveBadge: "Чернетка",
+        activate: "Активувати",
+        deactivate: "Деактивувати",
+        edit: "Редагувати",
+        deleteButton: "Видалити",
+        save: "Зберегти",
+        saving: "Збереження…",
+        cancel: "Скасувати",
+        activeHint:
+          "Активація цього попапа автоматично деактивує будь-який інший активний попап.",
+        newPopupTitle: "Новий попап",
+        editPopupTitle: "Редагування попапа",
+        kindMessage: "Повідомлення / анонс",
+        kindFeedback: "Відгук (репорт бага)",
+        delayUnit: "с затримка",
+        fields: {
+          kind: "Тип",
+          isActive: "Активний",
+          delaySeconds: "Затримка перед показом (секунди)",
+          delayHint: "0–600 секунд після завантаження сторінки.",
+          titleEn: "Заголовок (EN)",
+          titleUk: "Заголовок (UK)",
+          bodyEn: "Текст (EN)",
+          bodyUk: "Текст (UK)",
+          ctaLabelEn: "Напис на кнопці (EN)",
+          ctaLabelUk: "Напис на кнопці (UK)",
+          ctaHref: "Посилання кнопки",
+          ctaHint:
+            "Відносний шлях (напр. /articles) або повний https:// URL. Лише для попапів-повідомлень.",
+        },
+        confirmDeleteTitle: "Видалити попап?",
+        confirmDeleteMessage:
+          "Це назавжди видалить попап. Дію не можна скасувати.",
+        confirmDeleteButton: "Видалити",
+        errorFallback: "Не вдалося виконати дію. Спробуйте ще раз.",
+        messageEmptyError:
+          "Додайте заголовок, текст або кнопку, щоб анонс мав що показати.",
+        sections: {
+          behavior: "Тип і поведінка",
+          content: "Контент",
+          button: "Кнопка",
+        },
+        preview: {
+          label: "Прев'ю",
+          emptyHint: "Заповніть поля, щоб побачити прев'ю.",
+        },
+      },
     },
     footer: {
       description:
@@ -2611,6 +2738,15 @@ export const dictionaries = {
         "Зарезервовано для майбутніх кампаній, атрибуції чи сторонніх промо-інструментів. Ця категорія залишається вимкненою, доки ви її не дозволите.",
       themeSessionOnly:
         "Зміна теми працює для поточного візиту, але не зберігається без дозволу на cookies налаштувань.",
+    },
+    sitePopup: {
+      regionLabel: "Повідомлення",
+      close: "Закрити",
+      dismiss: "Не зараз",
+      feedbackCta: "Залишити відгук",
+      feedbackDefaultTitle: "Знайшли баг або маєте ідею?",
+      feedbackDefaultBody:
+        "Допоможіть зробити SearchTalent кращим — поділіться відгуком, повідомте про проблему чи запропонуйте ідею. Це займе хвилину.",
     },
     common: {
       project: "Проєкт",
@@ -4524,6 +4660,14 @@ export const dictionaries = {
       successDescription:
         "Ваш відгук отримано. Ми розглядаємо кожне звернення і зв'яжемося, якщо знадобляться деталі.",
       sendAnother: "Надіслати ще",
+      attachTitle: "Вкладення (необов'язково)",
+      attachAction: "Додати зображення",
+      attachHint: "PNG, JPG чи WebP — до 5 зображень.",
+      attachSignInHint: "Увійдіть, щоб прикріпити скріншоти.",
+      attachUploading: "Завантаження…",
+      attachRemove: "Прибрати зображення",
+      attachTooMany: "Можна прикріпити до 5 зображень.",
+      attachFailed: "Не вдалося завантажити зображення. Спробуйте ще раз.",
     },
     contactsPage: {
       eyebrow: "Зв'яжіться з нами",
