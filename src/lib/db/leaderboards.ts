@@ -28,10 +28,13 @@ import { createAdminClient, createPublicReadOnlyClient } from "@/lib/supabase/ad
 // ---- row types ------------------------------------------------------------
 //
 // These mirror the aggregate views leaderboard_project_stats /
-// leaderboard_profile_stats (see supabase/23_leaderboard_stat_views.sql). The
-// views compute all vote / media / skill / section counts in Postgres so the
-// leaderboard reads one compact row per project / profile instead of paging
-// the entire votes / media / skills / section tables into memory.
+// leaderboard_profile_stats — MATERIALIZED as of
+// supabase/35_leaderboard_materialization.sql (originally plain views in
+// supabase/23_leaderboard_stat_views.sql). The views compute all vote / media /
+// skill / section counts in Postgres so the compute reads one compact row per
+// project / profile instead of paging the entire votes / media / skills /
+// section tables into memory. Because they are now materialized, that read is a
+// cheap index scan of precomputed rows rather than a live re-aggregation.
 
 type ProjectStatsRow = {
   id: string;
@@ -165,6 +168,13 @@ type LeaderboardData = {
 
 export const LEADERBOARDS_CACHE_TAG = "leaderboards";
 export const LEADERBOARDS_CACHE_REVALIDATE_SECONDS = 300;
+
+// How stale the persisted snapshot may get before a public read triggers a
+// recompute itself. Deliberately longer than the cache-revalidate window above
+// so the expensive recompute stays rare and bounded even if the cron refresh
+// job (see /api/cron/refresh-leaderboard) never runs — the ratings use 20–45
+// day decay half-lives, so a few minutes of staleness is invisible.
+export const LEADERBOARD_SNAPSHOT_STALE_SECONDS = 15 * 60;
 
 // PostgREST silently caps each response at the server's max_rows setting
 // (1000 on Supabase by default). Page through the result set explicitly so
@@ -644,12 +654,113 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
   };
 }
 
-// Cached entry point. The leaderboard reads only public data, so we use the
-// anon read-only client (cookies are not allowed inside `unstable_cache`).
-// Mutations invalidate the cache via `revalidateTag(LEADERBOARDS_CACHE_TAG)`.
+// ---- snapshot persistence & read -----------------------------------------
+//
+// The O(projects × profiles) computation in loadLeaderboardData() now runs ONLY
+// inside refreshLeaderboardSnapshot(), which persists the result to the
+// singleton public.leaderboard_snapshot row. The public read path
+// (readLeaderboardSnapshot) just reads that one row, so page renders and the
+// talents search no longer trigger a full recompute — nor does a vote.
+
+type SnapshotRow = {
+  result: LeaderboardsResult;
+  creator_ratings: Record<string, number> | null;
+  project_ratings: Record<string, number> | null;
+  computed_at: string;
+};
+
+// Recompute the leaderboard from the materialized stat views and persist it to
+// the snapshot row. This is the single expensive path; it also awards the
+// derived badges (inside loadLeaderboardData). Invoked by the cron refresh job
+// and lazily by readLeaderboardSnapshot when the snapshot is missing or stale.
+// Requires the service-role key to refresh the matviews and write the snapshot;
+// without it, it still returns freshly-computed data (just not persisted).
+export async function refreshLeaderboardSnapshot(): Promise<LeaderboardData> {
+  const admin = createAdminClient();
+
+  // Refresh the materialized stat views first so the compute sees current
+  // vote/media/skill aggregates. Best-effort: on failure we compute from the
+  // last materialized state rather than block the refresh.
+  if (admin) {
+    const { error } = await admin.rpc("refresh_leaderboard_stats");
+    if (error) {
+      console.error("refresh_leaderboard_stats failed:", error.message);
+    }
+  }
+
+  const data = await loadLeaderboardData();
+
+  if (admin) {
+    const { error } = await admin.from("leaderboard_snapshot").upsert(
+      {
+        id: 1,
+        result: data.result,
+        creator_ratings: data.creatorRatings,
+        project_ratings: data.projectRatings,
+        computed_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+    if (error) {
+      console.error("leaderboard_snapshot upsert failed:", error.message);
+    }
+  }
+
+  return data;
+}
+
+async function readLeaderboardSnapshot(): Promise<LeaderboardData> {
+  const supabase = createPublicReadOnlyClient();
+
+  if (!supabase) {
+    return { result: EMPTY_RESULT, creatorRatings: {}, projectRatings: {} };
+  }
+
+  const { data, error } = await supabase
+    .from("leaderboard_snapshot")
+    .select("result, creator_ratings, project_ratings, computed_at")
+    .eq("id", 1)
+    .maybeSingle<SnapshotRow>();
+
+  const isStale =
+    !!data &&
+    Date.now() - new Date(data.computed_at).getTime() >
+      LEADERBOARD_SNAPSHOT_STALE_SECONDS * 1000;
+
+  // Missing snapshot (fresh DB / migration just applied) or one that aged past
+  // the staleness window with no cron refresh: recompute and persist so the
+  // leaderboard self-heals. Bounded by the unstable_cache window below, so this
+  // fires at most once per revalidate period.
+  if (error || !data || isStale) {
+    try {
+      return await refreshLeaderboardSnapshot();
+    } catch (refreshError) {
+      console.error("leaderboard snapshot refresh failed:", refreshError);
+      if (data) {
+        return {
+          result: data.result,
+          creatorRatings: data.creator_ratings ?? {},
+          projectRatings: data.project_ratings ?? {},
+        };
+      }
+      return { result: EMPTY_RESULT, creatorRatings: {}, projectRatings: {} };
+    }
+  }
+
+  return {
+    result: data.result,
+    creatorRatings: data.creator_ratings ?? {},
+    projectRatings: data.project_ratings ?? {},
+  };
+}
+
+// Cached entry point. Reads the precomputed snapshot (a single-row SELECT), so
+// callers pay a cheap read — not the full recompute. The cache dedupes that
+// read across a request and across the revalidate window. The tag is flushed by
+// the cron refresh job after it writes a new snapshot.
 const getLeaderboardData = unstable_cache(
-  loadLeaderboardData,
-  ["leaderboards-v2"],
+  readLeaderboardSnapshot,
+  ["leaderboards-v3"],
   {
     revalidate: LEADERBOARDS_CACHE_REVALIDATE_SECONDS,
     tags: [LEADERBOARDS_CACHE_TAG],

@@ -1,6 +1,4 @@
-import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
-import { LEADERBOARDS_CACHE_TAG } from "@/lib/db/leaderboards";
 import { getProfileVoteSummary } from "@/lib/db/profile-votes";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
@@ -135,7 +133,11 @@ export async function POST(request: Request) {
   // The persisted profiles.score (Wilson, 0-100) is maintained by a database
   // trigger now — see supabase/32_rating_score_triggers.sql. The previous
   // client-side write here was silently dropped by RLS (owner-or-admin).
-  revalidateTag(LEADERBOARDS_CACHE_TAG, "max");
+  //
+  // The homepage leaderboard / composite ratings are served from the
+  // precomputed leaderboard_snapshot and refreshed on a schedule (see
+  // /api/cron/refresh-leaderboard), so a profile vote no longer triggers a full
+  // O(projects × profiles) recompute here — it surfaces on the next refresh.
 
   return NextResponse.json({ success: true, ...summary });
 }
