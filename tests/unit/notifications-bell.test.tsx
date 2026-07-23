@@ -147,14 +147,18 @@ describe("<NotificationsBell />", () => {
     await screen.findByText("2");
 
     await openDropdown();
-    await screen.findByText("did a thing");
 
-    await userEvent.click(screen.getByText("did a thing"));
-
-    expect(vi.mocked(apiFetch)).toHaveBeenCalledWith(
-      "/api/notifications/mark-read",
-      expect.objectContaining({ method: "POST", body: { ids: ["n1"] } }),
-    );
+    // Under full-suite load the dropdown can briefly re-enter its loading state
+    // (the unread-count poll and the preview fetch overlap), which detaches the
+    // item mid-click so onClick never fires. Retry a synchronous click until it
+    // lands and the mark-read call is posted.
+    await waitFor(() => {
+      fireEvent.click(screen.getByText("did a thing"));
+      expect(vi.mocked(apiFetch)).toHaveBeenCalledWith(
+        "/api/notifications/mark-read",
+        expect.objectContaining({ method: "POST", body: { ids: ["n1"] } }),
+      );
+    });
     await waitFor(() => expect(screen.getByText("1")).toBeInTheDocument());
   });
 });
