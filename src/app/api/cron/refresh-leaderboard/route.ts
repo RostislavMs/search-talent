@@ -9,6 +9,13 @@ import {
 // crons). Decouples the expensive O(projects × profiles) computation from user
 // requests: page renders and the talents search only ever read the snapshot.
 //
+// Schedule: vercel.json runs this daily ("0 3 * * *"). The Hobby plan REJECTS
+// any cron more frequent than once per day at deploy time, so daily is the
+// backstop; freshness between runs is handled by the lazy self-heal in
+// readLeaderboardSnapshot (recomputes when the snapshot ages past
+// LEADERBOARD_SNAPSHOT_STALE_SECONDS). On Pro, bump the schedule to "*/15 * * * *"
+// so the refresh never lands on a user request.
+//
 // Auth: Vercel Cron sends `Authorization: Bearer $CRON_SECRET`. When CRON_SECRET
 // is set we require it, so the endpoint can't be triggered by the public. When
 // it is unset (e.g. local dev) the route is open.
