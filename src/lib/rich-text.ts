@@ -759,8 +759,12 @@ export function findHeadingOrderIssue(html: string): HeadingOrderIssue | null {
   const pattern = /<h([2-4])\b[^>]*>([\s\S]*?)<\/h\1>/gi;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(html))) {
-    const text = match[2]
-      .replace(/<[^>]*>/g, "")
+    // Strip inner tags until the string stops changing — a single pass can leave
+    // a `<tag` behind when markup is nested/reconstructed (e.g. `<b<i>>`), which
+    // is the "incomplete multi-character sanitization" pattern. The text is only
+    // used to build a plain toast message, but stripping to a fixpoint keeps it
+    // clean regardless of the input.
+    const text = stripUntilStable(match[2], /<[^>]*>/g)
       .replace(/&nbsp;/gi, " ")
       .replace(/\s+/g, " ")
       .trim();
