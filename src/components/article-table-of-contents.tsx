@@ -5,6 +5,8 @@ import { useEffect, useState, type MouseEvent } from "react";
 type Heading = {
   id: string;
   text: string;
+  /** 2, 3 or 4 — drives the nested indentation of the entry. */
+  level: number;
 };
 
 function slugify(text: string, index: number) {
@@ -45,7 +47,9 @@ export default function ArticleTableOfContents({
       const container = document.getElementById(targetId);
       if (!container) return;
 
-      const nodes = Array.from(container.querySelectorAll<HTMLElement>("h2"));
+      const nodes = Array.from(
+        container.querySelectorAll<HTMLElement>("h2, h3, h4"),
+      );
       const collected = nodes.map((node, index) => {
         const text = node.textContent?.trim() || `${index + 1}`;
         if (!node.id) {
@@ -53,7 +57,8 @@ export default function ArticleTableOfContents({
         }
         // Clear the sticky site header when jumping to a heading.
         node.style.scrollMarginTop = "7rem";
-        return { id: node.id, text };
+        const level = Number(node.tagName.slice(1)) || 2;
+        return { id: node.id, text, level };
       });
 
       setHeadings(collected);
@@ -101,6 +106,14 @@ export default function ArticleTableOfContents({
     event.currentTarget.closest("details")?.removeAttribute("open");
   };
 
+  // Indent sub-headings so the outline hierarchy is visible: H2 sits flush, H3
+  // and H4 step further in.
+  const indentByLevel: Record<number, string> = {
+    2: "pl-4",
+    3: "pl-8",
+    4: "pl-12",
+  };
+
   const items = headings.map((heading) => {
     const isActive = heading.id === activeId;
     return (
@@ -110,7 +123,8 @@ export default function ArticleTableOfContents({
           onClick={(event) => handleClick(event, heading.id)}
           aria-current={isActive ? "location" : undefined}
           className={[
-            "-ml-px block border-l-2 py-1.5 pl-4 text-sm leading-snug transition",
+            "-ml-px block border-l-2 py-1.5 text-sm leading-snug transition",
+            indentByLevel[heading.level] ?? "pl-4",
             isActive
               ? "border-[color:var(--brand)] font-medium text-[color:var(--foreground)]"
               : "border-transparent app-muted hover:border-[color:var(--border)] hover:text-[color:var(--foreground)]",

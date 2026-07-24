@@ -88,14 +88,16 @@ export async function PUT(
   const willRemove = screen.flagged && existing.moderation_status === "approved";
 
   // Keep the slug — and therefore the public URL — stable once an article has
-  // been published. Regenerating it from an edited title would 404 every
-  // shared / indexed / RSS link. Drafts have no public URL yet, so they still
-  // pick up a fresh slug (including on the edit that first publishes them,
-  // where published_at is still null at this point).
+  // been published. Regenerating it from an edited title (or honouring a new
+  // custom slug) would 404 every shared / indexed / RSS link. Drafts have no
+  // public URL yet, so they still pick up a fresh slug: the author's custom slug
+  // when provided, otherwise one derived from the title. This also covers the
+  // edit that first publishes a draft (published_at is still null at this point),
+  // so a custom slug set right before publishing is honoured and then frozen.
   const slug =
     existing.published_at && existing.slug
       ? existing.slug
-      : await ensureUniqueArticleSlug(payload.title, id);
+      : await ensureUniqueArticleSlug(payload.title, id, payload.slug);
   const now = new Date().toISOString();
   // Editing an already-published article stamps a dedicated "edited" date and
   // preserves the ORIGINAL publish date (so "Опубліковано" doesn't silently jump

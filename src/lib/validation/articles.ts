@@ -53,6 +53,11 @@ export const articlePayloadSchema = z.object({
   excerpt: z.string().trim().max(420, "Excerpt is too long").nullable(),
   content: z.string().trim().min(20, "Content is too short").max(50000, "Content is too long"),
   category_slug: z.string().trim().min(2, "Category is required").max(80),
+  // Optional author-supplied URL slug. Accepted freeform and always re-slugified
+  // server-side (transliterated, stripped, de-duplicated, reserved-word guarded),
+  // so an empty/emoji-only/unsafe value simply falls back to the title-derived
+  // slug. One slug per article, shared across both language versions.
+  slug: z.string().trim().max(200).optional(),
   status: z.enum(articleStatuses).default("draft"),
   cover_image_url: optionalUrl.nullable().default(null),
   cover_image_storage_path: z.string().trim().max(500).nullable().default(null),

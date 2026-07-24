@@ -91,7 +91,11 @@ export async function POST(request: Request) {
       ? screenContentForModeration(collectArticleModerationText(payload))
       : CLEAN_MODERATION_RESULT;
 
-  const slug = await ensureUniqueArticleSlug(payload.title);
+  const slug = await ensureUniqueArticleSlug(
+    payload.title,
+    undefined,
+    payload.slug,
+  );
   const now = new Date().toISOString();
   const { data, error } = await context.supabase
     .from("articles")
