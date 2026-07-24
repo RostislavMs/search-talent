@@ -820,6 +820,56 @@ export function countWords(value: string | null | undefined) {
     .filter((word) => word.length > 0).length;
 }
 
+// Filler words (uk + en) dropped when deriving keywords from a title, so the
+// result carries topical terms rather than glue words.
+const KEYWORD_STOP_WORDS = new Set([
+  // English
+  "the", "and", "for", "with", "from", "that", "this", "your", "you", "are",
+  "was", "how", "what", "why", "when", "who", "which", "into", "onto", "about",
+  "over", "under", "more", "less", "than", "then", "them", "they", "its", "our",
+  "out", "not", "but", "all", "any", "can", "will", "have", "has", "had",
+  // Ukrainian
+  "що", "як", "для", "про", "чи", "це", "цей", "ця", "цю", "від", "при",
+  "над", "під", "без", "але", "або", "їх", "його", "її", "ми", "ви", "вони",
+  "так", "вже", "ще", "бо", "щоб", "який", "яка", "яке", "які", "де", "коли",
+]);
+
+/**
+ * Derive up to `max` keywords for an article from its title, seeded with any
+ * fixed terms (e.g. the category names). Splits the title into words, drops
+ * short/filler tokens, and de-duplicates case-insensitively while preserving the
+ * seed terms' original casing and order. Locale-agnostic: the caller passes the
+ * already-localised title so the keywords match the rendered language.
+ */
+export function deriveArticleKeywords(
+  title: string | null | undefined,
+  seed: string[] = [],
+  max = 8,
+): string[] {
+  const result: string[] = [];
+  const seen = new Set<string>();
+
+  const push = (raw: string) => {
+    const value = raw.trim();
+    const key = value.toLowerCase();
+    if (!value || seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    result.push(value);
+  };
+
+  seed.forEach(push);
+
+  (title || "")
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((word) => word.length >= 3 && !KEYWORD_STOP_WORDS.has(word))
+    .forEach(push);
+
+  return result.slice(0, max);
+}
+
 /* ------------------------------------------------------------------ */
 /*  Indexability predicates — shared by page metadata AND the sitemap  */
 /*  so the two can never drift. A page that resolves to `noindex` must  */

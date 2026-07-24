@@ -12,6 +12,8 @@ const allowedTags = new Set([
   "figure",
   "figcaption",
   "h2",
+  "h3",
+  "h4",
   "hr",
   "iframe",
   "img",
@@ -26,15 +28,14 @@ const allowedTags = new Set([
 const tagAliases: Record<string, string> = {
   b: "strong",
   i: "em",
-  // Collapse every heading level onto the single supported <h2>, so a heading
-  // pasted from elsewhere (e.g. a Markdown preview emits <h1>/<h3>) stays a
-  // heading instead of being flattened to plain paragraph text. <h2> is the
-  // body's top section level, sitting one step below the page <h1> title.
+  // The body supports a three-level heading outline: <h2> (top section, one
+  // step below the page <h1> title), <h3> and <h4>. Levels outside that range —
+  // pasted from a Markdown preview or a rendered page — are clamped onto the
+  // nearest supported level instead of being flattened to plain paragraph text:
+  // <h1> demotes to <h2>, and <h5>/<h6> promote to the deepest level, <h4>.
   h1: "h2",
-  h3: "h2",
-  h4: "h2",
-  h5: "h2",
-  h6: "h2",
+  h5: "h4",
+  h6: "h4",
 };
 
 function escapeHtml(value: string) {
@@ -58,6 +59,8 @@ function stripZeroWidth(value: string) {
 const TEXT_BLOCK_TAGS = new Set([
   "p",
   "h2",
+  "h3",
+  "h4",
   "blockquote",
   "li",
   "summary",
@@ -137,7 +140,7 @@ export function inlineMarkdownToHtml(text: string): string {
 
 /**
  * Block-level Markdown → HTML for pasted plain-text drafts. Covers only what the
- * editor supports — headings (any level → <h2>), blockquotes, bullet / ordered
+ * editor supports — headings (clamped to the <h2>–<h4> outline), blockquotes, bullet / ordered
  * lists, horizontal rules and blank-line paragraphs — plus inline marks. Raw HTML
  * lines (e.g. the <details> spoiler blocks the drafts use) pass through untouched.
  * This is NOT a security boundary: the result must be run through
@@ -194,10 +197,13 @@ export function markdownToHtml(md: string): string {
       html.push("<hr>");
       continue;
     }
-    const heading = trimmed.match(/^#{1,6}\s+(.*)$/);
+    const heading = trimmed.match(/^(#{1,6})\s+(.*)$/);
     if (heading) {
       flushAll();
-      html.push(`<h2>${inlineMarkdownToHtml(heading[1].trim())}</h2>`);
+      // Map the Markdown level onto the body's supported outline (<h2>–<h4>):
+      // `#`/`##` open a section as <h2>, `###` → <h3>, and `####`+ → <h4>.
+      const level = Math.min(Math.max(heading[1].length, 2), 4);
+      html.push(`<h${level}>${inlineMarkdownToHtml(heading[2].trim())}</h${level}>`);
       continue;
     }
     const bq = trimmed.match(/^>\s?(.*)$/);
@@ -474,6 +480,8 @@ const ALLOWED_TAGS = [
   "figure",
   "figcaption",
   "h2",
+  "h3",
+  "h4",
   "hr",
   "iframe",
   "img",
@@ -486,13 +494,16 @@ const ALLOWED_TAGS = [
   "ul",
 ];
 
-// Collapse unsupported heading levels onto the single supported <h2>. Mirrors
-// the `tagAliases` map used by the DOM-walking editor normaliser so the string
-// (server / render / paste) path keeps pasted <h1>/<h3> headings as headings.
-// This also promotes legacy stored <h3> body content to <h2> at render time, so
-// section headings sit one level under the page <h1> instead of skipping <h2>.
+// Clamp heading levels onto the body's supported <h2>–<h4> outline. Mirrors the
+// `tagAliases` map used by the DOM-walking editor normaliser so the string
+// (server / render / paste) path keeps pasted headings as headings: <h1>
+// demotes to <h2> (the body's top section level, one step under the page <h1>),
+// and <h5>/<h6> promote to the deepest supported level, <h4>. <h2>–<h4> pass
+// through untouched.
 function normalizeHeadingLevels(html: string): string {
-  return html.replace(/<(\/?)(?:h1|h3|h4|h5|h6)(\b[^>]*)>/gi, "<$1h2$2>");
+  return html
+    .replace(/<(\/?)h1(\b[^>]*)>/gi, "<$1h2$2>")
+    .replace(/<(\/?)(?:h5|h6)(\b[^>]*)>/gi, "<$1h4$2>");
 }
 
 const ALLOWED_ATTR = [
@@ -723,6 +734,54 @@ export function extractYouTubeVideoId(url: string): string | null {
     if (match?.[1]) {
       return match[1];
     }
+  }
+
+  return null;
+}
+
+// The first structural problem in a body's <h2>–<h4> heading outline:
+//  - "first": the body opens below <h2> (e.g. it starts with an <h3>), so the
+//    section hierarchy has no top level to hang off the page <h1>.
+//  - "skip": a heading dives more than one level deeper than the previous one
+//    (e.g. <h2> straight to <h4>, skipping <h3>), which breaks the outline and
+//    hurts accessibility / SEO. Jumping back up any number of levels is fine.
+export type HeadingOrderIssue =
+  | { kind: "first"; level: number; text: string }
+  | { kind: "skip"; from: number; to: number; text: string };
+
+/**
+ * Inspect the heading outline of stored rich-text body HTML and return the first
+ * ordering problem, or null when the outline is clean (or has no headings). Used
+ * to warn authors before they save/publish an article with a broken hierarchy.
+ */
+export function findHeadingOrderIssue(html: string): HeadingOrderIssue | null {
+  const headings: { level: number; text: string }[] = [];
+  const pattern = /<h([2-4])\b[^>]*>([\s\S]*?)<\/h\1>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(html))) {
+    const text = match[2]
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    headings.push({ level: Number(match[1]), text });
+  }
+
+  if (headings.length === 0) {
+    return null;
+  }
+
+  if (headings[0].level !== 2) {
+    return { kind: "first", level: headings[0].level, text: headings[0].text };
+  }
+
+  let previous = headings[0].level;
+  for (let i = 1; i < headings.length; i += 1) {
+    const { level, text } = headings[i];
+    if (level > previous + 1) {
+      return { kind: "skip", from: previous, to: level, text };
+    }
+    previous = level;
   }
 
   return null;

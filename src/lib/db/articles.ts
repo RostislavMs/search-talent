@@ -1,4 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { slugify } from "@/lib/slug";
 import {
   NEWS_CATEGORY_SLUG,
   normalizeArticleSort,
@@ -754,12 +755,23 @@ export async function getArticleModerationQueue(locale?: string | null) {
     );
 }
 
+// Slugs that would collide with static route segments under /articles/ (and its
+// /news/ mirror), so an article can never claim one and become unreachable.
+const RESERVED_ARTICLE_SLUGS = new Set(["new", "edit", "feed"]);
+
 export async function ensureUniqueArticleSlug(
   title: string,
   excludeId?: string,
+  /**
+   * Author-supplied slug to use as the base instead of the title. Re-slugified
+   * for safety; when it normalises to nothing usable (empty / emoji-only), we
+   * fall back to the title-derived slug so a bad custom value never wins.
+   */
+  preferredSlug?: string,
 ) {
   const supabase = await createClient();
-  const baseSlug = slugifyArticleTitle(title);
+  const normalizedPreferred = preferredSlug ? slugify(preferredSlug, "") : "";
+  const baseSlug = normalizedPreferred || slugifyArticleTitle(title);
   const { data } = await supabase
     .from("articles")
     .select("id, slug")
@@ -772,13 +784,16 @@ export async function ensureUniqueArticleSlug(
       .filter((item): item is string => Boolean(item)),
   );
 
-  if (!existing.has(baseSlug)) {
+  const isTaken = (candidate: string) =>
+    existing.has(candidate) || RESERVED_ARTICLE_SLUGS.has(candidate);
+
+  if (!isTaken(baseSlug)) {
     return baseSlug;
   }
 
   let suffix = 2;
 
-  while (existing.has(`${baseSlug}-${suffix}`)) {
+  while (isTaken(`${baseSlug}-${suffix}`)) {
     suffix += 1;
   }
 

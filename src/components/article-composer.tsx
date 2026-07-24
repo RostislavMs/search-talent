@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/toast";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import FormSelect from "@/components/ui/form-select";
 import FormTextarea from "@/components/ui/form-textarea";
+import InfoHint from "@/components/ui/info-hint";
 import CoAuthorPicker, {
   type CoAuthorOption,
 } from "@/components/co-author-picker";
@@ -20,7 +21,11 @@ import {
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { compressImageFile } from "@/lib/image-compression";
-import { extractPlainTextFromRichText } from "@/lib/rich-text";
+import {
+  extractPlainTextFromRichText,
+  findHeadingOrderIssue,
+  type HeadingOrderIssue,
+} from "@/lib/rich-text";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 
 // The rich-text editor (with its lazy-loaded emoji dataset) is a heavy,
@@ -102,6 +107,7 @@ type EditableArticle = {
   excerpt: string | null;
   content: string;
   categorySlug: string;
+  slug?: string | null;
   status: "draft" | "published";
   coverImageUrl: string | null;
   coverImageStoragePath: string | null;
@@ -208,6 +214,10 @@ export default function ArticleComposer({
       availableCategories[0]?.slug ||
       "",
   );
+  // Optional custom URL slug, shared across both language versions. Prefilled
+  // with the current slug when editing so the author can see and (while it is
+  // still a draft) adjust it; frozen once the article is published.
+  const [slug, setSlug] = useState(editArticle?.slug || "");
   const [coAuthors, setCoAuthors] = useState<CoAuthorOption[]>(
     editArticle?.coAuthors ?? [],
   );
@@ -237,6 +247,7 @@ export default function ArticleComposer({
           presetCategorySlug ||
           availableCategories[0]?.slug ||
           "",
+        slug: editArticle?.slug || "",
       }),
     [initialVersions, editArticle, presetCategorySlug, availableCategories],
   );
@@ -247,7 +258,7 @@ export default function ArticleComposer({
   // originally loaded state, and the unsaved-changes guard keeps firing its
   // beforeunload warning even though everything is already saved.
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
-  const currentSnapshot = JSON.stringify({ versions, categorySlug });
+  const currentSnapshot = JSON.stringify({ versions, categorySlug, slug });
   const isDirty =
     saving === null && currentSnapshot !== (savedSnapshot ?? initialSnapshot);
 
@@ -281,6 +292,14 @@ export default function ArticleComposer({
         excerptPlaceholder:
           "Коротко поясніть, про що стаття, чому її варто відкрити і що читач отримає.",
         category: "Категорія",
+        slug: "URL-адреса (slug)",
+        slugOptional: "Необов'язково.",
+        slugTooltipLabel: "Пояснення про URL-адресу",
+        slugTooltip:
+          "Латиниця, цифри й дефіси. Якщо порожнє — згенерується з назви.",
+        slugPlaceholder: "напр. moya-korotka-adresa",
+        slugLockedHint:
+          "Slug зафіксовано після публікації, щоб не ламати наявні посилання.",
         status: "Статус",
         draft: "Чернетка",
         published: "Опублікувати",
@@ -320,6 +339,14 @@ export default function ArticleComposer({
         excerptPlaceholder:
           "Briefly explain what the article is about, why it matters, and what the reader will get from it.",
         category: "Category",
+        slug: "URL slug",
+        slugOptional: "Optional.",
+        slugTooltipLabel: "About the URL slug",
+        slugTooltip:
+          "Latin letters, digits and hyphens. Leave empty to generate it from the title.",
+        slugPlaceholder: "e.g. my-short-url",
+        slugLockedHint:
+          "The slug is locked after publishing so existing links keep working.",
         status: "Status",
         draft: "Draft",
         published: "Publish",
@@ -415,6 +442,26 @@ export default function ArticleComposer({
     }
   };
 
+  // Turn a heading-outline problem into a reader-facing warning. When both
+  // language versions are filled it is prefixed with the language name so the
+  // author knows which one to fix.
+  const headingIssueMessage = (issue: HeadingOrderIssue, langName?: string) => {
+    const quoted = issue.text
+      ? isUkrainian
+        ? ` — «${issue.text}»`
+        : ` — “${issue.text}”`
+      : "";
+    const body =
+      issue.kind === "first"
+        ? isUkrainian
+          ? `Заголовки мають починатися з «Заголовок 2» (H2), а не з H${issue.level}${quoted}.`
+          : `Headings must start with “Heading 2” (H2), not H${issue.level}${quoted}.`
+        : isUkrainian
+          ? `Порушено порядок заголовків: після H${issue.from} йде H${issue.to}${quoted}. Не пропускайте рівні (H2 → H3 → H4).`
+          : `Heading order is broken: H${issue.to} follows H${issue.from}${quoted}. Don't skip levels (H2 → H3 → H4).`;
+    return langName ? `${langName}: ${body}` : body;
+  };
+
   const saveArticle = async (nextStatus: "draft" | "published") => {
     // A language version counts as present once it has a title.
     const filledLocales = LOCALES.filter(
@@ -440,6 +487,21 @@ export default function ArticleComposer({
           isUkrainian
             ? `Додайте текст статті для версії «${lang}».`
             : `Add the article body for the ${lang} version.`,
+        );
+        setActiveLocale(loc);
+        return;
+      }
+    }
+
+    // Warn (and stop) when a version's heading outline is out of order — a body
+    // that opens below H2, or one that skips a level (e.g. H2 straight to H4).
+    // A clean H2 → H3 → H4 hierarchy keeps the article readable and SEO-friendly.
+    const showLang = filledLocales.length > 1;
+    for (const loc of filledLocales) {
+      const issue = findHeadingOrderIssue(versions[loc].content);
+      if (issue) {
+        toast.warning(
+          headingIssueMessage(issue, showLang ? LOCALE_NAMES[loc] : undefined),
         );
         setActiveLocale(loc);
         return;
@@ -495,6 +557,7 @@ export default function ArticleComposer({
       body: {
         ...toPayload(versions[primaryLocale]),
         category_slug: categorySlug,
+        slug: slug.trim() || undefined,
         status: nextStatus,
         content_locale: primaryLocale,
         translations,
@@ -524,7 +587,7 @@ export default function ArticleComposer({
     // isDirty goes false and the unsaved-changes guard doesn't warn during the
     // refresh or on the next navigation.
     if (isEditing) {
-      setSavedSnapshot(JSON.stringify({ versions, categorySlug }));
+      setSavedSnapshot(JSON.stringify({ versions, categorySlug, slug }));
       router.refresh();
       return;
     }
@@ -532,7 +595,7 @@ export default function ArticleComposer({
     // New article saved — mark the form clean so the unsaved-changes guard
     // stays quiet during the transition, then send the author to the articles
     // list.
-    setSavedSnapshot(JSON.stringify({ versions, categorySlug }));
+    setSavedSnapshot(JSON.stringify({ versions, categorySlug, slug }));
     router.push(`/${siteLocale}/articles`);
   };
 
@@ -662,6 +725,31 @@ export default function ArticleComposer({
                   label: getCategoryDisplayName(item, locale),
                 }))}
               />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <label className="text-sm font-medium text-[color:var(--foreground)]">
+                  {ui.slug}
+                </label>
+                <span className="text-xs font-normal app-soft">
+                  {ui.slugOptional}
+                </span>
+                <InfoHint label={ui.slugTooltipLabel}>{ui.slugTooltip}</InfoHint>
+              </div>
+              <input
+                className="app-input w-full bg-[color:var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+                placeholder={ui.slugPlaceholder}
+                value={slug}
+                disabled={isPublished}
+                onChange={(event) => setSlug(event.target.value)}
+                aria-describedby={isPublished ? "article-slug-hint" : undefined}
+              />
+              {isPublished ? (
+                <p id="article-slug-hint" className="text-xs leading-5 app-soft">
+                  {ui.slugLockedHint}
+                </p>
+              ) : null}
             </div>
 
             <div>

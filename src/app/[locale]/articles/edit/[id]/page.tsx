@@ -121,6 +121,7 @@ export default async function EditArticlePage({
           excerpt: article.excerpt || null,
           content: article.content || "",
           categorySlug: categoryRow?.slug || categories[0]?.slug || "",
+          slug: article.slug || "",
           status: article.status === "published" ? "published" : "draft",
           coverImageUrl: article.cover_image_url || null,
           coverImageStoragePath: article.cover_image_storage_path || null,

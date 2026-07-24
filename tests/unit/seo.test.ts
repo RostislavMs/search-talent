@@ -11,6 +11,7 @@ import {
   buildProjectSchema,
   buildWebSiteSchema,
   countWords,
+  deriveArticleKeywords,
   safeJsonLd,
   toBcp47,
 } from "@/lib/seo";
@@ -518,5 +519,51 @@ describe("buildArticleSchema", () => {
     });
 
     expect(schema).not.toHaveProperty("wordCount");
+  });
+});
+
+describe("deriveArticleKeywords", () => {
+  it("appends significant title words after the seed terms", () => {
+    const result = deriveArticleKeywords(
+      "AI-агенти в роботі розробника",
+      ["Гайди", "Guides"],
+    );
+    expect(result.slice(0, 2)).toEqual(["Гайди", "Guides"]);
+    expect(result).toContain("агенти");
+    expect(result).toContain("роботі");
+    expect(result).toContain("розробника");
+  });
+
+  it("drops short tokens and stop-words", () => {
+    const result = deriveArticleKeywords("How to build a great portfolio");
+    // "how"/"to"/"a" are filler/too short; topical words survive.
+    expect(result).not.toContain("how");
+    expect(result).not.toContain("to");
+    expect(result).not.toContain("a");
+    expect(result).toEqual(
+      expect.arrayContaining(["build", "great", "portfolio"]),
+    );
+  });
+
+  it("de-duplicates case-insensitively, keeping the seed's casing", () => {
+    const result = deriveArticleKeywords("Portfolio tips", ["Portfolio"]);
+    expect(result.filter((k) => k.toLowerCase() === "portfolio")).toEqual([
+      "Portfolio",
+    ]);
+  });
+
+  it("caps the result at the requested maximum", () => {
+    const result = deriveArticleKeywords(
+      "alpha bravo charlie delta echo foxtrot golf hotel india",
+      ["seed"],
+      5,
+    );
+    expect(result).toHaveLength(5);
+    expect(result[0]).toBe("seed");
+  });
+
+  it("returns just the seed for an empty title", () => {
+    expect(deriveArticleKeywords("", ["Design"])).toEqual(["Design"]);
+    expect(deriveArticleKeywords(null)).toEqual([]);
   });
 });

@@ -25,6 +25,7 @@ import {
   buildArticleSchema,
   buildBreadcrumbSchema,
   countWords,
+  deriveArticleKeywords,
   getMetadataBase,
   safeJsonLd,
 } from "@/lib/seo";
@@ -125,11 +126,11 @@ export default function ArticleDetailView({
 
   // Only surface the table of contents when the article actually has a few
   // headings to jump between — otherwise it would reserve sidebar space for
-  // nothing and narrow the reading column.
-  // Match both the current <h2> body heading and legacy stored <h3> (promoted to
-  // <h2> at render time), so the TOC still appears for older articles.
+  // nothing and narrow the reading column. Count every heading level the TOC
+  // renders (<h2>–<h4>) so this show/hide threshold matches what the sidebar
+  // would actually list.
   const headingCount = article.content
-    ? (article.content.match(/<h[23][\s>]/gi)?.length ?? 0)
+    ? (article.content.match(/<h[234][\s>]/gi)?.length ?? 0)
     : 0;
   const showTableOfContents = headingCount >= 2;
 
@@ -141,11 +142,17 @@ export default function ArticleDetailView({
       ? article.category.nameUk || article.category.name
       : article.category.name
     : null;
-  const articleKeywords = article.category
-    ? [article.category.name, article.category.nameUk].filter(
-        (value): value is string => Boolean(value),
-      )
-    : [];
+  // Category names seed the keyword list; significant words from the (localised)
+  // title are appended so each article gets a distinct set rather than every
+  // article in a category sharing the same two category keywords.
+  const articleKeywords = deriveArticleKeywords(
+    article.title,
+    article.category
+      ? [article.category.name, article.category.nameUk].filter(
+          (value): value is string => Boolean(value),
+        )
+      : [],
+  );
 
   const articleSchema = buildArticleSchema({
     title: article.title,

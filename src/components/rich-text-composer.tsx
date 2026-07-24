@@ -341,7 +341,9 @@ export default function RichTextComposer({
             insertTitle: "Вставити",
             listTitle: "Списки",
             paragraph: "Параграф",
-            heading: "Заголовок",
+            heading: "Заголовок 2",
+            heading3: "Заголовок 3",
+            heading4: "Заголовок 4",
             quote: "Цитата",
             spoiler: "Спойлер",
             spoilerSummary: "Спойлер",
@@ -363,7 +365,9 @@ export default function RichTextComposer({
             insertTitle: "Insert",
             listTitle: "Lists",
             paragraph: "Paragraph",
-            heading: "Heading",
+            heading: "Heading 2",
+            heading3: "Heading 3",
+            heading4: "Heading 4",
             quote: "Quote",
             spoiler: "Spoiler",
             spoilerSummary: "Click to expand",
@@ -641,7 +645,7 @@ export default function RichTextComposer({
 
   /* ---- toolbar actions ---- */
   const applyBlock = useCallback(
-    (tag: "P" | "H2" | "BLOCKQUOTE") => {
+    (tag: "P" | "H2" | "H3" | "H4" | "BLOCKQUOTE") => {
       exec("formatBlock", tag);
       setBlocksOpen(false);
     },
@@ -813,6 +817,8 @@ export default function RichTextComposer({
       const block = findEnclosingBlock(sel.anchorNode, el, [
         "BLOCKQUOTE",
         "H2",
+        "H3",
+        "H4",
       ]);
       if (!block) return false;
 
@@ -921,6 +927,100 @@ export default function RichTextComposer({
     [emitChange],
   );
 
+  // Tab / Shift+Tab inside a list item nests (indents) or un-nests (outdents) it,
+  // building the sub-lists browsers otherwise only expose through no visible key.
+  // Outside a list Tab keeps its default behaviour (moving focus out of the
+  // editor), so keyboard users can still leave the field.
+  const handleListTab = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== "Tab" || e.ctrlKey || e.metaKey || e.altKey) {
+        return false;
+      }
+      const el = editorRef.current;
+      if (!el) return false;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return false;
+
+      const li = findEnclosingBlock(sel.anchorNode, el, ["LI"]);
+      if (!li || !el.contains(li)) return false;
+
+      e.preventDefault();
+      exec(e.shiftKey ? "outdent" : "indent");
+      return true;
+    },
+    [exec],
+  );
+
+  // Enter on an empty list item ends the list cleanly instead of leaving a blank
+  // bullet behind. A nested item pops out one level (so you can carry on in the
+  // parent list); a top-level trailing item drops into a fresh paragraph — from
+  // where a brand-new list can be started. A non-empty item, or an empty item in
+  // the middle of a list, keeps the native "insert the next item" behaviour.
+  const exitListOnEnter = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (
+        e.key !== "Enter" ||
+        e.shiftKey ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey
+      ) {
+        return false;
+      }
+      const el = editorRef.current;
+      if (!el) return false;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
+
+      const li = findEnclosingBlock(sel.anchorNode, el, ["LI"]);
+      if (!li || !el.contains(li)) return false;
+      const list = li.parentElement;
+      if (!list || (list.tagName !== "UL" && list.tagName !== "OL")) {
+        return false;
+      }
+
+      const zeroWidth = String.fromCharCode(0x200b);
+      const isEmpty =
+        (li.textContent ?? "").split(zeroWidth).join("").trim() === "" &&
+        !li.querySelector("img, iframe, figure");
+      if (!isEmpty) return false;
+
+      // A nested empty item: pop it up one level rather than escaping the whole
+      // structure, so Enter mirrors Shift+Tab at the end of a sub-list.
+      const nested =
+        list.parentElement?.tagName === "LI" ||
+        list.parentElement?.tagName === "UL" ||
+        list.parentElement?.tagName === "OL";
+      if (nested) {
+        e.preventDefault();
+        exec("outdent");
+        return true;
+      }
+
+      // Top-level list: only the last (trailing) item exits into a paragraph.
+      if (li.nextElementSibling) return false;
+      const parent = list.parentNode;
+      if (!parent) return false;
+
+      e.preventDefault();
+      const paragraph = document.createElement("p");
+      paragraph.appendChild(document.createElement("br"));
+      parent.insertBefore(paragraph, list.nextSibling);
+      li.remove();
+      if (!list.querySelector("li")) list.remove();
+
+      const range = document.createRange();
+      range.setStart(paragraph, 0);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      savedRangeRef.current = range.cloneRange();
+      emitChange();
+      return true;
+    },
+    [emitChange, exec],
+  );
+
   /* ---- spoiler (details/summary) editing ---- */
 
   // A native <summary> is a focusable disclosure widget: on mousedown it grabs
@@ -1015,6 +1115,8 @@ export default function RichTextComposer({
       const block = findEnclosingBlock(sel.anchorNode, el, [
         "P",
         "H2",
+        "H3",
+        "H4",
         "BLOCKQUOTE",
       ]);
       if (!block) return false;
@@ -1107,9 +1209,11 @@ export default function RichTextComposer({
   /* ---- keyboard shortcuts ---- */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (handleListTab(e)) return;
       if (handleSpoilerEnter(e)) return;
       if (handleSpoilerBackspace(e)) return;
       if (exitCodeOnEnter(e)) return;
+      if (exitListOnEnter(e)) return;
       if (exitBlockOnEnter(e)) return;
       if (exitListOnBackspace(e)) return;
       if (!(e.ctrlKey || e.metaKey)) return;
@@ -1137,6 +1241,8 @@ export default function RichTextComposer({
       exitBlockOnEnter,
       exitCodeOnEnter,
       exitListOnBackspace,
+      exitListOnEnter,
+      handleListTab,
       handleSpoilerEnter,
       handleSpoilerBackspace,
       features,
@@ -1269,8 +1375,16 @@ export default function RichTextComposer({
                           {ui.paragraph}
                         </button>
                         <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H2")}>
-                          <span className="w-6 text-center text-sm font-bold text-[color:var(--muted-foreground)]">H</span>
+                          <span className="w-6 text-center text-sm font-bold text-[color:var(--muted-foreground)]">H2</span>
                           {ui.heading}
+                        </button>
+                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H3")}>
+                          <span className="w-6 text-center text-xs font-bold text-[color:var(--muted-foreground)]">H3</span>
+                          {ui.heading3}
+                        </button>
+                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H4")}>
+                          <span className="w-6 text-center text-[0.65rem] font-bold text-[color:var(--muted-foreground)]">H4</span>
+                          {ui.heading4}
                         </button>
                         <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("BLOCKQUOTE")}>
                           <span className="w-6 text-center text-base text-[color:var(--muted-foreground)]">&#10077;</span>

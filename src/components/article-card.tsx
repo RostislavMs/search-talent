@@ -59,7 +59,7 @@ export default function ArticleCard({
   return (
     <LocalizedLink
       href={`/${section}/${article.slug}`}
-      className="group block overflow-hidden rounded-hero app-card transition hover:-translate-y-0.5 hover:shadow-xl"
+      className="group flex h-full flex-col overflow-hidden rounded-hero app-card transition hover:-translate-y-0.5 hover:shadow-xl"
     >
       {(article.coverImageUrl || article.heroVideoUrl) && (
         <div className="relative aspect-video bg-[color:var(--surface-muted)]">
@@ -89,7 +89,7 @@ export default function ArticleCard({
         </div>
       )}
 
-      <div className={compact ? "p-4" : "p-6"}>
+      <div className={`flex flex-1 flex-col ${compact ? "p-4" : "p-6"}`}>
         <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">
           {isPinned && !article.coverImageUrl && !article.heroVideoUrl && (
             <>
@@ -120,6 +120,10 @@ export default function ArticleCard({
           {article.excerpt || article.content || ""}
         </p>
 
+        {/* Author + reading time and the stats row form the card footer. The
+            wrapper's mt-auto pins it to the bottom of the card so footers line
+            up across cards of differing content height in the same row. */}
+        <div className="mt-auto">
         <div
           className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-t app-border text-xs app-muted ${
             compact ? "mt-4 pt-3" : "mt-6 pt-4"
@@ -215,6 +219,7 @@ export default function ArticleCard({
               {article.commentsCount}
             </span>
           </span>
+        </div>
         </div>
       </div>
     </LocalizedLink>

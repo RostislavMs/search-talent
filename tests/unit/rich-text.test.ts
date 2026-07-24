@@ -3,6 +3,7 @@ import {
   extractClipboardHtmlFragment,
   extractPlainTextFromRichText,
   extractYouTubeVideoId,
+  findHeadingOrderIssue,
   hasMarkdownSyntax,
   htmlFragmentHasBlocks,
   inlineMarkdownToHtml,
@@ -116,18 +117,26 @@ describe("sanitizeRichTextHtml (server path)", () => {
     expect(result).toMatch(/<blockquote>/i);
   });
 
-  it("collapses unsupported heading levels onto <h2>", () => {
+  it("keeps the supported <h2>–<h4> outline and clamps levels outside it", () => {
     const result = sanitizeRichTextHtml(
-      "<h1>Title</h1><h3>Section</h3><h4>Minor</h4>",
+      "<h1>Title</h1><h3>Section</h3><h4>Minor</h4><h5>Deep</h5><h6>Deeper</h6>",
     );
 
+    // <h1> demotes to <h2>; <h5>/<h6> promote to the deepest level, <h4>.
     expect(result).not.toMatch(/<h1\b/i);
-    expect(result).not.toMatch(/<h3\b/i);
-    expect(result).not.toMatch(/<h4\b/i);
-    expect(result.match(/<h2\b/gi)?.length).toBe(3);
+    expect(result).not.toMatch(/<h5\b/i);
+    expect(result).not.toMatch(/<h6\b/i);
+    // <h1> → <h2> (one occurrence).
+    expect(result.match(/<h2\b/gi)?.length).toBe(1);
+    // <h3> is now a supported level and passes through untouched.
+    expect(result.match(/<h3\b/gi)?.length).toBe(1);
+    // <h4> plus the two promoted from <h5>/<h6>.
+    expect(result.match(/<h4\b/gi)?.length).toBe(3);
     expect(result).toContain("Title");
     expect(result).toContain("Section");
     expect(result).toContain("Minor");
+    expect(result).toContain("Deep");
+    expect(result).toContain("Deeper");
   });
 
   it("keeps existing <h2> headings untouched", () => {
@@ -137,12 +146,13 @@ describe("sanitizeRichTextHtml (server path)", () => {
     expect(result).toContain("Kept");
   });
 
-  it("promotes legacy stored <h3> body headings to <h2>", () => {
-    const result = sanitizeRichTextHtml("<h3>Legacy section</h3>");
+  it("keeps stored <h3>/<h4> body headings at their level", () => {
+    const result = sanitizeRichTextHtml("<h3>Section</h3><h4>Sub</h4>");
 
-    expect(result).toMatch(/<h2\b/i);
-    expect(result).not.toMatch(/<h3\b/i);
-    expect(result).toContain("Legacy section");
+    expect(result).toMatch(/<h3\b/i);
+    expect(result).toMatch(/<h4\b/i);
+    expect(result).toContain("Section");
+    expect(result).toContain("Sub");
   });
 
   it("keeps <hr> dividers", () => {
@@ -260,10 +270,13 @@ describe("inlineMarkdownToHtml", () => {
 });
 
 describe("markdownToHtml", () => {
-  it("turns ## lines into <h2> (any level collapses to h2)", () => {
-    expect(markdownToHtml("## Title")).toBe("<h2>Title</h2>");
+  it("maps Markdown heading levels onto the <h2>–<h4> outline", () => {
+    // `#`/`##` open a section as <h2>; `###` → <h3>; `####`+ clamp to <h4>.
     expect(markdownToHtml("# Title")).toBe("<h2>Title</h2>");
-    expect(markdownToHtml("#### Title")).toBe("<h2>Title</h2>");
+    expect(markdownToHtml("## Title")).toBe("<h2>Title</h2>");
+    expect(markdownToHtml("### Title")).toBe("<h3>Title</h3>");
+    expect(markdownToHtml("#### Title")).toBe("<h4>Title</h4>");
+    expect(markdownToHtml("##### Title")).toBe("<h4>Title</h4>");
   });
 
   it("wraps blank-line-separated paragraphs", () => {
@@ -374,7 +387,7 @@ describe("htmlFragmentHasBlocks", () => {
 });
 
 describe("preview paste → real headings (end-to-end)", () => {
-  it("keeps pasted <h1>/<h3> as <h2> instead of flattening to text", () => {
+  it("keeps pasted headings as real headings (<h1> demotes, <h3> stays)", () => {
     // What a Markdown-preview copy puts on the clipboard.
     const clipboard =
       "<html><body><!--StartFragment-->" +
@@ -386,11 +399,51 @@ describe("preview paste → real headings (end-to-end)", () => {
     expect(htmlFragmentHasBlocks(fragment)).toBe(true);
 
     const stored = sanitizeRichTextHtml(fragment);
+    // <h1> demotes to <h2> (no <h1> in the body); <h3> is supported and stays.
     expect(stored).toContain("<h2>Big title</h2>");
-    expect(stored).toContain("<h2>Subsection</h2>");
+    expect(stored).toContain("<h3>Subsection</h3>");
     expect(stored).toContain("<ul>");
-    // No heading levels survive other than the supported <h2>.
-    expect(stored).not.toMatch(/<h[13456]\b/);
+    // <h1>/<h5>/<h6> never survive; <h2>–<h4> do.
+    expect(stored).not.toMatch(/<h[156]\b/);
+  });
+});
+
+describe("findHeadingOrderIssue", () => {
+  it("returns null for a clean H2 → H3 → H4 outline", () => {
+    expect(
+      findHeadingOrderIssue(
+        "<h2>Intro</h2><p>x</p><h3>Detail</h3><h4>Fine</h4><h2>Next</h2><h3>More</h3>",
+      ),
+    ).toBeNull();
+  });
+
+  it("returns null when there are no headings", () => {
+    expect(findHeadingOrderIssue("<p>Just prose.</p><ul><li>a</li></ul>")).toBeNull();
+  });
+
+  it("flags a body that opens below <h2>", () => {
+    const issue = findHeadingOrderIssue("<h3>Starts too deep</h3><p>x</p>");
+    expect(issue).toEqual({
+      kind: "first",
+      level: 3,
+      text: "Starts too deep",
+    });
+  });
+
+  it("flags a skipped level (H2 straight to H4)", () => {
+    const issue = findHeadingOrderIssue("<h2>Top</h2><h4>Skipped H3</h4>");
+    expect(issue).toEqual({ kind: "skip", from: 2, to: 4, text: "Skipped H3" });
+  });
+
+  it("allows jumping back up any number of levels", () => {
+    expect(
+      findHeadingOrderIssue("<h2>A</h2><h3>B</h3><h4>C</h4><h2>D</h2>"),
+    ).toBeNull();
+  });
+
+  it("strips inline markup from the reported heading text", () => {
+    const issue = findHeadingOrderIssue("<h4><strong>Bold</strong>&nbsp;title</h4>");
+    expect(issue).toEqual({ kind: "first", level: 4, text: "Bold title" });
   });
 });
 
