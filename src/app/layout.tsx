@@ -4,7 +4,6 @@ import { JetBrains_Mono, Literata, Manrope } from "next/font/google";
 import ConsentedAnalytics from "@/components/consented-analytics";
 import HydrationCleanupScript from "@/components/hydration-cleanup-script";
 import InteractiveBackground from "@/components/interactive-background";
-import PlerdyScript from "@/components/plerdy-script";
 import ThemeScript from "@/components/theme-script";
 
 const fontDisplay = Literata({
@@ -110,10 +109,11 @@ export default async function RootLayout({
       <body className="min-h-screen" suppressHydrationWarning>
         <InteractiveBackground />
         <div className="relative flex min-h-screen flex-col">{children}</div>
+        {/* Plerdy now renders inside ConsentedAnalytics, behind the same
+            analytics-consent gate as the other measurement tools. */}
         <ConsentedAnalytics
           initialAllowed={allowsCookieCategory(consent, "analytics")}
         />
-        <PlerdyScript />
       </body>
     </html>
   );
