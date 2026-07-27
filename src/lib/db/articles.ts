@@ -614,6 +614,270 @@ export async function getArticleDetail(slug: string, locale?: string | null) {
   };
 }
 
+// High-frequency function words (4+ letters, so they survive the length gate)
+// that would otherwise match across almost every article and drown out the
+// topical signal. Kept small and pragmatic — the rare, subject-specific words
+// are what should drive relevance.
+const RELATED_STOPWORDS = new Set([
+  // Ukrainian
+  "який",
+  "яка",
+  "яке",
+  "які",
+  "якщо",
+  "тому",
+  "коли",
+  "цього",
+  "цьому",
+  "дуже",
+  "також",
+  "більше",
+  "менше",
+  "може",
+  "бути",
+  "було",
+  "буде",
+  "один",
+  "така",
+  "саме",
+  "лише",
+  "адже",
+  "отже",
+  "тобто",
+  "треба",
+  "вони",
+  "вона",
+  "воно",
+  "цей",
+  "цих",
+  "того",
+  "щось",
+  "нього",
+  // English
+  "this",
+  "that",
+  "with",
+  "from",
+  "have",
+  "were",
+  "your",
+  "their",
+  "about",
+  "which",
+  "would",
+  "there",
+  "these",
+  "those",
+  "been",
+  "into",
+  "than",
+  "then",
+  "them",
+  "they",
+  "will",
+  "what",
+  "when",
+  "only",
+  "also",
+  "more",
+  "most",
+  "some",
+  "such",
+  "very",
+  "just",
+  "like",
+]);
+
+// Topical tokens: 4+ letter/digit words, minus the stopword noise above.
+function relatedTokens(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .split(/\s+/)
+    .filter((word) => word.length >= 4 && !RELATED_STOPWORDS.has(word));
+}
+
+// Bag-of-words are all we need for similarity, so slicing the (HTML) body
+// mid-tag is fine and caps the work per candidate regardless of article size.
+function relatedBodySnippet(content: string | null): string {
+  if (!content) {
+    return "";
+  }
+  return extractPlainTextFromRichText(content.slice(0, 4000));
+}
+
+// The current article's weighted term profile: a word in the title counts most,
+// then the excerpt, then the (capped) body. This is what makes suggestions
+// track the article's actual subject rather than just its category.
+function buildRelatedTermWeights(
+  title: string,
+  excerpt: string | null,
+  content: string | null,
+): Map<string, number> {
+  const weights = new Map<string, number>();
+  const add = (text: string, weight: number) => {
+    for (const term of new Set(relatedTokens(text))) {
+      weights.set(term, (weights.get(term) ?? 0) + weight);
+    }
+  };
+  add(title, 3);
+  add(excerpt ?? "", 2);
+  add(relatedBodySnippet(content), 1);
+  return weights;
+}
+
+// The set of topical terms a candidate covers (title + excerpt + capped body),
+// scored against the current article's weighted profile above.
+function collectRelatedTerms(
+  title: string,
+  excerpt: string | null,
+  content: string | null,
+): Set<string> {
+  const terms = new Set<string>();
+  for (const term of relatedTokens(title)) terms.add(term);
+  for (const term of relatedTokens(excerpt ?? "")) terms.add(term);
+  for (const term of relatedTokens(relatedBodySnippet(content))) {
+    terms.add(term);
+  }
+  return terms;
+}
+
+// A shared category is a topical hint, but only a nudge — a strongly-related
+// piece from another category should still be able to outrank a same-category
+// one that shares no vocabulary.
+const RELATED_CATEGORY_BOOST = 6;
+
+/**
+ * Articles to recommend at the foot of a detail page. Relevance is driven by
+ * how much a candidate's text overlaps the current article's own vocabulary
+ * (title weighted highest, then excerpt, then body) — not by category or
+ * recency, which only nudge and break ties. The News category is excluded (it
+ * has its own /news section) and only published, publicly-visible articles are
+ * eligible.
+ */
+export async function getRelatedArticles(params: {
+  articleId: string;
+  categoryId: number | null;
+  title: string;
+  excerpt?: string | null;
+  content?: string | null;
+  locale?: string | null;
+  limit?: number;
+}): Promise<ArticleFeedItem[]> {
+  noStore();
+  const { articleId, categoryId, title, locale } = params;
+  const limit = params.limit ?? 3;
+
+  const viewer = await getCurrentViewerRole();
+  const supabase = viewer.supabase;
+
+  const { data: newsCategory } = await supabase
+    .from("article_categories")
+    .select("id")
+    .eq("slug", NEWS_CATEGORY_SLUG)
+    .maybeSingle();
+
+  let query = supabase
+    .from("articles")
+    .select(
+      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at, content_locale, translations",
+    )
+    .eq("status", "published")
+    .neq("id", articleId)
+    .limit(40);
+
+  if (newsCategory) {
+    query = query.or(`category_id.is.null,category_id.neq.${newsCategory.id}`);
+  }
+
+  const { data } = await query.order("published_at", { ascending: false });
+
+  const rows = ((data || []) as ArticleRow[]).filter((item) =>
+    isPublicModerationStatus(item.moderation_status),
+  );
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const currentWeights = buildRelatedTermWeights(
+    title,
+    params.excerpt ?? null,
+    params.content ?? null,
+  );
+  const publishedTime = (row: ArticleRow) =>
+    new Date(row.published_at || row.created_at || 0).getTime();
+
+  const ranked = rows
+    .map((row) => {
+      // Score against the reader's language version of each candidate so the
+      // vocabulary lines up with the (already-localized) current article.
+      const localized = pickLocalizedVersion(row, locale);
+      const candidateTerms = collectRelatedTerms(
+        localized.title,
+        localized.excerpt,
+        localized.content,
+      );
+      let contentScore = 0;
+      for (const term of candidateTerms) {
+        contentScore += currentWeights.get(term) ?? 0;
+      }
+      const sameCategory =
+        categoryId != null && row.category_id === categoryId;
+      const score = contentScore + (sameCategory ? RELATED_CATEGORY_BOOST : 0);
+      return { row, score };
+    })
+    .sort((left, right) => {
+      if (left.score !== right.score) return right.score - left.score;
+      // Among equally-related pieces, prefer the more-read one, then the newer
+      // one — so ties resolve to the strongest article, not merely the latest.
+      const viewsDelta =
+        (right.row.views_count ?? 0) - (left.row.views_count ?? 0);
+      if (viewsDelta !== 0) return viewsDelta;
+      return publishedTime(right.row) - publishedTime(left.row);
+    })
+    .slice(0, limit)
+    .map((entry) => entry.row);
+
+  const [categoryMap, authorMap] = await Promise.all([
+    getCategoriesMap(
+      supabase,
+      Array.from(
+        new Set(
+          ranked
+            .map((item) => item.category_id)
+            .filter((item): item is number => typeof item === "number"),
+        ),
+      ),
+    ),
+    getAuthorsMap(
+      supabase,
+      Array.from(
+        new Set(
+          ranked
+            .map((item) => item.author_user_id)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ),
+    ),
+  ]);
+
+  const items = ranked.map((row) =>
+    toFeedItem(row, categoryMap, authorMap, locale),
+  );
+
+  const coAuthorsMap = await loadAcceptedCoAuthorsMap(
+    supabase,
+    "article",
+    items.map((item) => item.id),
+  );
+  for (const item of items) {
+    item.coAuthors = coAuthorsMap.get(item.id) ?? [];
+  }
+
+  return items;
+}
+
 export async function getDashboardArticles(locale?: string | null) {
   noStore();
   const supabase = await createClient();

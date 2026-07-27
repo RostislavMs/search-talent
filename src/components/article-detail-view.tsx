@@ -4,6 +4,7 @@ import ArticleInteractions from "@/components/article-interactions";
 import { isGifSearchConfigured } from "@/lib/gif/provider";
 import AuthorList from "@/components/author-list";
 import ArticlePinButton from "@/components/article-pin-button";
+import ArticleRelated from "@/components/article-related";
 import ArticleTableOfContents from "@/components/article-table-of-contents";
 import ReportArticleButton from "@/components/report-article-button";
 import RichTextRenderer from "@/components/rich-text-renderer";
@@ -17,6 +18,7 @@ import {
   getCategoryDisplayName,
   type ArticleDetail,
   type ArticleAuthor,
+  type ArticleFeedItem,
 } from "@/lib/articles";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { normalizeModerationStatus } from "@/lib/moderation";
@@ -60,11 +62,14 @@ export default function ArticleDetailView({
   locale,
   slug,
   section,
+  relatedArticles = [],
 }: {
   data: ArticleDetailData;
   locale: string;
   slug: string;
   section: ArticleSection;
+  /** Relevant articles to surface at the foot of the page. Empty hides the block. */
+  relatedArticles?: ArticleFeedItem[];
 }) {
   const { article, viewerUserId, isOwner, isAdmin } = data;
   const isUkrainian = locale === "uk";
@@ -91,6 +96,7 @@ export default function ArticleDetailView({
         category: "Категорія",
         noCategory: "Без категорії",
         tableOfContents: isNews ? "Зміст" : "Зміст статті",
+        related: "Рекомендовані статті",
         moderatorNote: "Нотатка модератора",
         adminDelete: "Видалити як адмін",
         adminConfirmTitle: "Видалити статтю як адміністратор?",
@@ -112,6 +118,7 @@ export default function ArticleDetailView({
         category: "Category",
         noCategory: "No category",
         tableOfContents: isNews ? "Contents" : "In this article",
+        related: "Recommended articles",
         moderatorNote: "Moderator note",
         adminDelete: "Delete as admin",
         adminConfirmTitle: "Delete article as administrator?",
@@ -190,11 +197,7 @@ export default function ArticleDetailView({
   ]);
 
   return (
-    <main
-      className={`mx-auto px-0 py-10 sm:px-6 ${
-        showTableOfContents ? "max-w-7xl" : "max-w-6xl"
-      }`}
-    >
+    <main className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }}
@@ -206,8 +209,8 @@ export default function ArticleDetailView({
       <div
         className={
           showTableOfContents
-            ? "lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-8"
-            : ""
+            ? "lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8"
+            : "mx-auto max-w-6xl"
         }
       >
         <div className="rounded-none app-card min-w-0 sm:rounded-hero">
@@ -366,6 +369,7 @@ export default function ArticleDetailView({
                 variant="mobile"
                 targetId="article-body"
                 title={ui.tableOfContents}
+                locale={locale}
               />
             </div>
           ) : null}
@@ -395,9 +399,17 @@ export default function ArticleDetailView({
             <ArticleTableOfContents
               targetId="article-body"
               title={ui.tableOfContents}
+              locale={locale}
             />
           </aside>
         ) : null}
+      </div>
+      <div className={showTableOfContents ? "" : "mx-auto max-w-6xl"}>
+        <ArticleRelated
+          articles={relatedArticles}
+          locale={locale}
+          title={ui.related}
+        />
       </div>
       <ScrollToTopButton
         label={getDictionary(isUkrainian ? "uk" : "en").common.scrollToTop}
