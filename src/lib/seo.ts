@@ -879,22 +879,38 @@ export function deriveArticleKeywords(
 // A project page is too thin to index below this combined word count.
 // Tuned for a portfolio platform: a couple of descriptive sentences (~40 words)
 // is enough unique text for a real project page, which also carries non-prose
-// signal (tech stack, GitHub insights/README, cover/gallery) that Google sees
-// but this counter doesn't. A higher bar (e.g. 150) hid legitimate short-but-
+// signal (tech stack, cover/gallery) that Google sees but this counter doesn't.
+// The count spans the description fields AND user-authored GitHub insights (see
+// getProjectIndexNarrative). A higher bar (e.g. 150) hid legitimate short-but-
 // real projects from search.
 export const PROJECT_MIN_CONTENT_WORDS = 40;
 
-/**
- * The combined narrative used both for a project's meta description and for
- * its thin-content (noindex) decision. Keep the field set in one place so the
- * page and the sitemap agree on what "thin" means.
- */
-export function getProjectNarrative(project: {
+type ProjectNarrativeFields = {
   description?: string | null;
   problem?: string | null;
   solution?: string | null;
   results?: string | null;
-}): string {
+};
+
+// User-authored GitHub "insight" prose. Always rendered on the page when
+// present (unlike `github_readme`, which is display-gated via `showReadme` and
+// is synced verbatim from GitHub — duplicate-content risk), so it counts toward
+// indexability but NOT toward the marketing meta description.
+type ProjectIndexFields = ProjectNarrativeFields & {
+  github_contribution?: string | null;
+  github_motivation?: string | null;
+  github_tech_decisions?: string | null;
+  github_learnings?: string | null;
+  github_showcase_notes?: string | null;
+  github_production_usage?: string | null;
+};
+
+/**
+ * The marketing narrative used for a project's meta description. Deliberately
+ * limited to the descriptive fields so the description stays clean — GitHub
+ * insights feed indexability (see `getProjectIndexNarrative`), not this.
+ */
+export function getProjectNarrative(project: ProjectNarrativeFields): string {
   return [project.description, project.problem, project.solution, project.results]
     .filter((value): value is string => Boolean(value))
     .map((value) => toPlainText(value))
@@ -902,14 +918,33 @@ export function getProjectNarrative(project: {
     .join(" ");
 }
 
+/**
+ * The full text a real reader sees on a project page, used for the thin-content
+ * (noindex) decision only. Extends the marketing narrative with user-authored
+ * GitHub insight fields so a project with a short description but substantial
+ * insights is not wrongly hidden from search. Callers that feed this MUST
+ * select the github_* fields too, or the page and sitemap will disagree.
+ */
+export function getProjectIndexNarrative(project: ProjectIndexFields): string {
+  const insights = [
+    project.github_contribution,
+    project.github_motivation,
+    project.github_tech_decisions,
+    project.github_learnings,
+    project.github_showcase_notes,
+    project.github_production_usage,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => toPlainText(value))
+    .filter(Boolean)
+    .join(" ");
+
+  return [getProjectNarrative(project), insights].filter(Boolean).join(" ");
+}
+
 /** Whether a project has enough narrative to be indexed (and listed in sitemap). */
-export function isProjectIndexable(project: {
-  description?: string | null;
-  problem?: string | null;
-  solution?: string | null;
-  results?: string | null;
-}): boolean {
-  return countWords(getProjectNarrative(project)) >= PROJECT_MIN_CONTENT_WORDS;
+export function isProjectIndexable(project: ProjectIndexFields): boolean {
+  return countWords(getProjectIndexNarrative(project)) >= PROJECT_MIN_CONTENT_WORDS;
 }
 
 /**

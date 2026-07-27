@@ -237,7 +237,9 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
   if (id === "projects") {
     const { data } = await supabase
       .from("projects")
-      .select("slug, updated_at, description, problem, solution, results")
+      .select(
+        "slug, updated_at, description, problem, solution, results, github_contribution, github_motivation, github_tech_decisions, github_learnings, github_showcase_notes, github_production_usage",
+      )
       .eq("moderation_status", "approved")
       .eq("status", "published")
       .not("slug", "is", null)
