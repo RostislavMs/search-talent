@@ -569,7 +569,7 @@ export default function AdminPopupsManager({
               </div>
             </div>
 
-            <aside className="lg:sticky lg:top-24 lg:self-start">
+            <aside className="app-sticky-pane lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:self-start lg:pr-1">
               <p className="mb-3 text-xs font-semibold uppercase tracking-eyebrow app-soft">
                 {copy.preview.label}
               </p>

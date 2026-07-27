@@ -47,7 +47,7 @@ export default async function AdminLayout({
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 sm:mt-8 lg:grid-cols-[240px_1fr]">
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside className="app-sticky-pane lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:self-start lg:pr-1">
           <div className="rounded-3xl app-panel p-3">
             <AdminSidebar
               locale={locale}

@@ -483,11 +483,75 @@ select {
   color: var(--foreground);
 }
 
+/*
+ * A sticky sidebar that scrolls on its own once it outgrows the viewport.
+ * Pair with `max-height` + `overflow-y: auto` at the breakpoint where the
+ * column becomes sticky. `overscroll-behavior: contain` stops a scroll that
+ * reaches the end of the pane from chaining into the page behind it, which
+ * otherwise yanks the reader away from the filters they were adjusting.
+ */
+.app-sticky-pane {
+  overscroll-behavior: contain;
+}
+
+/*
+ * Quieter scrollbar for panes inside the layout (sticky sidebars, dropdown
+ * lists). The global 12px bar with a filled track is fine against the page
+ * edge but reads as a heavy grey stripe down a 18rem sidebar. This keeps the
+ * thumb visible — the pane has to look scrollable, that discoverability is
+ * the whole point — but drops the track and thins the bar, then firms the
+ * thumb up on hover.
+ */
+.app-sticky-pane,
+.app-select-dropdown-inner {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.app-sticky-pane::-webkit-scrollbar,
+.app-select-dropdown-inner::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.app-sticky-pane::-webkit-scrollbar-track,
+.app-select-dropdown-inner::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-sticky-pane::-webkit-scrollbar-thumb,
+.app-select-dropdown-inner::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+.app-sticky-pane:hover::-webkit-scrollbar-thumb,
+.app-select-dropdown-inner:hover::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+/*
+ * Anchored to the viewport (see `useAnchoredDropdown`), not to the trigger's
+ * wrapper. `position: fixed` keeps the panel out of the clipping box of any
+ * scrollable ancestor — the filter sidebars scroll independently, and an
+ * absolutely-positioned panel would be cut off by them. Position, width and
+ * max-height all come from inline styles, computed against the room actually
+ * left around the trigger.
+ */
 .app-select-dropdown {
-  position: absolute;
-  z-index: 40;
-  margin-top: 0.65rem;
-  width: 100%;
+  position: fixed;
+  /*
+   * Above the sticky header (40) and the mobile filter drawer (50) — the
+   * filters live inside that drawer, so the panel has to clear it. Below the
+   * cookie banner / site popup (60) and modals (70), which should cover an
+   * open dropdown rather than appear behind it.
+   */
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 1.5rem;
@@ -497,10 +561,23 @@ select {
   color: var(--foreground);
 }
 
+/*
+ * The scrolling option list. `min-height: 0` is what lets it actually shrink
+ * inside the flex column — without it the list keeps its content height and
+ * overflows the panel's max-height instead of scrolling.
+ */
 .app-select-dropdown-inner {
-  max-height: 18rem;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: 0.45rem;
+}
+
+/* A non-scrolling header (search box) pinned above the option list. */
+.app-select-dropdown-header {
+  flex: 0 0 auto;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  padding: 0.5rem;
 }
 
 .app-select-option {

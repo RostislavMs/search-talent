@@ -1,15 +1,18 @@
 /**
- * Discovery helpers for "related / similar" recommendations.
+ * Discovery helpers for the "related creators" section.
  *
- * Items are ranked purely by how many skills (technologies) they share with
- * the item the visitor is currently viewing. Ties break on a quality signal
- * (score) and then recency, so equally-related items surface the strongest,
- * freshest work first.
+ * Creators are ranked by how many skills they share with the profile being
+ * viewed, with the profile category as a secondary signal and recency as the
+ * final tiebreak.
+ *
+ * Related *projects* used to be ranked the same way and no longer are — plain
+ * overlap counting weighted a ubiquitous shared tag the same as a rare one.
+ * That path now lives in `src/lib/recommendations.ts`, which scores
+ * IDF-weighted similarity alongside format, quality and viewer affinity.
  *
  * The query layer (`src/lib/db`) fetches candidate rows from Postgres; the
  * ranking math lives here as pure, framework-free functions so it can be
- * unit-tested without a database. The shapes are deliberately generic so the
- * same logic powers both related projects and related creators.
+ * unit-tested without a database.
  */
 
 /** Default number of recommendations rendered in a related section. */
@@ -52,40 +55,6 @@ export function tallySharedSkills(
   }
 
   return counts;
-}
-
-/** A candidate ready to be ranked into a related list. */
-export type RankableCandidate = {
-  id: string;
-  sharedSkillCount: number;
-  /** Quality tiebreaker — e.g. the stored project score. */
-  score: number;
-  /** Recency tiebreaker as an ISO timestamp; nulls sort last. */
-  createdAt: string | null;
-};
-
-/**
- * Rank candidates by shared-skill overlap, breaking ties on score then
- * recency. Candidates with zero overlap are dropped (a recommendation must be
- * genuinely related), and at most `limit` items are returned.
- */
-export function rankBySharedSkills<T extends RankableCandidate>(
-  candidates: T[],
-  limit: number,
-): T[] {
-  if (limit <= 0) {
-    return [];
-  }
-
-  return candidates
-    .filter((candidate) => candidate.sharedSkillCount > 0)
-    .sort(
-      (a, b) =>
-        b.sharedSkillCount - a.sharedSkillCount ||
-        b.score - a.score ||
-        compareRecencyDesc(a.createdAt, b.createdAt),
-    )
-    .slice(0, limit);
 }
 
 /** A creator candidate ready to be ranked into a related list. */

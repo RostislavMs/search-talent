@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  rankBySharedSkills,
   rankRelatedCreators,
   tallySharedSkills,
   type CreatorRankInput,
-  type RankableCandidate,
   type SkillLink,
 } from "@/lib/related";
 
@@ -46,67 +44,6 @@ describe("tallySharedSkills", () => {
   it("ignores reference skills that are mere duplicates", () => {
     const counts = tallySharedSkills(links, [1, 1, 2], "self");
     expect(counts.get("a")).toBe(2);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// rankBySharedSkills
-// ---------------------------------------------------------------------------
-
-describe("rankBySharedSkills", () => {
-  const make = (
-    id: string,
-    sharedSkillCount: number,
-    score: number,
-    createdAt: string | null = null,
-  ): RankableCandidate => ({ id, sharedSkillCount, score, createdAt });
-
-  it("orders by shared-skill count descending", () => {
-    const ranked = rankBySharedSkills(
-      [make("low", 1, 100), make("high", 3, 0), make("mid", 2, 50)],
-      10,
-    );
-    expect(ranked.map((item) => item.id)).toEqual(["high", "mid", "low"]);
-  });
-
-  it("breaks ties on score, then recency", () => {
-    const ranked = rankBySharedSkills(
-      [
-        make("old", 2, 10, "2024-01-01T00:00:00Z"),
-        make("strong", 2, 99, "2024-01-01T00:00:00Z"),
-        make("new", 2, 10, "2026-01-01T00:00:00Z"),
-      ],
-      10,
-    );
-    expect(ranked.map((item) => item.id)).toEqual(["strong", "new", "old"]);
-  });
-
-  it("drops candidates with zero overlap", () => {
-    const ranked = rankBySharedSkills(
-      [make("keep", 1, 0), make("drop", 0, 999)],
-      10,
-    );
-    expect(ranked.map((item) => item.id)).toEqual(["keep"]);
-  });
-
-  it("caps the result at the requested limit", () => {
-    const ranked = rankBySharedSkills(
-      [make("a", 3, 0), make("b", 2, 0), make("c", 1, 0)],
-      2,
-    );
-    expect(ranked).toHaveLength(2);
-    expect(ranked.map((item) => item.id)).toEqual(["a", "b"]);
-  });
-
-  it("returns nothing for a non-positive limit", () => {
-    expect(rankBySharedSkills([make("a", 3, 0)], 0)).toEqual([]);
-  });
-
-  it("does not mutate the input array", () => {
-    const input = [make("a", 1, 0), make("b", 2, 0)];
-    const snapshot = input.map((item) => item.id);
-    rankBySharedSkills(input, 10);
-    expect(input.map((item) => item.id)).toEqual(snapshot);
   });
 });
 

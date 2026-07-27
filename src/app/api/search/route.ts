@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { loadViewerAffinity } from "@/lib/db/affinity";
 import { searchDiscovery } from "@/lib/db/search";
 import { normalizeProjectKind } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
@@ -41,12 +42,24 @@ function parseStringArray(value: string | null) {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const supabase = await createClient();
+  const sort = searchParams.get("sort") || undefined;
+
+  // Only load the viewer's behavioural profile when the request actually asks
+  // for a personalised order — every other sort is impersonal, and the
+  // affinity load is several extra queries.
+  const {
+    data: { user },
+  } = sort === "forYou"
+    ? await supabase.auth.getUser()
+    : { data: { user: null } };
+
+  const viewer = user ? await loadViewerAffinity(supabase, user.id) : null;
 
   const result = await searchDiscovery(
     {
       q: searchParams.get("q") || undefined,
       scope: searchParams.get("scope") || undefined,
-      sort: searchParams.get("sort") || undefined,
+      sort,
       countryId: parseNumber(searchParams.get("countryId")),
       categoryId: parseNumber(searchParams.get("categoryId")),
       skillIds: parseNumberArray(searchParams.get("skillIds")),
@@ -64,6 +77,7 @@ export async function GET(request: Request) {
       page: parseNumber(searchParams.get("page")),
     },
     supabase,
+    viewer,
   );
 
   return NextResponse.json(result);

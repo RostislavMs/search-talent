@@ -5,15 +5,31 @@ import { getCreatorRatings, getProjectRatings } from "@/lib/db/leaderboards";
 import type { ProjectKind } from "@/lib/projects";
 import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/current-user";
+import { loadViewerAffinity } from "@/lib/db/affinity";
 import {
+  composeRelevance,
+  facetRelevance,
   getProfileRelevanceScore,
   getProjectRelevanceScore,
   normalizePage,
   normalizePerPage,
+  normalizeSort,
   pageOffset,
   profileComparator,
+  profileRichness,
   projectComparator,
+  projectRichness,
+  qualityBlend,
 } from "@/lib/search-ranking";
+import {
+  hasUsableAffinity,
+  personalScore,
+  scoreProfileAffinity,
+  scoreProjectAffinity,
+  type ViewerAffinity,
+} from "@/lib/personalization";
 
 type ProjectRow = {
   id: string;
@@ -182,6 +198,13 @@ async function fetchAllByIds<T>(
 export async function searchDiscovery(
   params: DiscoverySearchParams,
   supabase: SupabaseClient,
+  /**
+   * Behavioural profile of the signed-in visitor, from
+   * `loadViewerAffinity`. Omitted (or null) for anonymous visitors, which is
+   * also what SSR passes for the crawlable listing — so the public,
+   * cacheable order never depends on who is looking.
+   */
+  viewer: ViewerAffinity | null = null,
 ) {
   const q = (params.q || "").trim().toLowerCase();
   const scope = params.scope || "all";
@@ -202,7 +225,17 @@ export async function searchDiscovery(
   const perPage = normalizePerPage(params.perPage ?? null);
   const page = normalizePage(params.page ?? null);
 
-  const activeSort = sort === "rating" || sort === "newest" ? sort : "relevance";
+  // "For you" needs a viewer with enough recorded behaviour to rank on; below
+  // that threshold the affinity is noise, so the request degrades to the
+  // impersonal relevance order rather than shuffling the page on a single
+  // remembered click.
+  const personalized = hasUsableAffinity(viewer);
+  const requestedSort = normalizeSort(sort);
+  const activeSort =
+    requestedSort === "forYou" && !personalized ? "relevance" : requestedSort;
+  const hasQuery = q.length > 0;
+  const nowMs = Date.now();
+
   // Candidate ordering for the SQL pre-filter: newest rows for the "newest"
   // sort, otherwise the highest-scoring rows, so that capping the candidate set
   // never drops the rows most likely to surface on the first pages.
@@ -423,16 +456,26 @@ export async function searchDiscovery(
       // project not yet in the current leaderboard snapshot.
       const rating = projectRatings[project.id] ?? project.score ?? 0;
 
-      return {
-        ...project,
-        slug: project.slug || "",
-        score: rating,
-        ownerName: owner?.name ?? null,
-        ownerUsername: owner?.username ?? null,
-        coAuthorNames: [] as string[],
-        technologies,
-        mediaCount,
-        relevance: getProjectRelevanceScore(
+      // Relevance is text match + how many of the selected facets this row
+      // actually satisfies + a 0..1 quality tail. With no query and no facets
+      // only the tail remains, which is what keeps the default listing
+      // distinct from the plain "by rating" order.
+      const quality = qualityBlend(
+        {
+          score: rating,
+          createdAt: project.created_at,
+          richness: projectRichness({
+            hasCover: Boolean(project.cover_url),
+            mediaCount,
+            descriptionLength: project.description?.length ?? 0,
+            technologyCount: technologies.length,
+          }),
+        },
+        nowMs,
+      );
+
+      const relevance = composeRelevance({
+        text: getProjectRelevanceScore(
           {
             title: project.title,
             description: project.description,
@@ -442,6 +485,37 @@ export async function searchDiscovery(
           },
           q,
         ),
+        facet: facetRelevance({
+          selectedSkillIds: skillIds,
+          entitySkillIds: technologies.map((item) => item.id),
+        }),
+        quality,
+      });
+
+      return {
+        ...project,
+        slug: project.slug || "",
+        score: rating,
+        ownerName: owner?.name ?? null,
+        ownerUsername: owner?.username ?? null,
+        coAuthorNames: [] as string[],
+        technologies,
+        mediaCount,
+        relevance,
+        quality,
+        affinity:
+          personalized && viewer
+            ? scoreProjectAffinity(
+                {
+                  id: project.id,
+                  ownerUserId: project.owner_id,
+                  kind: project.kind,
+                  skillIds: technologies.map((item) => item.id),
+                },
+                viewer,
+              )
+            : 0,
+        personal: 0,
       };
     })
     .filter((project) => Boolean(project.slug))
@@ -479,21 +553,31 @@ export async function searchDiscovery(
       const technologies = profileSkillsMap.get(profile.id) || [];
       const countryName = profile.country_id ? countryMap.get(profile.country_id) || null : null;
       const categoryName = profile.category_id ? categoryMap.get(profile.category_id) || null : null;
+      const languageIds = profileLanguageIdsMap.get(profile.id) || [];
 
-      return {
-        ...profile,
-        username: profile.username || "",
-        // Use the composite leaderboard rating (completeness + portfolio +
-        // community trust + production + tech + freshness + badges) instead of
-        // the persisted Wilson-only profiles.score, so the card rating and the
-        // "sort by rating" order match the homepage leaderboard. Falls back to
-        // the persisted score if the leaderboard map is unavailable.
-        score: creatorRatings[profile.id] ?? profile.score ?? 0,
-        technologies,
-        countryName,
-        categoryName,
-        languageIds: profileLanguageIdsMap.get(profile.id) || [],
-        relevance: getProfileRelevanceScore(
+      // Use the composite leaderboard rating (completeness + portfolio +
+      // community trust + production + tech + freshness + badges) instead of
+      // the persisted Wilson-only profiles.score, so the card rating and the
+      // "sort by rating" order match the homepage leaderboard. Falls back to
+      // the persisted score if the leaderboard map is unavailable.
+      const rating = creatorRatings[profile.id] ?? profile.score ?? 0;
+
+      const quality = qualityBlend(
+        {
+          score: rating,
+          createdAt: profile.created_at,
+          richness: profileRichness({
+            hasAvatar: Boolean(profile.avatar_url),
+            headlineLength: profile.headline?.length ?? 0,
+            technologyCount: technologies.length,
+            hasLocation: Boolean(profile.country_id || profile.city),
+          }),
+        },
+        nowMs,
+      );
+
+      const relevance = composeRelevance({
+        text: getProfileRelevanceScore(
           {
             username: profile.username || "",
             name: profile.name,
@@ -503,6 +587,38 @@ export async function searchDiscovery(
           },
           q,
         ),
+        facet: facetRelevance({
+          selectedSkillIds: skillIds,
+          entitySkillIds: technologies.map((item) => item.id),
+        }),
+        quality,
+      });
+
+      return {
+        ...profile,
+        username: profile.username || "",
+        score: rating,
+        technologies,
+        countryName,
+        categoryName,
+        languageIds,
+        relevance,
+        quality,
+        affinity:
+          personalized && viewer
+            ? scoreProfileAffinity(
+                {
+                  profileId: profile.id,
+                  userId: profile.user_id,
+                  categoryId: profile.category_id,
+                  countryId: profile.country_id,
+                  skillIds: technologies.map((item) => item.id),
+                  languageIds,
+                },
+                viewer,
+              )
+            : 0,
+        personal: 0,
       };
     })
     .filter((profile) => {
@@ -524,6 +640,15 @@ export async function searchDiscovery(
     users: users.length,
   };
 
+  // Relevance is an open-ended sum, so it has to be normalised against the
+  // strongest row in *this* result set before it can be blended with the 0..1
+  // affinity and quality terms. Done here, after filtering, because the
+  // maximum depends on which rows survived.
+  if (activeSort === "forYou") {
+    applyPersonalScores(projects, hasQuery);
+    applyPersonalScores(users, hasQuery);
+  }
+
   // `totals` above holds the full filtered counts; here we return just the
   // requested page so the client can render numbered pagination.
   const offset = pageOffset(page, perPage);
@@ -538,7 +663,38 @@ export async function searchDiscovery(
     projects: scope === "creators" ? [] : projects,
     users: scope === "projects" ? [] : users,
     totals,
+    /**
+     * Whether this response was actually personalised. The UI uses it to label
+     * the listing honestly instead of promising a tailored order it did not
+     * get (anonymous visitor, or too little recorded behaviour to rank on).
+     */
+    personalized: activeSort === "forYou",
   };
+}
+
+/** Fills in the `personal` blend each "for you" comparator sorts on. */
+function applyPersonalScores(
+  rows: Array<{
+    relevance: number;
+    quality: number;
+    affinity: number;
+    personal: number;
+  }>,
+  hasQuery: boolean,
+) {
+  const maxRelevance = rows.reduce(
+    (max, row) => (row.relevance > max ? row.relevance : max),
+    0,
+  );
+
+  for (const row of rows) {
+    row.personal = personalScore({
+      affinity: row.affinity,
+      quality: row.quality,
+      relevanceNorm: maxRelevance > 0 ? row.relevance / maxRelevance : 0,
+      hasQuery,
+    });
+  }
 }
 
 /**
@@ -560,4 +716,49 @@ export async function getInitialDiscoveryResults(params: DiscoverySearchParams) 
   } catch {
     return null;
   }
+}
+
+/**
+ * SSR seed for `/projects` and `/talents`, personalised when it can be.
+ *
+ * A signed-in visitor with enough recorded behaviour gets a "for you" ordering
+ * rendered on the server, so the tailored list *is* the first paint — no
+ * re-shuffle after hydration. Everyone else (including Googlebot) falls
+ * through to the anonymous read-only path, which keeps the crawlable listing
+ * identical for every anonymous request.
+ *
+ * Returns the sort that was actually used so the client can start its state
+ * on that value; if it started on "relevance" while the server had ranked
+ * "forYou", the dropdown would contradict the list it labels.
+ */
+export async function getDiscoverySeed(params: DiscoverySearchParams) {
+  const user = await getCurrentUser();
+
+  if (user) {
+    try {
+      const supabase = await createClient();
+      const affinity = await loadViewerAffinity(supabase, user.id);
+
+      if (hasUsableAffinity(affinity)) {
+        const results = await searchDiscovery(
+          { ...params, sort: "forYou" },
+          supabase,
+          affinity,
+        );
+
+        if (results.personalized) {
+          return { results, sort: "forYou" as const, canPersonalize: true };
+        }
+      }
+    } catch {
+      // Fall through to the anonymous seed — a personalisation failure must
+      // never cost the visitor their results.
+    }
+  }
+
+  return {
+    results: await getInitialDiscoveryResults(params),
+    sort: "relevance" as const,
+    canPersonalize: Boolean(user),
+  };
 }

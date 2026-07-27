@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAnchoredDropdown } from "@/components/ui/use-anchored-dropdown";
 
 type Option = {
   id: number;
@@ -19,9 +20,11 @@ export default function SearchSelect({
   onChange: (value: number | null) => void;
 }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const selectedOption = options.find((option) => option.id === value) || null;
+  const dropdownStyle = useAnchoredDropdown(triggerRef, isOpen);
 
   const filteredOptions = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -53,6 +56,7 @@ export default function SearchSelect({
   return (
     <div ref={wrapperRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         data-open={isOpen}
         onClick={() => setIsOpen((current) => !current)}
@@ -80,8 +84,9 @@ export default function SearchSelect({
       </button>
 
       {isOpen && (
-        <div className="app-select-dropdown">
-          <div className="app-select-dropdown-inner">
+        <div className="app-select-dropdown" style={dropdownStyle}>
+          {/* Pinned above the list so filtering stays reachable while scrolling. */}
+          <div className="app-select-dropdown-header">
             <input
               type="text"
               value={query}
@@ -90,73 +95,73 @@ export default function SearchSelect({
               className="w-full rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] outline-none focus-visible:border-[color:var(--ring)] focus-visible:ring-2 focus-visible:ring-[color:var(--border)]"
               autoFocus
             />
+          </div>
 
-            <div className="mt-3 max-h-64 overflow-y-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  onChange(null);
-                  setIsOpen(false);
-                  setQuery("");
-                }}
-                data-selected={!selectedOption}
-                data-placeholder="true"
-                className="app-select-option"
-              >
-                <span>{placeholder}</span>
-                <span className="app-select-check" aria-hidden="true">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M3.5 8.5L6.5 11.5L12.5 4.5"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-              </button>
+          <div className="app-select-dropdown-inner">
+            <button
+              type="button"
+              onClick={() => {
+                onChange(null);
+                setIsOpen(false);
+                setQuery("");
+              }}
+              data-selected={!selectedOption}
+              data-placeholder="true"
+              className="app-select-option"
+            >
+              <span>{placeholder}</span>
+              <span className="app-select-check" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M3.5 8.5L6.5 11.5L12.5 4.5"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </button>
 
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((option) => {
-                  const isSelected = option.id === value;
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => {
+                const isSelected = option.id === value;
 
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => {
-                        onChange(option.id);
-                        setIsOpen(false);
-                        setQuery("");
-                      }}
-                      data-selected={isSelected}
-                      className="app-select-option"
-                    >
-                      <span>{option.name}</span>
-                      <span className="app-select-check" aria-hidden="true">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 16 16"
-                          fill="none"
-                        >
-                          <path
-                            d="M3.5 8.5L6.5 11.5L12.5 4.5"
-                            stroke="currentColor"
-                            strokeWidth="1.7"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </span>
-                    </button>
-                  );
-                })
-              ) : (
-                <p className="app-select-empty">No results found</p>
-              )}
-            </div>
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(option.id);
+                      setIsOpen(false);
+                      setQuery("");
+                    }}
+                    data-selected={isSelected}
+                    className="app-select-option"
+                  >
+                    <span>{option.name}</span>
+                    <span className="app-select-check" aria-hidden="true">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                      >
+                        <path
+                          d="M3.5 8.5L6.5 11.5L12.5 4.5"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                );
+              })
+            ) : (
+              <p className="app-select-empty">No results found</p>
+            )}
           </div>
         </div>
       )}

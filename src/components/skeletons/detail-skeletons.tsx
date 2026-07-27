@@ -26,45 +26,75 @@ function ParagraphLines({ lines = 4 }: { lines?: number }) {
   );
 }
 
-/** Mirrors a `DetailCard` (label + value inside an app-panel). */
-function DetailCardSkeleton() {
+/**
+ * A run of bars sized to a real `leading-7 sm:leading-8` paragraph, so the
+ * block occupies the same height as the copy it stands in for. The generic
+ * `ParagraphLines` above uses `h-3` bars, which collapse a 28px line to 12px
+ * and make the fallback far shorter than the content that replaces it.
+ */
+function ProseLines({ lines = 3 }: { lines?: number }) {
+  const widths = ["w-full", "w-11/12", "w-full", "w-5/6", "w-2/3"];
   return (
-    <div className="rounded-2xl app-panel p-4">
-      <Skeleton className="h-3 w-20 rounded-full" />
-      <Skeleton className="mt-3 h-4 w-2/3 rounded" />
+    <div className="space-y-2">
+      {Array.from({ length: lines }).map((_, index) => (
+        <Skeleton
+          key={index}
+          className={`h-5 rounded sm:h-6 ${widths[index % widths.length]}`}
+        />
+      ))}
     </div>
   );
 }
 
-/** Skeleton for the project detail page (`/projects/[slug]`). */
+/** Mirrors a `DetailCard` (label + value inside an app-panel). */
+function DetailCardSkeleton() {
+  return (
+    <div className="rounded-2xl app-panel p-3 sm:rounded-3xl sm:p-4">
+      <Skeleton className="h-3 w-20 rounded-full" />
+      <Skeleton className="mt-1 h-5 w-2/3 rounded sm:mt-2 sm:h-6" />
+    </div>
+  );
+}
+
+/**
+ * Skeleton for the project detail page (`/projects/[slug]`).
+ *
+ * Mirrors `src/app/[locale]/projects/[slug]/page.tsx` block for block —
+ * including the details grid being 2-up on mobile, the always-present gallery
+ * section, the comments panel and the related-projects grid. The page is
+ * edge-to-edge on mobile (`px-0`) and square-cornered there (`rounded-none`),
+ * so the fallback must be too: an inset, rounded fallback visibly snaps
+ * sideways the moment the real page swaps in.
+ */
 export function ProjectDetailSkeleton() {
   return (
     <main
-      className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 sm:py-10"
+      className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10"
       role="status"
       aria-busy="true"
     >
       {/* Hero: text column + cover */}
-      <section className="overflow-hidden rounded-2xl app-card sm:rounded-hero">
+      <section className="overflow-hidden rounded-none app-card sm:rounded-hero">
         <div className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
           <div className="p-5 sm:p-8 md:p-10">
+            {/* Back / share / manage actions */}
             <div className="flex flex-wrap items-center gap-3">
-              <Skeleton className="h-8 w-32 rounded-full" />
+              <Skeleton className="h-8 w-28 rounded-full" />
+              <Skeleton className="h-8 w-24 rounded-full" />
             </div>
 
-            <div className="mt-4 space-y-2 sm:mt-6">
-              <Skeleton className="h-8 w-3/4 rounded md:h-10" />
-              <Skeleton className="h-8 w-1/2 rounded md:h-10" />
-            </div>
+            {/* h1 — text-2xl / sm:text-3xl / md:text-4xl */}
+            <Skeleton className="mt-4 h-8 w-4/5 rounded sm:mt-6 sm:h-9 md:h-10" />
 
             <div className="mt-3 max-w-3xl sm:mt-4">
-              <ParagraphLines lines={3} />
+              <ProseLines lines={3} />
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
-              <Skeleton className="h-8 w-24 rounded-full" />
+            {/* Rating pill, bookmark, author chip */}
+            <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-6">
+              <Skeleton className="h-8 w-20 rounded-full" />
               <Skeleton className="h-8 w-28 rounded-full" />
-              <Skeleton className="h-8 w-32 rounded-full" />
+              <Skeleton className="h-8 w-44 rounded-full" />
             </div>
           </div>
 
@@ -72,38 +102,92 @@ export function ProjectDetailSkeleton() {
         </div>
       </section>
 
-      {/* Body: main content + sidebar */}
+      {/* Body: main content + sidebar + comments */}
       <section className="mt-5 grid grid-cols-1 gap-5 sm:mt-8 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-5 sm:space-y-8">
-          <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
-            <Skeleton className="h-7 w-40 rounded" />
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {Array.from({ length: 6 }).map((_, index) => (
+          {/* Details: 2-up grid on every breakpoint, then technologies + links */}
+          <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
+            <Skeleton className="h-8 w-40 rounded" />
+
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4">
+              {Array.from({ length: 4 }).map((_, index) => (
                 <DetailCardSkeleton key={index} />
               ))}
             </div>
+
+            <div className="mt-6">
+              <Skeleton className="h-5 w-32 rounded" />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Skeleton className="h-8 w-24 rounded-full" />
+                <Skeleton className="h-8 w-20 rounded-full" />
+                <Skeleton className="h-8 w-28 rounded-full" />
+                <Skeleton className="h-8 w-16 rounded-full" />
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Skeleton className="h-9 w-32 rounded-full" />
+              <Skeleton className="h-9 w-28 rounded-full" />
+            </div>
           </section>
 
-          <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
-            <Skeleton className="h-7 w-48 rounded" />
-            <div className="mt-6">
-              <ParagraphLines lines={5} />
+          {/* Gallery — rendered for every project, empty state included */}
+          <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
+            <Skeleton className="h-7 w-32 rounded sm:h-8" />
+            <div className="mt-4 grid gap-3 sm:mt-6 sm:grid-cols-2">
+              <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
+              <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
             </div>
           </section>
         </div>
 
-        <aside className="space-y-5 sm:space-y-8">
-          <div className="space-y-4 rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
-            <Skeleton className="h-5 w-24 rounded" />
-            <Skeleton className="h-12 w-full rounded-xl" />
-            <Skeleton className="h-12 w-full rounded-xl" />
-          </div>
-          <div className="space-y-4 rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
-            <Skeleton className="h-5 w-32 rounded" />
-            <Skeleton className="h-16 w-full rounded-xl" />
-            <Skeleton className="h-16 w-full rounded-xl" />
-          </div>
+        <aside className="app-sticky-pane space-y-4 sm:space-y-6 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:self-start xl:row-span-2">
+          {/* VoteButtons panel */}
+          <section className="rounded-panel app-panel p-4">
+            <Skeleton className="h-5 w-28 rounded" />
+            <div className="mt-3 flex items-center gap-2">
+              <Skeleton className="h-9 w-16 rounded-full" />
+              <Skeleton className="h-9 w-16 rounded-full" />
+              <Skeleton className="h-9 w-16 rounded-full" />
+            </div>
+          </section>
+
+          {/* Author card */}
+          <section className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-5">
+            <Skeleton className="h-4 w-28 rounded" />
+            <div className="mt-4 flex items-center gap-3">
+              <Skeleton className="h-14 w-14 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-5 w-2/3 rounded" />
+                <Skeleton className="h-4 w-1/2 rounded" />
+              </div>
+            </div>
+            <Skeleton className="mt-5 h-9 w-40 rounded-full" />
+          </section>
         </aside>
+
+        {/* Comments */}
+        <section className="rounded-hero app-card p-5 sm:p-6">
+          <Skeleton className="h-7 w-44 rounded" />
+          <Skeleton className="mt-4 h-24 w-full rounded-2xl" />
+          <div className="mt-6 space-y-5">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div key={index} className="flex gap-3">
+                <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32 rounded" />
+                  <Skeleton className="h-4 w-full rounded" />
+                  <Skeleton className="h-4 w-4/5 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </section>
+
+      {/* Related projects — matches the page's own Suspense fallback */}
+      <section className="mt-5 rounded-none app-card p-4 sm:mt-8 sm:rounded-hero sm:p-6">
+        <ProjectCardGridSkeleton count={3} />
       </section>
     </main>
   );

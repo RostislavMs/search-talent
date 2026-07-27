@@ -3,7 +3,7 @@ import nextDynamic from "next/dynamic";
 import JsonLd from "@/components/json-ld";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import { getProfileCategoryBySlug } from "@/lib/db/marketing";
-import { getInitialDiscoveryResults } from "@/lib/db/search";
+import { getDiscoverySeed } from "@/lib/db/search";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import {
   buildItemListSchema,
@@ -71,13 +71,13 @@ export default async function TalentsByRolePage({
     notFound();
   }
 
-  const initial = await getInitialDiscoveryResults({
+  const seed = await getDiscoverySeed({
     scope: "creators",
-    sort: "relevance",
     page: 1,
     perPage: 12,
     categoryId: category.id,
   });
+  const initial = seed.results;
 
   const hero = {
     eyebrow: locale === "uk" ? "Напрямок" : "Direction",
@@ -115,6 +115,8 @@ export default async function TalentsByRolePage({
         mode="creators"
         lockedFilter={{ label: category.name, categoryId: category.id }}
         hero={hero}
+        initialSort={seed.sort}
+        canPersonalize={seed.canPersonalize}
         initialUsers={initial?.users}
         initialProjects={initial?.projects}
         initialTotals={initial?.totals}

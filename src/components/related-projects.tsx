@@ -1,26 +1,48 @@
 import ProjectCard from "@/components/project-card";
+import { loadViewerAffinity } from "@/lib/db/affinity";
 import { getRelatedProjects } from "@/lib/db/public";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { hasUsableAffinity } from "@/lib/personalization";
 import { RELATED_ITEMS_LIMIT } from "@/lib/related";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/current-user";
 
 /**
  * "Related projects" section for the project detail page. Async server
  * component so it streams in behind a Suspense boundary without blocking the
- * main content. Renders nothing when no public project shares a technology,
- * keeping the page clean rather than showing an empty shell.
+ * main content.
+ *
+ * Recommendations are ranked on IDF-weighted stack similarity, format, quality
+ * and freshness (see `src/lib/recommendations.ts`), with a bounded personal
+ * term for signed-in visitors. Renders nothing only when the recommender comes
+ * back empty — with the fallback tiers that now means the platform genuinely
+ * has nothing else public to show.
  */
 export default async function RelatedProjects({
   projectId,
   skillIds,
+  kind,
+  ownerUserId,
   dictionary,
   limit = RELATED_ITEMS_LIMIT,
 }: {
   projectId: string;
   skillIds: number[];
+  kind?: string | null;
+  ownerUserId?: string | null;
   dictionary: Dictionary;
   limit?: number;
 }) {
-  const related = await getRelatedProjects(projectId, skillIds, limit);
+  const user = await getCurrentUser();
+  const viewer = user
+    ? await loadViewerAffinity(await createClient(), user.id)
+    : null;
+
+  const related = await getRelatedProjects(
+    { projectId, skillIds, kind, ownerUserId },
+    limit,
+    hasUsableAffinity(viewer) ? viewer : null,
+  );
 
   if (related.length === 0) {
     return null;

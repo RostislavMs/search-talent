@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useAnchoredDropdown } from "@/components/ui/use-anchored-dropdown";
 
 type SelectOption = {
   label: string;
@@ -44,10 +45,14 @@ export default function FormSelect({
   dropdownClassName,
 }: FormSelectProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [internalValue, setInternalValue] = useState(value);
   const [query, setQuery] = useState("");
   const listboxId = useId();
+  // Anchored to the viewport so the panel is never clipped by a scrollable
+  // sidebar and never runs off the bottom of the window.
+  const dropdownStyle = useAnchoredDropdown(triggerRef, isOpen);
 
   useEffect(() => {
     setInternalValue(value);
@@ -106,6 +111,7 @@ export default function FormSelect({
       {name ? <input type="hidden" name={name} value={currentValue} /> : null}
 
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         aria-haspopup="listbox"
@@ -145,9 +151,12 @@ export default function FormSelect({
       </button>
 
       {isOpen ? (
-        <div className={cx("app-select-dropdown", dropdownClassName)}>
+        <div
+          className={cx("app-select-dropdown", dropdownClassName)}
+          style={dropdownStyle}
+        >
           {searchable ? (
-            <div className="border-b app-border p-2">
+            <div className="app-select-dropdown-header">
               <input
                 type="text"
                 value={query}

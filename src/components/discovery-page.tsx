@@ -79,7 +79,15 @@ type SearchResponse = {
   };
 };
 
-type Sort = "relevance" | "rating" | "newest";
+type Sort = "forYou" | "relevance" | "rating" | "newest";
+
+/** Label for the "active filters" pill when the sort differs from the seed. */
+const SORT_LABELS: Record<Sort, (copy: DiscoveryCopy["common"]) => string> = {
+  forYou: (copy) => copy.sortForYou,
+  relevance: (copy) => copy.sortRelevance,
+  rating: (copy) => copy.sortRating,
+  newest: (copy) => copy.sortNewest,
+};
 
 type DiscoveryHero = {
   eyebrow?: string;
@@ -136,6 +144,18 @@ type DiscoveryPageProps = {
   initialUsers?: SearchUser[];
   initialProjects?: SearchProject[];
   initialTotals?: { projects: number; users: number };
+  /**
+   * The sort the SSR seed was actually ranked with. The client state must
+   * start on this value — if it defaulted to "relevance" while the server had
+   * ranked "forYou", the dropdown would name an order the list is not in.
+   */
+  initialSort?: Sort;
+  /**
+   * Whether the viewer is signed in, i.e. whether the "for you" option can
+   * return anything personal. Hidden for anonymous visitors rather than shown
+   * and silently ignored.
+   */
+  canPersonalize?: boolean;
 };
 
 type DiscoveryCopy = {
@@ -143,6 +163,7 @@ type DiscoveryCopy = {
     filters: string;
     resetFilters: string;
     sortBy: string;
+    sortForYou: string;
     sortRelevance: string;
     sortRating: string;
     sortNewest: string;
@@ -322,6 +343,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
         filters: "Фільтри",
         resetFilters: "Скинути",
         sortBy: "Сортування",
+        sortForYou: "Для тебе",
         sortRelevance: "За релевантністю",
         sortRating: "За рейтингом",
         sortNewest: "Найновіші",
@@ -427,6 +449,7 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       filters: "Filters",
       resetFilters: "Reset",
       sortBy: "Sort by",
+      sortForYou: "For you",
       sortRelevance: "Relevance",
       sortRating: "Rating",
       sortNewest: "Newest",
@@ -538,6 +561,8 @@ export default function DiscoveryPage({
   initialUsers,
   initialProjects,
   initialTotals,
+  initialSort = "relevance",
+  canPersonalize = false,
 }: DiscoveryPageProps) {
   const dictionary = useDictionary();
   const toast = useToast();
@@ -561,7 +586,7 @@ export default function DiscoveryPage({
     categories: [],
   });
   const [query, setQuery] = useState(initialQuery ?? "");
-  const [sort, setSort] = useState<Sort>("relevance");
+  const [sort, setSort] = useState<Sort>(initialSort);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(12);
   const [countryId, setCountryId] = useState<number | null>(null);
@@ -920,7 +945,10 @@ export default function DiscoveryPage({
     workFormatFilters.length > 0 ||
     minScore !== null ||
     maxScore !== null ||
-    sort !== "relevance";
+    // The seed's sort is this page's baseline, not always "relevance" — for a
+    // personalised visitor the page opens on "forYou", and that is not an
+    // "active filter" they chose.
+    sort !== initialSort;
   const selectedCountryName =
     meta.countries.find((country) => country.id === countryId)?.name || null;
   const selectedCategoryLabel =
@@ -940,11 +968,11 @@ export default function DiscoveryPage({
           remove: () => setQuery(""),
         }
       : null,
-    sort !== "relevance"
+    sort !== initialSort
       ? {
           key: "sort",
-          label: sort === "rating" ? commonUi.sortRating : commonUi.sortNewest,
-          remove: () => setSort("relevance"),
+          label: SORT_LABELS[sort](commonUi),
+          remove: () => setSort(initialSort),
         }
       : null,
     mode === "creators" && selectedCountryName
@@ -1046,7 +1074,7 @@ export default function DiscoveryPage({
 
   const resetFilters = () => {
     setQuery("");
-    setSort("relevance");
+    setSort(initialSort);
     setCountryId(null);
     // Restore the landing-page seed (no-op on the main /talents & /projects
     // pages, where both seeds are empty) so "Reset" keeps the page's defining
@@ -1216,7 +1244,13 @@ export default function DiscoveryPage({
         <aside
           id="discovery-filters-drawer"
           className={[
-            "space-y-4 xl:block xl:sticky xl:top-24 xl:self-start xl:bg-transparent xl:p-0 xl:backdrop-blur-none",
+            // A sticky column taller than the viewport is unreachable: it pins
+            // at top-24 and its overflow never comes into view, however far
+            // the page is scrolled. Capping it to the remaining viewport
+            // height and giving it its own scrollbar makes every filter
+            // reachable. `app-sticky-pane` also hides the scrollbar chrome
+            // until the pane is hovered.
+            "space-y-4 xl:block xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:self-start xl:bg-transparent xl:p-0 xl:pr-1 xl:backdrop-blur-none app-sticky-pane",
             mobileFiltersOpen
               ? "fixed inset-0 z-50 overflow-y-auto bg-[color:var(--background)]/95 px-4 pb-10 pt-4 backdrop-blur-md"
               : "hidden",
@@ -1280,6 +1314,9 @@ export default function DiscoveryPage({
                   value={sort}
                   onChange={(value) => setSort(value as Sort)}
                   options={[
+                    ...(canPersonalize
+                      ? [{ value: "forYou", label: commonUi.sortForYou }]
+                      : []),
                     { value: "relevance", label: commonUi.sortRelevance },
                     { value: "rating", label: commonUi.sortRating },
                     { value: "newest", label: commonUi.sortNewest },

@@ -3,10 +3,13 @@ import { createSupabaseMock, type SupabaseMock } from "./helpers/supabase-mock";
 
 const { holder } = vi.hoisted(() => ({ holder: { mock: null as SupabaseMock | null } }));
 
+vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => holder.mock!.client) }));
 vi.mock("@/lib/db/search", () => ({ searchDiscovery: vi.fn(async () => ({ projects: [], users: [], totals: { projects: 0, users: 0 } })) }));
+vi.mock("@/lib/db/affinity", () => ({ loadViewerAffinity: vi.fn(async () => null) }));
 
 import { GET } from "@/app/api/search/route";
+import { loadViewerAffinity } from "@/lib/db/affinity";
 import { searchDiscovery } from "@/lib/db/search";
 
 afterEach(() => {
@@ -30,5 +33,26 @@ describe("GET /api/search", () => {
     expect(query.page).toBe(3);
     expect(query.hasMedia).toBe(true);
     expect(query.scope).toBe("projects");
+  });
+
+  it("skips the affinity load for impersonal sorts", async () => {
+    holder.mock = createSupabaseMock({ resolve: () => ({}) });
+    await GET(new Request("http://test/api/search?sort=rating"));
+    expect(vi.mocked(loadViewerAffinity)).not.toHaveBeenCalled();
+    expect(vi.mocked(searchDiscovery).mock.calls[0][2]).toBeNull();
+  });
+
+  it("resolves the viewer only when the request asks for a personalised sort", async () => {
+    holder.mock = createSupabaseMock({ resolve: () => ({}) });
+    holder.mock.client.auth = {
+      getUser: vi.fn(async () => ({ data: { user: { id: "viewer-1" } } })),
+    } as unknown as typeof holder.mock.client.auth;
+
+    await GET(new Request("http://test/api/search?sort=forYou"));
+
+    expect(vi.mocked(loadViewerAffinity)).toHaveBeenCalledWith(
+      holder.mock.client,
+      "viewer-1",
+    );
   });
 });

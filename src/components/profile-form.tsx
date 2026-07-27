@@ -1999,7 +1999,7 @@ export default function ProfileForm({
   return (
     <div className="space-y-8">
       <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
-        <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
+        <aside className="app-sticky-pane hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:self-start lg:pr-1">
           {renderNav()}
         </aside>
 
