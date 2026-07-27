@@ -21,21 +21,20 @@ function HeroBar({ className = "" }: { className?: string }) {
 /** Mirrors the live "top talent / project / article" card in the home hero. */
 export function HeroLiveCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-3 sm:p-4">
-      <HeroBar className="h-3 w-24 rounded-full" />
-      <div className="mt-2.5 flex items-start gap-3">
+    <div className="rounded-2xl border border-white/10 bg-black/25 p-3.5 sm:p-4.5">
+      <div className="flex items-center justify-between gap-2">
+        <HeroBar className="h-3 w-24 rounded-full" />
+        <HeroBar className="h-5 w-16 shrink-0 rounded-full" />
+      </div>
+      <div className="mt-3 flex items-center gap-3">
         <div
           aria-hidden="true"
-          className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-white/15"
+          className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-white/15"
         />
         <div className="min-w-0 flex-1 space-y-2">
           <HeroBar className="h-4 w-3/4" />
           <HeroBar className="h-3 w-1/2" />
         </div>
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <HeroBar className="h-6 w-20 rounded-full" />
-        <HeroBar className="h-3 w-16" />
       </div>
     </div>
   );
@@ -62,7 +61,7 @@ export function HomeHeroSkeleton() {
           </div>
         </div>
 
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-3 sm:space-y-3.5">
           <HeroBar className="h-3 w-28 rounded-full" />
           {Array.from({ length: 3 }).map((_, index) => (
             <HeroLiveCardSkeleton key={index} />
