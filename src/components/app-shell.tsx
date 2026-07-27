@@ -19,7 +19,6 @@ export default async function AppShell({
     initialConsent,
     initialTheme,
     initialCanPersistTheme,
-    isSignedIn,
     viewer,
     activePopup,
   } = await getAppShellData(locale);
@@ -33,7 +32,7 @@ export default async function AppShell({
         initialCanPersistTheme={initialCanPersistTheme}
       />
       <div className="flex-1">{children}</div>
-      <SiteFooter dictionary={dictionary} isSignedIn={isSignedIn} />
+      <SiteFooter dictionary={dictionary} />
       <CookieConsentBanner initialConsent={initialConsent} />
       <SitePopup popup={activePopup} />
     </ToastProvider>

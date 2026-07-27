@@ -6,13 +6,9 @@ import logoImage from "../../public/logo.webp";
 
 type SiteFooterProps = {
   dictionary: Dictionary;
-  isSignedIn: boolean;
 };
 
-export default function SiteFooter({
-  dictionary,
-  isSignedIn,
-}: SiteFooterProps) {
+export default function SiteFooter({ dictionary }: SiteFooterProps) {
   const isEnglish = dictionary.nav.search === "Search";
 
   const talentsLabel = isEnglish ? "Browse Talent" : "Таланти";
@@ -27,7 +23,7 @@ export default function SiteFooter({
 
   const navLabel = isEnglish ? "Explore" : "Навігація";
 
-  const accountLabel = isEnglish ? "Account" : "Акаунт";
+  const sitemapLabel = isEnglish ? "Sitemap" : "Карта сайту";
 
   const infoLabel = isEnglish ? "Info" : "Інформація";
   const legalLabel = isEnglish ? "Legal" : "Правова інформація";
@@ -41,8 +37,13 @@ export default function SiteFooter({
   return (
     <footer className="border-t border-[color:var(--border)] bg-[color:var(--surface)]">
       <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 sm:py-10">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
-          <div className="sm:col-span-2 lg:col-span-1">
+        {/*
+          Three link columns remain after the account block was dropped, so the
+          tablet grid is 3-up (brand spans the full first row) — a 2-up grid
+          would leave a hole in the last row.
+        */}
+        <div className="grid gap-8 sm:grid-cols-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div className="sm:col-span-3 lg:col-span-1">
             <LocalizedLink
               href="/"
               className="relative block h-9 w-[112px] shrink-0"
@@ -95,36 +96,17 @@ export default function SiteFooter({
               >
                 {newsLabel}
               </LocalizedLink>
-            </nav>
-          </div>
-
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-eyebrow text-[color:var(--soft-foreground)]">
-              {accountLabel}
-            </p>
-            <nav className="mt-3 flex flex-col gap-2 text-sm text-[color:var(--muted-foreground)]">
-              <LocalizedLink
-                href={isSignedIn ? "/my-space" : "/login"}
+              {/*
+                Plain anchor, not LocalizedLink: /sitemap.xml is a root route
+                handler outside the [locale] segment, so a locale prefix would
+                404. It renders as a human-readable page via /sitemap.xsl.
+              */}
+              <a
+                href="/sitemap.xml"
                 className="hover:text-[color:var(--foreground)]"
               >
-                {isSignedIn ? dictionary.nav.mySpace : dictionary.nav.login}
-              </LocalizedLink>
-              {!isSignedIn && (
-                <LocalizedLink
-                  href="/signup"
-                  className="hover:text-[color:var(--foreground)]"
-                >
-                  {dictionary.nav.signup}
-                </LocalizedLink>
-              )}
-              {isSignedIn && (
-                <LocalizedLink
-                  href="/profile/edit"
-                  className="hover:text-[color:var(--foreground)]"
-                >
-                  {dictionary.mySpace.editProfile}
-                </LocalizedLink>
-              )}
+                {sitemapLabel}
+              </a>
             </nav>
           </div>
 

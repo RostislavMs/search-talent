@@ -90,14 +90,27 @@ function HeroLiveCard({
   return (
     <LocalizedLink
       href={href}
-      className={`group block rounded-2xl border border-white/10 ${tone.base} p-3 backdrop-blur transition hover:border-white/25 ${tone.hover} sm:p-4`}
+      className={`group block rounded-2xl border border-white/10 ${tone.base} p-3.5 backdrop-blur transition hover:border-white/25 ${tone.hover} sm:p-4.5`}
     >
-      <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
-        {label}
-      </p>
-      <div className="mt-2.5 flex items-start gap-3">
+      {/*
+        Two rows, not three: the rating/date badge shares the eyebrow row and the
+        CTA collapses into a single arrow. That trims ~38px per card, which is
+        what keeps the whole hero short enough for the next section heading to
+        stay in view. The CTA copy survives as the link's accessible label.
+      */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-xs font-semibold uppercase tracking-eyebrow text-white/55">
+          {label}
+        </p>
+        {meta ? (
+          <span className="font-display shrink-0 rounded-full bg-white/12 px-3 py-0.5 text-xs font-semibold text-white">
+            {meta}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-3 flex items-center gap-3">
         {avatarLabel ? (
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/10 text-sm font-semibold text-white">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/10 text-sm font-semibold text-white">
             {avatarUrl ? (
               <OptimizedImage
                 src={avatarUrl}
@@ -116,24 +129,17 @@ function HeroLiveCard({
             {primary}
           </p>
           {secondary ? (
-            <p className="mt-0.5 truncate text-xs text-white/65 sm:text-sm">
-              {secondary}
-            </p>
+            <p className="mt-0.5 truncate text-xs text-white/65">{secondary}</p>
           ) : null}
         </div>
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-3">
-        {meta ? (
-          <span className="font-display rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white">
-            {meta}
-          </span>
-        ) : (
-          <span aria-hidden="true" />
-        )}
-        <span className="text-xs font-medium text-white/70 transition group-hover:text-white">
-          {cta} →
+        <span
+          aria-hidden="true"
+          className="shrink-0 text-sm text-white/55 transition duration-200 group-hover:translate-x-0.5 group-hover:text-white"
+        >
+          →
         </span>
       </div>
+      <span className="sr-only">{cta}</span>
     </LocalizedLink>
   );
 }
@@ -149,7 +155,7 @@ function HeroFallbackCard({
 }) {
   return (
     <article
-      className={`rounded-2xl border border-white/10 ${tone.base} p-3 backdrop-blur sm:p-4`}
+      className={`rounded-2xl border border-white/10 ${tone.base} p-3.5 backdrop-blur sm:p-4.5`}
     >
       <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
         {label}
@@ -246,7 +252,7 @@ export default async function LocalizedHomePage({
             </div>
           </div>
 
-          <div className="space-y-2.5 sm:space-y-3">
+          <div className="space-y-3 sm:space-y-3.5">
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
               {dictionary.home.cards.eyebrow}
             </p>
