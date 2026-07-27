@@ -637,7 +637,9 @@ export default function ArticleComposer({
           />
         </section>
 
-        <aside className="order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)] xl:order-2 xl:sticky xl:top-20 xl:self-start">
+        {/* Scrolls on its own once taller than the viewport — a sticky column
+            without a height cap pins in place and hides its own overflow. */}
+        <aside className="app-sticky-pane order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)] xl:order-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:self-start">
           <div className="space-y-5 p-5">
             <div className="flex flex-col gap-1.5">
               <div

@@ -9,7 +9,7 @@ import {
   getProjectKindDirectory,
   getTechnologyDirectory,
 } from "@/lib/db/marketing";
-import { getInitialDiscoveryResults } from "@/lib/db/search";
+import { getDiscoverySeed } from "@/lib/db/search";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
@@ -65,16 +65,20 @@ export default async function LocalizedProjectsPage({
   const marketing = getMarketingContent(locale);
   const dictionary = getDictionary(locale);
 
-  const [technologies, kindCounts, initial] = await Promise.all([
+  const [technologies, kindCounts, seed] = await Promise.all([
     getTechnologyDirectory(200),
     getProjectKindDirectory(),
-    getInitialDiscoveryResults({
+    // Signed-in visitors with enough recorded behaviour get a "for you"
+    // ordering rendered server-side; anonymous requests (and Googlebot) get
+    // the impersonal listing, so the crawlable HTML stays identical for all.
+    getDiscoverySeed({
       scope: "projects",
-      sort: "relevance",
       page: 1,
       perPage: 12,
     }),
   ]);
+
+  const initial = seed.results;
 
   const visibleTechnologies = technologies.filter(
     (technology) => technology.count >= MIN_PROJECTS_PER_TAG,
@@ -119,6 +123,8 @@ export default async function LocalizedProjectsPage({
       )}
       <DiscoveryPage
         mode="projects"
+        initialSort={seed.sort}
+        canPersonalize={seed.canPersonalize}
         initialUsers={initial?.users}
         initialProjects={initial?.projects}
         initialTotals={initial?.totals}

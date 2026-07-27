@@ -697,7 +697,7 @@ export default async function PublicProjectPage({
 
         </div>
 
-        <aside className="space-y-4 sm:space-y-6 xl:sticky xl:top-24 xl:self-start xl:row-span-2">
+        <aside className="app-sticky-pane space-y-4 sm:space-y-6 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:self-start xl:row-span-2">
           <VoteButtons
             projectId={project.id}
             initialVote={voteSummary.currentVote}
@@ -798,6 +798,8 @@ export default async function PublicProjectPage({
         <RelatedProjects
           projectId={project.id}
           skillIds={technologies.map((technology) => technology.id)}
+          kind={project.kind}
+          ownerUserId={project.owner_id}
           dictionary={dictionary}
         />
       </Suspense>

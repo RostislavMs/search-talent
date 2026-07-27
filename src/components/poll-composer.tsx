@@ -438,46 +438,6 @@ export default function PollComposer({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-        <div className="flex w-full flex-col items-start gap-1.5 sm:w-auto sm:items-end">
-          <div
-            className="flex w-full items-center gap-1 rounded-full border app-border bg-[color:var(--surface-muted)] p-1 sm:inline-flex sm:w-auto"
-            role="tablist"
-            aria-label={ui.languageLabel}
-          >
-            {LOCALES.map((loc) => {
-              const active = loc === activeLocale;
-              const filled = versionHasContent(versions[loc]);
-              return (
-                <button
-                  key={loc}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setActiveLocale(loc)}
-                  className={cx(
-                    "inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition sm:flex-none",
-                    active
-                      ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-sm"
-                      : "app-muted hover:text-[color:var(--foreground)]",
-                  )}
-                >
-                  {LOCALE_NAMES[loc]}
-                  <span
-                    aria-hidden
-                    className={cx(
-                      "h-1.5 w-1.5 rounded-full transition",
-                      filled ? "bg-[color:var(--brand)]" : "bg-transparent",
-                    )}
-                  />
-                </button>
-              );
-            })}
-          </div>
-          <p className="max-w-sm text-xs leading-5 app-soft sm:text-right">{ui.languageHint}</p>
-        </div>
-      </div>
-
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <section className="order-2 space-y-6 xl:order-1">
           <RichTextComposer
@@ -506,8 +466,53 @@ export default function PollComposer({
           </div>
         </section>
 
-        <aside className="order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)] xl:order-2 xl:sticky xl:top-20 xl:self-start">
+        {/* Scrolls on its own once taller than the viewport — a sticky column
+            without a height cap pins in place and hides its own overflow. */}
+        <aside className="app-sticky-pane order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)] xl:order-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:self-start">
           <div className="space-y-5 p-5">
+            {/* Language switcher lives here rather than in a row above the
+                grid: as a right-aligned strip it left a wide empty band across
+                the top of the page, and it belongs with the per-language
+                fields (title, excerpt) it actually governs — same as the
+                article composer. */}
+            <div className="flex flex-col gap-1.5">
+              <div
+                className="flex w-full items-center gap-1 rounded-full border app-border bg-[color:var(--surface-muted)] p-1"
+                role="tablist"
+                aria-label={ui.languageLabel}
+              >
+                {LOCALES.map((loc) => {
+                  const active = loc === activeLocale;
+                  const filled = versionHasContent(versions[loc]);
+                  return (
+                    <button
+                      key={loc}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setActiveLocale(loc)}
+                      className={cx(
+                        "inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
+                        active
+                          ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-sm"
+                          : "app-muted hover:text-[color:var(--foreground)]",
+                      )}
+                    >
+                      {LOCALE_NAMES[loc]}
+                      <span
+                        aria-hidden
+                        className={cx(
+                          "h-1.5 w-1.5 rounded-full transition",
+                          filled ? "bg-[color:var(--brand)]" : "bg-transparent",
+                        )}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs leading-5 app-soft">{ui.languageHint}</p>
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="min-w-0 text-xs font-semibold uppercase tracking-eyebrow app-soft">
                 {ui.sidebarTitle}

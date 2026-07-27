@@ -9,7 +9,7 @@ import {
   getProfileCategoryDirectory,
   getTalentSkillDirectory,
 } from "@/lib/db/marketing";
-import { getInitialDiscoveryResults } from "@/lib/db/search";
+import { getDiscoverySeed } from "@/lib/db/search";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
@@ -72,17 +72,20 @@ export default async function LocalizedTalentsPage({
   const rawQuery = (await searchParams).q;
   const query = (Array.isArray(rawQuery) ? rawQuery[0] : rawQuery)?.trim() || "";
 
-  const [roles, skills, initial] = await Promise.all([
+  const [roles, skills, seed] = await Promise.all([
     getProfileCategoryDirectory(),
     getTalentSkillDirectory(),
-    getInitialDiscoveryResults({
+    // Personalised server-side for signed-in visitors with enough recorded
+    // behaviour; anonymous requests keep the impersonal, crawlable ordering.
+    getDiscoverySeed({
       scope: "creators",
-      sort: "relevance",
       page: 1,
       perPage: 12,
       q: query || undefined,
     }),
   ]);
+
+  const initial = seed.results;
 
   const visibleRoles = roles
     .filter((role) => role.count >= MIN_TALENTS_PER_FACET)
@@ -125,6 +128,8 @@ export default async function LocalizedTalentsPage({
       <DiscoveryPage
         mode="creators"
         initialQuery={query || undefined}
+        initialSort={seed.sort}
+        canPersonalize={seed.canPersonalize}
         initialUsers={initial?.users}
         initialProjects={initial?.projects}
         initialTotals={initial?.totals}

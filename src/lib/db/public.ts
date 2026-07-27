@@ -38,10 +38,15 @@ import {
 } from "@/lib/profile-presentation";
 import {
   RELATED_ITEMS_LIMIT,
-  rankBySharedSkills,
   rankRelatedCreators,
   tallySharedSkills,
 } from "@/lib/related";
+import {
+  buildSkillIdf,
+  orderSkillsByRarity,
+  selectRelated,
+} from "@/lib/recommendations";
+import type { ViewerAffinity } from "@/lib/personalization";
 
 function getRelationName(
   relation: { name?: string | null } | Array<{ name?: string | null }> | null,
@@ -1342,104 +1347,303 @@ type RelatedProjectRow = {
 };
 
 /**
- * Public projects that share at least one technology with the given project,
- * ranked by overlap (then score, then recency). Powers the "Related projects"
- * section on the project detail page — internal linking that deepens crawl
- * paths and keeps visitors exploring. Returns `[]` when the project has no
- * skills or nothing public overlaps, so the caller can skip the section.
+ * Hard cap on candidate skill-link rows pulled in. The previous
+ * `.limit(1000)` had no ordering, so a project tagged with anything popular
+ * got an arbitrary 1000-row slice of Postgres' physical order — the related
+ * list was partly random. This budget is paged properly and spent
+ * rarest-technology-first, so if it runs out it runs out on the tag that
+ * discriminates least.
+ */
+const RELATED_LINK_BUDGET = 6000;
+const LINK_PAGE_SIZE = 1000;
+const ID_CHUNK_SIZE = 200;
+
+/**
+ * Public-project count per skill, from the `skill_directory_stats` view.
+ * Doubles as the document frequency behind the IDF weighting and as the
+ * rarity order for spending the candidate budget. Returns an empty map if the
+ * view is unavailable, in which case every skill is treated as equally rare —
+ * degrading to the old uniform weighting rather than failing the section.
+ */
+async function loadSkillProjectCounts(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<Map<number, number>> {
+  const { data, error } = await supabase
+    .from("skill_directory_stats")
+    .select("id, project_count");
+
+  if (error || !data) {
+    return new Map();
+  }
+
+  return new Map(
+    (data as Array<{ id: number; project_count: number | null }>).map((row) => [
+      row.id,
+      row.project_count ?? 0,
+    ]),
+  );
+}
+
+/**
+ * Ids of projects sharing at least one of the reference technologies.
+ *
+ * Walks the technologies rarest-first and pages each one properly, stopping at
+ * `RELATED_LINK_BUDGET`. Unlike the old single unordered `.limit(1000)`, a
+ * truncation here costs the least informative tag rather than an arbitrary
+ * slice of all of them.
+ */
+async function loadCandidateIdsBySkill(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  skillIdsByRarity: number[],
+  excludeProjectId: string,
+): Promise<string[]> {
+  const ids = new Set<string>();
+  let budget = RELATED_LINK_BUDGET;
+
+  for (const skillId of skillIdsByRarity) {
+    if (budget <= 0) {
+      break;
+    }
+
+    let from = 0;
+
+    while (budget > 0) {
+      const pageSize = Math.min(LINK_PAGE_SIZE, budget);
+      const { data, error } = await supabase
+        .from("project_skills")
+        .select("project_id")
+        .eq("skill_id", skillId)
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        break;
+      }
+
+      const rows = (data || []) as Array<{ project_id: string }>;
+
+      for (const row of rows) {
+        if (row.project_id !== excludeProjectId) {
+          ids.add(row.project_id);
+        }
+      }
+
+      budget -= rows.length;
+
+      if (rows.length < pageSize) {
+        break;
+      }
+
+      from += pageSize;
+    }
+  }
+
+  return [...ids];
+}
+
+/**
+ * Padding candidates: the strongest recent public projects, same format first.
+ * Only ever used behind genuine matches (see `selectRelated`'s tiers), so a
+ * project with no technologies still gets a useful section instead of none.
+ */
+async function loadFallbackCandidateIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  kind: string | null,
+  excludeProjectId: string,
+  limit: number,
+): Promise<string[]> {
+  const run = async (matchKind: string | null) => {
+    let query = supabase
+      .from("projects")
+      .select("id")
+      .eq("status", "published")
+      .not("slug", "is", null)
+      .neq("id", excludeProjectId)
+      .order("score", { ascending: false, nullsFirst: false })
+      .limit(limit);
+
+    if (matchKind) {
+      query = query.eq("kind", matchKind);
+    }
+
+    const { data, error } = await query;
+    return error ? [] : ((data || []) as Array<{ id: string }>).map((row) => row.id);
+  };
+
+  const sameKind = kind ? await run(kind) : [];
+
+  return sameKind.length >= limit ? sameKind : [...sameKind, ...(await run(null))];
+}
+
+/**
+ * `in(ids)` lookup chunked so a long id list cannot blow the request-URL
+ * length limit and silently drop rows.
+ */
+async function fetchInChunks<T>(
+  ids: Array<string | number>,
+  build: (
+    chunk: Array<string | number>,
+  ) => PromiseLike<{ data: unknown; error: unknown }>,
+): Promise<T[]> {
+  const out: T[] = [];
+
+  for (let index = 0; index < ids.length; index += ID_CHUNK_SIZE) {
+    const { data, error } = await build(ids.slice(index, index + ID_CHUNK_SIZE));
+
+    if (error) {
+      continue;
+    }
+
+    out.push(...((data || []) as T[]));
+  }
+
+  return out;
+}
+
+/**
+ * Recommended projects for the one being viewed.
+ *
+ * Ranks IDF-weighted stack similarity first (a shared rare technology means
+ * far more than a shared ubiquitous one), then format, quality and freshness,
+ * caps how many slots one creator may take, and — for signed-in visitors —
+ * blends in a bounded personal term from what they engage with. Falls through
+ * to same-format and then strong-recent work so the section is not empty for a
+ * project with no or only-unique technologies.
+ *
+ * See `src/lib/recommendations.ts` for the scoring itself.
  */
 export async function getRelatedProjects(
-  projectId: string,
-  referenceSkillIds: number[],
+  reference: {
+    projectId: string;
+    skillIds: number[];
+    kind?: string | null;
+    ownerUserId?: string | null;
+  },
   limit = RELATED_ITEMS_LIMIT,
+  viewer: ViewerAffinity | null = null,
 ): Promise<RelatedProjectItem[]> {
   noStore();
 
-  if (referenceSkillIds.length === 0 || limit <= 0) {
+  if (limit <= 0) {
     return [];
   }
 
+  const { projectId, skillIds: referenceSkillIds } = reference;
   const supabase = await createClient();
 
-  // 1. Candidate projects that share at least one of the reference skills.
-  const { data: skillLinks } = await supabase
-    .from("project_skills")
-    .select("project_id, skill_id")
-    .in("skill_id", referenceSkillIds)
-    .limit(1000);
+  // 1. Per-skill project counts drive both the IDF weighting and the order in
+  //    which we spend the candidate budget.
+  const skillCounts = await loadSkillProjectCounts(supabase);
+  const totalProjects = [...skillCounts.values()].reduce(
+    (max, count) => (count > max ? count : max),
+    0,
+  );
+  const idf = buildSkillIdf(skillCounts, Math.max(totalProjects, 1));
 
-  const sharedCounts = tallySharedSkills(
-    ((skillLinks || []) as Array<{ project_id: string; skill_id: number }>).map(
-      (row) => ({ entityId: row.project_id, skillId: row.skill_id }),
-    ),
-    referenceSkillIds,
+  // 2. Candidates sharing a technology, rarest technology first.
+  const candidateIds = await loadCandidateIdsBySkill(
+    supabase,
+    orderSkillsByRarity(referenceSkillIds, skillCounts),
     projectId,
   );
 
-  if (sharedCounts.size === 0) {
+  // 3. A project with no (or only unique) technologies still deserves a
+  //    section, so top up the candidate pool with strong recent work of the
+  //    same format. `selectRelated` keeps these behind genuine matches.
+  const fallbackIds = await loadFallbackCandidateIds(
+    supabase,
+    reference.kind ?? null,
+    projectId,
+    Math.max(limit * 4, 24),
+  );
+
+  const allCandidateIds = [...new Set([...candidateIds, ...fallbackIds])];
+
+  if (allCandidateIds.length === 0) {
     return [];
   }
 
-  // Hydrate a few more candidates than we need so published / moderation
-  // filtering still leaves a full row to rank.
-  const hydrateCap = Math.max(limit * 4, 24);
-  const candidateIds = Array.from(sharedCounts.keys())
-    .sort((a, b) => (sharedCounts.get(b) || 0) - (sharedCounts.get(a) || 0))
-    .slice(0, hydrateCap);
-
-  // 2. Keep only public, published candidates with a slug to link to.
-  const { data: rows } = await supabase
-    .from("projects")
-    .select(
-      "id, owner_id, title, slug, description, score, cover_url, kind, created_at, moderation_status",
-    )
-    .in("id", candidateIds)
-    .eq("status", "published")
-    .not("slug", "is", null);
-
-  const projects = ((rows || []) as RelatedProjectRow[]).filter((row) =>
-    isPublicModerationStatus(row.moderation_status),
+  // 4. Keep only public, published candidates with a slug to link to.
+  const rows = await fetchInChunks<RelatedProjectRow>(allCandidateIds, (chunk) =>
+    supabase
+      .from("projects")
+      .select(
+        "id, owner_id, title, slug, description, score, cover_url, kind, created_at, moderation_status",
+      )
+      .in("id", chunk)
+      .eq("status", "published")
+      .not("slug", "is", null),
   );
+
+  const projects = rows.filter((row) => isPublicModerationStatus(row.moderation_status));
 
   if (projects.length === 0) {
     return [];
   }
 
-  // 3. Resolve owner display names in a single batched query.
-  const ownerIds = Array.from(new Set(projects.map((row) => row.owner_id)));
-  const { data: owners } = await supabase
-    .from("profiles")
-    .select("user_id, name, username")
-    .in("user_id", ownerIds);
-  const ownerByUserId = new Map(
-    (
-      (owners || []) as Array<{
-        user_id: string;
-        name: string | null;
-        username: string | null;
-      }>
-    ).map((owner) => [owner.user_id, owner]),
-  );
+  // 5. Hydrate each candidate's full stack and media count — similarity needs
+  //    the whole tag set, not only the tags shared with the reference.
+  const projectIds = projects.map((row) => row.id);
+  const [candidateSkills, mediaRows, owners, projectRatings] = await Promise.all([
+    fetchInChunks<{ project_id: string; skill_id: number }>(projectIds, (chunk) =>
+      supabase.from("project_skills").select("project_id, skill_id").in("project_id", chunk),
+    ),
+    fetchInChunks<{ project_id: string }>(projectIds, (chunk) =>
+      supabase.from("project_media").select("project_id").in("project_id", chunk),
+    ),
+    fetchInChunks<{ user_id: string; name: string | null; username: string | null }>(
+      Array.from(new Set(projects.map((row) => row.owner_id))),
+      (chunk) =>
+        supabase.from("profiles").select("user_id, name, username").in("user_id", chunk),
+    ),
+    // Override the Wilson-only persisted score with the composite rating shown
+    // on the homepage / search (see getPublicProfilePageData for the rationale).
+    getProjectRatings(),
+  ]);
 
-  // Override the Wilson-only persisted score with the composite rating shown on
-  // the homepage / search (see getPublicProfilePageData for the rationale).
-  const projectRatings = await getProjectRatings();
-  const ratingFor = (row: RelatedProjectRow) =>
-    projectRatings[row.id] ?? row.score;
+  const skillsByProject = new Map<string, number[]>();
+  for (const row of candidateSkills) {
+    const list = skillsByProject.get(row.project_id) ?? [];
+    list.push(row.skill_id);
+    skillsByProject.set(row.project_id, list);
+  }
 
-  // 4. Rank by shared-skill overlap, breaking ties on score then recency.
-  const ranked = rankBySharedSkills(
+  const mediaCountByProject = new Map<string, number>();
+  for (const row of mediaRows) {
+    mediaCountByProject.set(
+      row.project_id,
+      (mediaCountByProject.get(row.project_id) ?? 0) + 1,
+    );
+  }
+
+  const ownerByUserId = new Map(owners.map((owner) => [owner.user_id, owner]));
+  const ratingFor = (row: RelatedProjectRow) => projectRatings[row.id] ?? row.score;
+
+  // 6. Score, diversify and select.
+  const ranked = selectRelated(
     projects.map((row) => ({
-      id: row.id,
-      sharedSkillCount: sharedCounts.get(row.id) || 0,
-      score: ratingFor(row) ?? 0,
-      createdAt: row.created_at,
-      row,
+      item: row,
+      candidate: {
+        id: row.id,
+        ownerUserId: row.owner_id,
+        kind: row.kind,
+        skillIds: skillsByProject.get(row.id) ?? [],
+        score: ratingFor(row) ?? 0,
+        createdAt: row.created_at,
+        hasCover: Boolean(row.cover_url),
+        mediaCount: mediaCountByProject.get(row.id) ?? 0,
+      },
     })),
+    {
+      id: projectId,
+      ownerUserId: reference.ownerUserId ?? "",
+      kind: reference.kind ?? null,
+      skillIds: referenceSkillIds,
+    },
+    { idf, nowMs: Date.now(), affinity: viewer },
     limit,
   );
 
-  const items = ranked.map(({ row }) => {
+  const items = ranked.map(({ item: row }) => {
     const owner = ownerByUserId.get(row.owner_id);
     return {
       id: row.id,
