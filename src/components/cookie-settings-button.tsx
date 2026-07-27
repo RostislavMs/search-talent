@@ -15,7 +15,10 @@ export default function CookieSettingsButton({
     <button
       type="button"
       onClick={() => requestCookieConsentPreferences()}
-      className={className}
+      // Tailwind v4's preflight resets buttons to `cursor: default`, so the
+      // affordance has to be explicit. It lives here rather than in the
+      // caller's className so every future placement gets it for free.
+      className={`cursor-pointer ${className}`.trim()}
     >
       {label}
     </button>

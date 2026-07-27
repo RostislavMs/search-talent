@@ -376,7 +376,7 @@ export const dictionaries = {
         "Remember optional interface choices such as your theme after you explicitly allow them.",
       analyticsTitle: "Analytics",
       analyticsDescription:
-        "Reserved for future usage statistics and product measurement. This category stays off unless you allow it.",
+        "Measure how the platform is used and how fast it runs, through Vercel Analytics, Google Analytics, Ahrefs, and Plerdy click maps. This category stays off unless you allow it.",
       marketingTitle: "Marketing",
       marketingDescription:
         "Reserved for future campaigns, attribution, or third-party promotion tools. This category stays off unless you allow it.",
@@ -2732,7 +2732,7 @@ export const dictionaries = {
         "Дозволяють запам'ятовувати необов'язкові вибори, наприклад тему інтерфейсу, після вашого дозволу.",
       analyticsTitle: "Аналітика",
       analyticsDescription:
-        "Зарезервовано для майбутньої статистики використання та вимірювання продукту. Ця категорія залишається вимкненою, доки ви її не дозволите.",
+        "Дозволяють вимірювати, як використовується платформа та наскільки швидко вона працює, — через Vercel Analytics, Google Analytics, Ahrefs і карти кліків Plerdy. Ця категорія залишається вимкненою, доки ви її не дозволите.",
       marketingTitle: "Маркетинг",
       marketingDescription:
         "Зарезервовано для майбутніх кампаній, атрибуції чи сторонніх промо-інструментів. Ця категорія залишається вимкненою, доки ви її не дозволите.",
