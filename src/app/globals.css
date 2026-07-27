@@ -626,6 +626,39 @@ select {
   margin-top: 0;
 }
 
+/* Editor-only element badge: tag each heading with its level (H2/H3/H4) so a
+   writer can tell heading levels apart at a glance, not just by font size. It's
+   a pure CSS ::before, so it never enters the saved HTML — and .rich-text-renderer
+   is deliberately left out, so the published article never shows these chips.
+   user-select:none keeps the label out of any copied selection. */
+.rich-text-editor :is(h2, h3, h4)::before {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface-muted);
+  color: var(--muted-foreground);
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+  vertical-align: middle;
+  transform: translateY(-0.12em);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.rich-text-editor h2::before {
+  content: "H2";
+}
+.rich-text-editor h3::before {
+  content: "H3";
+}
+.rich-text-editor h4::before {
+  content: "H4";
+}
+
 .rich-text-editor blockquote,
 .rich-text-renderer blockquote {
   margin: 0 0 1rem;

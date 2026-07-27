@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import ArticleDetailView from "@/components/article-detail-view";
 import { NEWS_CATEGORY_SLUG } from "@/lib/articles";
-import { getArticleDetail } from "@/lib/db/articles";
+import { getArticleDetail, getRelatedArticles } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
@@ -59,12 +59,23 @@ export default async function ArticleDetailPage({
     redirect(`/${safeLocale}/news/${slug}`);
   }
 
+  const relatedArticles = await getRelatedArticles({
+    articleId: data.article.id,
+    categoryId: data.article.category?.id ?? null,
+    title: data.article.title,
+    excerpt: data.article.excerpt,
+    content: data.article.content,
+    locale: safeLocale,
+    limit: 3,
+  });
+
   return (
     <ArticleDetailView
       data={data}
       locale={safeLocale}
       slug={slug}
       section="articles"
+      relatedArticles={relatedArticles}
     />
   );
 }
