@@ -10,6 +10,7 @@ import ReportArticleButton from "@/components/report-article-button";
 import RichTextRenderer from "@/components/rich-text-renderer";
 import ScrollToTopButton from "@/components/scroll-to-top-button";
 import { ButtonLink } from "@/components/ui/Button";
+import MentionText from "@/components/ui/mention-text";
 import OptimizedImage from "@/components/ui/optimized-image";
 import ShareButton from "@/components/ui/share-button";
 import {
@@ -257,7 +258,9 @@ export default function ArticleDetailView({
 
             {article.excerpt ? (
               <p className="mt-5 text-lg leading-8 app-muted">
-                {article.excerpt}
+                {/* The excerpt is plain text, so mentions in it need the same
+                    linkification the body gets from `linkifyMentionsInHtml`. */}
+                <MentionText body={article.excerpt} />
               </p>
             ) : null}
 
@@ -269,6 +272,9 @@ export default function ArticleDetailView({
                   {author?.username ? (
                 <Link
                   href={`/${locale}/u/${author.username}`}
+                  // Hover preview: "who wrote this?" is the question a reader
+                  // has right here, at the byline.
+                  data-link-preview=""
                   className="flex items-center gap-3 transition hover:opacity-80"
                 >
                   <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-sm font-semibold text-[color:var(--foreground)]">

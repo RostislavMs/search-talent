@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import CookieConsentBanner from "@/components/cookie-consent-banner";
+import LinkPreviewProvider from "@/components/link-preview-provider";
 import SiteFooter from "@/components/site-footer";
 import SiteHeader from "@/components/site-header";
 import SitePopup from "@/components/site-popup";
@@ -35,6 +36,10 @@ export default async function AppShell({
       <SiteFooter dictionary={dictionary} />
       <CookieConsentBanner initialConsent={initialConsent} />
       <SitePopup popup={activePopup} />
+      {/* Renders nothing until a previewable link is hovered; the card copy
+          itself arrives already localized from /api/link-preview, so only the
+          loading label crosses into the client bundle. */}
+      <LinkPreviewProvider labels={{ loading: dictionary.linkPreview.loading }} />
     </ToastProvider>
   );
 }

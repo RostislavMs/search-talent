@@ -61,6 +61,9 @@ export default function AuthorList({
       linkProfiles && author.username ? (
         <LocalizedLink
           href={`/u/${author.username}`}
+          // Bylines are the other place a reader wonders "who is this?" — same
+          // hover preview as an inline @mention.
+          data-link-preview=""
           className="font-medium text-[color:var(--foreground)] hover:underline"
         >
           {label}

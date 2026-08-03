@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo, type CSSProperties } from "react";
-import { extractPlainTextFromRichText, sanitizeRichTextHtml } from "@/lib/rich-text";
+import { useCurrentLocale } from "@/lib/i18n/client";
+import {
+  extractPlainTextFromRichText,
+  linkifyMentionsInHtml,
+  sanitizeRichTextHtml,
+} from "@/lib/rich-text";
 
 export { extractPlainTextFromRichText as stripRichTextFormatting } from "@/lib/rich-text";
 
@@ -14,7 +19,14 @@ export default function RichTextRenderer({
   accentColor: string;
   compact?: boolean;
 }) {
-  const sanitizedHtml = useMemo(() => sanitizeRichTextHtml(content), [content]);
+  const locale = useCurrentLocale();
+  const sanitizedHtml = useMemo(
+    () =>
+      // Sanitize first, always: the linkifier adds markup of its own, so it must
+      // never run on untrusted input.
+      linkifyMentionsInHtml(sanitizeRichTextHtml(content), `/${locale}/u/`),
+    [content, locale],
+  );
   const hasContent = useMemo(
     () => extractPlainTextFromRichText(sanitizedHtml).length > 0,
     [sanitizedHtml],
@@ -26,6 +38,11 @@ export default function RichTextRenderer({
 
   return (
     <div
+      // Internal links inside authored bodies (article content, poll
+      // descriptions, profile bios) get hover preview cards. The scope marker
+      // has to live here because the HTML is injected, so its anchors are not
+      // React elements — see `components/link-preview-provider`.
+      data-link-preview-scope=""
       className={[
         "rich-text-renderer",
         compact ? "space-y-4 text-sm leading-7" : "space-y-5 text-base leading-8",

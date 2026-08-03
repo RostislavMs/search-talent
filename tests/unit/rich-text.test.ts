@@ -7,6 +7,7 @@ import {
   hasMarkdownSyntax,
   htmlFragmentHasBlocks,
   inlineMarkdownToHtml,
+  linkifyMentionsInHtml,
   markdownToHtml,
   sanitizeRichTextHtml,
 } from "@/lib/rich-text";
@@ -405,6 +406,65 @@ describe("preview paste → real headings (end-to-end)", () => {
     expect(stored).toContain("<ul>");
     // <h1>/<h5>/<h6> never survive; <h2>–<h4> do.
     expect(stored).not.toMatch(/<h[156]\b/);
+  });
+});
+
+describe("linkifyMentionsInHtml", () => {
+  const linkify = (html: string) => linkifyMentionsInHtml(html, "/uk/u/");
+
+  it("turns a mention in body text into a locale-prefixed profile link", () => {
+    expect(linkify("<p>Дякую @rostyslav за ревʼю</p>")).toBe(
+      '<p>Дякую <a href="/uk/u/rostyslav" data-link-preview="" class="rich-text-mention">@rostyslav</a> за ревʼю</p>',
+    );
+  });
+
+  it("handles several mentions across several blocks", () => {
+    const out = linkify("<p>@ada and @bob</p><p>@ada again</p>");
+    expect(out.match(/rich-text-mention/g)).toHaveLength(3);
+  });
+
+  it("leaves text inside an existing link alone", () => {
+    // Nesting anchors would produce invalid markup and swallow the link.
+    const html = '<p><a href="https://example.com">ping @ada</a></p>';
+    expect(linkify(html)).toBe(html);
+  });
+
+  it("leaves code and pre untouched", () => {
+    expect(linkify("<p><code>@decorator</code></p>")).toBe(
+      "<p><code>@decorator</code></p>",
+    );
+    expect(linkify("<pre><code>npm i @scope/pkg</code></pre>")).toBe(
+      "<pre><code>npm i @scope/pkg</code></pre>",
+    );
+  });
+
+  it("resumes linkifying after a skipped element closes", () => {
+    const out = linkify("<p><code>@x</code> ping @ada</p>");
+    expect(out).toContain("<code>@x</code>");
+    expect(out).toContain('href="/uk/u/ada"');
+  });
+
+  it("does not touch attribute values that contain an at-sign", () => {
+    const html = '<p><img src="https://cdn.test/a@2x.png" alt="a"></p>';
+    expect(linkify(html)).toBe(html);
+  });
+
+  it("skips email addresses", () => {
+    const html = "<p>write to ada@example.com</p>";
+    expect(linkify(html)).toBe(html);
+  });
+
+  it("returns the input untouched when there is no mention", () => {
+    const html = "<p>plain text</p>";
+    expect(linkify(html)).toBe(html);
+    expect(linkify("")).toBe("");
+  });
+
+  it("cannot inject markup — the username charset is fixed by the matcher", () => {
+    // `@<img …>` is not a mention: `<` ends the token, and the tag was already
+    // sanitized away upstream, so nothing here can become executable.
+    const out = linkify("<p>@&lt;script&gt;alert(1)&lt;/script&gt;</p>");
+    expect(out).not.toContain("<script");
   });
 });
 

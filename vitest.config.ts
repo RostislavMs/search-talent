@@ -8,6 +8,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(rootDir, "src"),
+      // Build-time marker with no runtime package to resolve — see the stub.
+      "server-only": path.resolve(rootDir, "tests/unit/helpers/server-only-stub.ts"),
     },
   },
   test: {
