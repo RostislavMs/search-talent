@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import ArticleCard from "@/components/article-card";
 import PollCard from "@/components/poll-card";
+import MasonryGrid from "@/components/ui/masonry-grid";
 import type { ArticleFeedItem } from "@/lib/articles";
 import type { PollFeedItem } from "@/lib/polls";
 
@@ -64,20 +65,28 @@ export default function InfiniteCardFeed(props: Props) {
 
   return (
     <>
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {props.kind === "article"
-          ? props.items.slice(0, visible).map((article) => (
-              <ArticleCard
-                key={article.id}
-                article={article}
-                locale={locale}
-                section={props.section}
-              />
-            ))
-          : props.items.slice(0, visible).map((poll) => (
-              <PollCard key={poll.id} poll={poll} locale={locale} />
-            ))}
-      </div>
+      {/* Articles go into a masonry grid: covers are optional, so stretching
+          every card to the tallest in its row leaves a void under the text-only
+          ones. Polls are uniform (no media), so a plain grid still reads right
+          there. */}
+      {props.kind === "article" ? (
+        <MasonryGrid className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+          {props.items.slice(0, visible).map((article) => (
+            <ArticleCard
+              key={article.id}
+              article={article}
+              locale={locale}
+              section={props.section}
+            />
+          ))}
+        </MasonryGrid>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {props.items.slice(0, visible).map((poll) => (
+            <PollCard key={poll.id} poll={poll} locale={locale} />
+          ))}
+        </div>
+      )}
 
       {hasMore ? (
         <div
