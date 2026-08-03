@@ -1,4 +1,7 @@
-import { ProjectCardGridSkeleton } from "@/components/skeletons/card-skeletons";
+import {
+  ArticleCardGridSkeleton,
+  ProjectCardGridSkeleton,
+} from "@/components/skeletons/card-skeletons";
 import Skeleton from "@/components/ui/skeleton";
 
 /**
@@ -11,26 +14,11 @@ import Skeleton from "@/components/ui/skeleton";
  * the streamed fallback avoids the mismatched flash and layout shift.
  */
 
-/** A run of text-like bars to stand in for a paragraph block. */
-function ParagraphLines({ lines = 4 }: { lines?: number }) {
-  const widths = ["w-full", "w-11/12", "w-full", "w-5/6", "w-full", "w-2/3"];
-  return (
-    <div className="space-y-2">
-      {Array.from({ length: lines }).map((_, index) => (
-        <Skeleton
-          key={index}
-          className={`h-3 rounded ${widths[index % widths.length]}`}
-        />
-      ))}
-    </div>
-  );
-}
-
 /**
  * A run of bars sized to a real `leading-7 sm:leading-8` paragraph, so the
- * block occupies the same height as the copy it stands in for. The generic
- * `ParagraphLines` above uses `h-3` bars, which collapse a 28px line to 12px
- * and make the fallback far shorter than the content that replaces it.
+ * block occupies the same height as the copy it stands in for. Thinner `h-3`
+ * bars collapse a 28px line to 12px, which makes the fallback far shorter than
+ * the content that replaces it.
  */
 function ProseLines({ lines = 3 }: { lines?: number }) {
   const widths = ["w-full", "w-11/12", "w-full", "w-5/6", "w-2/3"];
@@ -193,55 +181,128 @@ export function ProjectDetailSkeleton() {
   );
 }
 
-/** Skeleton for the article detail page (`/articles/[slug]`). */
+/**
+ * Skeleton for the article detail page (`/articles/[slug]`).
+ *
+ * Mirrors `ArticleDetailView`, including the table of contents: any article with
+ * two or more headings reads in a `1fr / 20rem` grid with a sticky outline rail
+ * on desktop and a collapsed disclosure under the cover on mobile. The fallback
+ * used to draw a single centred column, so every long-form article — the ones
+ * that actually arrive from search — snapped a whole 20rem column sideways the
+ * moment it swapped in. `loading.tsx` gets no params, so the layout can't be
+ * decided per article; it takes the shape of the articles that have an outline,
+ * and the rail is a plain block that simply drops away for short posts.
+ *
+ * The comments/reactions block is part of the page too, so it's part of the
+ * fallback — otherwise the fallback ends where the prose does and the scroll
+ * position jumps on swap.
+ */
 export function ArticleDetailSkeleton() {
   return (
     <main
-      className="mx-auto max-w-6xl px-4 py-10 sm:px-6"
+      className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6"
       role="status"
       aria-busy="true"
     >
-      <div className="rounded-hero app-card">
-        {/* Header */}
-        <div className="border-b app-border p-6 sm:p-8">
-          <div className="flex flex-wrap gap-3">
-            <Skeleton className="h-10 w-28 rounded-full" />
-          </div>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8">
+        <div className="min-w-0 rounded-none app-card sm:rounded-hero">
+          {/* Header */}
+          <div className="border-b app-border p-6 sm:p-8">
+            <div className="flex flex-wrap gap-3">
+              <Skeleton className="h-10 w-28 rounded-full" />
+              <Skeleton className="h-10 w-24 rounded-full" />
+            </div>
 
-          <div className="mt-6 space-y-3">
-            <Skeleton className="h-9 w-3/4 rounded sm:h-11" />
-            <Skeleton className="h-9 w-1/2 rounded sm:h-11" />
-          </div>
+            <div className="mt-6 space-y-3">
+              <Skeleton className="h-9 w-3/4 rounded sm:h-11" />
+              <Skeleton className="h-9 w-1/2 rounded sm:h-11" />
+            </div>
 
-          <div className="mt-5 space-y-2">
-            <Skeleton className="h-5 w-full rounded" />
-            <Skeleton className="h-5 w-5/6 rounded" />
-          </div>
+            <div className="mt-5 space-y-2">
+              <Skeleton className="h-5 w-full rounded" />
+              <Skeleton className="h-5 w-5/6 rounded" />
+            </div>
 
-          <div className="mt-6 flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-11 w-11 rounded-full" />
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-11 w-11 rounded-full" />
+                <Skeleton className="h-4 w-28 rounded" />
+              </div>
+              <Skeleton className="h-4 w-32 rounded" />
+              <Skeleton className="h-4 w-20 rounded" />
               <Skeleton className="h-4 w-28 rounded" />
             </div>
-            <Skeleton className="h-4 w-32 rounded" />
-            <Skeleton className="h-4 w-20 rounded" />
-            <Skeleton className="h-4 w-28 rounded" />
+          </div>
+
+          {/* Cover */}
+          <Skeleton className="aspect-[16/8] w-full rounded-none" />
+
+          {/* Collapsed contents disclosure — mobile / tablet only. */}
+          <div className="px-6 pt-6 sm:px-8 sm:pt-8 lg:hidden">
+            <Skeleton className="h-14 w-full rounded-panel" />
+          </div>
+
+          {/* Body + interactions */}
+          <div className="grid gap-8 p-6 sm:p-8">
+            <section className="space-y-6">
+              <ProseLines lines={4} />
+              <Skeleton className="h-7 w-1/2 rounded sm:h-8" />
+              <ProseLines lines={5} />
+              <ProseLines lines={3} />
+            </section>
+
+            <section className="space-y-4">
+              {/* Reaction pills + like/bookmark row */}
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-9 w-16 rounded-full" />
+                <Skeleton className="h-9 w-16 rounded-full" />
+                <Skeleton className="h-9 w-16 rounded-full" />
+                <Skeleton className="h-9 w-28 rounded-full" />
+              </div>
+
+              <Skeleton className="h-7 w-40 rounded" />
+              <Skeleton className="h-24 w-full rounded-2xl" />
+              <div className="space-y-5 pt-2">
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <div key={index} className="flex gap-3">
+                    <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <Skeleton className="h-4 w-32 rounded" />
+                      <Skeleton className="h-4 w-full rounded" />
+                      <Skeleton className="h-4 w-4/5 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         </div>
 
-        {/* Cover */}
-        <Skeleton className="aspect-[16/8] w-full rounded-none" />
-
-        {/* Body */}
-        <div className="grid gap-8 p-6 sm:p-8">
-          <section className="space-y-6">
-            <ParagraphLines lines={4} />
-            <Skeleton className="h-6 w-1/2 rounded" />
-            <ParagraphLines lines={5} />
-            <ParagraphLines lines={3} />
-          </section>
-        </div>
+        {/* Sticky contents rail — desktop only, like the real one. */}
+        <aside className="mt-8 hidden lg:mt-0 lg:block">
+          <div className="sticky top-24 rounded-panel app-card p-5">
+            <Skeleton className="h-3 w-20 rounded-full" />
+            <div className="mt-4 space-y-3 border-l app-border pl-4">
+              <Skeleton className="h-3 w-11/12 rounded" />
+              <Skeleton className="h-3 w-4/5 rounded" />
+              <Skeleton className="h-3 w-2/3 rounded" />
+              <Skeleton className="h-3 w-10/12 rounded" />
+              <Skeleton className="h-3 w-3/5 rounded" />
+            </div>
+          </div>
+        </aside>
       </div>
+
+      {/* Recommended articles strip */}
+      <section className="mt-8 rounded-none app-card p-6 sm:rounded-hero sm:p-8">
+        <Skeleton className="h-8 w-56 rounded sm:h-9" />
+        <div className="mt-6">
+          <ArticleCardGridSkeleton
+            count={3}
+            className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+          />
+        </div>
+      </section>
     </main>
   );
 }
