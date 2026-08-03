@@ -57,6 +57,10 @@ export default function MentionText({ body, className }: MentionTextProps) {
           <LocalizedLink
             key={index}
             href={`/u/${segment.username}`}
+            // Opts this link into the hover preview card (see
+            // `components/link-preview-provider`) — who a @mention refers to is
+            // exactly the question a reader has mid-sentence.
+            data-link-preview=""
             className="font-semibold text-[color:var(--accent)] hover:underline"
           >
             @{segment.username}

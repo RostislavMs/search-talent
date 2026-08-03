@@ -9,6 +9,7 @@ import PollPinButton from "@/components/poll-pin-button";
 import PollVoting from "@/components/poll-voting";
 import RichTextRenderer from "@/components/rich-text-renderer";
 import { ButtonLink } from "@/components/ui/Button";
+import MentionText from "@/components/ui/mention-text";
 import ShareButton from "@/components/ui/share-button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { formatArticleDate, getCategoryDisplayName } from "@/lib/articles";
@@ -156,12 +157,20 @@ export default async function PollDetailPage({
             {poll.title}
           </h1>
 
-          {poll.excerpt ? <p className="mt-5 text-lg leading-8 app-muted">{poll.excerpt}</p> : null}
+          {poll.excerpt ? (
+            <p className="mt-5 text-lg leading-8 app-muted">
+              {/* Plain text, so mentions need the same linkification the rich
+                  body gets from `linkifyMentionsInHtml`. */}
+              <MentionText body={poll.excerpt} />
+            </p>
+          ) : null}
 
           <div className="mt-6 flex flex-wrap items-center gap-4 text-sm app-muted">
             {poll.author?.username ? (
               <Link
                 href={`/${safeLocale}/u/${poll.author.username}`}
+                // Hover preview on the byline, same as articles.
+                data-link-preview=""
                 className="flex items-center gap-3 transition hover:opacity-80"
               >
                 <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-sm font-semibold text-[color:var(--foreground)]">

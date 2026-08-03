@@ -1,4 +1,5 @@
 ﻿import DOMPurify from "isomorphic-dompurify";
+import { MENTION_REGEX } from "@/lib/constants/mentions";
 
 export { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 
@@ -582,6 +583,70 @@ export function sanitizeRichTextHtml(value: string) {
   }
 
   return sanitizeWithDomPurify(trimmed);
+}
+
+// Elements whose text content must be left alone when linkifying mentions:
+// an <a> would nest anchors, and code/pre carry literal text (a decorator or a
+// shell handle is not a mention).
+const MENTION_SKIP_TAGS = new Set(["a", "code", "pre"]);
+
+/**
+ * Turns `@username` tokens in already-sanitized rich text into profile links.
+ *
+ * Mentions are stored as plain text inside the body — the editor has no mention
+ * node — so the notification pipeline sees them (`persistMentionsFromText`) but
+ * the reader got dead text. This runs at render time, over the sanitized HTML,
+ * so no stored content changes and no migration is needed.
+ *
+ * Splits on tags rather than parsing: DOMPurify has already normalized the
+ * markup, and a DOM round-trip here would pull jsdom into every server render.
+ * Text inside `<a>`, `<code>` and `<pre>` is skipped, so links keep their label
+ * and code samples keep `@decorator` verbatim.
+ *
+ * `profileHrefPrefix` should carry the active locale (e.g. `/uk/u/`) so the link
+ * does not bounce through the locale redirect. The username charset is fixed by
+ * `MENTION_REGEX` (letters, digits, dot, underscore, dash), so it needs no
+ * escaping to be safe in an attribute or in text.
+ */
+export function linkifyMentionsInHtml(
+  html: string,
+  profileHrefPrefix: string,
+): string {
+  if (!html || !html.includes("@")) {
+    return html;
+  }
+
+  const parts = html.split(/(<[^>]*>)/);
+  let skipDepth = 0;
+
+  return parts
+    .map((part) => {
+      if (part.startsWith("<")) {
+        const match = /^<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9]*)/.exec(part);
+        const tag = match?.[2]?.toLowerCase();
+
+        if (tag && MENTION_SKIP_TAGS.has(tag)) {
+          if (match?.[1] === "/") {
+            skipDepth = Math.max(0, skipDepth - 1);
+          } else if (!/\/\s*>$/.test(part)) {
+            skipDepth += 1;
+          }
+        }
+
+        return part;
+      }
+
+      if (skipDepth > 0 || !part.includes("@")) {
+        return part;
+      }
+
+      return part.replace(
+        MENTION_REGEX,
+        (_full, username: string) =>
+          `<a href="${profileHrefPrefix}${username}" data-link-preview="" class="rich-text-mention">@${username}</a>`,
+      );
+    })
+    .join("");
 }
 
 // Top-level block elements the editor produces. Anything else at the root is

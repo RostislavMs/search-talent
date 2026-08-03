@@ -431,6 +431,9 @@ export default async function PublicProjectPage({
                 (owner.username ? (
                   <ButtonLink
                     href={`/u/${owner.username}`}
+                    // Hover preview on the creator attribution, same as the
+                    // article and poll bylines.
+                    data-link-preview=""
                     variant="ghost"
                     className="rounded-full app-panel px-3 py-1 text-sm app-muted transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
                   >

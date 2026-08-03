@@ -819,6 +819,19 @@ export const dictionaries = {
       loading: "Searching…",
       noResults: "No users found",
     },
+    // Hover cards for internal links and @mentions. The kind labels are used
+    // server-side by /api/link-preview, which ships the card already localized.
+    linkPreview: {
+      profile: "Profile",
+      project: "Project",
+      article: "Article",
+      poll: "Poll",
+      views: "views",
+      responses: "responses",
+      projects: "projects",
+      articles: "articles",
+      loading: "Loading preview…",
+    },
     coAuthors: {
       sectionTitle: "Co-authors",
       formHint:
@@ -3145,6 +3158,17 @@ export const dictionaries = {
       suggestionsLabel: "Підказки користувачів",
       loading: "Пошук…",
       noResults: "Користувачів не знайдено",
+    },
+    linkPreview: {
+      profile: "Профіль",
+      project: "Проєкт",
+      article: "Стаття",
+      poll: "Опитування",
+      views: "переглядів",
+      responses: "відповідей",
+      projects: "проєктів",
+      articles: "статей",
+      loading: "Завантаження…",
     },
     coAuthors: {
       sectionTitle: "Співавтори",

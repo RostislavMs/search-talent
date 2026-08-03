@@ -627,6 +627,50 @@ select {
   color: var(--muted-foreground);
 }
 
+/*
+ * Hover preview for internal links and @mentions (see
+ * `components/link-preview-provider`). Anchored to the viewport through inline
+ * styles for the same reason as `.app-select-dropdown` — fixed positioning
+ * escapes the clipping box of every scrollable ancestor, and article bodies sit
+ * inside plenty of them.
+ *
+ * `pointer-events: none` is load-bearing: the card only describes the link, so
+ * it must never intercept the click that belongs to the link underneath, and
+ * the cursor has to be able to travel straight across it.
+ */
+.link-preview-panel {
+  position: fixed;
+  /*
+   * Above the sticky header (40), the mobile filter drawer (50) and select
+   * panels (55); below the cookie banner / site popup (60) and modals (70),
+   * which should cover a stray card rather than sit behind it.
+   */
+  z-index: 58;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  animation: link-preview-in 140ms ease-out;
+}
+
+/* Lets the card shrink into the panel's max-height (room actually left around
+   the link) instead of keeping its content height and spilling past it. The
+   card clips its own overflow inside its rounded, shadowed box. */
+.link-preview-panel > * {
+  min-height: 0;
+}
+
+@keyframes link-preview-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Long unbreakable tokens (a URL used as inline-link text, a long code span, a
    glued word) must wrap instead of forcing the column wider than the viewport —
    otherwise the article body overflows horizontally on mobile. */
@@ -775,6 +819,20 @@ select {
   text-decoration: underline;
   text-decoration-color: var(--border);
   text-underline-offset: 0.24rem;
+}
+
+/* @mentions linkified at render time (see `linkifyMentionsInHtml`). Matches the
+   accent treatment `MentionText` gives mentions in comments, so a mention reads
+   the same whether it sits in a comment or in an article. */
+.rich-text-renderer a.rich-text-mention {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.rich-text-renderer a.rich-text-mention:hover {
+  text-decoration: underline;
+  text-decoration-color: currentColor;
 }
 
 .rich-text-editor figure,
