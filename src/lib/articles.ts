@@ -14,6 +14,28 @@ export function isNewsCategorySlug(slug: string | null | undefined): boolean {
   return slug === NEWS_CATEGORY_SLUG;
 }
 
+/**
+ * Slug of the standalone-discussions category. Same arrangement as News: the
+ * rows live in `articles`, but the section owns `/discussions`, so they are kept
+ * out of the community Articles feed and its RSS.
+ */
+export const DISCUSSIONS_CATEGORY_SLUG = "discussions";
+
+export function isDiscussionsCategorySlug(
+  slug: string | null | undefined,
+): boolean {
+  return slug === DISCUSSIONS_CATEGORY_SLUG;
+}
+
+/**
+ * Categories that have a section of their own and must therefore never appear
+ * in the generic Articles feed. Uncategorised articles still show through.
+ */
+export const SECTION_CATEGORY_SLUGS = [
+  NEWS_CATEGORY_SLUG,
+  DISCUSSIONS_CATEGORY_SLUG,
+] as const;
+
 export type ArticleStatus = (typeof articleStatuses)[number];
 export type ArticleSortOption = (typeof articleSortOptions)[number];
 

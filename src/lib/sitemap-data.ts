@@ -4,6 +4,7 @@ import {
   getTalentSkillDirectory,
   getTechnologyDirectory,
 } from "@/lib/db/marketing";
+import { DISCUSSIONS_CATEGORY_SLUG } from "@/lib/articles";
 import { normalizeProjectKind } from "@/lib/projects";
 import {
   createLocalePath,
@@ -261,11 +262,29 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
   }
 
   if (id === "articles") {
-    const { data } = await supabase
+    // Discussion topics are `noindex` by product decision, and a noindex page
+    // must never appear in the sitemap. News is deliberately NOT excluded here:
+    // it has no sitemap section of its own, so dropping it would take news out
+    // of the sitemap entirely.
+    const { data: discussionsCategory } = await supabase
+      .from("article_categories")
+      .select("id")
+      .eq("slug", DISCUSSIONS_CATEGORY_SLUG)
+      .maybeSingle();
+
+    let articlesQuery = supabase
       .from("articles")
       .select("slug, updated_at")
       .eq("status", "published")
-      .eq("moderation_status", "approved")
+      .eq("moderation_status", "approved");
+
+    if (discussionsCategory) {
+      articlesQuery = articlesQuery.or(
+        `category_id.is.null,category_id.neq.${discussionsCategory.id}`,
+      );
+    }
+
+    const { data } = await articlesQuery
       .order("updated_at", { ascending: false })
       .limit(SITEMAP_PAGE_SIZE);
 

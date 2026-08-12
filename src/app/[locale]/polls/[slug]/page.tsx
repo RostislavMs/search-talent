@@ -14,6 +14,10 @@ import ShareButton from "@/components/ui/share-button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { formatArticleDate, getCategoryDisplayName } from "@/lib/articles";
 import { getPollClosesLabel } from "@/lib/polls";
+import {
+  buildDiscussionPath,
+  DISCUSSION_PREVIEW_LIMIT,
+} from "@/lib/discussions";
 import { getPollDetail } from "@/lib/db/polls";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -273,6 +277,8 @@ export default async function PollDetailPage({
             viewerUserId={viewerUserId ?? null}
             ownerUserId={poll.author?.userId ?? null}
             gifEnabled={isGifSearchConfigured()}
+            previewLimit={DISCUSSION_PREVIEW_LIMIT}
+            discussionHref={buildDiscussionPath("poll", slug)}
           />
         </div>
       </div>

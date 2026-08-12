@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import CommentDeleteButton from "@/components/comment-delete-button";
+import DiscussionPreviewLink from "@/components/discussion-preview-link";
 import CommentGif from "@/components/ui/comment-gif";
 import FormTextarea from "@/components/ui/form-textarea";
 import GifPicker from "@/components/ui/gif-picker";
@@ -15,6 +16,7 @@ import {
   StatChip,
 } from "@/components/ui/content-stats";
 import { apiFetch } from "@/lib/api-client";
+import { isDiscussionOpen } from "@/lib/discussions";
 import { createLocalePath } from "@/lib/i18n/config";
 import type { PollComment } from "@/lib/polls";
 
@@ -303,6 +305,8 @@ export default function PollInteractions({
   viewerUserId,
   ownerUserId,
   gifEnabled,
+  previewLimit = null,
+  discussionHref = null,
 }: {
   locale: string;
   pollId: string;
@@ -314,6 +318,14 @@ export default function PollInteractions({
   viewerUserId: string | null;
   ownerUserId: string | null;
   gifEnabled: boolean;
+  /**
+   * Cap on inline top-level comments. Set on the poll page so a hot thread does
+   * not bury the results; left undefined on the discussion page, which exists
+   * precisely to show everything.
+   */
+  previewLimit?: number | null;
+  /** Where the "open full discussion" call-to-action points. */
+  discussionHref?: string | null;
 }) {
   const router = useRouter();
   const loginPath = createLocalePath(locale === "uk" ? "uk" : "en", "/login");
@@ -333,6 +345,18 @@ export default function PollInteractions({
   const [submittingFor, setSubmittingFor] = useState<string | null>(null);
   const [replyError, setReplyError] = useState<string | null>(null);
   const totalCommentCount = countComments(comments);
+
+  // A thread gets its own page once it is busy enough; until then the poll page
+  // keeps the whole conversation inline and links nowhere. The discussion page
+  // itself passes neither prop, so it never links to itself.
+  const discussionOpen =
+    Boolean(discussionHref) &&
+    previewLimit !== null &&
+    isDiscussionOpen(totalCommentCount);
+  const visibleComments = discussionOpen
+    ? comments.slice(0, previewLimit ?? undefined)
+    : comments;
+  const shownCommentCount = countComments(visibleComments);
 
   // One view per authenticated user (server dedupes via poll_views). The
   // author's own visits and anonymous readers are never counted; localStorage
@@ -496,7 +520,7 @@ export default function PollInteractions({
 
         {comments.length > 0 ? (
           <div className="space-y-4 sm:space-y-6">
-            {comments.map((comment) => (
+            {visibleComments.map((comment) => (
               <CommentNode
                 key={comment.id}
                 comment={comment}
@@ -526,6 +550,14 @@ export default function PollInteractions({
                 onDeleted={() => router.refresh()}
               />
             ))}
+
+            {discussionOpen && discussionHref ? (
+              <DiscussionPreviewLink
+                href={discussionHref}
+                shown={shownCommentCount}
+                total={totalCommentCount}
+              />
+            ) : null}
           </div>
         ) : (
           <p className="rounded-3xl app-panel-dashed p-5 text-sm app-muted">

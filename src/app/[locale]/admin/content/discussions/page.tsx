@@ -26,14 +26,19 @@ export async function generateMetadata({
   const dictionary = getDictionary(locale);
   return buildMetadata({
     locale,
-    pathname: "/admin/content/articles",
-    title: `${dictionary.admin.content.articlesTitle} · ${dictionary.admin.shell.title}`,
-    description: dictionary.admin.content.articlesDescription,
+    pathname: "/admin/content/discussions",
+    title: `${dictionary.admin.content.discussionsTitle} · ${dictionary.admin.shell.title}`,
+    description: dictionary.admin.content.discussionsDescription,
     noindex: true,
   });
 }
 
-export default async function AdminArticlesContentPage({
+/**
+ * Moderation for standalone discussion topics. They are `articles` rows under
+ * the hood, so this is the same list as the Articles section narrowed to the
+ * Discussions category — the two scopes are complements and never overlap.
+ */
+export default async function AdminDiscussionsContentPage({
   params,
   searchParams,
 }: {
@@ -47,11 +52,11 @@ export default async function AdminArticlesContentPage({
     <AdminArticlesSection
       locale={locale}
       searchParams={await searchParams}
-      scope="articles"
-      basePath="/admin/content/articles"
-      itemPathPrefix="/articles"
-      title={copy.articlesTitle}
-      description={copy.articlesDescription}
+      scope="discussions"
+      basePath="/admin/content/discussions"
+      itemPathPrefix="/discussions"
+      title={copy.discussionsTitle}
+      description={copy.discussionsDescription}
       perPage={PER_PAGE}
     />
   );

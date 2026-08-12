@@ -12,6 +12,10 @@ import {
 } from "@/lib/project-media";
 import { parseProjectPath } from "@/lib/projects";
 import { localizeArticleListFields } from "@/lib/articles";
+import {
+  excludeSectionCategories,
+  getDiscussionsCategoryIds,
+} from "@/lib/db/article-sections";
 import type { PollFeedItem } from "@/lib/polls";
 import {
   type EmploymentType,
@@ -855,6 +859,11 @@ export async function getUserArticlesPage(
       ? `author_user_id.eq.${profile.user_id},id.in.(${coAuthoredIds.join(",")})`
       : null;
 
+  // Topics are not part of an author's article body of work — they live on
+  // /discussions. The count must apply the same filter as the page query, or
+  // pagination promises rows that are then filtered away.
+  const discussionCategoryIds = await getDiscussionsCategoryIds(supabase);
+
   let countQuery = supabase
     .from("articles")
     .select("id", { count: "exact", head: true })
@@ -863,6 +872,7 @@ export async function getUserArticlesPage(
   countQuery = authorOrFilter
     ? countQuery.or(authorOrFilter)
     : countQuery.eq("author_user_id", profile.user_id);
+  countQuery = excludeSectionCategories(countQuery, discussionCategoryIds);
   const { count } = await countQuery;
 
   const totalCount = count || 0;
@@ -881,6 +891,11 @@ export async function getUserArticlesPage(
   articlesQuery = authorOrFilter
     ? articlesQuery.or(authorOrFilter)
     : articlesQuery.eq("author_user_id", profile.user_id);
+  // Both `.or()` calls are AND-ed by PostgREST.
+  articlesQuery = excludeSectionCategories(
+    articlesQuery,
+    discussionCategoryIds,
+  );
   const { data: articles } = await articlesQuery
     .order("published_at", { ascending: false })
     .range(from, to);

@@ -28,6 +28,7 @@ type Props = {
     articles: string;
     projects: string;
     polls: string;
+    discussions: string;
     comments: string;
   };
   groupLabels: {
@@ -63,6 +64,11 @@ export default function AdminSidebar({
         { href: "/admin/content/articles", label: contentLabels.articles, icon: "✎" },
         { href: "/admin/content/projects", label: contentLabels.projects, icon: "▤" },
         { href: "/admin/content/polls", label: contentLabels.polls, icon: "☑" },
+        {
+          href: "/admin/content/discussions",
+          label: contentLabels.discussions,
+          icon: "◈",
+        },
         { href: "/admin/content/comments", label: contentLabels.comments, icon: "✱" },
       ],
     },

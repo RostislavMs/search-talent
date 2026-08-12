@@ -3,7 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import CommentsTableClient from "@/components/admin/comments-table-client";
 import Pagination from "@/components/ui/pagination";
-import { getAdminCommentsList } from "@/lib/db/admin-content";
+import {
+  ADMIN_COMMENT_KINDS,
+  getAdminCommentsList,
+  type AdminCommentKind,
+} from "@/lib/db/admin-content";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
@@ -58,8 +62,11 @@ export default async function AdminCommentsContentPage({
     10,
   );
 
-  const kind: "all" | "article" | "project" =
-    kindParam === "article" || kindParam === "project" ? kindParam : "all";
+  const kind: "all" | AdminCommentKind = ADMIN_COMMENT_KINDS.includes(
+    kindParam as AdminCommentKind,
+  )
+    ? (kindParam as AdminCommentKind)
+    : "all";
 
   const result = await getAdminCommentsList({
     kind,
@@ -69,7 +76,7 @@ export default async function AdminCommentsContentPage({
 
   const pageCount = Math.max(1, Math.ceil(result.total / result.perPage));
 
-  function buildFilterHref(nextKind: "all" | "article" | "project") {
+  function buildFilterHref(nextKind: "all" | AdminCommentKind) {
     const qs = new URLSearchParams();
     if (nextKind !== "all") qs.set("kind", nextKind);
     const query = qs.toString();
@@ -97,13 +104,18 @@ export default async function AdminCommentsContentPage({
     }
   }
 
+  const kindLabels: Record<AdminCommentKind, string> = {
+    article: copy.typeArticle,
+    project: copy.typeProject,
+    poll: copy.typePoll,
+  };
+
   const filterChips: Array<{
-    value: "all" | "article" | "project";
+    value: "all" | AdminCommentKind;
     label: string;
   }> = [
     { value: "all", label: copy.filterAll },
-    { value: "article", label: copy.typeArticle },
-    { value: "project", label: copy.typeProject },
+    ...ADMIN_COMMENT_KINDS.map((value) => ({ value, label: kindLabels[value] })),
   ];
 
   return (
@@ -150,10 +162,7 @@ export default async function AdminCommentsContentPage({
               kind: comment.kind,
               body: comment.body,
               mediaUrl: comment.mediaUrl,
-              kindLabel:
-                comment.kind === "article"
-                  ? copy.typeArticle
-                  : copy.typeProject,
+              kindLabel: kindLabels[comment.kind],
               authorLabel: comment.authorLabel,
               authorHref: comment.authorHref
                 ? createLocalePath(locale, comment.authorHref)

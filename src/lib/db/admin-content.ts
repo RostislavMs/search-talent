@@ -3,6 +3,10 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildProjectPath } from "@/lib/projects";
+import {
+  excludeSectionCategories,
+  getDiscussionsCategoryIds,
+} from "@/lib/db/article-sections";
 import type { ModerationStatus } from "@/lib/moderation";
 
 const PER_PAGE = 25;
@@ -13,6 +17,13 @@ type ContentFilterParams = {
   page?: number;
   perPage?: number;
 };
+
+/**
+ * Which slice of the `articles` table a list covers. Topics are articles under
+ * the hood but have their own admin section, so the two lists are complements —
+ * every row appears in exactly one of them.
+ */
+export type AdminArticleScope = "articles" | "discussions";
 
 export type AdminArticleRow = {
   id: string;
@@ -64,6 +75,8 @@ async function getProfilesByUserIds(userIds: string[]) {
 
 async function getStatusCounts(
   table: "articles" | "projects",
+  /** Applied to the count queries so the chips match the rows on screen. */
+  narrow?: <T>(query: T) => T,
 ): Promise<AdminContentStatusCounts> {
   const supabase = await createClient();
   const counts: AdminContentStatusCounts = {
@@ -81,10 +94,11 @@ async function getStatusCounts(
 
   await Promise.all(
     statuses.map(async (status) => {
-      const { count } = await supabase
+      const base = supabase
         .from(table)
         .select("id", { count: "exact", head: true })
         .eq("moderation_status", status);
+      const { count } = await (narrow ? narrow(base) : base);
       counts[status] = count || 0;
     }),
   );
@@ -102,24 +116,48 @@ function authorHref(profile: { username: string | null } | undefined) {
 }
 
 export async function getAdminArticlesList(
-  params: ContentFilterParams = {},
+  params: ContentFilterParams & { scope?: AdminArticleScope } = {},
 ): Promise<AdminArticlesList> {
   const {
     search = "",
     status = "all",
     page = 1,
     perPage = PER_PAGE,
+    scope = "articles",
   } = params;
 
   const supabase = await createClient();
   const offset = (Math.max(1, page) - 1) * perPage;
+  const discussionCategoryIds = await getDiscussionsCategoryIds(supabase);
+  const discussionCategoryId = discussionCategoryIds[0] ?? null;
 
-  let query = supabase
-    .from("articles")
-    .select(
-      "id, title, slug, created_at, moderation_status, author_user_id, likes_count, comments_count",
-      { count: "exact" },
-    )
+  // The Discussions section owns topics; the Articles section owns everything
+  // else. Applied to both the rows and the status counts so they agree.
+  const narrow = <T,>(query: T): T => {
+    if (discussionCategoryId === null) {
+      // No category row yet (migration unapplied): there are no topics, so the
+      // articles list is already correct and the discussions list is empty.
+      return scope === "discussions"
+        ? (query as { eq: (c: string, v: number) => T }).eq("category_id", -1)
+        : query;
+    }
+
+    return scope === "discussions"
+      ? (query as { eq: (c: string, v: number) => T }).eq(
+          "category_id",
+          discussionCategoryId,
+        )
+      : excludeSectionCategories(query, discussionCategoryIds);
+  };
+
+  let query = narrow(
+    supabase
+      .from("articles")
+      .select(
+        "id, title, slug, created_at, moderation_status, author_user_id, likes_count, comments_count",
+        { count: "exact" },
+      ),
+  )
     .order("created_at", { ascending: false })
     .range(offset, offset + perPage - 1);
 
@@ -161,7 +199,7 @@ export async function getAdminArticlesList(
   }));
 
   const total = count || 0;
-  const statusCounts = await getStatusCounts("articles");
+  const statusCounts = await getStatusCounts("articles", narrow);
 
   return {
     items,
@@ -288,9 +326,11 @@ export async function getAdminProjectsList(
   };
 }
 
+export type AdminCommentKind = "article" | "project" | "poll";
+
 export type AdminCommentRow = {
   id: string;
-  kind: "article" | "project";
+  kind: AdminCommentKind;
   body: string;
   mediaUrl: string | null;
   createdAt: string;
@@ -309,9 +349,58 @@ export type AdminCommentsList = {
   hasMore: boolean;
 };
 
+type AdminCommentSource = {
+  commentTable: string;
+  /** Column on the comment row pointing at the content it belongs to. */
+  contentFk: string;
+  contentTable: string;
+  buildHref: (row: { id: string; slug: string | null }) => string | null;
+};
+
+/**
+ * One entry per commentable content type. Written as a table rather than a
+ * hand-merged pair of queries because that pair silently left poll comments
+ * unmoderatable: they existed, but no admin surface listed them.
+ */
+const ADMIN_COMMENT_SOURCES: Record<AdminCommentKind, AdminCommentSource> = {
+  article: {
+    commentTable: "article_comments",
+    contentFk: "article_id",
+    contentTable: "articles",
+    buildHref: (row) => (row.slug ? `/articles/${row.slug}` : null),
+  },
+  project: {
+    commentTable: "project_comments",
+    contentFk: "project_id",
+    contentTable: "projects",
+    buildHref: (row) => buildProjectPath(row.id, row.slug),
+  },
+  poll: {
+    commentTable: "poll_comments",
+    contentFk: "poll_id",
+    contentTable: "polls",
+    buildHref: (row) => (row.slug ? `/polls/${row.slug}` : null),
+  },
+};
+
+export const ADMIN_COMMENT_KINDS = Object.keys(
+  ADMIN_COMMENT_SOURCES,
+) as AdminCommentKind[];
+
+/** Newest comments scanned per source. The cap is per source, as it always was. */
+const ADMIN_COMMENT_SCAN_LIMIT = 200;
+
+type RawCommentRow = {
+  id: string;
+  author_user_id: string;
+  body: string;
+  media_url: string | null;
+  created_at: string;
+} & Record<string, unknown>;
+
 export async function getAdminCommentsList(
   params: {
-    kind?: "all" | "article" | "project";
+    kind?: "all" | AdminCommentKind;
     page?: number;
     perPage?: number;
   } = {},
@@ -319,159 +408,101 @@ export async function getAdminCommentsList(
   const { kind = "all", page = 1, perPage = PER_PAGE } = params;
   const supabase = await createClient();
 
-  const fetchArticleComments = kind !== "project";
-  const fetchProjectComments = kind !== "article";
+  const activeKinds =
+    kind === "all" ? ADMIN_COMMENT_KINDS : ([kind] as AdminCommentKind[]);
 
-  const [articleResponse, projectResponse] = await Promise.all([
-    fetchArticleComments
-      ? supabase
-          .from("article_comments")
-          .select("id, article_id, author_user_id, body, media_url, created_at", {
-            count: "exact",
-          })
-          .order("created_at", { ascending: false })
-          .limit(200)
-      : Promise.resolve({
-          data: [] as {
-            id: string;
-            article_id: string;
-            author_user_id: string;
-            body: string;
-            media_url: string | null;
-            created_at: string;
-          }[],
-          count: 0,
-        }),
-    fetchProjectComments
-      ? supabase
-          .from("project_comments")
-          .select("id, project_id, author_user_id, body, media_url, created_at", {
-            count: "exact",
-          })
-          .order("created_at", { ascending: false })
-          .limit(200)
-      : Promise.resolve({
-          data: [] as {
-            id: string;
-            project_id: string;
-            author_user_id: string;
-            body: string;
-            media_url: string | null;
-            created_at: string;
-          }[],
-          count: 0,
-        }),
+  const responses = await Promise.all(
+    activeKinds.map(async (activeKind) => {
+      const source = ADMIN_COMMENT_SOURCES[activeKind];
+      const { data, count } = await supabase
+        .from(source.commentTable)
+        .select(
+          `id, ${source.contentFk}, author_user_id, body, media_url, created_at`,
+          { count: "exact" },
+        )
+        .order("created_at", { ascending: false })
+        .limit(ADMIN_COMMENT_SCAN_LIMIT);
+
+      return {
+        kind: activeKind,
+        // The select list is built from the source table, so PostgREST's
+        // literal-string typing cannot infer the row shape here.
+        rows: (data || []) as unknown as RawCommentRow[],
+        count: count || 0,
+      };
+    }),
+  );
+
+  const authorIds = Array.from(
+    new Set(
+      responses.flatMap(({ rows }) => rows.map((row) => row.author_user_id)),
+    ),
+  );
+
+  const [profileMap, targetMaps] = await Promise.all([
+    getProfilesByUserIds(authorIds),
+    Promise.all(
+      responses.map(async ({ kind: activeKind, rows }) => {
+        const source = ADMIN_COMMENT_SOURCES[activeKind];
+        const contentIds = Array.from(
+          new Set(rows.map((row) => String(row[source.contentFk]))),
+        );
+        const targets = new Map<string, { label: string; href: string | null }>();
+
+        if (contentIds.length === 0) {
+          return [activeKind, targets] as const;
+        }
+
+        const { data } = await supabase
+          .from(source.contentTable)
+          .select("id, title, slug")
+          .in("id", contentIds);
+
+        for (const row of (data || []) as Array<{
+          id: string;
+          title: string;
+          slug: string | null;
+        }>) {
+          targets.set(row.id, { label: row.title, href: source.buildHref(row) });
+        }
+
+        return [activeKind, targets] as const;
+      }),
+    ),
   ]);
 
-  type ArticleCommentRow = {
-    id: string;
-    article_id: string;
-    author_user_id: string;
-    body: string;
-    media_url: string | null;
-    created_at: string;
-  };
-  type ProjectCommentRow = {
-    id: string;
-    project_id: string;
-    author_user_id: string;
-    body: string;
-    media_url: string | null;
-    created_at: string;
-  };
+  const targetsByKind = new Map(targetMaps);
 
-  const articleRows = (articleResponse.data || []) as ArticleCommentRow[];
-  const projectRows = (projectResponse.data || []) as ProjectCommentRow[];
+  const combined: AdminCommentRow[] = responses.flatMap(
+    ({ kind: activeKind, rows }) => {
+      const source = ADMIN_COMMENT_SOURCES[activeKind];
+      const targets = targetsByKind.get(activeKind);
 
-  const articleIds = Array.from(new Set(articleRows.map((row) => row.article_id)));
-  const projectIds = Array.from(new Set(projectRows.map((row) => row.project_id)));
-  const authorIds = Array.from(
-    new Set([
-      ...articleRows.map((row) => row.author_user_id),
-      ...projectRows.map((row) => row.author_user_id),
-    ]),
+      return rows.map<AdminCommentRow>((row) => {
+        const target = targets?.get(String(row[source.contentFk]));
+
+        return {
+          id: row.id,
+          kind: activeKind,
+          body: row.body,
+          mediaUrl: row.media_url,
+          createdAt: row.created_at,
+          authorUserId: row.author_user_id,
+          authorLabel: authorLabel(profileMap.get(row.author_user_id)),
+          authorHref: authorHref(profileMap.get(row.author_user_id)),
+          targetLabel: target?.label || "\u2014",
+          targetHref: target?.href || null,
+        };
+      });
+    },
   );
-
-  const [articleTargetsResponse, projectTargetsResponse, profileMap] =
-    await Promise.all([
-      articleIds.length
-        ? supabase
-            .from("articles")
-            .select("id, title, slug")
-            .in("id", articleIds)
-        : Promise.resolve({
-            data: [] as { id: string; title: string; slug: string }[],
-          }),
-      projectIds.length
-        ? supabase
-            .from("projects")
-            .select("id, title, slug")
-            .in("id", projectIds)
-        : Promise.resolve({
-            data: [] as { id: string; title: string; slug: string | null }[],
-          }),
-      getProfilesByUserIds(authorIds),
-    ]);
-
-  const articleTargetMap = new Map(
-    (articleTargetsResponse.data || []).map((row) => [
-      row.id,
-      {
-        label: row.title,
-        href: row.slug ? `/articles/${row.slug}` : null,
-      },
-    ]),
-  );
-  const projectTargetMap = new Map(
-    (projectTargetsResponse.data || []).map((row) => [
-      row.id,
-      {
-        label: row.title,
-        href: buildProjectPath(row.id, row.slug),
-      },
-    ]),
-  );
-
-  const combined: AdminCommentRow[] = [
-    ...articleRows.map<AdminCommentRow>((row) => {
-      const target = articleTargetMap.get(row.article_id);
-      return {
-        id: row.id,
-        kind: "article",
-        body: row.body,
-        mediaUrl: row.media_url,
-        createdAt: row.created_at,
-        authorUserId: row.author_user_id,
-        authorLabel: authorLabel(profileMap.get(row.author_user_id)),
-        authorHref: authorHref(profileMap.get(row.author_user_id)),
-        targetLabel: target?.label || "—",
-        targetHref: target?.href || null,
-      };
-    }),
-    ...projectRows.map<AdminCommentRow>((row) => {
-      const target = projectTargetMap.get(row.project_id);
-      return {
-        id: row.id,
-        kind: "project",
-        body: row.body,
-        mediaUrl: row.media_url,
-        createdAt: row.created_at,
-        authorUserId: row.author_user_id,
-        authorLabel: authorLabel(profileMap.get(row.author_user_id)),
-        authorHref: authorHref(profileMap.get(row.author_user_id)),
-        targetLabel: target?.label || "—",
-        targetHref: target?.href || null,
-      };
-    }),
-  ];
 
   combined.sort(
     (left, right) =>
       new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
   );
 
-  const total =
-    (articleResponse.count || 0) + (projectResponse.count || 0);
+  const total = responses.reduce((sum, response) => sum + response.count, 0);
   const offset = (Math.max(1, page) - 1) * perPage;
   const items = combined.slice(offset, offset + perPage);
 

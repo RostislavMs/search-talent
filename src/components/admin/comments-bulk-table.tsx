@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { apiFetch } from "@/lib/api-client";
+import type { AdminCommentKind } from "@/lib/db/admin-content";
 
-type Item = { id: string; kind: "article" | "project" };
+type Item = { id: string; kind: AdminCommentKind };
 
 type Labels = {
   selected: string;

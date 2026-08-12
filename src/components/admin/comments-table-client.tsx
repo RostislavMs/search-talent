@@ -10,10 +10,11 @@ import {
   AdminCardList,
   AdminCardMeta,
 } from "@/components/admin/admin-mobile-cards";
+import type { AdminCommentKind } from "@/lib/db/admin-content";
 
 export type CommentTableItem = {
   id: string;
-  kind: "article" | "project";
+  kind: AdminCommentKind;
   body: string;
   mediaUrl: string | null;
   kindLabel: string;

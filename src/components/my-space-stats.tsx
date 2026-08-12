@@ -106,6 +106,7 @@ export default function MySpaceStats({
             { href: "/projects/new", label: ui.createProject },
             { href: "/articles/new", label: ui.createArticle },
             { href: "/polls/new", label: ui.createPoll },
+            { href: "/discussions/new", label: ui.createTopic },
           ]}
         />
         {isAdmin && (
@@ -118,7 +119,7 @@ export default function MySpaceStats({
       {/* ─── Content ─── */}
       <section>
         <SectionHeading>{dictionary.mySpace.content}</SectionHeading>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCardLink
             value={compact(userStats.projectsCount)}
             label={dictionary.mySpace.myProjects}
@@ -146,6 +147,16 @@ export default function MySpaceStats({
               userStats.username ? `/u/${userStats.username}/polls` : "/polls"
             }
             accent="bg-indigo-500"
+          />
+          <StatCardLink
+            value={compact(userStats.discussionsCount)}
+            label={dictionary.mySpace.myDiscussions}
+            href={
+              userStats.username
+                ? `/u/${userStats.username}/discussions`
+                : "/discussions"
+            }
+            accent="bg-sky-500"
           />
           <StatCardLink
             value={compact(userStats.bookmarksCount)}

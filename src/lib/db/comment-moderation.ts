@@ -3,7 +3,9 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type CommentKind = "article" | "project" | "poll";
+export const COMMENT_KINDS = ["article", "project", "poll"] as const;
+
+export type CommentKind = (typeof COMMENT_KINDS)[number];
 
 type CommentConfig = {
   commentTable: string;
@@ -34,6 +36,15 @@ const CONFIG: Record<CommentKind, CommentConfig> = {
     ownerColumn: "author_user_id",
   },
 };
+
+/**
+ * Table holding a kind's comments. Exported so the admin delete routes read the
+ * same mapping the ownership check does, instead of re-deriving it — the last
+ * time they were derived separately, polls were left out of both admin routes.
+ */
+export function getCommentTable(kind: CommentKind): string {
+  return CONFIG[kind].commentTable;
+}
 
 export type DeleteCommentResult =
   | { ok: true }

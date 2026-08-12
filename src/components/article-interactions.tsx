@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import CommentDeleteButton from "@/components/comment-delete-button";
+import DiscussionPreviewLink from "@/components/discussion-preview-link";
 import CommentGif from "@/components/ui/comment-gif";
 import GifPicker from "@/components/ui/gif-picker";
 import MentionText from "@/components/ui/mention-text";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/content-stats";
 import { apiFetch } from "@/lib/api-client";
 import type { ReactionSummary } from "@/lib/constants/reactions";
+import { isDiscussionOpen } from "@/lib/discussions";
 import { createLocalePath } from "@/lib/i18n/config";
 import type { ArticleComment } from "@/lib/articles";
 
@@ -434,6 +436,9 @@ export default function ArticleInteractions({
   viewerUserId,
   ownerUserId,
   gifEnabled,
+  previewLimit = null,
+  discussionHref = null,
+  context = "article",
 }: {
   locale: string;
   articleId: string;
@@ -446,6 +451,20 @@ export default function ArticleInteractions({
   viewerUserId: string | null;
   ownerUserId: string | null;
   gifEnabled: boolean;
+  /**
+   * Cap on inline top-level comments. Set on the article page so a hot thread
+   * does not bury the rest of it; left undefined on the discussion page, which
+   * exists precisely to show everything.
+   */
+  previewLimit?: number | null;
+  /** Where the "open full discussion" call-to-action points. */
+  discussionHref?: string | null;
+  /**
+   * Which page the thread is rendered on. A topic page IS the discussion, so it
+   * neither repeats a "Discussion" heading above the composer nor invites you to
+   * share thoughts "about the article".
+   */
+  context?: "article" | "topic";
 }) {
   const router = useRouter();
   const loginPath = createLocalePath(locale === "uk" ? "uk" : "en", "/login");
@@ -458,6 +477,18 @@ export default function ArticleInteractions({
   const [submittingComment, setSubmittingComment] = useState(false);
   const [submittingLike, setSubmittingLike] = useState(false);
   const totalCommentCount = countComments(comments);
+
+  // A thread gets its own page once it is busy enough; until then the article
+  // page keeps the whole conversation inline and links nowhere. The discussion
+  // page itself passes neither prop, so it never links to itself.
+  const discussionOpen =
+    Boolean(discussionHref) &&
+    previewLimit !== null &&
+    isDiscussionOpen(totalCommentCount);
+  const visibleComments = discussionOpen
+    ? comments.slice(0, previewLimit ?? undefined)
+    : comments;
+  const shownCommentCount = countComments(visibleComments);
 
   // One view per authenticated user (server dedupes via article_views). The
   // author's own visits and anonymous readers are never counted; localStorage
@@ -572,24 +603,32 @@ export default function ArticleInteractions({
       </div>
 
       <section className="space-y-4">
-        <div>
-          <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
-            {locale === "uk" ? "Обговорення" : "Discussion"}
-          </h2>
-          <p className="mt-2 text-sm app-muted">
-            {locale === "uk"
-              ? "Діліться думками та відповідайте на коментарі інших."
-              : "Share your thoughts and reply to other comments."}
-          </p>
-        </div>
+        {/* On a topic page the whole page is the discussion — a "Discussion"
+            heading right under the topic title just says it twice. */}
+        {context === "article" ? (
+          <div>
+            <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
+              {locale === "uk" ? "Обговорення" : "Discussion"}
+            </h2>
+            <p className="mt-2 text-sm app-muted">
+              {locale === "uk"
+                ? "Діліться думками та відповідайте на коментарі інших."
+                : "Share your thoughts and reply to other comments."}
+            </p>
+          </div>
+        ) : null}
 
         <div className="rounded-panel app-card p-5">
           <MentionTextarea
             className="min-h-32 w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] p-4 text-sm text-[color:var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
             placeholder={
-              locale === "uk"
-                ? "Поділіться думкою про статтю..."
-                : "Share your thoughts about the article..."
+              context === "topic"
+                ? locale === "uk"
+                  ? "Відповісти в темі..."
+                  : "Reply to this topic..."
+                : locale === "uk"
+                  ? "Поділіться думкою про статтю..."
+                  : "Share your thoughts about the article..."
             }
             value={commentBody}
             onChange={setCommentBody}
@@ -630,16 +669,25 @@ export default function ArticleInteractions({
         </div>
 
         {comments.length > 0 ? (
-          <CommentThread
-            comments={comments}
-            locale={locale}
-            canComment={isAuthenticated}
-            articleId={articleId}
-            onCommentPosted={() => router.refresh()}
-            viewerUserId={viewerUserId}
-            ownerUserId={ownerUserId}
-            gifEnabled={gifEnabled}
-          />
+          <>
+            <CommentThread
+              comments={visibleComments}
+              locale={locale}
+              canComment={isAuthenticated}
+              articleId={articleId}
+              onCommentPosted={() => router.refresh()}
+              viewerUserId={viewerUserId}
+              ownerUserId={ownerUserId}
+              gifEnabled={gifEnabled}
+            />
+            {discussionOpen && discussionHref ? (
+              <DiscussionPreviewLink
+                href={discussionHref}
+                shown={shownCommentCount}
+                total={totalCommentCount}
+              />
+            ) : null}
+          </>
         ) : (
           <p className="rounded-3xl app-panel-dashed p-5 text-sm app-muted">
             {locale === "uk"

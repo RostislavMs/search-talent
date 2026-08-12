@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
+import { COMMENT_KINDS, getCommentTable } from "@/lib/db/comment-moderation";
 
 const paramsSchema = z.object({
   id: z.string().uuid(),
 });
 
 const querySchema = z.object({
-  kind: z.enum(["article", "project"]),
+  kind: z.enum(COMMENT_KINDS),
 });
 
 export async function DELETE(
@@ -34,14 +35,13 @@ export async function DELETE(
   const query = querySchema.safeParse({ kind: url.searchParams.get("kind") });
   if (!query.success) {
     return NextResponse.json(
-      { error: "kind must be article or project" },
+      { error: `kind must be one of: ${COMMENT_KINDS.join(", ")}` },
       { status: 400 },
     );
   }
 
   const { supabase } = context;
-  const table =
-    query.data.kind === "article" ? "article_comments" : "project_comments";
+  const table = getCommentTable(query.data.kind);
 
   const { error } = await supabase
     .from(table)

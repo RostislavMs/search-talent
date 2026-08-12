@@ -1,4 +1,8 @@
 import { getProfileCompletenessScore } from "@/lib/leaderboards";
+import {
+  excludeSectionCategories,
+  getDiscussionsCategoryIds,
+} from "@/lib/db/article-sections";
 import { createClient } from "@/lib/supabase/server";
 
 type EmbeddedCount = { count: number }[] | null;
@@ -48,6 +52,7 @@ export type UserStats = {
   projectsCount: number;
   articlesCount: number;
   pollsCount: number;
+  discussionsCount: number;
   followersCount: number;
   followingCount: number;
   bookmarksCount: number;
@@ -378,12 +383,16 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 
 export async function getUserStats(userId: string): Promise<UserStats> {
   const supabase = await createClient();
+  // Topic views are discussion activity, not article readership — keep them out
+  // of the author's article stats.
+  const discussionCategoryIds = await getDiscussionsCategoryIds(supabase);
 
   const [
     profileResponse,
     projectsCountResponse,
     articlesResponse,
     pollsCountResponse,
+    discussionsCountResponse,
     receivedVotesResponse,
   ] = await Promise.all([
     supabase
@@ -392,8 +401,20 @@ export async function getUserStats(userId: string): Promise<UserStats> {
       .eq("user_id", userId)
       .maybeSingle(),
     supabase.from("projects").select("id", { count: "exact", head: true }).eq("owner_id", userId),
-    supabase.from("articles").select("views_count").eq("author_user_id", userId),
+    excludeSectionCategories(
+      supabase.from("articles").select("views_count").eq("author_user_id", userId),
+      discussionCategoryIds,
+    ),
     supabase.from("polls").select("id", { count: "exact", head: true }).eq("author_user_id", userId),
+    // Topics, counted separately from articles for the same reason they are
+    // excluded above — they are their own kind of thing to the author.
+    discussionCategoryIds.length > 0
+      ? supabase
+          .from("articles")
+          .select("id", { count: "exact", head: true })
+          .eq("author_user_id", userId)
+          .in("category_id", discussionCategoryIds)
+      : Promise.resolve({ count: 0 }),
     // Likes/dislikes across all of the user's projects, aggregated in SQL instead
     // of fetching every vote row to count in JS. Follower / following / bookmark
     // totals are read from the denormalized counters on the profile row.
@@ -420,6 +441,7 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     projectsCount: projectsCountResponse.count || 0,
     articlesCount: userArticles.length,
     pollsCount: pollsCountResponse.count || 0,
+    discussionsCount: discussionsCountResponse.count || 0,
     followersCount: profile?.followers_count ?? 0,
     followingCount: profile?.following_count ?? 0,
     bookmarksCount: profile?.bookmarks_count ?? 0,
