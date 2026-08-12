@@ -18,6 +18,10 @@ import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import AuthorList from "@/components/author-list";
 import { ButtonLink } from "@/components/ui/Button";
 import ShareButton from "@/components/ui/share-button";
+import {
+  buildDiscussionPath,
+  DISCUSSION_PREVIEW_LIMIT,
+} from "@/lib/discussions";
 import { getPublicProjectPageData } from "@/lib/db/public";
 import { syncProjectFromGitHub } from "@/lib/db/github-sync";
 import { GITHUB_AUTO_SYNC_INTERVAL_MS } from "@/lib/constants/github";
@@ -788,6 +792,8 @@ export default async function PublicProjectPage({
           viewerUserId={viewer.user?.id ?? null}
           ownerUserId={project.owner_id}
           gifEnabled={isGifSearchConfigured()}
+          previewLimit={DISCUSSION_PREVIEW_LIMIT}
+          discussionHref={buildDiscussionPath("project", project.slug || slug)}
         />
       </section>
 

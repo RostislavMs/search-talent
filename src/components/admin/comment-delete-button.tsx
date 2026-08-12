@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { apiFetch } from "@/lib/api-client";
+import type { AdminCommentKind } from "@/lib/db/admin-content";
 
 type Props = {
   commentId: string;
-  kind: "article" | "project";
+  kind: AdminCommentKind;
   labels: {
     delete: string;
     deleting: string;

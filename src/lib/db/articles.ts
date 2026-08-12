@@ -1,7 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { slugify } from "@/lib/slug";
 import {
-  NEWS_CATEGORY_SLUG,
   normalizeArticleSort,
   normalizeArticleStatus,
   slugifyArticleTitle,
@@ -12,6 +11,11 @@ import {
   type ArticleDetail,
   type ArticleFeedItem,
 } from "@/lib/articles";
+import {
+  excludeSectionCategories,
+  getDiscussionsCategoryIds,
+  getSectionCategoryIds,
+} from "@/lib/db/article-sections";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { createClient } from "@/lib/supabase/server";
@@ -365,19 +369,12 @@ export async function getArticleFeed(params?: {
 
     query = query.eq("category_id", category.id);
   } else {
-    // Community feed: hide the admin-only News category — it has its own /news
-    // section. Uncategorised articles (null category) still show through.
-    const { data: newsCategory } = await supabase
-      .from("article_categories")
-      .select("id")
-      .eq("slug", NEWS_CATEGORY_SLUG)
-      .maybeSingle();
-
-    if (newsCategory) {
-      query = query.or(
-        `category_id.is.null,category_id.neq.${newsCategory.id}`,
-      );
-    }
+    // Community feed: hide categories that have a section of their own (News,
+    // Discussions). Uncategorised articles (null category) still show through.
+    query = excludeSectionCategories(
+      query,
+      await getSectionCategoryIds(supabase),
+    );
   }
 
   const { data } = await query.order(
@@ -771,12 +768,6 @@ export async function getRelatedArticles(params: {
   const viewer = await getCurrentViewerRole();
   const supabase = viewer.supabase;
 
-  const { data: newsCategory } = await supabase
-    .from("article_categories")
-    .select("id")
-    .eq("slug", NEWS_CATEGORY_SLUG)
-    .maybeSingle();
-
   let query = supabase
     .from("articles")
     .select(
@@ -786,9 +777,10 @@ export async function getRelatedArticles(params: {
     .neq("id", articleId)
     .limit(40);
 
-  if (newsCategory) {
-    query = query.or(`category_id.is.null,category_id.neq.${newsCategory.id}`);
-  }
+  query = excludeSectionCategories(
+    query,
+    await getSectionCategoryIds(supabase),
+  );
 
   const { data } = await query.order("published_at", { ascending: false });
 
@@ -889,13 +881,18 @@ export async function getDashboardArticles(locale?: string | null) {
     return null;
   }
 
-  const { data } = await supabase
-    .from("articles")
-    .select(
-      "id, category_id, title, slug, status, moderation_status, moderation_note, views_count, likes_count, comments_count, published_at, created_at, content_locale, translations",
-    )
-    .eq("author_user_id", user.id)
-    .order("created_at", { ascending: false });
+  // Discussion topics are articles underneath, but the author never manages
+  // them as such — they are edited from the topic page and listed on
+  // /discussions, so they must not show up among the author's articles.
+  const { data } = await excludeSectionCategories(
+    supabase
+      .from("articles")
+      .select(
+        "id, category_id, title, slug, status, moderation_status, moderation_note, views_count, likes_count, comments_count, published_at, created_at, content_locale, translations",
+      )
+      .eq("author_user_id", user.id),
+    await getDiscussionsCategoryIds(supabase),
+  ).order("created_at", { ascending: false });
 
   const rows = (data || []) as Array<{
     id: string;

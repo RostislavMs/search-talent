@@ -167,16 +167,18 @@ export default function SiteHeader({
     { href: "/talents", label: talentsLabel },
     { href: "/projects", label: dictionary.nav.projects },
   ];
-  // Community groups the content types (articles, polls, news) under one
-  // dropdown.
+  // Community groups the content types (articles, polls, discussions, news)
+  // under one dropdown.
   const communityLinks = [
     { href: "/articles", label: articlesLabel },
     { href: "/polls", label: dictionary.nav.polls },
+    { href: "/discussions", label: dictionary.discussions.pageTitle },
     { href: "/news", label: dictionary.nav.news },
   ];
   const communityActive =
     pathname.startsWith("/articles") ||
     pathname.startsWith("/polls") ||
+    pathname.startsWith("/discussions") ||
     pathname.startsWith("/news");
 
   // The profile dropdown is split into groups: the account essentials
@@ -211,6 +213,10 @@ export default function SiteHeader({
         {
           href: `/u/${viewer.username}/polls`,
           label: dictionary.nav.myPolls,
+        },
+        {
+          href: `/u/${viewer.username}/discussions`,
+          label: dictionary.nav.myDiscussions,
         },
       ]
     : [];

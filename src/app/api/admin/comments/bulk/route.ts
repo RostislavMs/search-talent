@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
+import {
+  COMMENT_KINDS,
+  getCommentTable,
+  type CommentKind,
+} from "@/lib/db/comment-moderation";
 
 const itemSchema = z.object({
   id: z.string().uuid(),
-  kind: z.enum(["article", "project"]),
+  kind: z.enum(COMMENT_KINDS),
 });
 
 const bodySchema = z.object({
@@ -35,36 +40,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const articleIds: string[] = [];
-  const projectIds: string[] = [];
+  // Group by kind rather than branching per kind, so a new commentable type is
+  // covered by adding it to COMMENT_KINDS and nothing else.
+  const idsByKind = new Map<CommentKind, string[]>();
   for (const item of parsed.data.items) {
-    if (item.kind === "article") {
-      articleIds.push(item.id);
-    } else {
-      projectIds.push(item.id);
-    }
+    const bucket = idsByKind.get(item.kind) ?? [];
+    bucket.push(item.id);
+    idsByKind.set(item.kind, bucket);
   }
 
   const { supabase } = context;
 
-  if (articleIds.length > 0) {
+  for (const [kind, ids] of idsByKind) {
     const { error } = await supabase
-      .from("article_comments")
+      .from(getCommentTable(kind))
       .delete()
-      .in("id", articleIds);
-    if (error) {
-      return NextResponse.json(
-        { error: error.message || "Delete failed" },
-        { status: 400 },
-      );
-    }
-  }
+      .in("id", ids);
 
-  if (projectIds.length > 0) {
-    const { error } = await supabase
-      .from("project_comments")
-      .delete()
-      .in("id", projectIds);
     if (error) {
       return NextResponse.json(
         { error: error.message || "Delete failed" },

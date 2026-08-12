@@ -46,6 +46,14 @@ type InlineAssetUploadResult = { url: string; label?: string | null };
 type EditorFeatures = {
   /** "+" menu with paragraph / heading / quote structural blocks. */
   blocks: boolean;
+  /**
+   * H2–H4 inside the "+" menu. Split out of `blocks` so a surface can keep
+   * quotes and spoilers while dropping document structure: a discussion topic
+   * is one continuous thought, and its page already owns the only h1.
+   */
+  headings: boolean;
+  /** Horizontal rule inside the "+" menu. */
+  divider: boolean;
   /** Bulleted & numbered lists (surfaced inside the "+" menu). */
   lists: boolean;
   bold: boolean;
@@ -57,6 +65,8 @@ type EditorFeatures = {
 
 const FULL_FEATURES: EditorFeatures = {
   blocks: true,
+  headings: true,
+  divider: true,
   lists: true,
   bold: true,
   italic: true,
@@ -69,6 +79,8 @@ const FULL_FEATURES: EditorFeatures = {
 // emphasis, links, emoji and lists — no structural blocks or code spans.
 const COMPACT_FEATURES: EditorFeatures = {
   blocks: false,
+  headings: false,
+  divider: false,
   lists: true,
   bold: true,
   italic: true,
@@ -1374,18 +1386,22 @@ export default function RichTextComposer({
                           <span className="w-6 text-center text-base text-[color:var(--muted-foreground)]">¶</span>
                           {ui.paragraph}
                         </button>
-                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H2")}>
-                          <span className="w-6 text-center text-sm font-bold text-[color:var(--muted-foreground)]">H2</span>
-                          {ui.heading}
-                        </button>
-                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H3")}>
-                          <span className="w-6 text-center text-xs font-bold text-[color:var(--muted-foreground)]">H3</span>
-                          {ui.heading3}
-                        </button>
-                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H4")}>
-                          <span className="w-6 text-center text-[0.65rem] font-bold text-[color:var(--muted-foreground)]">H4</span>
-                          {ui.heading4}
-                        </button>
+                        {features.headings && (
+                          <>
+                            <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H2")}>
+                              <span className="w-6 text-center text-sm font-bold text-[color:var(--muted-foreground)]">H2</span>
+                              {ui.heading}
+                            </button>
+                            <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H3")}>
+                              <span className="w-6 text-center text-xs font-bold text-[color:var(--muted-foreground)]">H3</span>
+                              {ui.heading3}
+                            </button>
+                            <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("H4")}>
+                              <span className="w-6 text-center text-[0.65rem] font-bold text-[color:var(--muted-foreground)]">H4</span>
+                              {ui.heading4}
+                            </button>
+                          </>
+                        )}
                         <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => applyBlock("BLOCKQUOTE")}>
                           <span className="w-6 text-center text-base text-[color:var(--muted-foreground)]">&#10077;</span>
                           {ui.quote}
@@ -1400,10 +1416,12 @@ export default function RichTextComposer({
                           <span className="w-6 text-center text-base text-[color:var(--muted-foreground)]">▸</span>
                           {ui.spoiler}
                         </button>
-                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={insertDivider}>
-                          <span className="w-6 text-center text-base text-[color:var(--muted-foreground)]">—</span>
-                          {ui.divider}
-                        </button>
+                        {features.divider && (
+                          <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={insertDivider}>
+                            <span className="w-6 text-center text-base text-[color:var(--muted-foreground)]">—</span>
+                            {ui.divider}
+                          </button>
+                        )}
                       </>
                     )}
 

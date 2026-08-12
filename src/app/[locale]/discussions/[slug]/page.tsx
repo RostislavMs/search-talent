@@ -1,19 +1,24 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import ArticleDetailView from "@/components/article-detail-view";
-import {
-  DISCUSSIONS_CATEGORY_SLUG,
-  NEWS_CATEGORY_SLUG,
-} from "@/lib/articles";
-import { getArticleDetail, getRelatedArticles } from "@/lib/db/articles";
+import { DISCUSSIONS_CATEGORY_SLUG } from "@/lib/articles";
+import { getArticleDetail } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
-import { isPublicModerationStatus } from "@/lib/moderation";
 import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
 import { buildArticlePageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+/**
+ * A standalone discussion topic. Stored as an article in the Discussions
+ * category, rendered by the shared article view under its own section.
+ *
+ * Always `noindex`, unlike News: a topic is short by nature and its value is the
+ * replies, not the opening post, so it is thin content in search terms. That is
+ * a deliberate product decision, not a temporary state — which also keeps these
+ * out of the sitemap, per the noindex/sitemap invariant in lib/seo.ts.
+ */
 export async function generateMetadata({
   params,
 }: {
@@ -22,12 +27,6 @@ export async function generateMetadata({
   const { locale, slug } = await params;
   const safeLocale = isLocale(locale) ? locale : "en";
   const data = await getArticleDetail(slug, safeLocale);
-
-  const isDraft = data?.article.status !== "published";
-  const isNotPublicModeration = !isPublicModerationStatus(
-    data?.article.moderationStatus ?? null,
-  );
-  const isThin = !data || isDraft || isNotPublicModeration;
   const excerpt =
     data?.article.excerpt ||
     (data?.article.content
@@ -36,14 +35,14 @@ export async function generateMetadata({
 
   return buildArticlePageMetadata({
     locale: safeLocale,
-    pathname: `/articles/${slug}`,
+    pathname: `/discussions/${slug}`,
     title: data?.article.title || null,
     excerpt,
-    noindex: isThin,
+    noindex: true,
   });
 }
 
-export default async function ArticleDetailPage({
+export default async function DiscussionTopicPage({
   params,
 }: {
   params: Promise<{ locale: string; slug: string }>;
@@ -56,33 +55,18 @@ export default async function ArticleDetailPage({
     notFound();
   }
 
-  // News and Discussions are their own sections — keep a single canonical URL by
-  // redirecting to them (old /articles links stay valid via this 308).
-  if (data.article.category?.slug === NEWS_CATEGORY_SLUG) {
-    redirect(`/${safeLocale}/news/${slug}`);
+  // Only topics belong here; anything else is a community article — send it back
+  // to /articles/[slug] so each piece keeps a single canonical URL.
+  if (data.article.category?.slug !== DISCUSSIONS_CATEGORY_SLUG) {
+    redirect(`/${safeLocale}/articles/${slug}`);
   }
-
-  if (data.article.category?.slug === DISCUSSIONS_CATEGORY_SLUG) {
-    redirect(`/${safeLocale}/discussions/${slug}`);
-  }
-
-  const relatedArticles = await getRelatedArticles({
-    articleId: data.article.id,
-    categoryId: data.article.category?.id ?? null,
-    title: data.article.title,
-    excerpt: data.article.excerpt,
-    content: data.article.content,
-    locale: safeLocale,
-    limit: 3,
-  });
 
   return (
     <ArticleDetailView
       data={data}
       locale={safeLocale}
       slug={slug}
-      section="articles"
-      relatedArticles={relatedArticles}
+      section="discussions"
     />
   );
 }

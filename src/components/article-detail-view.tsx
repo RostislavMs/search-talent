@@ -6,6 +6,7 @@ import AuthorList from "@/components/author-list";
 import ArticlePinButton from "@/components/article-pin-button";
 import ArticleRelated from "@/components/article-related";
 import ArticleTableOfContents from "@/components/article-table-of-contents";
+import DeleteArticleButton from "@/components/delete-article-button";
 import ReportArticleButton from "@/components/report-article-button";
 import RichTextRenderer from "@/components/rich-text-renderer";
 import ScrollToTopButton from "@/components/scroll-to-top-button";
@@ -21,6 +22,10 @@ import {
   type ArticleAuthor,
   type ArticleFeedItem,
 } from "@/lib/articles";
+import {
+  buildDiscussionPath,
+  DISCUSSION_PREVIEW_LIMIT,
+} from "@/lib/discussions";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { normalizeModerationStatus } from "@/lib/moderation";
 import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
@@ -35,8 +40,20 @@ import {
 
 /** Which top-level section this detail page renders under. Controls the back
  * link, breadcrumb, canonical URL and post-delete redirect — everything else is
- * identical, so News and Articles share one renderer. */
-export type ArticleSection = "articles" | "news";
+ * identical, so Articles, News and Discussion topics share one renderer. */
+export type ArticleSection = "articles" | "news" | "discussions";
+
+const SECTION_HREF: Record<ArticleSection, string> = {
+  articles: "/articles",
+  news: "/news",
+  discussions: "/discussions",
+};
+
+const SECTION_BACK_LABEL: Record<ArticleSection, { uk: string; en: string }> = {
+  articles: { uk: "Усі статті", en: "All articles" },
+  news: { uk: "Усі новини", en: "All news" },
+  discussions: { uk: "Усі обговорення", en: "All discussions" },
+};
 
 export type ArticleDetailData = {
   article: ArticleDetail;
@@ -75,7 +92,11 @@ export default function ArticleDetailView({
   const { article, viewerUserId, isOwner, isAdmin } = data;
   const isUkrainian = locale === "uk";
   const isNews = section === "news";
-  const sectionHref = isNews ? "/news" : "/articles";
+  // A topic page is not an article page: it has no editorial category to name
+  // (it is always "Discussions") and nobody skims a forum post for a reading
+  // estimate. What matters there is how many replies it has.
+  const isTopic = section === "discussions";
+  const sectionHref = SECTION_HREF[section];
 
   const author: ArticleAuthor | null = article.author;
   const deletedUserLabel = isUkrainian ? "Видалений користувач" : "Deleted user";
@@ -85,7 +106,7 @@ export default function ArticleDetailView({
   const authorInitial = authorLabel.slice(0, 1).toUpperCase();
   const ui = isUkrainian
     ? {
-        back: isNews ? "Усі новини" : "Усі статті",
+        back: SECTION_BACK_LABEL[section].uk,
         delete: "Видалити",
         deleting: "Видалення...",
         confirmDelete: "Видалити цю статтю?",
@@ -105,9 +126,16 @@ export default function ArticleDetailView({
           "Дію не можна скасувати. Стаття буде прибрана назавжди.",
         adminConfirmButton: "Видалити",
         cancel: "Скасувати",
+        edit: "Редагувати",
+        deleteTopic: "Видалити тему",
+        confirmDeleteTopicTitle: "Видалити цю тему?",
+        confirmDeleteTopic: "Дію не можна скасувати.",
+        confirmDeleteTopicWithReplies:
+          "Тему буде видалено разом з усіма відповідями інших учасників. Дію не можна скасувати.",
+        deleteTopicFailed: "Не вдалося видалити тему.",
       }
     : {
-        back: isNews ? "All news" : "All articles",
+        back: SECTION_BACK_LABEL[section].en,
         delete: "Delete",
         deleting: "Deleting...",
         confirmDelete: "Delete this article?",
@@ -127,6 +155,13 @@ export default function ArticleDetailView({
           "This action cannot be undone. The article will be removed permanently.",
         adminConfirmButton: "Delete",
         cancel: "Cancel",
+        edit: "Edit",
+        deleteTopic: "Delete topic",
+        confirmDeleteTopicTitle: "Delete this topic?",
+        confirmDeleteTopic: "This action cannot be undone.",
+        confirmDeleteTopicWithReplies:
+          "The topic and every reply other people left will be deleted. This action cannot be undone.",
+        deleteTopicFailed: "Could not delete the topic.",
       };
 
   const siteUrl = getMetadataBase().toString().replace(/\/$/, "");
@@ -221,6 +256,37 @@ export default function ArticleDetailView({
                 {ui.back}
               </ButtonLink>
               <ShareButton url={articleUrl} title={article.title} />
+              {/* Topics are hidden from the author's Articles list, so their
+                  own page is the only place to manage them from. */}
+              {isOwner && section === "discussions" ? (
+                <>
+                  <ButtonLink
+                    href={`/discussions/edit/${article.id}`}
+                    variant="secondary"
+                  >
+                    {ui.edit}
+                  </ButtonLink>
+                  <DeleteArticleButton
+                    articleId={article.id}
+                    label={ui.deleteTopic}
+                    pendingLabel={ui.deleting}
+                    confirmTitle={ui.confirmDeleteTopicTitle}
+                    // Deleting the topic cascades to its comments, so say so
+                    // plainly when there are other people's replies to lose.
+                    confirmMessage={
+                      article.comments.length > 0
+                        ? ui.confirmDeleteTopicWithReplies
+                        : ui.confirmDeleteTopic
+                    }
+                    confirmButtonLabel={ui.adminConfirmButton}
+                    cancelLabel={ui.cancel}
+                    errorFallback={ui.deleteTopicFailed}
+                    redirectHref="/discussions"
+                    variant="secondary"
+                    size="md"
+                  />
+                </>
+              ) : null}
               {!isOwner && viewerUserId && (
                 <ReportArticleButton articleId={article.id} locale={locale} />
               )}
@@ -330,8 +396,11 @@ export default function ArticleDetailView({
                   {ui.updated}: {formatArticleDate(article.editedAt, locale)}
                 </span>
               ) : null}
-              <span>{getArticleReadingTime(article.content, locale)}</span>
-              {!isNews && (
+              {/* No reply count here — the stat chips below already carry it. */}
+              {!isTopic && (
+                <span>{getArticleReadingTime(article.content, locale)}</span>
+              )}
+              {!isNews && !isTopic && (
                 <span>
                   {ui.category}:{" "}
                   {getCategoryDisplayName(article.category, locale)}
@@ -397,6 +466,13 @@ export default function ArticleDetailView({
               viewerUserId={viewerUserId ?? null}
               ownerUserId={author?.userId ?? null}
               gifEnabled={isGifSearchConfigured()}
+              // A topic page is the discussion, so it shows the whole thread
+              // and links nowhere; an article page previews it and links out.
+              previewLimit={isTopic ? null : DISCUSSION_PREVIEW_LIMIT}
+              discussionHref={
+                isTopic ? null : buildDiscussionPath("article", slug)
+              }
+              context={isTopic ? "topic" : "article"}
             />
           </div>
         </div>

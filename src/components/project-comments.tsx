@@ -4,6 +4,7 @@ import Image from "next/image";
 import { startTransition, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import CommentDeleteButton from "@/components/comment-delete-button";
+import DiscussionPreviewLink from "@/components/discussion-preview-link";
 import CommentGif from "@/components/ui/comment-gif";
 import GifPicker from "@/components/ui/gif-picker";
 import MentionText from "@/components/ui/mention-text";
@@ -11,6 +12,7 @@ import MentionTextarea from "@/components/ui/mention-textarea";
 import ReactionPicker from "@/components/ui/reaction-picker";
 import { apiFetch } from "@/lib/api-client";
 import type { ReactionSummary } from "@/lib/constants/reactions";
+import { isDiscussionOpen } from "@/lib/discussions";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { formatRelativeTime } from "@/lib/format-relative-time";
 
@@ -37,6 +39,14 @@ type ProjectCommentsProps = {
   viewerUserId: string | null;
   ownerUserId: string | null;
   gifEnabled: boolean;
+  /**
+   * Cap on inline top-level comments. Set on the project page so a hot thread
+   * does not bury the rest of it; left undefined on the discussion page, which
+   * exists precisely to show everything.
+   */
+  previewLimit?: number | null;
+  /** Where the "open full discussion" call-to-action points. */
+  discussionHref?: string | null;
 };
 
 function pluralizeReplies(count: number, locale: string, hide: boolean) {
@@ -53,6 +63,14 @@ function pluralizeReplies(count: number, locale: string, hide: boolean) {
 
   const noun = count === 1 ? "reply" : "replies";
   return hide ? `Hide ${count} ${noun}` : `${count} ${noun}`;
+}
+
+/** Size of a comment's subtree, itself included — used to keep the preview note honest. */
+function countSubtree(commentId: string, childrenMap: Map<string, Comment[]>): number {
+  return (childrenMap.get(commentId) || []).reduce(
+    (sum, child) => sum + countSubtree(child.id, childrenMap),
+    1,
+  );
 }
 
 function buildCommentTree(comments: Comment[]) {
@@ -318,6 +336,8 @@ export default function ProjectComments({
   viewerUserId,
   ownerUserId,
   gifEnabled,
+  previewLimit = null,
+  discussionHref = null,
 }: ProjectCommentsProps) {
   const dictionary = useDictionary();
   const router = useLocalizedRouter();
@@ -404,6 +424,21 @@ export default function ProjectComments({
 
   const { topLevel, childrenMap } = buildCommentTree(comments);
 
+  // A thread gets its own page once it is busy enough; until then the project
+  // page keeps the whole conversation inline and links nowhere. The discussion
+  // page itself passes neither prop, so it never links to itself.
+  const discussionOpen =
+    Boolean(discussionHref) &&
+    previewLimit !== null &&
+    isDiscussionOpen(comments.length);
+  const visibleTopLevel = discussionOpen
+    ? topLevel.slice(0, previewLimit ?? undefined)
+    : topLevel;
+  const shownCount = visibleTopLevel.reduce(
+    (sum, comment) => sum + countSubtree(comment.id, childrenMap),
+    0,
+  );
+
   return (
     <section className="rounded-hero app-card p-5 sm:p-6">
       <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
@@ -472,7 +507,7 @@ export default function ProjectComments({
         </p>
       ) : (
         <div className="mt-6 space-y-4 sm:space-y-6">
-          {topLevel.map((comment) => (
+          {visibleTopLevel.map((comment) => (
             <CommentItem
               key={comment.id}
               comment={comment}
@@ -500,6 +535,14 @@ export default function ProjectComments({
               onDeleted={() => void loadComments()}
             />
           ))}
+
+          {discussionOpen && discussionHref ? (
+            <DiscussionPreviewLink
+              href={discussionHref}
+              shown={shownCount}
+              total={comments.length}
+            />
+          ) : null}
         </div>
       )}
     </section>
