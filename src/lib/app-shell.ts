@@ -19,7 +19,12 @@ export type AppViewer = {
   isAdmin: boolean;
 } | null;
 
-function normalizeViewerAvatarUrl(value: string | null | undefined) {
+/**
+ * Only lets through avatar hosts that next.config.ts allows for the image
+ * optimizer — an unlisted host would throw at render time. Shared with the
+ * feedback page, which shows the same viewer identity strip.
+ */
+export function normalizeViewerAvatarUrl(value: string | null | undefined) {
   if (!value) {
     return null;
   }

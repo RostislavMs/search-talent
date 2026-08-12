@@ -19,13 +19,27 @@ type Attachment = {
   name: string;
 };
 
-type FeedbackFormProps = {
-  isSignedIn: boolean;
+export type FeedbackViewer = {
+  displayName: string | null;
+  username: string | null;
+  avatarUrl: string | null;
+  email: string | null;
 };
 
-export default function FeedbackForm({ isSignedIn }: FeedbackFormProps) {
+type FeedbackFormProps = {
+  /** null for anonymous visitors — they still get the name/email fields. */
+  viewer: FeedbackViewer | null;
+};
+
+export default function FeedbackForm({ viewer }: FeedbackFormProps) {
   const dictionary = useDictionary();
   const copy = dictionary.feedbackPage;
+  const isSignedIn = viewer !== null;
+  const viewerLabel =
+    viewer?.displayName ||
+    viewer?.username ||
+    viewer?.email ||
+    dictionary.coAuthors.authorFallback;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -122,9 +136,13 @@ export default function FeedbackForm({ isSignedIn }: FeedbackFormProps) {
     setLoading(true);
     setError(null);
 
+    // Signed-in submissions carry no name/email — the server attaches the
+    // account itself, so the admin queue always knows who wrote it.
     const result = await apiFetch("/api/feedback", {
       method: "POST",
-      body: { name, email, category, message, attachments },
+      body: isSignedIn
+        ? { category, message, attachments }
+        : { name, email, category, message, attachments },
     });
 
     setLoading(false);
@@ -180,43 +198,74 @@ export default function FeedbackForm({ isSignedIn }: FeedbackFormProps) {
             noValidate
             className="mt-8 flex flex-col gap-5"
           >
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="feedback-name"
-                  className="mb-2 block text-sm font-medium text-[color:var(--foreground)]"
-                >
-                  {copy.nameLabel}
-                </label>
-                <input
-                  id="feedback-name"
-                  type="text"
-                  placeholder={copy.namePlaceholder}
-                  className="app-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={100}
-                />
+            {viewer ? (
+              <div className="rounded-panel app-panel flex items-center gap-3 p-4">
+                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[color:var(--surface-muted)] text-sm font-semibold text-[color:var(--foreground)]">
+                  {viewer.avatarUrl ? (
+                    <OptimizedImage
+                      src={viewer.avatarUrl}
+                      alt={viewerLabel}
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span>{viewerLabel.slice(0, 1).toUpperCase()}</span>
+                  )}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
+                    {copy.identityLabel}
+                  </p>
+                  <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
+                    {viewerLabel}
+                    {viewer.username ? (
+                      <span className="ml-2 font-normal app-soft">
+                        @{viewer.username}
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
               </div>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="feedback-name"
+                    className="mb-2 block text-sm font-medium text-[color:var(--foreground)]"
+                  >
+                    {copy.nameLabel}
+                  </label>
+                  <input
+                    id="feedback-name"
+                    type="text"
+                    placeholder={copy.namePlaceholder}
+                    className="app-input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    maxLength={100}
+                  />
+                </div>
 
-              <div>
-                <label
-                  htmlFor="feedback-email"
-                  className="mb-2 block text-sm font-medium text-[color:var(--foreground)]"
-                >
-                  {copy.emailLabel}
-                </label>
-                <input
-                  id="feedback-email"
-                  type="email"
-                  placeholder={copy.emailPlaceholder}
-                  className="app-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  maxLength={254}
-                />
+                <div>
+                  <label
+                    htmlFor="feedback-email"
+                    className="mb-2 block text-sm font-medium text-[color:var(--foreground)]"
+                  >
+                    {copy.emailLabel}
+                  </label>
+                  <input
+                    id="feedback-email"
+                    type="email"
+                    placeholder={copy.emailPlaceholder}
+                    className="app-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    maxLength={254}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <label className="mb-2 block text-sm font-medium text-[color:var(--foreground)]">

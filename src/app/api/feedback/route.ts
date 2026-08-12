@@ -18,17 +18,18 @@ const feedbackSchema = z.object({
   email: z.string().max(254).optional().default(""),
   category: z.enum(["idea", "bug", "feedback", "complaint"]),
   message: z.string().min(1).max(5000),
-  attachments: z.array(attachmentSchema).max(MAX_ATTACHMENTS).optional().default([]),
+  attachments: z
+    .array(attachmentSchema)
+    .max(MAX_ATTACHMENTS)
+    .optional()
+    .default([]),
 });
 
 export async function POST(request: Request) {
   const limited = rateLimit("feedback", 5, 60_000);
 
   if (limited) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429 },
-    );
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   const parsed = await parseJsonRequest(request, feedbackSchema);
@@ -67,10 +68,14 @@ export async function POST(request: Request) {
     }
   }
 
+  // A signed-in submission goes out as the account itself: the admin queue
+  // resolves the author from user_id, so client-supplied name/email are ignored
+  // (the form does not even render those fields) and the contact email comes
+  // from the session — never from the request body.
   const { error } = await supabase.from("feedback").insert({
     user_id: user?.id || null,
-    name: parsed.data.name || null,
-    email: parsed.data.email || null,
+    name: user ? null : parsed.data.name || null,
+    email: user ? user.email || null : parsed.data.email || null,
     category: parsed.data.category,
     message: parsed.data.message,
     attachments,

@@ -18,7 +18,11 @@ import { POST } from "@/app/api/feedback/route";
 import { rateLimit } from "@/lib/rate-limit";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
-const authUser: MockUser = { id: USER_ID, email_confirmed_at: "2026-01-01T00:00:00Z" };
+const authUser: MockUser = {
+  id: USER_ID,
+  email: "member@example.com",
+  email_confirmed_at: "2026-01-01T00:00:00Z",
+};
 
 function setMock(user: MockUser, resolve: (t: string, v: string) => QueryResult) {
   holder.mock = createSupabaseMock({ user, resolve: (c) => resolve(c.table, c.verb) });
@@ -59,12 +63,36 @@ describe("POST /api/feedback", () => {
     expect((insert?.payload as { user_id: string | null }).user_id).toBe(USER_ID);
   });
 
+  it("ignores client-supplied name/email for a signed-in user", async () => {
+    const mock = setMock(authUser, () => ({ error: null }));
+    const res = await POST(
+      req({ ...valid, name: "Spoofed", email: "spoof@example.com" }),
+    );
+    expect(res.status).toBe(200);
+    const insert = mock.calls.find((c) => c.table === "feedback" && c.verb === "insert");
+    const payload = insert?.payload as { name: string | null; email: string | null };
+    expect(payload.name).toBeNull();
+    expect(payload.email).toBe("member@example.com");
+  });
+
   it("accepts anonymous feedback (user_id null)", async () => {
     const mock = setMock(null, () => ({ error: null }));
     const res = await POST(req(valid));
     expect(res.status).toBe(200);
     const insert = mock.calls.find((c) => c.table === "feedback" && c.verb === "insert");
     expect((insert?.payload as { user_id: string | null }).user_id).toBeNull();
+  });
+
+  it("keeps the typed-in name/email for an anonymous submission", async () => {
+    const mock = setMock(null, () => ({ error: null }));
+    const res = await POST(
+      req({ ...valid, name: "Guest", email: "guest@example.com" }),
+    );
+    expect(res.status).toBe(200);
+    const insert = mock.calls.find((c) => c.table === "feedback" && c.verb === "insert");
+    const payload = insert?.payload as { name: string | null; email: string | null };
+    expect(payload.name).toBe("Guest");
+    expect(payload.email).toBe("guest@example.com");
   });
 
   it("500 when the insert fails", async () => {
