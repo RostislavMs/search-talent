@@ -83,6 +83,13 @@ export default function AdminFeedbackEntry({
     (authorUsername ? `@${authorUsername}` : null) ||
     copy.anonymous;
 
+  // Signed-in submissions no longer carry a typed-in name, so the handle is what
+  // identifies the account at a glance — show it unless it is already the label.
+  const handle =
+    authorUsername && displayAuthor !== `@${authorUsername}`
+      ? `@${authorUsername}`
+      : null;
+
   return (
     <article className="rounded-hero app-card p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -129,6 +136,7 @@ export default function AdminFeedbackEntry({
           <div className="mt-4 flex flex-wrap gap-4 text-sm app-muted">
             <span>
               {copy.from}: {displayAuthor}
+              {handle ? <span className="app-soft"> {handle}</span> : null}
             </span>
             {email ? (
               <span>

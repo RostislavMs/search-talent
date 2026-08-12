@@ -27,7 +27,11 @@ export type QueryCall = {
 
 export type Resolver = (call: QueryCall) => QueryResult;
 
-export type MockUser = { id: string; email_confirmed_at?: string | null } | null;
+export type MockUser = {
+  id: string;
+  email?: string | null;
+  email_confirmed_at?: string | null;
+} | null;
 
 const FILTER_METHODS = new Set([
   "eq", "neq", "gt", "gte", "lt", "lte", "like", "ilike", "is", "in",
