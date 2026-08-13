@@ -90,6 +90,23 @@ export const changePasswordSchema = z
     }
   });
 
+// Accounts created through Google/GitHub have no password to verify, so the
+// first password they set skips the current-password step.
+export const setPasswordSchema = z
+  .object({
+    newPassword: signupPasswordSchema,
+    confirmPassword: z.string().min(1, "confirm_password_required"),
+  })
+  .superRefine(({ newPassword, confirmPassword }, context) => {
+    if (newPassword !== confirmPassword) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["confirmPassword"],
+        message: "passwords_do_not_match",
+      });
+    }
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

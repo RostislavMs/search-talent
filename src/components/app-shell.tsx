@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import CookieConsentBanner from "@/components/cookie-consent-banner";
 import LinkPreviewProvider from "@/components/link-preview-provider";
 import SiteFooter from "@/components/site-footer";
+import SiteFooterSlot from "@/components/site-footer-slot";
 import SiteHeader from "@/components/site-header";
 import SitePopup from "@/components/site-popup";
 import { ToastProvider } from "@/components/ui/toast";
@@ -33,7 +34,9 @@ export default async function AppShell({
         initialCanPersistTheme={initialCanPersistTheme}
       />
       <div className="flex-1">{children}</div>
-      <SiteFooter dictionary={dictionary} />
+      <SiteFooterSlot>
+        <SiteFooter dictionary={dictionary} />
+      </SiteFooterSlot>
       <CookieConsentBanner initialConsent={initialConsent} />
       <SitePopup popup={activePopup} />
       {/* Renders nothing until a previewable link is hovered; the card copy
