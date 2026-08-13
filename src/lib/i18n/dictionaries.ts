@@ -357,35 +357,31 @@ export const dictionaries = {
       manageCookies: "Cookie settings",
     },
     cookieConsent: {
-      badge: "Privacy choices",
       title:
-        "We use cookies only for clear product needs and future optional features.",
-      description:
-        "Essential cookies keep sign-in, routing, and security working. You can reject optional cookies, allow a limited setup, or choose categories individually before any analytics or marketing tools are added.",
-      essentialSummary: "Essential cookies stay on",
-      learnMore: "Read the Cookie Policy",
+        "We use cookies to keep the site running, for analytics, and to remember your settings. You can choose which categories to allow.",
+      learnMore: "Cookie Policy",
       rejectOptional: "Reject optional",
       limitedUse: "Limited use",
-      customize: "Choose settings",
+      customize: "Settings",
       allowAll: "Allow all",
-      modalTitle: "Choose which cookies SearchTalent may use",
+      modalTitle: "Which cookies to allow?",
       modalDescription:
-        "Optional categories stay off until you enable them. You can return to these settings at any time from the footer.",
+        "Optional categories stay off until you turn them on. You can change this any time from the footer.",
       saveSelection: "Save selection",
       close: "Close",
-      alwaysActive: "Always active",
+      alwaysActive: "always on",
       essentialTitle: "Essential",
       essentialDescription:
-        "Required for sign-in, core routing, language handling, security, and saving your consent choice.",
+        "Sign-in, routing, interface language, security, and saving this choice.",
       preferencesTitle: "Preferences",
       preferencesDescription:
-        "Remember optional interface choices such as your theme after you explicitly allow them.",
+        "Remember your theme and similar interface choices between visits.",
       analyticsTitle: "Analytics",
       analyticsDescription:
-        "Measure how the platform is used and how fast it runs, through Vercel Analytics, Google Analytics, Ahrefs, and Plerdy click maps. This category stays off unless you allow it.",
+        "Show how the site is used and how fast it runs: Vercel Analytics, Google Analytics, Ahrefs, Plerdy click maps.",
       marketingTitle: "Marketing",
       marketingDescription:
-        "Reserved for future campaigns, attribution, or third-party promotion tools. This category stays off unless you allow it.",
+        "Reserved for future campaigns, attribution, and third-party promotion tools. Nothing runs here yet.",
       themeSessionOnly:
         "Theme changes work for this visit, but they are not saved until you allow preference cookies.",
     },
@@ -1356,6 +1352,11 @@ export const dictionaries = {
         success: "Your password has been changed.",
         wrongCurrent: "Your current password is incorrect.",
         genericError: "Could not change your password. Please try again.",
+        addDescription:
+          "You signed up with Google or GitHub, so your account has no password yet. Add one to also sign in with your email.",
+        addSubmit: "Add password",
+        addSubmitting: "Saving...",
+        addSuccess: "Password added. You can now sign in with your email and password.",
       },
       deleteAccount: {
         sectionTitle: "Danger zone",
@@ -1398,7 +1399,6 @@ export const dictionaries = {
       login: {
         eyebrow: "Welcome back",
         title: "Log in",
-        description: "Sign in to manage your profile and publish projects.",
         submit: "Log in",
         loading: "Signing in...",
         google: "Continue with Google",
@@ -1407,10 +1407,8 @@ export const dictionaries = {
         exploreFirst: "Explore first",
       },
       signup: {
-        eyebrow: "Join SearchTalent",
+        eyebrow: "Join the platform",
         title: "Create account",
-        description:
-          "Set up your workspace so your profile and projects have a clear home.",
         submit: "Sign up",
         loading: "Creating...",
         alreadyHaveAccount: "Already have an account?",
@@ -1452,6 +1450,17 @@ export const dictionaries = {
         backToLogin: "Go to login",
         invalidSession:
           "This recovery link has expired or is invalid. Please request a new one.",
+      },
+      oauth: {
+        google: "Google",
+        github: "GitHub",
+        divider: "or continue with email",
+      },
+      legal: {
+        prefix: "By continuing you accept our",
+        terms: "Terms of Service",
+        and: "and",
+        privacy: "Privacy Policy",
       },
       home: "Home",
       email: "Email",
@@ -2786,35 +2795,31 @@ export const dictionaries = {
       manageCookies: "Налаштування cookies",
     },
     cookieConsent: {
-      badge: "Налаштування конфіденційності",
       title:
-        "Ми використовуємо cookies лише для зрозумілих потреб продукту та майбутніх додаткових опцій.",
-      description:
-        "Обов'язкові cookies підтримують вхід, маршрутизацію та безпеку. Ви можете відхилити необов'язкові cookies, дозволити лише обмежений набір або окремо обрати категорії ще до підключення аналітики чи маркетингових інструментів.",
-      essentialSummary: "Обов'язкові cookies завжди активні",
-      learnMore: "Перейти до Політики cookies",
+        "Ми використовуємо файли cookie для роботи сайту, аналітики та збереження ваших налаштувань. Ви можете обрати, які категорії дозволити.",
+      learnMore: "Політика cookies",
       rejectOptional: "Відхилити необов'язкові",
       limitedUse: "Обмежений дозвіл",
-      customize: "Обрати налаштування",
+      customize: "Налаштування",
       allowAll: "Дозволити все",
-      modalTitle: "Оберіть, які cookies може використовувати SearchTalent",
+      modalTitle: "Які cookies дозволити?",
       modalDescription:
-        "Необов'язкові категорії залишаються вимкненими, доки ви їх не дозволите. До цих налаштувань можна повернутися в будь-який момент через футер.",
+        "Необов'язкові категорії вимкнені, доки ви їх не увімкнете. Змінити вибір можна будь-коли у футері.",
       saveSelection: "Зберегти вибір",
       close: "Закрити",
-      alwaysActive: "Завжди активно",
+      alwaysActive: "завжди активні",
       essentialTitle: "Обов'язкові",
       essentialDescription:
-        "Потрібні для входу, основної маршрутизації, мови інтерфейсу, безпеки та збереження вашого вибору щодо cookies.",
+        "Вхід, маршрутизація, мова інтерфейсу, безпека та збереження цього вибору.",
       preferencesTitle: "Налаштування",
       preferencesDescription:
-        "Дозволяють запам'ятовувати необов'язкові вибори, наприклад тему інтерфейсу, після вашого дозволу.",
+        "Запам'ятовують тему інтерфейсу та схожі дрібниці між візитами.",
       analyticsTitle: "Аналітика",
       analyticsDescription:
-        "Дозволяють вимірювати, як використовується платформа та наскільки швидко вона працює, — через Vercel Analytics, Google Analytics, Ahrefs і карти кліків Plerdy. Ця категорія залишається вимкненою, доки ви її не дозволите.",
+        "Показують, як користуються сайтом і як швидко він працює: Vercel Analytics, Google Analytics, Ahrefs, карти кліків Plerdy.",
       marketingTitle: "Маркетинг",
       marketingDescription:
-        "Зарезервовано для майбутніх кампаній, атрибуції чи сторонніх промо-інструментів. Ця категорія залишається вимкненою, доки ви її не дозволите.",
+        "Зарезервовано для майбутніх кампаній, атрибуції та сторонніх промо-інструментів. Поки нічого не працює.",
       themeSessionOnly:
         "Зміна теми працює для поточного візиту, але не зберігається без дозволу на cookies налаштувань.",
     },
@@ -3755,6 +3760,11 @@ export const dictionaries = {
         success: "Пароль змінено.",
         wrongCurrent: "Поточний пароль неправильний.",
         genericError: "Не вдалося змінити пароль. Спробуйте ще раз.",
+        addDescription:
+          "Ви реєструвалися через Google або GitHub, тому пароля в акаунті ще немає. Додайте його, щоб входити також через email.",
+        addSubmit: "Додати пароль",
+        addSubmitting: "Збереження...",
+        addSuccess: "Пароль додано. Тепер ви можете входити через email і пароль.",
       },
       deleteAccount: {
         sectionTitle: "Небезпечна зона",
@@ -3797,7 +3807,6 @@ export const dictionaries = {
       login: {
         eyebrow: "З поверненням",
         title: "Вхід",
-        description: "Увійдіть, щоб керувати профілем і публікувати проєкти.",
         submit: "Увійти",
         loading: "Вхід...",
         google: "Продовжити через Google",
@@ -3806,10 +3815,8 @@ export const dictionaries = {
         exploreFirst: "Спочатку переглянути",
       },
       signup: {
-        eyebrow: "Приєднуйтесь до SearchTalent",
+        eyebrow: "Приєднатися до платформи",
         title: "Створення акаунта",
-        description:
-          "Налаштуйте свій робочий простір, щоб профіль і проєкти мали зрозуміле місце.",
         submit: "Зареєструватися",
         loading: "Створення...",
         alreadyHaveAccount: "Уже є акаунт?",
@@ -3851,6 +3858,17 @@ export const dictionaries = {
         backToLogin: "До сторінки входу",
         invalidSession:
           "Це посилання для відновлення вже недійсне або протерміноване. Спробуйте запросити нове.",
+      },
+      oauth: {
+        google: "Google",
+        github: "GitHub",
+        divider: "або через email",
+      },
+      legal: {
+        prefix: "Продовжуючи, ви приймаєте",
+        terms: "Умови користування",
+        and: "і",
+        privacy: "Політику конфіденційності",
       },
       home: "Головна",
       email: "Email",

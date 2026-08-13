@@ -12,6 +12,9 @@ import {
 } from "@/lib/auth/validation";
 import { useDictionary, useLocalizedHref, useLocalizedRouter } from "@/lib/i18n/client";
 import { createClient } from "@/lib/supabase/client";
+import AuthDivider from "@/components/auth/auth-divider";
+import AuthLegalNote from "@/components/auth/auth-legal-note";
+import OAuthButtons from "@/components/auth/oauth-buttons";
 import LocalizedLink from "@/components/ui/localized-link";
 import PasswordInput from "@/components/ui/password-input";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -85,8 +88,8 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="mx-auto max-w-md px-0 py-0 sm:px-4 sm:py-16">
-      <section className="rounded-none sm:rounded-hero app-card px-4 py-6 sm:p-8">
+    <main className="mx-auto flex w-full max-w-md flex-col justify-center px-0 py-0 sm:min-h-[calc(100svh-4.5rem)] sm:px-4 sm:py-6">
+      <section className="w-full rounded-none sm:rounded-hero app-card px-4 py-6 sm:px-7 sm:py-6">
         <div className="flex items-center justify-between gap-3">
           <p className="min-w-0 text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
             {dictionary.auth.signup.eyebrow}
@@ -95,22 +98,22 @@ export default function SignupPage() {
             href="/"
             variant="ghost"
             size="sm"
-            className="shrink-0 whitespace-nowrap"
+            className="-mr-2 shrink-0 whitespace-nowrap"
           >
             {dictionary.auth.home}
           </ButtonLink>
         </div>
 
-        <h1 className="font-display mt-3 text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:mt-4 sm:text-3xl">
+        <h1 className="font-display mt-2 text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
           {dictionary.auth.signup.title}
         </h1>
 
-        <p className="mt-3 text-sm leading-6 app-muted sm:text-base">
-          {dictionary.auth.signup.description}
-        </p>
+        <OAuthButtons className="mt-5" disabled={loading} onError={setError} />
 
-        <form onSubmit={handleSignup} noValidate className="mt-6 flex flex-col gap-4 sm:mt-8">
-          <div className="flex flex-col gap-2">
+        <AuthDivider className="my-4" />
+
+        <form onSubmit={handleSignup} noValidate className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-1.5">
             <label
               htmlFor="signup-email"
               className="text-sm font-medium text-[color:var(--foreground)]"
@@ -145,7 +148,7 @@ export default function SignupPage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <label
               htmlFor="signup-password"
               className="text-sm font-medium text-[color:var(--foreground)]"
@@ -166,7 +169,7 @@ export default function SignupPage() {
               aria-invalid={Boolean(fieldErrors.password)}
               aria-describedby={`signup-password-hint${fieldErrors.password ? " signup-password-error" : ""}`}
             />
-            <p id="signup-password-hint" className="text-sm app-muted">
+            <p id="signup-password-hint" className="text-xs leading-5 app-muted">
               {dictionary.auth.passwordHint}
             </p>
             {fieldErrors.password && (
@@ -176,7 +179,7 @@ export default function SignupPage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <label
               htmlFor="signup-confirm-password"
               className="text-sm font-medium text-[color:var(--foreground)]"
@@ -216,9 +219,11 @@ export default function SignupPage() {
           <Button type="submit" disabled={loading} className="justify-center">
             {loading ? dictionary.auth.signup.loading : dictionary.auth.signup.submit}
           </Button>
+
+          <AuthLegalNote />
         </form>
 
-        <div className="mt-6 flex items-center justify-between text-sm app-muted">
+        <div className="mt-4 flex items-center justify-between gap-3 text-sm app-muted">
           <LocalizedLink href="/login" className="hover:text-[color:var(--foreground)]">
             {dictionary.auth.signup.alreadyHaveAccount}
           </LocalizedLink>

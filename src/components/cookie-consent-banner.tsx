@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import LocalizedLink from "@/components/ui/localized-link";
 import { buttonStyles } from "@/components/ui/button-styles";
+import { isAuthRoute } from "@/lib/auth-routes";
 import {
   allowsCookieCategory,
   buildAllowAllConsent,
@@ -29,13 +31,17 @@ export default function CookieConsentBanner({
   initialConsent,
 }: CookieConsentBannerProps) {
   const dictionary = useDictionary();
+  const pathname = usePathname();
   const [consent, setConsent] = useState(initialConsent);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [draft, setDraft] = useState(
     initialConsent?.categories ?? buildEssentialOnlyConsent().categories,
   );
 
-  const showBanner = consent === null;
+  // The banner is suppressed on the auth screens, never skipped: an unanswered
+  // consent keeps every optional category off, so the visitor simply gets asked
+  // on the next page instead of on top of the sign-in form.
+  const showBanner = consent === null && !isAuthRoute(pathname);
 
   useEffect(() => {
     const openPreferences = () => {
@@ -127,20 +133,17 @@ export default function CookieConsentBanner({
             role="dialog"
             aria-modal="true"
             aria-labelledby="cookie-settings-title"
-            className="mx-auto w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-2xl sm:p-8"
+            className="mx-auto w-full max-w-xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-2xl"
           >
             <div className="relative">
-              <div className="max-w-2xl pr-11 sm:pr-12">
-                <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-                  {dictionary.cookieConsent.badge}
-                </p>
+              <div className="pr-10">
                 <h2
                   id="cookie-settings-title"
-                  className="font-display mt-3 text-2xl font-medium tracking-tight text-[color:var(--foreground)]"
+                  className="font-display text-lg font-medium tracking-tight text-[color:var(--foreground)]"
                 >
                   {dictionary.cookieConsent.modalTitle}
                 </h2>
-                <p className="mt-3 text-sm leading-7 app-muted sm:text-base">
+                <p className="mt-1.5 text-xs leading-5 app-muted">
                   {dictionary.cookieConsent.modalDescription}
                 </p>
               </div>
@@ -149,7 +152,7 @@ export default function CookieConsentBanner({
                 type="button"
                 onClick={() => setIsPreferencesOpen(false)}
                 aria-label={dictionary.cookieConsent.close}
-                className="absolute right-0 top-0 inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border app-border bg-[color:var(--surface)] text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
+                className="absolute -right-1 -top-1 inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-[color:var(--muted-foreground)] transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
               >
                 <svg
                   width="16"
@@ -168,15 +171,15 @@ export default function CookieConsentBanner({
               </button>
             </div>
 
-            <div className="mt-5 space-y-3 sm:mt-6 sm:space-y-4">
+            <div className="mt-4 space-y-2">
               {categories.map((category) => (
                 <label
                   key={category.key}
-                  className="flex items-start gap-4 rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-4"
+                  className="flex items-start gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-3.5 py-3"
                 >
                   <input
                     type="checkbox"
-                    className="app-checkbox mt-1"
+                    className="app-checkbox mt-0.5"
                     checked={category.checked}
                     disabled={category.disabled}
                     onChange={(event) => {
@@ -191,15 +194,15 @@ export default function CookieConsentBanner({
                     }}
                   />
                   <span className="min-w-0">
-                    <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[color:var(--foreground)] sm:text-base">
+                    <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-[color:var(--foreground)]">
                       <span>{category.label}</span>
                       {category.disabled && (
-                        <span className="rounded-full border border-[color:var(--border)] px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.14em] app-soft">
+                        <span className="text-[11px] font-normal app-soft">
                           {dictionary.cookieConsent.alwaysActive}
                         </span>
                       )}
                     </span>
-                    <span className="mt-2 block text-sm leading-7 app-muted">
+                    <span className="mt-0.5 block text-xs leading-5 app-muted">
                       {category.description}
                     </span>
                   </span>
@@ -207,12 +210,13 @@ export default function CookieConsentBanner({
               ))}
             </div>
 
-            <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
               <button
                 type="button"
                 onClick={() => applyConsent(buildEssentialOnlyConsent())}
                 className={buttonStyles({
                   variant: "secondary",
+                  size: "sm",
                   className: "justify-center",
                 })}
               >
@@ -220,23 +224,24 @@ export default function CookieConsentBanner({
               </button>
               <button
                 type="button"
-                onClick={saveCustomConsent}
-                className={buttonStyles({
-                  variant: "secondary",
-                  className: "justify-center",
-                })}
-              >
-                {dictionary.cookieConsent.saveSelection}
-              </button>
-              <button
-                type="button"
                 onClick={() => applyConsent(buildAllowAllConsent())}
                 className={buttonStyles({
                   variant: "secondary",
+                  size: "sm",
                   className: "justify-center",
                 })}
               >
                 {dictionary.cookieConsent.allowAll}
+              </button>
+              <button
+                type="button"
+                onClick={saveCustomConsent}
+                className={buttonStyles({
+                  size: "sm",
+                  className: "col-span-2 justify-center",
+                })}
+              >
+                {dictionary.cookieConsent.saveSelection}
               </button>
             </div>
           </div>
@@ -245,8 +250,8 @@ export default function CookieConsentBanner({
 
       {showBanner && (
         <div className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-6 sm:pb-4">
-          <section className="mx-auto flex max-h-[calc(100dvh-1.5rem)] max-w-3xl flex-col gap-3 overflow-y-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-2xl sm:gap-4">
-            <p className="text-sm leading-6 app-muted">
+          <section className="mx-auto flex max-h-[calc(100dvh-1.5rem)] max-w-3xl flex-col gap-2.5 overflow-y-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3.5 shadow-2xl sm:gap-3">
+            <p className="text-xs leading-5 app-muted">
               {dictionary.cookieConsent.title}{" "}
               <LocalizedLink
                 href="/cookies"
