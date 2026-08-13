@@ -33,7 +33,7 @@ type ProfileWeights = {
   freshness: number;
 };
 
-const PROJECT_WEIGHTS: Record<LeaderboardTimeframe, ProjectWeights> = {
+export const PROJECT_WEIGHTS: Record<LeaderboardTimeframe, ProjectWeights> = {
   all: {
     communityTrust: 35,
     contentQuality: 30,
@@ -50,7 +50,7 @@ const PROJECT_WEIGHTS: Record<LeaderboardTimeframe, ProjectWeights> = {
   },
 };
 
-const PROFILE_WEIGHTS: Record<LeaderboardTimeframe, ProfileWeights> = {
+export const PROFILE_WEIGHTS: Record<LeaderboardTimeframe, ProfileWeights> = {
   all: {
     completeness: 25,
     portfolio: 30,
@@ -70,7 +70,7 @@ const PROFILE_WEIGHTS: Record<LeaderboardTimeframe, ProfileWeights> = {
 };
 
 // Saturation points — the count at which a signal reaches ~50 % of its max.
-const SATURATION = {
+export const SATURATION = {
   media: 6,
   technologies: 10,
   projects: 8,
@@ -78,7 +78,7 @@ const SATURATION = {
 } as const;
 
 // Half-life in days — how quickly freshness decays by timeframe.
-const HALF_LIFE_DAYS: Record<LeaderboardTimeframe, number> = {
+export const HALF_LIFE_DAYS: Record<LeaderboardTimeframe, number> = {
   all: 45,
   month: 20,
 };
@@ -125,9 +125,18 @@ export function getWilsonScore(positive: number, negative: number) {
  * At `count === saturation` the result is ~0.5.
  * Prevents gaming: adding 20 items is only marginally better than 10.
  */
-function diminishing(count: number, saturation: number) {
+export function diminishing(count: number, saturation: number) {
   if (count <= 0) return 0;
   return 1 - Math.exp((-count * Math.LN2) / saturation);
+}
+
+/**
+ * Exponential decay by age in days.  Returns 0-1.
+ * At `halfLifeDays` the result is 0.5.
+ */
+export function decayByAge(days: number, halfLifeDays: number) {
+  if (days <= 0) return 1;
+  return Math.exp((-days * Math.LN2) / halfLifeDays);
 }
 
 /**
@@ -139,7 +148,7 @@ function freshness(createdAt: string | null, halfLifeDays: number) {
   const ms = Date.now() - new Date(createdAt).getTime();
   if (ms < 0 || Number.isNaN(ms)) return 1;
   const days = ms / (1000 * 60 * 60 * 24);
-  return Math.exp((-days * Math.LN2) / halfLifeDays);
+  return decayByAge(days, halfLifeDays);
 }
 
 // ---- completeness scores (0-1) -------------------------------------------

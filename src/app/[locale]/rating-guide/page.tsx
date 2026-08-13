@@ -1,8 +1,20 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { notFound } from "next/navigation";
+import {
+  DecayChart,
+  RatingWeightsChart,
+  SaturationChart,
+  TrustChart,
+} from "@/components/charts/rating-charts";
+import {
+  BalanceIllustration,
+  SignalsToScoreIllustration,
+  TemplateGridIllustration,
+} from "@/components/illustrations/rating-illustrations";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
+import MediaSplit from "@/components/ui/media-split";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
@@ -168,6 +180,9 @@ type Factor = {
   accent: "amber" | "violet" | "sky" | "emerald" | "rose";
 };
 
+/** Ties each mechanic to the chart that illustrates it. */
+type MechanicId = "trust" | "decay" | "saturation";
+
 type GuideCopy = {
   eyebrow: string;
   title: string;
@@ -177,9 +192,11 @@ type GuideCopy = {
   ctaProfileHref: string;
   ctaProjectLabel: string;
   ctaProjectHref: string;
+  heroIllustrationLabel: string;
   whyNotLikes: {
     title: string;
     description: string;
+    illustrationLabel: string;
     contrast: Array<{ heading: string; text: string; isUs: boolean }>;
   };
   profile: { title: string; description: string; factors: Factor[] };
@@ -187,7 +204,7 @@ type GuideCopy = {
   mechanics: {
     title: string;
     description: string;
-    items: Array<{ name: string; text: string; Icon: () => ReactElement }>;
+    items: Array<{ id: MechanicId; name: string; text: string; Icon: () => ReactElement }>;
   };
   badges: { title: string; description: string; bullets: string[]; Icon: () => ReactElement };
   boards: {
@@ -195,7 +212,12 @@ type GuideCopy = {
     description: string;
     items: Array<{ name: string; text: string; Icon: () => ReactElement }>;
   };
-  antiPatterns: { title: string; description: string; bullets: string[] };
+  antiPatterns: {
+    title: string;
+    description: string;
+    illustrationLabel: string;
+    bullets: string[];
+  };
   outro: { title: string; description: string };
 };
 
@@ -205,41 +227,43 @@ function getCopy(locale: Locale): GuideCopy {
       eyebrow: "Гайд",
       title: "Як працює рейтинг і як його заробляти",
       description:
-        "Рейтинг на SearchTalent побудований навколо якості, а не популярності. Він винагороджує заповнений профіль, реальні проєкти зі сильним сигналом виконання та живий обмін зі спільнотою.",
+        "Рейтинг тут про якість, а не популярність: заповнений профіль, реальні проєкти й зароблена довіра спільноти.",
       backHome: "На головну",
       ctaProfileLabel: "Перейти до профілю",
       ctaProfileHref: "/profile/edit",
       ctaProjectLabel: "Опублікувати проєкт",
       ctaProjectHref: "/projects/new",
+      heroIllustrationLabel:
+        "Схема: сигнали профілю сходяться в один підсумковий бал — 78 зі 100",
       whyNotLikes: {
         title: "Чому не просто лайки",
         description:
-          "Простий лічильник лайків легко накрутити. Тому ми рахуємо інакше — і ось у чому різниця.",
+          "Лічильник лайків легко накрутити. Ми зважуємо кілька сигналів одразу — і ось у чому різниця.",
+        illustrationLabel:
+          "Терези: один зароблений сигнал переважує купку дрібних лайків",
         contrast: [
           {
             heading: "Так роблять інші",
-            text: "Скільки людей натиснуло сердечко. Чим більше, тим вище. Накрутити з пари акаунтів — справа десяти хвилин.",
+            text: "Скільки людей натиснуло сердечко. Накрутити з пари акаунтів — справа десяти хвилин.",
             isUs: false,
           },
           {
             heading: "Так робимо ми",
-            text: "Заповненість профілю, глибина проєктів, реальна довіра спільноти й активність — усе разом. Кожен фактор має вагу, тож формулу не зламати одним фейковим лайком.",
+            text: "Профіль, глибина проєктів, довіра спільноти й активність — кожен фактор зі своєю вагою. Одним фейковим лайком формулу не зрушити.",
             isUs: true,
           },
         ],
       },
       profile: {
         title: "Рейтинг профілю",
-        description:
-          "Шість факторів сумуються у фінальний бал від 0 до 100. У дужках — вага кожного у all-time таблиці.",
+        description: "Шість факторів сумуються у фінальний бал від 0 до 100.",
         factors: [
           {
             weight: "30%",
             title: "Якість портфоліо",
-            whatCounts:
-              "Враховується і середня якість усіх ваших проєктів, і ваш найкращий пік. Один сильний проєкт не сховає слабкі — але й слабкі не зіпсують ваш топ.",
+            whatCounts: "Середня якість усіх ваших проєктів плюс ваш найкращий пік.",
             howToImprove:
-              "Прокачайте 1-2 ключових проєктів максимально: опис, медіа, посилання. Інші лишайте принаймні в адекватному стані.",
+              "Прокачайте 1-2 ключових проєкти максимально. Інші тримайте в адекватному стані.",
             Icon: TrophyIcon,
             accent: "amber",
           },
@@ -247,9 +271,9 @@ function getCopy(locale: Locale): GuideCopy {
             weight: "25%",
             title: "Заповненість профілю",
             whatCounts:
-              "Зважена шкала по основних блоках профілю: біо, аватар, навички, мови, освіта, сертифікати, Q&A, досвід роботи й інше.",
+              "Зважена шкала по блоках профілю: біо, аватар, навички, освіта, досвід.",
             howToImprove:
-              "Натисніть на пілюлю «Профіль X%» у героїчному блоці — модалка покаже, що саме залишилось заповнити.",
+              "Натисніть пілюлю «Профіль X%» у героїчному блоці — модалка покаже, чого бракує.",
             Icon: ChecklistIcon,
             accent: "sky",
           },
@@ -257,19 +281,17 @@ function getCopy(locale: Locale): GuideCopy {
             weight: "20%",
             title: "Довіра спільноти",
             whatCounts:
-              "Як інші користувачі реагують на ваш профіль. Кілька лайків від декого знайомого не вистрелять — формула чекає на стабільний потік позитивної реакції.",
+              "Реакція інших на ваш профіль. Кілька лайків від знайомих не спрацюють.",
             howToImprove:
-              "Публікуйте сильні проєкти й статті, отримуйте чесні відгуки. Мульти-акаунти не працюють (див. розділ нижче).",
+              "Публікуйте сильні проєкти й статті. Мульти-акаунти не працюють — див. нижче.",
             Icon: HandshakeIcon,
             accent: "emerald",
           },
           {
             weight: "15%",
             title: "Продуктивність",
-            whatCounts:
-              "Кількість опублікованих проєктів і медіа в них. Із поправкою: перші 5-10 проєктів дають великий ріст, далі ефект слабшає.",
-            howToImprove:
-              "Не женіться за об'ємом. 5-10 проєктів із реальною роботою — це вже сильний сигнал.",
+            whatCounts: "Кількість проєктів і медіа в них. Перші 5-10 дають найбільший ріст.",
+            howToImprove: "5-10 проєктів із реальною роботою — це вже сильний сигнал.",
             Icon: StackIcon,
             accent: "violet",
           },
@@ -277,9 +299,8 @@ function getCopy(locale: Locale): GuideCopy {
             weight: "10%",
             title: "Широта стеку",
             whatCounts:
-              "Унікальні технології з ваших проєктів і профілю. Теж із насиченням — після ~12 додавати нові майже не дає виграшу.",
-            howToImprove:
-              "Додавайте теги стеку до проєктів і скіли до профілю — головне, щоб вони реально відображали те, з чим ви працюєте.",
+              "Унікальні технології з проєктів і профілю. Після ~12 приріст майже зникає.",
+            howToImprove: "Додавайте теги стеку й скіли — але тільки ті, з якими реально працюєте.",
             Icon: CodeIcon,
             accent: "sky",
           },
@@ -287,9 +308,8 @@ function getCopy(locale: Locale): GuideCopy {
             weight: "0% (30 днів: 6%)",
             title: "Свіжість",
             whatCounts:
-              "У all-time таблиці не враховується. У таблиці за останні 30 днів — важить 6% і поступово згасає за кілька тижнів. Рахується за датою вашого найновішого проєкту.",
-            howToImprove:
-              "Ціль — топ за 30 днів? Публікуйте щось нове регулярно. Для all-time свіжість не критична.",
+              "Рахується за датою найновішого проєкту. В all-time таблиці не враховується.",
+            howToImprove: "Ціль — топ за 30 днів? Публікуйте щось нове регулярно.",
             Icon: ClockIcon,
             accent: "rose",
           },
@@ -297,16 +317,13 @@ function getCopy(locale: Locale): GuideCopy {
       },
       project: {
         title: "Рейтинг проєкту",
-        description:
-          "Окрема формула для кожного проєкту, теж від 0 до 100. Ваги для all-time таблиці:",
+        description: "Окрема формула для кожного проєкту, теж від 0 до 100.",
         factors: [
           {
             weight: "35%",
             title: "Довіра спільноти",
-            whatCounts:
-              "Голоси за проєкт із поправкою на впевненість. Як і в профілю — пара лайків не дає миттєвого скачка.",
-            howToImprove:
-              "Реальна робота → реальні голоси. Просіть колег чесно проголосувати, але не з фейк-акаунтів.",
+            whatCounts: "Голоси за проєкт із поправкою на впевненість — пара лайків не вистрелить.",
+            howToImprove: "Реальна робота → реальні голоси. Але не з фейк-акаунтів.",
             Icon: HandshakeIcon,
             accent: "emerald",
           },
@@ -314,29 +331,25 @@ function getCopy(locale: Locale): GuideCopy {
             weight: "30%",
             title: "Якість контенту",
             whatCounts:
-              "Заповненість основних полів проєкту: опис, роль, статус, посилання, problem/solution/results, дати, обкладинка тощо.",
+              "Заповненість полів: опис, роль, статус, посилання, problem/solution/results, обкладинка.",
             howToImprove:
-              "Не лишайте порожніх блоків. Поле «Результати» з метриками сильно піднімає сигнал.",
+              "Не лишайте порожніх блоків. Поле «Результати» з метриками піднімає сигнал найсильніше.",
             Icon: DocumentIcon,
             accent: "sky",
           },
           {
             weight: "15%",
             title: "Медіа",
-            whatCounts:
-              "Кількість прикріплених скриншотів і відео. Після кількох елементів зростання уповільнюється.",
-            howToImprove:
-              "Завантажте 3-6 скриншотів чи коротке відео — це переконливіше за слова.",
+            whatCounts: "Кількість скриншотів і відео. Після кількох елементів зростання сповільнюється.",
+            howToImprove: "3-6 скриншотів або коротке відео — переконливіше за слова.",
             Icon: ImageIcon,
             accent: "violet",
           },
           {
             weight: "10%",
             title: "Стек технологій",
-            whatCounts:
-              "Кількість тегів стеку на проєкті. Знов із кривою насичення.",
-            howToImprove:
-              "Додайте 5-8 тегів, які реально використовувались. Не спам.",
+            whatCounts: "Кількість тегів стеку на проєкті. Знов із кривою насичення.",
+            howToImprove: "5-8 тегів, які реально використовувались. Не спам.",
             Icon: CodeIcon,
             accent: "amber",
           },
@@ -344,9 +357,8 @@ function getCopy(locale: Locale): GuideCopy {
             weight: "10% (30 днів: 15%)",
             title: "Свіжість",
             whatCounts:
-              "Рахується за датою публікації проєкту: чим він старіший, тим менша ця вага. У таблиці за останні 30 днів свіжість важить приблизно в 1.5 раза сильніше, ніж у all-time.",
-            howToImprove:
-              "Свіжість згасає сама й залежить від дати публікації, а не правок. Ціль — топ за 30 днів? Публікуйте нові проєкти регулярно.",
+              "Рахується за датою публікації: чим старіший проєкт, тим менша вага. Правки її не оновлюють.",
+            howToImprove: "Ціль — топ за 30 днів? Публікуйте нові проєкти регулярно.",
             Icon: ClockIcon,
             accent: "rose",
           },
@@ -358,18 +370,21 @@ function getCopy(locale: Locale): GuideCopy {
           "Три прийоми роблять формулу стійкою до накрутки і чесною до різних типів учасників.",
         items: [
           {
+            id: "trust",
             name: "Довіра, а не сире співвідношення",
-            text: "3 лайки з 0 дизлайків — менш надійний сигнал, ніж 100 лайків з 5. Формула рахує не просте відношення, а наскільки ми статистично впевнені у високому рейтингу. Тому 100% від трьох знайомих не б'ють 95% від двохсот незнайомців.",
+            text: "3 лайки з 0 дизлайків — слабший сигнал, ніж 100 з 5. Формула рахує не саме відношення, а нашу впевненість у ньому.",
             Icon: ChartIcon,
           },
           {
+            id: "decay",
             name: "Згасання у часі",
-            text: "Старі голоси й проєкти важать менше з кожним тижнем. Це штовхає до активності, але не карає старих учасників надто сильно — стабільна якість усе ще тримається у топі.",
+            text: "Старі голоси й проєкти важать менше з кожним тижнем. Але стабільна якість усе одно тримається в топі.",
             Icon: HourglassIcon,
           },
           {
+            id: "saturation",
             name: "Криві насичення",
-            text: "10 проєктів кращі за 5. Але 50 — лише трохи кращі за 30. Формула захищена від спаму: тонна шаблонних робіт не виграє у когось із декількома сильними кейсами.",
+            text: "10 проєктів кращі за 5. А 50 — лише трохи кращі за 30. Тонна шаблонних робіт не виграє у кількох сильних кейсів.",
             Icon: CurveIcon,
           },
         ],
@@ -377,27 +392,27 @@ function getCopy(locale: Locale): GuideCopy {
       badges: {
         title: "Бонус від бейджів",
         description:
-          "16 бейджів за різні досягнення (перший проєкт, 25+ підписників, верифікований GitHub, top-10 місяця тощо). Кожен дає невеликий бонус до рейтингу — до +5 балів сумарно. Фарм бейджів не зламає формулу.",
+          "16 бейджів за досягнення — перший проєкт, 25+ підписників, верифікований GitHub, top-10 місяця. Разом дають до +5 балів, тож фармити їх немає сенсу.",
         bullets: [
-          "Деякі бейджі мають 3 рівні (наприклад, 50/250/1000 коментарів). Вищий рівень = більше визнання.",
-          "Бейджі видно на профілі — натисніть на іконку, щоб побачити опис і прогрес.",
-          "Top-10 і Hall of Fame нараховуються автоматично, коли ви досягаєте критерію.",
+          "Деякі бейджі мають 3 рівні — наприклад, 50/250/1000 коментарів.",
+          "Натисніть на іконку в профілі, щоб побачити опис і прогрес.",
+          "Top-10 і Hall of Fame нараховуються автоматично.",
         ],
         Icon: MedalIcon,
       },
       boards: {
         title: "Дві таблиці",
         description:
-          "All-time зберігає історію, топ за 30 днів дає шанс новачкам. Якщо ваш рейтинг низький у all-time — це не означає, що ви не можете потрапити в топ за останні 30 днів.",
+          "All-time зберігає історію, топ за 30 днів дає шанс новачкам. Низький all-time не закриває вам дорогу в місячний топ.",
         items: [
           {
             name: "All-time",
-            text: "Враховує всю історію. Сильні старожили домінують доти, доки накопичений сигнал не перебитий новачком. Свіжість тут не важить.",
+            text: "Уся історія, свіжість не враховується. Старожили тримають топ, доки накопичений сигнал не переб'ють.",
             Icon: TrophyIcon,
           },
           {
             name: "Останні 30 днів",
-            text: "Сильніше важить свіжість, старі голоси швидше згасають. Новачки мають реальний шанс потрапити в топ за 30 днів — достатньо стабільної активності кілька тижнів.",
+            text: "Свіжість важить більше, старі голоси швидше згасають. Кількох тижнів стабільної активності достатньо.",
             Icon: CalendarIcon,
           },
         ],
@@ -405,12 +420,14 @@ function getCopy(locale: Locale): GuideCopy {
       antiPatterns: {
         title: "Що НЕ працює",
         description:
-          "Формула захищена від типових накруток. Спроби обійти її не дають бажаного результату, але дають реальний — модерацію.",
+          "Спроби обійти формулу не дають бажаного результату — але дають реальний: модерацію.",
+        illustrationLabel:
+          "Сітка однакових шаблонних карток, одну з них витягнуто й перекреслено",
         bullets: [
-          "Мульти-акаунти для лайків. Формула нівелює слабкі сигнали, плюс адмінка бачить кластери підозрілих голосів.",
-          "Спам-проєкти заради лічильника. Криві насичення гасять виграш, а модератор бачить тонкий контент і ховає його.",
-          "Накрутка тегів стеку. Рахуються унікальні технології, тож 20 разів той самий тег нічого не дають.",
-          "Тиха зміна старих проєктів просто заради дати. Це працює лиш якщо реально щось додано — інакше виглядає підозріло.",
+          "Мульти-акаунти для лайків — адмінка бачить кластери підозрілих голосів.",
+          "Спам-проєкти заради лічильника — криві насичення гасять виграш, а модератор ховає тонкий контент.",
+          "Накрутка тегів стеку — рахуються лише унікальні технології.",
+          "Перезбереження старих проєктів заради дати — свіжість залежить від публікації, а не від правок.",
         ],
       },
       outro: {
@@ -425,41 +442,42 @@ function getCopy(locale: Locale): GuideCopy {
     eyebrow: "Guide",
     title: "How the rating works and how to earn it",
     description:
-      "The SearchTalent rating is built around quality, not popularity. It rewards a filled-out profile, real projects with strong execution signals, and active community exchange.",
+      "The rating here is about quality, not popularity: a filled-out profile, real projects, and community trust you actually earned.",
     backHome: "Back to home",
     ctaProfileLabel: "Open profile editor",
     ctaProfileHref: "/profile/edit",
     ctaProjectLabel: "Publish a project",
     ctaProjectHref: "/projects/new",
+    heroIllustrationLabel:
+      "Diagram: profile signals combining into a single final score of 78 out of 100",
     whyNotLikes: {
       title: "Why it's not just likes",
       description:
-        "A simple like counter is trivial to game. So we count differently — and here's the contrast.",
+        "A like counter is trivial to game. We weigh several signals at once — here's the contrast.",
+      illustrationLabel:
+        "A balance scale where one earned signal outweighs a pile of small likes",
       contrast: [
         {
           heading: "How others do it",
-          text: "How many people pressed a heart. More likes — higher rank. Easy to inflate with a couple of accounts in ten minutes.",
+          text: "How many people pressed a heart. A couple of accounts and ten minutes will inflate it.",
           isUs: false,
         },
         {
           heading: "How we do it",
-          text: "Profile completeness, project depth, real community trust, and activity — all together. Each factor has a weight, so a single fake like won't break the formula.",
+          text: "Profile, project depth, community trust and activity — each with its own weight. One fake like won't move the formula.",
           isUs: true,
         },
       ],
     },
     profile: {
       title: "Profile rating",
-      description:
-        "Six factors sum into the final score from 0 to 100. In parentheses — each factor's weight in the all-time leaderboard.",
+      description: "Six factors sum into the final score from 0 to 100.",
       factors: [
         {
           weight: "30%",
           title: "Portfolio quality",
-          whatCounts:
-            "Both the average quality of all your projects and your single best one. One strong project won't hide the weak ones — but the weak ones won't drag your peak down either.",
-          howToImprove:
-            "Polish 1-2 key projects to the max (description, media, repo). Keep the rest at least decent.",
+          whatCounts: "The average quality of all your projects plus your single best one.",
+          howToImprove: "Polish 1-2 key projects to the max. Keep the rest at least decent.",
           Icon: TrophyIcon,
           accent: "amber",
         },
@@ -467,29 +485,25 @@ function getCopy(locale: Locale): GuideCopy {
           weight: "25%",
           title: "Profile completeness",
           whatCounts:
-            "Weighted scale across the main profile blocks: bio, avatar, skills, languages, education, certificates, Q&A, work experience and more.",
+            "A weighted scale across profile blocks: bio, avatar, skills, education, experience.",
           howToImprove:
-            "Click the \"Profile X%\" pill in your hero — the modal shows exactly which fields are still empty.",
+            "Click the \"Profile X%\" pill in your hero — the modal shows what's still missing.",
           Icon: ChecklistIcon,
           accent: "sky",
         },
         {
           weight: "20%",
           title: "Community trust",
-          whatCounts:
-            "How other users react to your profile. A few likes from acquaintances won't tip the scales — the formula waits for sustained positive signal.",
-          howToImprove:
-            "Publish strong projects, write articles, collect honest reactions. Multi-accounts don't work (see below).",
+          whatCounts: "How others react to your profile. A few likes from acquaintances won't tip it.",
+          howToImprove: "Publish strong projects and articles. Multi-accounts don't work — see below.",
           Icon: HandshakeIcon,
           accent: "emerald",
         },
         {
           weight: "15%",
           title: "Production output",
-          whatCounts:
-            "Number of published projects and media inside them. The first 5-10 give a big lift; the curve flattens after that.",
-          howToImprove:
-            "Don't chase volume. 5-10 projects with real work is already a strong signal.",
+          whatCounts: "Projects published and media inside them. The first 5-10 give the biggest lift.",
+          howToImprove: "5-10 projects with real work is already a strong signal.",
           Icon: StackIcon,
           accent: "violet",
         },
@@ -497,9 +511,8 @@ function getCopy(locale: Locale): GuideCopy {
           weight: "10%",
           title: "Tech breadth",
           whatCounts:
-            "Unique technologies across your projects and profile. Also saturates — after about a dozen, more tags barely move the needle.",
-          howToImprove:
-            "Tag your projects and add skills to your profile — but only the ones that reflect what you actually use.",
+            "Unique technologies across projects and profile. Past about a dozen it barely moves.",
+          howToImprove: "Tag projects and add skills — but only the ones you actually use.",
           Icon: CodeIcon,
           accent: "sky",
         },
@@ -507,9 +520,8 @@ function getCopy(locale: Locale): GuideCopy {
           weight: "0% (last 30 days: 6%)",
           title: "Freshness",
           whatCounts:
-            "Not counted in the all-time board. In the last-30-days one it weighs 6% and decays over a few weeks. It's measured from the date of your newest project.",
-          howToImprove:
-            "Aiming for the 30-day top-10? Publish something new regularly. For all-time, freshness isn't critical.",
+            "Measured from your newest project's date. Not counted on the all-time board at all.",
+          howToImprove: "Aiming for the 30-day top-10? Publish something new regularly.",
           Icon: ClockIcon,
           accent: "rose",
         },
@@ -517,16 +529,13 @@ function getCopy(locale: Locale): GuideCopy {
     },
     project: {
       title: "Project rating",
-      description:
-        "A separate formula for each project, also from 0 to 100. All-time weights:",
+      description: "A separate formula for each project, also from 0 to 100.",
       factors: [
         {
           weight: "35%",
           title: "Community trust",
-          whatCounts:
-            "Project votes adjusted for confidence. Just like profiles — a couple of likes doesn't trigger a jump.",
-          howToImprove:
-            "Real work → real votes. Ask peers to vote honestly, but not from fake accounts.",
+          whatCounts: "Project votes adjusted for confidence — a couple of likes won't trigger a jump.",
+          howToImprove: "Real work → real votes. Just not from fake accounts.",
           Icon: HandshakeIcon,
           accent: "emerald",
         },
@@ -534,28 +543,25 @@ function getCopy(locale: Locale): GuideCopy {
           weight: "30%",
           title: "Content quality",
           whatCounts:
-            "Completeness of the main project fields: description, role, status, links, problem/solution/results, dates, cover, and so on.",
+            "Field completeness: description, role, status, links, problem/solution/results, cover.",
           howToImprove:
-            "Don't leave empty blocks. A \"Results\" field with metrics lifts the signal a lot.",
+            "Don't leave empty blocks. A \"Results\" field with metrics lifts the signal most.",
           Icon: DocumentIcon,
           accent: "sky",
         },
         {
           weight: "15%",
           title: "Media richness",
-          whatCounts:
-            "Number of attached screenshots and videos. Growth flattens after a handful of items.",
-          howToImprove:
-            "Upload 3-6 screenshots or a short video — more persuasive than words.",
+          whatCounts: "Screenshots and videos attached. Growth flattens after a handful of items.",
+          howToImprove: "3-6 screenshots or a short video — more persuasive than words.",
           Icon: ImageIcon,
           accent: "violet",
         },
         {
           weight: "10%",
           title: "Tech stack",
-          whatCounts:
-            "Number of stack tags on the project. Same diminishing-returns curve.",
-          howToImprove: "Add 5-8 tags that you really used. No spam.",
+          whatCounts: "Stack tags on the project. Same diminishing-returns curve.",
+          howToImprove: "5-8 tags that you really used. No spam.",
           Icon: CodeIcon,
           accent: "amber",
         },
@@ -563,9 +569,8 @@ function getCopy(locale: Locale): GuideCopy {
           weight: "10% (last 30 days: 15%)",
           title: "Freshness",
           whatCounts:
-            "Measured from the project's publish date: the older it is, the lower this weight. The 30-day board weighs freshness about 1.5× stronger than the all-time one.",
-          howToImprove:
-            "Freshness is set by the publish date and fades on its own — not by edits. Aiming for the 30-day board? Publish new projects regularly.",
+            "Measured from the publish date: the older the project, the lower the weight. Edits don't reset it.",
+          howToImprove: "Aiming for the 30-day board? Publish new projects regularly.",
           Icon: ClockIcon,
           accent: "rose",
         },
@@ -577,18 +582,21 @@ function getCopy(locale: Locale): GuideCopy {
         "Three techniques make the formula resistant to gaming and fair to different kinds of contributors.",
       items: [
         {
+          id: "trust",
           name: "Trust, not raw ratio",
-          text: "3 likes with 0 dislikes is a less reliable signal than 100 likes with 5. The formula doesn't use a simple ratio — it computes how statistically confident we are. So 100% from three friends doesn't beat 95% from two hundred strangers.",
+          text: "3 likes with 0 dislikes is a weaker signal than 100 with 5. The formula scores our confidence in the ratio, not the ratio itself.",
           Icon: ChartIcon,
         },
         {
+          id: "decay",
           name: "Time decay",
-          text: "Old votes and projects matter less every week. This rewards activity without punishing long-time members too hard — consistent quality still holds the top.",
+          text: "Old votes and projects matter less every week. Consistent quality still holds the top.",
           Icon: HourglassIcon,
         },
         {
+          id: "saturation",
           name: "Saturation curves",
-          text: "10 projects beat 5. But 50 are only slightly better than 30. The formula resists volume spam: a flood of template work won't beat someone with a handful of strong cases.",
+          text: "10 projects beat 5. But 50 are only slightly better than 30. A flood of template work won't beat a handful of strong cases.",
           Icon: CurveIcon,
         },
       ],
@@ -596,27 +604,27 @@ function getCopy(locale: Locale): GuideCopy {
     badges: {
       title: "Badge bonus",
       description:
-        "16 badges for different achievements (first project, 25+ followers, verified GitHub, top-10 of the month, etc.). Each adds a small bonus to the rating — up to +5 points total. Farming badges won't break the formula.",
+        "16 badges for achievements — first project, 25+ followers, verified GitHub, top-10 of the month. Together they add up to +5 points, so farming them isn't worth it.",
       bullets: [
-        "Some badges have 3 tiers (e.g. 50/250/1000 comments). Higher tier = more recognition.",
-        "Badges show on the profile — click an icon to see description and progress.",
-        "Top-10 and Hall of Fame are awarded automatically when you hit the criteria.",
+        "Some badges have 3 tiers — for example 50/250/1000 comments.",
+        "Click a badge icon on the profile to see its description and progress.",
+        "Top-10 and Hall of Fame are awarded automatically.",
       ],
       Icon: MedalIcon,
     },
     boards: {
       title: "Two boards",
       description:
-        "All-time keeps the history, the last-30-days board gives newcomers a shot. A low all-time rating doesn't lock you out of the 30-day top-10.",
+        "All-time keeps the history, the last-30-days board gives newcomers a shot. A low all-time score doesn't lock you out of the monthly top.",
       items: [
         {
           name: "All-time",
-          text: "Counts the full history. Established members dominate until accumulated signal is beaten by a newcomer. Freshness doesn't matter here.",
+          text: "The full history, freshness excluded. Established members hold the top until their signal is beaten.",
           Icon: TrophyIcon,
         },
         {
           name: "Last 30 days",
-          text: "Freshness weighs more, old votes fade faster. Newcomers have a real shot at the 30-day top-10 — a few weeks of steady activity is enough.",
+          text: "Freshness weighs more and old votes fade faster. A few weeks of steady activity is enough.",
           Icon: CalendarIcon,
         },
       ],
@@ -624,12 +632,14 @@ function getCopy(locale: Locale): GuideCopy {
     antiPatterns: {
       title: "What does NOT work",
       description:
-        "The formula resists common gaming attempts. Trying to bypass it doesn't get you the rating you wanted — it gets you moderator attention.",
+        "Trying to bypass the formula doesn't get you the rating you wanted — it gets you moderator attention.",
+      illustrationLabel:
+        "A grid of identical template cards with one pulled out and crossed through",
       bullets: [
-        "Multi-account vote inflation. The formula discounts weak signal, and the admin panel sees suspicious vote clusters.",
-        "Spam projects for counter growth. Saturation curves cap the gain, and moderators hide thin content.",
-        "Stack tag stuffing. Only unique technologies count, so adding the same tag 20 times gives you nothing.",
-        "Silently re-saving old projects just to bump dates. Only works if you actually changed something — otherwise it looks suspicious.",
+        "Multi-account vote inflation — the admin panel sees suspicious vote clusters.",
+        "Spam projects for counter growth — saturation curves cap the gain and moderators hide thin content.",
+        "Stack tag stuffing — only unique technologies count.",
+        "Re-saving old projects to bump dates — freshness follows the publish date, not edits.",
       ],
     },
     outro: {
@@ -715,13 +725,15 @@ function MechanicCard({
   name,
   text,
   Icon,
+  chart,
 }: {
   name: string;
   text: string;
   Icon: () => ReactElement;
+  chart: ReactElement;
 }) {
   return (
-    <article className="rounded-3xl app-panel p-5">
+    <article className="flex flex-col rounded-3xl app-panel p-5">
       <span
         className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--surface)] text-[color:var(--foreground)] ring-1 app-border"
         aria-hidden="true"
@@ -730,8 +742,23 @@ function MechanicCard({
       </span>
       <h3 className="mt-4 font-semibold text-[color:var(--foreground)]">{name}</h3>
       <p className="mt-2 text-sm leading-6 app-muted">{text}</p>
+      <div className="mt-5 border-t app-border pt-5">{chart}</div>
     </article>
   );
+}
+
+function mechanicChart(id: MechanicId, locale: Locale) {
+  switch (id) {
+    // The card heading already names each mechanic, so the figure keeps its
+    // title for assistive tech only.
+    case "trust":
+      return <TrustChart locale={locale} surface="bare" hideTitle />;
+    case "decay":
+      return <DecayChart locale={locale} surface="bare" hideTitle />;
+    case "saturation":
+    default:
+      return <SaturationChart locale={locale} surface="bare" hideTitle />;
+  }
 }
 
 // ---- Page ------------------------------------------------------------------
@@ -763,21 +790,31 @@ export default async function RatingGuidePage({
             {copy.backHome}
           </LocalizedLink>
         </div>
-        <h1 className="font-display mt-4 max-w-4xl text-3xl font-medium tracking-tight sm:text-4xl md:text-5xl">
-          {copy.title}
-        </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-white/82 sm:text-base sm:leading-8">
-          {copy.description}
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <ButtonLink href={copy.ctaProfileHref}>{copy.ctaProfileLabel}</ButtonLink>
-          <ButtonLink
-            href={copy.ctaProjectHref}
-            variant="ghost"
-            className="border border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
-          >
-            {copy.ctaProjectLabel}
-          </ButtonLink>
+        {/* Two columns from lg up so the artwork fills the space the copy left empty. */}
+        <div className="mt-6 grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-12">
+          <div>
+            <h1 className="font-display text-3xl font-medium tracking-tight sm:text-4xl md:text-5xl">
+              {copy.title}
+            </h1>
+            <p className="mt-4 text-sm leading-7 text-white/82 sm:text-base sm:leading-8">
+              {copy.description}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <ButtonLink href={copy.ctaProfileHref}>{copy.ctaProfileLabel}</ButtonLink>
+              <ButtonLink
+                href={copy.ctaProjectHref}
+                variant="ghost"
+                className="border border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+              >
+                {copy.ctaProjectLabel}
+              </ButtonLink>
+            </div>
+          </div>
+          {/* The scrim keeps the white line art readable over the amber end of
+              the hero gradient. */}
+          <div className="flex aspect-3/2 items-center justify-center rounded-2xl bg-[rgba(8,15,30,0.42)] p-5 text-white ring-1 ring-white/15 backdrop-blur-sm sm:p-7">
+            <SignalsToScoreIllustration label={copy.heroIllustrationLabel} />
+          </div>
         </div>
       </section>
 
@@ -786,50 +823,55 @@ export default async function RatingGuidePage({
         className="mt-6 rounded-none sm:rounded-hero app-card p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-why"
       >
-        <h2
-          id="rating-guide-why"
-          className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
+        <MediaSplit
+          side="end"
+          media={<BalanceIllustration label={copy.whyNotLikes.illustrationLabel} />}
         >
-          {copy.whyNotLikes.title}
-        </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
-          {copy.whyNotLikes.description}
-        </p>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {copy.whyNotLikes.contrast.map((item) => (
-            <div
-              key={item.heading}
-              className={[
-                "rounded-3xl border p-5",
-                item.isUs
-                  ? "border-emerald-400/40 bg-emerald-500/10"
-                  : "app-border bg-[color:var(--surface-muted)] opacity-90",
-              ].join(" ")}
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={[
-                    "inline-flex h-8 w-8 items-center justify-center rounded-full text-white",
-                    item.isUs ? "bg-emerald-500" : "bg-rose-500",
-                  ].join(" ")}
-                  aria-hidden="true"
-                >
-                  {item.isUs ? (
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                      <path d="m5 12 5 5L20 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ) : (
-                    <XIcon />
-                  )}
-                </span>
-                <h3 className="text-base font-semibold text-[color:var(--foreground)]">
-                  {item.heading}
-                </h3>
+          <h2
+            id="rating-guide-why"
+            className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
+          >
+            {copy.whyNotLikes.title}
+          </h2>
+          <p className="mt-3 text-sm leading-7 app-muted sm:text-base sm:leading-8">
+            {copy.whyNotLikes.description}
+          </p>
+          <div className="mt-6 grid gap-4">
+            {copy.whyNotLikes.contrast.map((item) => (
+              <div
+                key={item.heading}
+                className={[
+                  "rounded-3xl border p-5",
+                  item.isUs
+                    ? "border-emerald-400/40 bg-emerald-500/10"
+                    : "app-border bg-[color:var(--surface-muted)] opacity-90",
+                ].join(" ")}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={[
+                      "inline-flex h-8 w-8 items-center justify-center rounded-full text-white",
+                      item.isUs ? "bg-emerald-500" : "bg-rose-500",
+                    ].join(" ")}
+                    aria-hidden="true"
+                  >
+                    {item.isUs ? (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                        <path d="m5 12 5 5L20 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <XIcon />
+                    )}
+                  </span>
+                  <h3 className="text-base font-semibold text-[color:var(--foreground)]">
+                    {item.heading}
+                  </h3>
+                </div>
+                <p className="mt-3 text-sm leading-6 app-muted">{item.text}</p>
               </div>
-              <p className="mt-3 text-sm leading-6 app-muted">{item.text}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </MediaSplit>
       </section>
 
       {/* Profile rating */}
@@ -846,6 +888,9 @@ export default async function RatingGuidePage({
         <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
           {copy.profile.description}
         </p>
+        <div className="mt-6">
+          <RatingWeightsChart kind="profile" locale={locale} />
+        </div>
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {copy.profile.factors.map((factor) => (
             <FactorCard key={factor.title} factor={factor} />
@@ -867,6 +912,9 @@ export default async function RatingGuidePage({
         <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
           {copy.project.description}
         </p>
+        <div className="mt-6">
+          <RatingWeightsChart kind="project" locale={locale} />
+        </div>
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {copy.project.factors.map((factor) => (
             <FactorCard key={factor.title} factor={factor} />
@@ -890,7 +938,13 @@ export default async function RatingGuidePage({
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           {copy.mechanics.items.map((item) => (
-            <MechanicCard key={item.name} name={item.name} text={item.text} Icon={item.Icon} />
+            <MechanicCard
+              key={item.name}
+              name={item.name}
+              text={item.text}
+              Icon={item.Icon}
+              chart={mechanicChart(item.id, locale)}
+            />
           ))}
         </div>
       </section>
@@ -964,31 +1018,36 @@ export default async function RatingGuidePage({
         className="mt-6 rounded-none sm:rounded-hero border border-rose-400/30 bg-rose-500/5 p-6 sm:mt-8 sm:p-10"
         aria-labelledby="rating-guide-anti"
       >
-        <h2
-          id="rating-guide-anti"
-          className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
+        <MediaSplit
+          side="start"
+          media={<TemplateGridIllustration label={copy.antiPatterns.illustrationLabel} />}
         >
-          {copy.antiPatterns.title}
-        </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
-          {copy.antiPatterns.description}
-        </p>
-        <ul className="mt-5 grid gap-3 md:grid-cols-2">
-          {copy.antiPatterns.bullets.map((bullet) => (
-            <li
-              key={bullet}
-              className="flex gap-3 rounded-2xl border border-rose-400/20 bg-[color:var(--surface)] p-4 text-sm leading-6 app-muted"
-            >
-              <span
-                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-500"
-                aria-hidden="true"
+          <h2
+            id="rating-guide-anti"
+            className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl"
+          >
+            {copy.antiPatterns.title}
+          </h2>
+          <p className="mt-3 text-sm leading-7 app-muted sm:text-base sm:leading-8">
+            {copy.antiPatterns.description}
+          </p>
+          <ul className="mt-5 grid gap-3">
+            {copy.antiPatterns.bullets.map((bullet) => (
+              <li
+                key={bullet}
+                className="flex gap-3 rounded-2xl border border-rose-400/20 bg-[color:var(--surface)] p-4 text-sm leading-6 app-muted"
               >
-                <XIcon />
-              </span>
-              <span>{bullet}</span>
-            </li>
-          ))}
-        </ul>
+                <span
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-500"
+                  aria-hidden="true"
+                >
+                  <XIcon />
+                </span>
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
+        </MediaSplit>
       </section>
 
       {/* Outro */}
