@@ -161,6 +161,23 @@ select {
     box-shadow 180ms ease;
 }
 
+/* Tailwind v4's Preflight dropped the `cursor: pointer` that v3 put on buttons,
+   which is why controls across the site showed the default arrow unless the
+   component happened to add the utility itself (the language tabs, among many).
+   Restored once here for every button-shaped control, and deliberately inside
+   `@layer base` so an explicit `cursor-*` utility on a component still wins. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -799,9 +816,37 @@ select {
   padding-left: 1.4rem;
 }
 
+/* A list that closes a block (or a section) carries no trailing gap of its own,
+   the same rule paragraphs follow. */
+.rich-text-editor ul:last-child,
+.rich-text-renderer ul:last-child,
+.rich-text-editor ol:last-child,
+.rich-text-renderer ol:last-child {
+  margin-bottom: 0;
+}
+
 .rich-text-editor li,
 .rich-text-renderer li {
   margin-bottom: 0.45rem;
+}
+
+/* The item spacing is between items — the last one must not add to the list's
+   own bottom margin, or a list reads as if a blank line followed it. */
+.rich-text-editor li:last-child,
+.rich-text-renderer li:last-child {
+  margin-bottom: 0;
+}
+
+/* Markers sit a step back from the text: the content leads, the numbering
+   supports it. Tabular figures keep multi-digit numbers aligned. */
+.rich-text-editor li::marker,
+.rich-text-renderer li::marker {
+  color: var(--muted-foreground);
+}
+
+.rich-text-editor ol li::marker,
+.rich-text-renderer ol li::marker {
+  font-variant-numeric: tabular-nums;
 }
 
 .rich-text-editor code,

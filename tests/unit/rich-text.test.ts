@@ -293,6 +293,134 @@ describe("markdownToHtml", () => {
     expect(markdownToHtml("1. one\n2. two")).toBe(
       "<ol><li>one</li><li>two</li></ol>",
     );
+    // `1)` is as common as `1.` in hand-written and generated Markdown.
+    expect(markdownToHtml("1) one\n2) two")).toBe(
+      "<ol><li>one</li><li>two</li></ol>",
+    );
+  });
+
+  it("keeps a blank-line-separated ('loose') list as ONE list", () => {
+    // The shape assistants and docs emit. Closing the list on the blank line gave
+    // every item its own <ol>, so each item restarted at "1." with a gap between.
+    expect(markdownToHtml("1. one\n\n2. two\n\n3. three")).toBe(
+      "<ol><li>one</li><li>two</li><li>three</li></ol>",
+    );
+    expect(markdownToHtml("- one\n\n- two")).toBe(
+      "<ul><li>one</li><li>two</li></ul>",
+    );
+  });
+
+  it("nests indented items inside the item above them", () => {
+    expect(markdownToHtml("- one\n  - nested\n- two")).toBe(
+      "<ul><li>one<ul><li>nested</li></ul></li><li>two</li></ul>",
+    );
+    // A tab counts as four columns, and a sub-list can switch marker style.
+    expect(markdownToHtml("1. one\n\t- nested\n2. two")).toBe(
+      "<ol><li>one<ul><li>nested</li></ul></li><li>two</li></ol>",
+    );
+    // Two steps down and back up in one go.
+    expect(markdownToHtml("- a\n  - b\n    - c\n- d")).toBe(
+      "<ul><li>a<ul><li>b<ul><li>c</li></ul></li></ul></li><li>d</li></ul>",
+    );
+  });
+
+  it("treats a stray single space as the same level, not a sub-list", () => {
+    expect(markdownToHtml("- one\n - two")).toBe(
+      "<ul><li>one</li><li>two</li></ul>",
+    );
+  });
+
+  it("continues an item across a wrapped line instead of splitting the list", () => {
+    expect(markdownToHtml("- one line\n  continued here\n- two")).toBe(
+      "<ul><li>one line continued here</li><li>two</li></ul>",
+    );
+  });
+
+  it("ends the list at the next non-list block", () => {
+    expect(markdownToHtml("- one\n\nProse after.")).toBe(
+      "<ul><li>one</li></ul><p>Prose after.</p>",
+    );
+    expect(markdownToHtml("- one\n## Heading")).toBe(
+      "<ul><li>one</li></ul><h2>Heading</h2>",
+    );
+    expect(markdownToHtml("- one\n> quoted")).toBe(
+      "<ul><li>one</li></ul><blockquote>quoted</blockquote>",
+    );
+  });
+
+  it("starts a switched marker style as its own list", () => {
+    expect(markdownToHtml("- bullet\n1. number")).toBe(
+      "<ul><li>bullet</li></ul><ol><li>number</li></ol>",
+    );
+  });
+
+  it("keeps the first number of a list that does not start at 1", () => {
+    expect(markdownToHtml("4. four\n5. five")).toBe(
+      '<ol start="4"><li>four</li><li>five</li></ol>',
+    );
+  });
+
+  it("renders task markers as glyphs instead of literal brackets", () => {
+    expect(markdownToHtml("- [ ] todo\n- [x] done")).toBe(
+      "<ul><li>☐ todo</li><li>☑ done</li></ul>",
+    );
+  });
+
+  it("rebuilds a word-processor outline that has no indentation left", () => {
+    // What Google Docs / Word put on the plain-text flavour of a nested list:
+    // the sub-levels are marked by letters and roman numerals only, with the
+    // indentation gone. Read as flat text, every sub-item used to be swallowed
+    // by the item above it.
+    const outline = [
+      "1. one",
+      "2. two",
+      "a. two-a",
+      "b. two-b",
+      "i. two-b-i",
+      "ii. two-b-ii",
+      "c. two-c",
+      "3. three",
+    ].join("\n");
+
+    expect(markdownToHtml(outline)).toBe(
+      "<ol><li>one</li><li>two" +
+        "<ol><li>two-a</li><li>two-b" +
+        "<ol><li>two-b-i</li><li>two-b-ii</li></ol>" +
+        "</li><li>two-c</li></ol>" +
+        "</li><li>three</li></ol>",
+    );
+  });
+
+  it("nests word-processor bullet glyphs by glyph", () => {
+    expect(markdownToHtml("● one\n○ sub\n○ sub2\n● two")).toBe(
+      "<ul><li>one<ul><li>sub</li><li>sub2</li></ul></li><li>two</li></ul>",
+    );
+  });
+
+  it("keeps ASCII bullets at one level whichever character is used", () => {
+    // Markdown treats - and * as the same level; only typographic glyphs (which
+    // come from a word processor) carry depth.
+    expect(markdownToHtml("- one\n* two")).toBe(
+      "<ul><li>one</li><li>two</li></ul>",
+    );
+  });
+
+  it("reads an ambiguous single letter from the list it continues", () => {
+    // `i.` right after `h.` is the ninth letter, not roman numeral one.
+    expect(markdownToHtml("g. seven\nh. eight\ni. nine")).toBe(
+      '<ol start="7"><li>seven</li><li>eight</li><li>nine</li></ol>',
+    );
+    // `i.` after `b.` has nowhere to continue, so it opens the roman sub-level.
+    expect(markdownToHtml("a. one\nb. two\ni. deep")).toBe(
+      "<ol><li>one</li><li>two<ol><li>deep</li></ol></li></ol>",
+    );
+  });
+
+  it("does not turn prose into a list", () => {
+    // A multi-letter token is only a marker when it is a roman numeral.
+    expect(markdownToHtml("Ok. Then this.\nAnd. Another line.")).toBe(
+      "<p>Ok. Then this. And. Another line.</p>",
+    );
   });
 
   it("builds blockquotes and horizontal rules", () => {
@@ -406,6 +534,59 @@ describe("preview paste → real headings (end-to-end)", () => {
     expect(stored).toContain("<ul>");
     // <h1>/<h5>/<h6> never survive; <h2>–<h4> do.
     expect(stored).not.toMatch(/<h[156]\b/);
+  });
+});
+
+describe("lists on the stored / rendered path", () => {
+  it("stores a pasted 'loose' numbered list as one counting list", () => {
+    // The end-to-end shape of the bug: three items, three <ol>s, every one of
+    // them numbered "1." with a block gap between.
+    const stored = sanitizeRichTextHtml(
+      markdownToHtml("1. one\n\n2. two\n\n3. three"),
+    );
+    expect(stored).toBe("<ol><li>one</li><li>two</li><li>three</li></ol>");
+  });
+
+  it("repairs bodies stored before lists were merged, with no migration", () => {
+    expect(sanitizeRichTextHtml("<ol><li>a</li></ol><ol><li>b</li></ol>")).toBe(
+      "<ol><li>a</li><li>b</li></ol>",
+    );
+    expect(sanitizeRichTextHtml("<ul><li>a</li></ul>\n<ul><li>b</li></ul>")).toBe(
+      "<ul><li>a</li><li>b</li></ul>",
+    );
+  });
+
+  it("keeps an <ol start> so a deliberate restart survives storage", () => {
+    expect(sanitizeRichTextHtml('<ol start="4"><li>a</li></ol>')).toBe(
+      '<ol start="4"><li>a</li></ol>',
+    );
+    expect(
+      sanitizeRichTextHtml('<ol><li>a</li></ol><ol start="7"><li>b</li></ol>'),
+    ).toBe('<ol><li>a</li></ol><ol start="7"><li>b</li></ol>');
+  });
+
+  it("keeps only a real list position in start, and only on <ol>", () => {
+    expect(
+      sanitizeRichTextHtml('<ol start="javascript:alert(1)"><li>a</li></ol>'),
+    ).toBe("<ol><li>a</li></ol>");
+    expect(sanitizeRichTextHtml('<ol start="1"><li>a</li></ol>')).toBe(
+      "<ol><li>a</li></ol>",
+    );
+    expect(sanitizeRichTextHtml('<ol start="-3"><li>a</li></ol>')).toBe(
+      "<ol><li>a</li></ol>",
+    );
+    expect(sanitizeRichTextHtml('<ul start="4"><li>a</li></ul>')).toBe(
+      "<ul><li>a</li></ul>",
+    );
+    expect(sanitizeRichTextHtml('<p start="4">text</p>')).toBe("<p>text</p>");
+  });
+
+  it("keeps nested lists nested", () => {
+    expect(
+      sanitizeRichTextHtml(
+        "<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>",
+      ),
+    ).toBe("<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>");
   });
 });
 
