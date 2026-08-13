@@ -40,6 +40,16 @@
     rgba(3, 105, 161, 0.92) 50%,
     rgba(245, 158, 11, 0.84) 100%
   );
+
+  /* Chart palette. Two categorical slots, assigned in fixed order and never
+     cycled — a third series folds into "other" or gets its own chart. Both
+     modes are validated (lightness band, chroma floor, CVD separation,
+     contrast vs surface) rather than flipped from one another. */
+  --chart-series-1: #d97706;
+  --chart-series-2: #0284c7;
+  --chart-track: #eef3f8;
+  --chart-grid: rgba(82, 98, 119, 0.18);
+  --chart-axis: #6d7d91;
 }
 
 @theme inline {
@@ -86,6 +96,14 @@ html[data-theme="dark"] {
     rgba(3, 105, 161, 0.92) 50%,
     rgba(245, 158, 11, 0.84) 100%
   );
+
+  /* Dark steps are picked for the dark surface, not lightened from the light
+     ones: the brand ambers all sit above the dark lightness band and glow. */
+  --chart-series-1: #c47d08;
+  --chart-series-2: #2f8fd0;
+  --chart-track: #182740;
+  --chart-grid: rgba(147, 164, 186, 0.2);
+  --chart-axis: #93a4ba;
 }
 
 html {
