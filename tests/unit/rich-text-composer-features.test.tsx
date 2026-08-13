@@ -7,7 +7,7 @@ import userEvent from "@testing-library/user-event";
 import RichTextComposer from "@/components/rich-text-composer";
 
 function renderEditor(
-  features?: Partial<{ headings: boolean; divider: boolean }>,
+  features?: Partial<{ headings: boolean; divider: boolean; lists: boolean }>,
 ) {
   return render(
     <RichTextComposer
@@ -59,5 +59,32 @@ describe("RichTextComposer block menu features", () => {
     expect(screen.getByText("Цитата")).toBeInTheDocument();
     expect(screen.getByText("Спойлер")).toBeInTheDocument();
     expect(screen.getByText("Маркований список")).toBeInTheDocument();
+  });
+
+  it("offers both list kinds as toggles, with the typing shortcut spelled out", async () => {
+    renderEditor();
+    await openBlockMenu();
+
+    const bulleted = screen.getByRole("button", { name: /Маркований список/ });
+    const numbered = screen.getByRole("button", { name: /Нумерований список/ });
+
+    // Nothing is focused yet, so neither list is the active one.
+    expect(bulleted).toHaveAttribute("aria-pressed", "false");
+    expect(numbered).toHaveAttribute("aria-pressed", "false");
+
+    // Tab-to-nest and the "- " / "1. " shortcuts have no visible affordance of
+    // their own, so the menu says them out loud.
+    expect(
+      screen.getByText(/Tab — вкладений рівень/),
+    ).toBeInTheDocument();
+  });
+
+  it("drops the list entries when the surface disables lists", async () => {
+    renderEditor({ lists: false });
+    await openBlockMenu();
+
+    expect(screen.queryByText("Маркований список")).toBeNull();
+    expect(screen.queryByText("Нумерований список")).toBeNull();
+    expect(screen.getByText("Параграф")).toBeInTheDocument();
   });
 });

@@ -44,6 +44,7 @@ export default defineConfig({
         "src/lib/recommendations.ts",
         "src/lib/related.ts",
         "src/lib/rich-text.ts",
+        "src/lib/rich-text-lists.ts",
         "src/lib/search-ranking.ts",
         "src/lib/seo.ts",
         "src/lib/url-validation.ts",

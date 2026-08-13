@@ -11,14 +11,16 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import {
-  extractClipboardHtmlFragment,
   extractPlainTextFromRichText,
   extractYouTubeVideoId,
-  hasMarkdownSyntax,
-  htmlFragmentHasBlocks,
-  markdownToHtml,
   normalizeRichTextForEditor,
+  richTextFromClipboard,
 } from "@/lib/rich-text";
+import {
+  indentListItem,
+  matchListShortcut,
+  outdentListItem,
+} from "@/lib/rich-text-lists";
 
 const EmojiPicker = dynamic(() => import("@emoji-mart/react").then((m) => m.default), { ssr: false });
 
@@ -141,6 +143,11 @@ const btnIdle =
   "border-transparent text-[color:var(--muted-foreground)] hover:border-[color:var(--border)] hover:bg-[color:var(--surface)] hover:text-[color:var(--foreground)]";
 const btnActive =
   "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)]";
+const menuItem =
+  "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]";
+// A list entry doubles as its own toggle, so the menu marks the list the caret is
+// already inside — clicking it again lifts the items back out.
+const menuItemActive = "bg-[color:var(--surface-muted)] font-semibold";
 
 function saveSelection(): Range | null {
   const sel = window.getSelection();
@@ -173,6 +180,62 @@ function findEnclosingBlock(
     current = current.parentNode;
   }
   return null;
+}
+
+// An item holding nothing but the browser's filler markup. A sub-list counts as
+// content (its items' text is in textContent), so a parent item is never "empty".
+function isEmptyListItem(li: HTMLElement) {
+  const zeroWidth = String.fromCharCode(0x200b);
+  return (
+    (li.textContent ?? "").split(zeroWidth).join("").trim() === "" &&
+    !li.querySelector("img, iframe, figure")
+  );
+}
+
+// The caret as a plain-text offset from the start of the editor. A normalise pass
+// replaces the editor's innerHTML wholesale, which destroys the nodes the
+// selection pointed at — that is what dropped the caret to the top of the
+// document right after pasting. A text offset survives the rebuild.
+function caretTextOffset(root: HTMLElement): number | null {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0);
+  if (!root.contains(range.endContainer)) return null;
+  const measure = document.createRange();
+  measure.setStart(root, 0);
+  measure.setEnd(range.endContainer, range.endOffset);
+  return measure.toString().length;
+}
+
+function placeCaretAtTextOffset(root: HTMLElement, offset: number) {
+  const sel = window.getSelection();
+  if (!sel) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  let remaining = offset;
+  let node = walker.nextNode();
+  let last: Node | null = null;
+
+  while (node) {
+    const length = (node.textContent ?? "").length;
+    if (remaining <= length) {
+      range.setStart(node, remaining);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      return;
+    }
+    remaining -= length;
+    last = node;
+    node = walker.nextNode();
+  }
+
+  // Past the end of the (re-normalised) text: land after the last thing there is.
+  const anchor = last ?? root.lastElementChild ?? root;
+  range.selectNodeContents(anchor);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
 }
 
 /* ------------------------------------------------------------------ */
@@ -339,6 +402,8 @@ export default function RichTextComposer({
     bold: false,
     italic: false,
     code: false,
+    ul: false,
+    ol: false,
   });
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [emojiAssets, setEmojiAssets] = useState<EmojiAssets | null>(null);
@@ -362,6 +427,7 @@ export default function RichTextComposer({
             divider: "Роздільник",
             ul: "Маркований список",
             ol: "Нумерований список",
+            listHint: "Почніть рядок з «- » або «1. ». Tab — вкладений рівень.",
             bold: "Жирний (Ctrl+B)",
             italic: "Курсив (Ctrl+I)",
             link: "Посилання (Ctrl+K)",
@@ -386,6 +452,7 @@ export default function RichTextComposer({
             divider: "Divider",
             ul: "Bulleted list",
             ol: "Numbered list",
+            listHint: 'Start a line with "- " or "1. ". Tab nests one level.',
             bold: "Bold (Ctrl+B)",
             italic: "Italic (Ctrl+I)",
             link: "Link (Ctrl+K)",
@@ -431,16 +498,24 @@ export default function RichTextComposer({
   const refreshActiveFormats = useCallback(() => {
     const el = editorRef.current;
     let code = false;
+    // Which list the caret sits in, read off the DOM rather than through
+    // queryCommandState: the command state lies inside nested lists in Chrome,
+    // and the enclosing <ul>/<ol> is exactly what the menu needs to highlight.
+    let list: HTMLElement | null = null;
     if (el) {
       const sel = window.getSelection();
       if (sel && sel.rangeCount > 0 && sel.anchorNode && el.contains(sel.anchorNode)) {
         code = !!findEnclosingBlock(sel.anchorNode, el, ["CODE"]);
+        const li = findEnclosingBlock(sel.anchorNode, el, ["LI"]);
+        list = li ? findEnclosingBlock(li.parentNode, el, ["UL", "OL"]) : null;
       }
     }
     setActiveFormats({
       bold: document.queryCommandState("bold"),
       italic: document.queryCommandState("italic"),
       code,
+      ul: list?.tagName === "UL",
+      ol: list?.tagName === "OL",
     });
   }, []);
 
@@ -465,7 +540,19 @@ export default function RichTextComposer({
     if (!el) return;
     const sanitized = normalizeRichTextForEditor(el.innerHTML);
     lastSyncRef.current = sanitized;
-    if (el.innerHTML !== sanitized) el.innerHTML = sanitized;
+    if (el.innerHTML !== sanitized) {
+      // Rewriting innerHTML throws away the nodes the caret lived in. When the
+      // writer is still in the editor (a paste normalises immediately, without
+      // waiting for a blur) the position is measured as a text offset and put
+      // back afterwards, so typing carries on where the pasted block ended.
+      const offset =
+        document.activeElement === el ? caretTextOffset(el) : null;
+      el.innerHTML = sanitized;
+      if (offset !== null) {
+        placeCaretAtTextOffset(el, offset);
+        savedRangeRef.current = saveSelection();
+      }
+    }
     onChange(sanitized);
   }, [onChange]);
 
@@ -655,9 +742,77 @@ export default function RichTextComposer({
     refreshActiveFormats();
   }, [emitChange, refreshActiveFormats]);
 
+  // Place a collapsed caret. Used after the list moves below: they relocate the
+  // very text nodes the selection pointed at, so the original anchor is reused
+  // whenever it survived the move; otherwise the caret lands at the end of the
+  // block that took the item's place.
+  const placeCaret = useCallback(
+    (
+      anchor: { node: Node; offset: number } | null,
+      fallback: HTMLElement | null,
+    ) => {
+      const sel = window.getSelection();
+      if (!sel) return;
+      const range = document.createRange();
+      if (anchor && anchor.node.isConnected) {
+        const limit =
+          anchor.node.nodeType === Node.TEXT_NODE
+            ? (anchor.node.textContent ?? "").length
+            : anchor.node.childNodes.length;
+        range.setStart(anchor.node, Math.min(anchor.offset, limit));
+        range.collapse(true);
+      } else if (fallback) {
+        range.selectNodeContents(fallback);
+        range.collapse(false);
+      } else {
+        return;
+      }
+      sel.removeAllRanges();
+      sel.addRange(range);
+      savedRangeRef.current = range.cloneRange();
+    },
+    [],
+  );
+
+  // The caret's current anchor, captured before a DOM move so it can be restored.
+  const captureCaret = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return null;
+    const range = sel.getRangeAt(0);
+    return { node: range.startContainer, offset: range.startOffset };
+  }, []);
+
   /* ---- toolbar actions ---- */
+
+  // Toggle a bulleted / numbered list around the selection. Picking the entry the
+  // caret already sits in unwraps the items back into paragraphs.
+  const toggleList = useCallback(
+    (kind: "ul" | "ol") => {
+      exec(kind === "ul" ? "insertUnorderedList" : "insertOrderedList");
+      setBlocksOpen(false);
+    },
+    [exec],
+  );
+
   const applyBlock = useCallback(
     (tag: "P" | "H2" | "H3" | "H4" | "BLOCKQUOTE") => {
+      const el = editorRef.current;
+      const sel = window.getSelection();
+      const li =
+        el && sel?.anchorNode && el.contains(sel.anchorNode)
+          ? findEnclosingBlock(sel.anchorNode, el, ["LI"])
+          : null;
+      // Turning a list item into a heading or a quote has to leave the list
+      // first: a <li><h2> is neither of the two, and browsers keep the bullet
+      // sitting next to it. Toggling the list off lifts the item into a
+      // paragraph, which formatBlock can then re-tag.
+      if (li) {
+        exec(
+          li.parentElement?.tagName === "OL"
+            ? "insertOrderedList"
+            : "insertUnorderedList",
+        );
+      }
       exec("formatBlock", tag);
       setBlocksOpen(false);
     },
@@ -740,34 +895,21 @@ export default function RichTextComposer({
     [exec, insertHtml],
   );
 
-  // Pasting a whole article should keep its structure — headings as headings,
-  // lists as lists — instead of collapsing to plain paragraphs. Order matters:
-  //  1. Raw Markdown text FIRST. A .md file, a code editor (VS Code) or a
-  //     "source" preview put literal `## …` on BOTH the plain-text and the HTML
-  //     clipboard flavour; only the plain text parses cleanly, so whenever the
-  //     text carries Markdown syntax we rebuild from it and ignore the HTML.
-  //  2. Otherwise, rendered HTML (real <h1>/<h2> tags copied from a rendered
-  //     page): the browser's default contentEditable paste tends to flatten
-  //     headings to plain text, so we normalise the clipboard HTML ourselves
-  //     (which maps <h1>/<h3> → <h2> and strips junk) and insert real blocks.
-  // Small inline pastes (a styled word, a bare URL) match neither and keep the
-  // browser default, so a fragment is never wrapped in its own paragraph.
+  // Pasting a whole document should keep its structure — headings as headings,
+  // lists as lists, nesting as nesting — instead of collapsing to plain
+  // paragraphs. `richTextFromClipboard` picks the clipboard flavour that carries
+  // the most structure (see its docs for why the order matters) and returns "" for
+  // small inline pastes, which keep the browser default so a fragment is never
+  // wrapped in a paragraph of its own.
   const handlePaste = useCallback(
     (e: React.ClipboardEvent<HTMLDivElement>) => {
       const clipboard = e.clipboardData;
       if (!clipboard) return;
-      const html = clipboard.getData("text/html");
-      const text = clipboard.getData("text/plain");
 
-      let clean = "";
-      if (text && text.trim() && hasMarkdownSyntax(text)) {
-        clean = normalizeRichTextForEditor(markdownToHtml(text));
-      } else if (html && html.trim()) {
-        const fragment = extractClipboardHtmlFragment(html);
-        if (!htmlFragmentHasBlocks(fragment)) return;
-        clean = normalizeRichTextForEditor(fragment);
-      }
-
+      const clean = richTextFromClipboard(
+        clipboard.getData("text/html"),
+        clipboard.getData("text/plain"),
+      );
       if (!clean) return;
 
       e.preventDefault();
@@ -884,9 +1026,48 @@ export default function RichTextComposer({
     [emitChange, refreshActiveFormats],
   );
 
-  // Backspace at the start of an empty trailing list item should drop out of
-  // the list into a normal paragraph — mirroring how a plain Enter on an empty
-  // item ends the list. Without this only Enter could escape a list.
+  // Leave the list from an empty item: one level at a time out of a sub-list,
+  // and into a plain paragraph from the top level. Both Enter and Backspace do
+  // this (see the two handlers below), so an empty bullet is never a dead end.
+  const liftEmptyItem = useCallback(
+    (li: HTMLElement) => {
+      const target = outdentListItem(li);
+      if (!target) return false;
+      placeCaret(null, target);
+      emitChange();
+      refreshActiveFormats();
+      return true;
+    },
+    [emitChange, placeCaret, refreshActiveFormats],
+  );
+
+  // The list an empty item can be lifted out of, or null when the keypress
+  // should keep its native behaviour: a non-empty item, or an empty item in the
+  // middle of a top-level list (where the next item still follows it).
+  const liftableEmptyItem = useCallback((): HTMLElement | null => {
+    const el = editorRef.current;
+    if (!el) return null;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return null;
+
+    const li = findEnclosingBlock(sel.anchorNode, el, ["LI"]);
+    if (!li || !el.contains(li)) return null;
+    const list = li.parentElement;
+    if (!list || (list.tagName !== "UL" && list.tagName !== "OL")) return null;
+    if (!isEmptyListItem(li)) return null;
+
+    const nested =
+      list.parentElement?.tagName === "LI" ||
+      list.parentElement?.tagName === "UL" ||
+      list.parentElement?.tagName === "OL";
+    // A nested item always pops up a level; a top-level one only leaves the list
+    // when it is the last item, so a mid-list keypress still behaves natively.
+    if (!nested && li.nextElementSibling) return null;
+    return li;
+  }, []);
+
+  // Backspace at the start of an empty list item drops out of the list, mirroring
+  // how a plain Enter on an empty item ends it. Without this only Enter could.
   const exitListOnBackspace = useCallback(
     (e: React.KeyboardEvent) => {
       if (
@@ -898,51 +1079,22 @@ export default function RichTextComposer({
       ) {
         return false;
       }
-      const el = editorRef.current;
-      if (!el) return false;
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
-
-      const li = findEnclosingBlock(sel.anchorNode, el, ["LI"]);
-      if (!li || !el.contains(li)) return false;
-      const list = li.parentElement;
-      if (!list || (list.tagName !== "UL" && list.tagName !== "OL")) return false;
-
-      // Only the last item, and only when empty — a mid-list Backspace should
-      // keep its native "merge with the previous item" behaviour.
-      if (li.nextElementSibling) return false;
-      const zeroWidth = String.fromCharCode(0x200b);
-      const isEmpty =
-        (li.textContent ?? "").split(zeroWidth).join("").trim() === "" &&
-        !li.querySelector("img, iframe, figure");
-      if (!isEmpty) return false;
-
-      const parent = list.parentNode;
-      if (!parent) return false;
+      const li = liftableEmptyItem();
+      if (!li) return false;
 
       e.preventDefault();
-      const paragraph = document.createElement("p");
-      paragraph.appendChild(document.createElement("br"));
-      parent.insertBefore(paragraph, list.nextSibling);
-      li.remove();
-      if (!list.querySelector("li")) list.remove();
-
-      const range = document.createRange();
-      range.setStart(paragraph, 0);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      savedRangeRef.current = range.cloneRange();
-      emitChange();
+      liftEmptyItem(li);
       return true;
     },
-    [emitChange],
+    [liftEmptyItem, liftableEmptyItem],
   );
 
   // Tab / Shift+Tab inside a list item nests (indents) or un-nests (outdents) it,
   // building the sub-lists browsers otherwise only expose through no visible key.
-  // Outside a list Tab keeps its default behaviour (moving focus out of the
-  // editor), so keyboard users can still leave the field.
+  // The move is done on the DOM rather than through execCommand("indent"), which
+  // produces invalid `<ul><li>a</li><ul>…</ul></ul>` markup and drops the item
+  // when it is lifted back out. Outside a list Tab keeps its default behaviour
+  // (moving focus out of the editor), so keyboard users can still leave the field.
   const handleListTab = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key !== "Tab" || e.ctrlKey || e.metaKey || e.altKey) {
@@ -957,10 +1109,90 @@ export default function RichTextComposer({
       if (!li || !el.contains(li)) return false;
 
       e.preventDefault();
-      exec(e.shiftKey ? "outdent" : "indent");
+      const anchor = captureCaret();
+      if (e.shiftKey) {
+        const target = outdentListItem(li);
+        if (!target) return true;
+        placeCaret(anchor, target);
+      } else {
+        if (!indentListItem(li, el)) return true;
+        placeCaret(anchor, li);
+      }
+      emitChange();
+      refreshActiveFormats();
       return true;
     },
-    [exec],
+    [captureCaret, emitChange, placeCaret, refreshActiveFormats],
+  );
+
+  // Typing "- ", "* " or "1. " at the start of a paragraph starts the list the
+  // writer clearly meant — the shortcut every Markdown-flavoured editor has, and
+  // the reason those characters used to be left sitting in the text as literals.
+  const applyListShortcut = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (
+        e.key !== " " ||
+        e.shiftKey ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        !features.lists
+      ) {
+        return false;
+      }
+      const el = editorRef.current;
+      if (!el) return false;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || !sel.isCollapsed || !sel.anchorNode) {
+        return false;
+      }
+      // Plain paragraphs only: inside a list item, a heading, a quote or a
+      // spoiler title the shortcut would fight the block the writer chose.
+      const block = findEnclosingBlock(sel.anchorNode, el, [
+        "P",
+        "LI",
+        "H2",
+        "H3",
+        "H4",
+        "BLOCKQUOTE",
+        "SUMMARY",
+      ]);
+      if (!block || block.tagName !== "P" || !el.contains(block)) return false;
+
+      // Everything typed between the start of the block and the caret.
+      const prefix = document.createRange();
+      prefix.setStart(block, 0);
+      prefix.setEnd(sel.anchorNode, sel.anchorOffset);
+      const shortcut = matchListShortcut(prefix.toString().trim());
+      if (!shortcut) return false;
+
+      e.preventDefault();
+      // The marker itself is not content — it becomes the list.
+      prefix.deleteContents();
+      const caret = document.createRange();
+      caret.setStart(block, 0);
+      caret.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(caret);
+      savedRangeRef.current = caret.cloneRange();
+
+      exec(shortcut.command);
+
+      // "5. " opens a list that starts at five rather than silently at one.
+      if (shortcut.start > 1) {
+        const active = window.getSelection();
+        const li = active?.anchorNode
+          ? findEnclosingBlock(active.anchorNode, el, ["LI"])
+          : null;
+        const list = li?.parentElement;
+        if (list?.tagName === "OL") {
+          list.setAttribute("start", String(shortcut.start));
+          emitChange();
+        }
+      }
+      return true;
+    },
+    [emitChange, exec, features.lists],
   );
 
   // Enter on an empty list item ends the list cleanly instead of leaving a blank
@@ -979,58 +1211,14 @@ export default function RichTextComposer({
       ) {
         return false;
       }
-      const el = editorRef.current;
-      if (!el) return false;
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
-
-      const li = findEnclosingBlock(sel.anchorNode, el, ["LI"]);
-      if (!li || !el.contains(li)) return false;
-      const list = li.parentElement;
-      if (!list || (list.tagName !== "UL" && list.tagName !== "OL")) {
-        return false;
-      }
-
-      const zeroWidth = String.fromCharCode(0x200b);
-      const isEmpty =
-        (li.textContent ?? "").split(zeroWidth).join("").trim() === "" &&
-        !li.querySelector("img, iframe, figure");
-      if (!isEmpty) return false;
-
-      // A nested empty item: pop it up one level rather than escaping the whole
-      // structure, so Enter mirrors Shift+Tab at the end of a sub-list.
-      const nested =
-        list.parentElement?.tagName === "LI" ||
-        list.parentElement?.tagName === "UL" ||
-        list.parentElement?.tagName === "OL";
-      if (nested) {
-        e.preventDefault();
-        exec("outdent");
-        return true;
-      }
-
-      // Top-level list: only the last (trailing) item exits into a paragraph.
-      if (li.nextElementSibling) return false;
-      const parent = list.parentNode;
-      if (!parent) return false;
+      const li = liftableEmptyItem();
+      if (!li) return false;
 
       e.preventDefault();
-      const paragraph = document.createElement("p");
-      paragraph.appendChild(document.createElement("br"));
-      parent.insertBefore(paragraph, list.nextSibling);
-      li.remove();
-      if (!list.querySelector("li")) list.remove();
-
-      const range = document.createRange();
-      range.setStart(paragraph, 0);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      savedRangeRef.current = range.cloneRange();
-      emitChange();
+      liftEmptyItem(li);
       return true;
     },
-    [emitChange, exec],
+    [liftEmptyItem, liftableEmptyItem],
   );
 
   /* ---- spoiler (details/summary) editing ---- */
@@ -1221,6 +1409,7 @@ export default function RichTextComposer({
   /* ---- keyboard shortcuts ---- */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (applyListShortcut(e)) return;
       if (handleListTab(e)) return;
       if (handleSpoilerEnter(e)) return;
       if (handleSpoilerBackspace(e)) return;
@@ -1250,6 +1439,7 @@ export default function RichTextComposer({
     [
       exec,
       openPopover,
+      applyListShortcut,
       exitBlockOnEnter,
       exitCodeOnEnter,
       exitListOnBackspace,
@@ -1434,14 +1624,31 @@ export default function RichTextComposer({
                         <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider app-soft">
                           {ui.listTitle}
                         </p>
-                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => { exec("insertUnorderedList"); setBlocksOpen(false); }}>
+                        <button
+                          type="button"
+                          className={cls(menuItem, activeFormats.ul && menuItemActive)}
+                          aria-pressed={activeFormats.ul}
+                          title={ui.listHint}
+                          onMouseDown={pd}
+                          onClick={() => toggleList("ul")}
+                        >
                           <span className="w-6 text-center text-lg leading-none text-[color:var(--muted-foreground)]">•</span>
                           {ui.ul}
                         </button>
-                        <button type="button" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]" onMouseDown={pd} onClick={() => { exec("insertOrderedList"); setBlocksOpen(false); }}>
+                        <button
+                          type="button"
+                          className={cls(menuItem, activeFormats.ol && menuItemActive)}
+                          aria-pressed={activeFormats.ol}
+                          title={ui.listHint}
+                          onMouseDown={pd}
+                          onClick={() => toggleList("ol")}
+                        >
                           <span className="w-6 text-center text-sm font-bold text-[color:var(--muted-foreground)]">1.</span>
                           {ui.ol}
                         </button>
+                        <p className="px-3 pb-1 pt-1.5 text-xs leading-snug app-soft">
+                          {ui.listHint}
+                        </p>
                       </>
                     )}
                   </div>
