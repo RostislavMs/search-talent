@@ -1,31 +1,9 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { JetBrains_Mono, Literata, Manrope } from "next/font/google";
 import ConsentedAnalytics from "@/components/consented-analytics";
 import HydrationCleanupScript from "@/components/hydration-cleanup-script";
 import InteractiveBackground from "@/components/interactive-background";
 import ThemeScript from "@/components/theme-script";
-
-const fontDisplay = Literata({
-  subsets: ["latin", "latin-ext", "cyrillic"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const fontBody = Manrope({
-  subsets: ["latin", "latin-ext", "cyrillic"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-body",
-  display: "swap",
-});
-
-const fontMono = JetBrains_Mono({
-  subsets: ["latin", "latin-ext", "cyrillic"],
-  weight: ["400", "500"],
-  variable: "--font-mono",
-  display: "swap",
-});
 import {
   allowsCookieCategory,
   cookieConsentCookieName,
@@ -92,12 +70,7 @@ export default async function RootLayout({
       : "light";
 
   return (
-    <html
-      lang={locale}
-      data-theme={theme}
-      className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang={locale} data-theme={theme} suppressHydrationWarning>
       <head>
         <ThemeScript />
         <HydrationCleanupScript />

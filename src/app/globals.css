@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Self-hosted @font-face rules + the --font-* variables (see fonts.css). Fonts
+   used to come from next/font/google, which fetched them from Google on every
+   build; that fetch is not retried by Turbopack, so one slow response failed the
+   production build outright. */
+@import "./fonts.css";
 
 /*
  * The site theme is driven by `html[data-theme="dark"]` (see theme-script),
