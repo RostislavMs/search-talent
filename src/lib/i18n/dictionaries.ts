@@ -2286,44 +2286,77 @@ export const dictionaries = {
       eyebrow: "About the platform",
       title: "About SearchTalent",
       description:
-        "SearchTalent is an open community platform where IT specialists build public portfolios, publish projects and articles, and get recognized through community ratings — all in one fast, minimalist space.",
+        "An open community platform where specialists show real work: public profiles, project portfolios, articles, and a rating you can trace back to its inputs.",
+      heroIllustrationLabel:
+        "Diagram: one profile feeding a project, an article, a leaderboard, and a rating mark",
       pillarsTitle: "The platform at a glance",
       pillars: [
         {
           title: "Public profiles",
-          text: "A clean, fast public page for your skills, experience, links, and contacts — customizable and exportable as a PDF resume.",
+          text: "One fast public page for skills, experience, and links — and a PDF résumé export.",
+          illustrationLabel:
+            "A profile card with skill pills and a download arrow into a tray",
         },
         {
           title: "Project portfolios",
-          text: "Publish real work with images, video, tech stacks, and case studies. Every project gets its own page and community votes.",
+          text: "Real work with images, video, and tech stack. Every project gets its own page and votes.",
+          illustrationLabel: "A media frame with a play button and stack tags",
         },
         {
           title: "Community knowledge",
-          text: "Articles, polls, and platform news live in one Community hub — share write-ups, gather opinions, and follow active authors.",
+          text: "Articles, polls, and platform news in one Community hub.",
+          illustrationLabel:
+            "An open article spread with a poll chart and a speech bubble",
         },
         {
           title: "Recognition",
-          text: "A transparent rating built from community votes and badges, so strong work surfaces through search and leaderboards.",
+          text: "A transparent rating from community votes and badges, so strong work surfaces.",
+          illustrationLabel: "A podium with a star medal above the top place",
+        },
+      ],
+      stepsTitle: "How it works",
+      stepsDescription:
+        "Three steps — and the third one runs by itself once the first two are done.",
+      stepsIllustrationLabel:
+        "Diagram: three connected steps — fill in the profile, publish work, get ranked",
+      steps: [
+        {
+          title: "Fill in the profile",
+          text: "Skills, experience, links. The completeness pill shows what is still missing.",
+        },
+        {
+          title: "Publish your work",
+          text: "Projects, articles, and polls — on your own or with co-authors.",
+        },
+        {
+          title: "Get ranked",
+          text: "Votes and badges feed the rating, search, and both leaderboards.",
         },
       ],
       missionTitle: "Our mission",
       missionText:
-        "We believe every developer, designer, and specialist deserves a clean, fast way to present their skills and projects to the world. SearchTalent gives you a public profile, a project portfolio, community feedback, and discovery tools — all in one place.",
+        "Every developer, designer, and specialist deserves one clean page instead of a trail of links across a dozen services. That page is the product.",
+      missionIllustrationLabel:
+        "Diagram: scattered files, links, and screenshots converging into a single profile page",
       featuresTitle: "What you can do",
       features: [
-        "Build a customizable public profile with skills, experience, links, and a PDF resume export",
-        "Publish portfolio projects with images, video, tech stacks, and case studies",
-        "Write articles and create polls — on your own or as a co-author with other members",
-        "Earn a community rating and badges through upvotes and steady contribution",
-        "Get discovered via search, topic pages, ratings, and leaderboards",
-        "Follow authors, react and comment, and stay updated on new work",
+        "A customizable public profile with a PDF résumé export",
+        "Portfolio projects with images, video, and tech stacks",
+        "Articles and polls, solo or with co-authors",
+        "A community rating and badges earned through contribution",
+        "Discovery through search, topic pages, and leaderboards",
+        "Follows, reactions, and comments on every surface",
       ],
       communityTitle: "Community & quality",
       communityText:
-        "Ratings, badges, and leaderboards reward genuine contribution, while lightweight moderation keeps the feeds clean and trustworthy. Reactions, comments, and following turn portfolios into a living community rather than a static gallery.",
+        "Ratings and badges reward genuine contribution, light moderation keeps the feeds trustworthy, and reactions turn portfolios into a community rather than a static gallery.",
+      communityIllustrationLabel:
+        "Diagram: a closed loop between three people and the work they react to",
       openSourceTitle: "Built in the open",
       openSourceText:
-        "SearchTalent started as a university project and keeps growing with community input. Feedback and ideas are always welcome.",
+        "SearchTalent started as a university project and keeps growing on community input. Ideas and bug reports are welcome.",
+      openSourceIllustrationLabel:
+        "Diagram: the platform on a bench with contributions arriving from outside",
       ctaTitle: "Ready to show your work?",
       ctaText:
         "Create a free profile, publish your first project, and join the conversation.",
@@ -4696,44 +4729,77 @@ export const dictionaries = {
       eyebrow: "Про платформу",
       title: "Про SearchTalent",
       description:
-        "SearchTalent — відкрита платформа-спільнота, де IT-фахівці створюють публічні портфоліо, публікують проєкти та статті й отримують визнання завдяки рейтингу спільноти — усе в одному швидкому та мінімалістичному просторі.",
+        "Відкрита платформа-спільнота, де фахівці показують реальні роботи: публічні профілі, портфоліо проєктів, статті та рейтинг, який можна розкласти на складові.",
+      heroIllustrationLabel:
+        "Схема: один профіль живить проєкт, статтю, лідерборд і рейтингову позначку",
       pillarsTitle: "Платформа коротко",
       pillars: [
         {
           title: "Публічні профілі",
-          text: "Чиста та швидка публічна сторінка з навичками, досвідом, посиланнями й контактами — з кастомізацією та експортом у PDF-резюме.",
+          text: "Одна швидка публічна сторінка з навичками, досвідом і посиланнями — та експорт у PDF-резюме.",
+          illustrationLabel:
+            "Картка профілю з пілюлями навичок і стрілкою завантаження в лоток",
         },
         {
           title: "Портфоліо проєктів",
-          text: "Публікуйте реальні роботи із зображеннями, відео, стеком технологій та кейсами. Кожен проєкт має власну сторінку й голоси спільноти.",
+          text: "Реальні роботи із зображеннями, відео та стеком. Кожен проєкт має власну сторінку й голоси.",
+          illustrationLabel: "Медіа-рамка з кнопкою відтворення та тегами стеку",
         },
         {
           title: "Знання спільноти",
-          text: "Статті, опитування та новини платформи зібрані в розділі «Спільнота» — діліться матеріалами, збирайте думки та стежте за авторами.",
+          text: "Статті, опитування та новини платформи в одному розділі «Спільнота».",
+          illustrationLabel:
+            "Розкрита стаття з діаграмою опитування та бульбашкою коментаря",
         },
         {
           title: "Визнання",
-          text: "Прозорий рейтинг на основі голосів спільноти та бейджів, тож сильні роботи помітні через пошук і лідерборди.",
+          text: "Прозорий рейтинг із голосів спільноти та бейджів, тож сильні роботи помітні.",
+          illustrationLabel: "Подіум із зірковою медаллю над першим місцем",
+        },
+      ],
+      stepsTitle: "Як це працює",
+      stepsDescription:
+        "Три кроки — і третій починає працювати сам, коли зроблені перші два.",
+      stepsIllustrationLabel:
+        "Схема: три пов'язані кроки — заповнити профіль, опублікувати роботи, потрапити в рейтинг",
+      steps: [
+        {
+          title: "Заповніть профіль",
+          text: "Навички, досвід, посилання. Пілюля заповненості показує, чого бракує.",
+        },
+        {
+          title: "Опублікуйте роботи",
+          text: "Проєкти, статті та опитування — самостійно або у співавторстві.",
+        },
+        {
+          title: "Потрапте в рейтинг",
+          text: "Голоси й бейджі живлять рейтинг, пошук і обидва лідерборди.",
         },
       ],
       missionTitle: "Наша місія",
       missionText:
-        "Ми віримо, що кожен розробник, дизайнер та фахівець заслуговує на зручний і швидкий спосіб представити свої навички та проєкти світу. SearchTalent дає вам публічний профіль, портфоліо проєктів, зворотний зв'язок від спільноти та інструменти пошуку — все в одному місці.",
+        "Кожен розробник, дизайнер і фахівець заслуговує на одну чисту сторінку замість розсипу посилань по десятку сервісів. Ця сторінка і є продуктом.",
+      missionIllustrationLabel:
+        "Схема: розрізнені файли, посилання та скриншоти сходяться в одну сторінку профілю",
       featuresTitle: "Що ви можете робити",
       features: [
-        "Створити кастомізований публічний профіль із навичками, досвідом, посиланнями та експортом PDF-резюме",
-        "Публікувати портфоліо-проєкти із зображеннями, відео, стеком технологій та кейсами",
-        "Писати статті та створювати опитування — самостійно або у співавторстві з іншими учасниками",
-        "Отримувати рейтинг спільноти та бейджі за голоси й постійний внесок",
-        "Бути знайденим через пошук, тематичні сторінки, рейтинги та лідерборди",
-        "Стежити за авторами, реагувати й коментувати та отримувати оновлення про нові роботи",
+        "Кастомізований публічний профіль з експортом PDF-резюме",
+        "Портфоліо-проєкти із зображеннями, відео та стеком технологій",
+        "Статті й опитування — самостійно або у співавторстві",
+        "Рейтинг спільноти та бейджі за реальний внесок",
+        "Видимість через пошук, тематичні сторінки та лідерборди",
+        "Підписки, реакції та коментарі на всіх розділах",
       ],
       communityTitle: "Спільнота та якість",
       communityText:
-        "Рейтинги, бейджі та лідерборди винагороджують справжній внесок, а легка модерація тримає стрічки чистими й надійними. Реакції, коментарі та підписки перетворюють портфоліо на живу спільноту, а не статичну галерею.",
+        "Рейтинги й бейджі винагороджують справжній внесок, легка модерація тримає стрічки надійними, а реакції перетворюють портфоліо на спільноту, а не статичну галерею.",
+      communityIllustrationLabel:
+        "Схема: замкнене коло між трьома людьми та роботою, на яку вони реагують",
       openSourceTitle: "Створено відкрито",
       openSourceText:
-        "SearchTalent розпочався як університетський проєкт і продовжує розвиватися завдяки відгукам спільноти. Ідеї та пропозиції завжди вітаються.",
+        "SearchTalent розпочався як університетський проєкт і продовжує розвиватися завдяки відгукам спільноти. Ідеї та звіти про помилки вітаються.",
+      openSourceIllustrationLabel:
+        "Схема: платформа на верстаті, а внески надходять іззовні",
       ctaTitle: "Готові показати свої роботи?",
       ctaText:
         "Створіть безкоштовний профіль, опублікуйте перший проєкт і долучайтеся до спільноти.",
