@@ -173,6 +173,16 @@ describe("renderGithubReadme", () => {
     expect(html).toContain("Visible");
   });
 
+  it("leaves no comment opener behind when comments are nested", () => {
+    // Cutting the inner comment out of overlapping markup can reassemble a fresh
+    // `<!--`, so the strip has to run to a fixpoint.
+    const html = render("before <!--<!-- x -->--> after");
+
+    expect(html).not.toContain("<!--");
+    expect(html).toContain("before");
+    expect(html).toContain("after");
+  });
+
   it("keeps the readme's own layout HTML and hardens its links", () => {
     const html = render('<p align="center"><a href="docs/api.md">API</a></p>');
 

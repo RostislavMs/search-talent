@@ -140,6 +140,24 @@ const RAW_SENTINEL = new RegExp(`${RAW_OPEN}(\\d+)${RAW_CLOSE}`, "g");
 // nesting is two levels deep — a linked badge; anything beyond this is malformed.
 const MAX_RESTORE_PASSES = 8;
 
+/**
+ * Drop HTML comments, repeating until a pass removes nothing. One pass is not
+ * enough: cutting the inner match out of overlapping markup can reassemble a
+ * fresh opener (`<!--<!-- -->-->` leaves `<!--` behind), which is the
+ * "incomplete multi-character sanitization" shape. The result is sanitized by
+ * DOMPurify either way, but a comment opener surviving this step would let the
+ * rest of a line be swallowed as a comment by the parser instead of rendering.
+ */
+function stripHtmlComments(value: string): string {
+  let current = value;
+  let previous: string;
+  do {
+    previous = current;
+    current = current.replace(/<!--[\s\S]*?-->/g, "");
+  } while (current !== previous);
+  return current;
+}
+
 function anchorHtml(href: string, inner: string): string {
   return href
     ? `<a href="${href}" target="_blank" rel="noreferrer nofollow">${inner}</a>`
@@ -183,7 +201,7 @@ function inlineToHtml(
     stashRaw(anchorHtml(escapeHtml(url), escapeHtml(url))),
   );
 
-  out = out.replace(/<!--[\s\S]*?-->/g, "");
+  out = stripHtmlComments(out);
   // A real tag: `<name …>`, `</name>`, `<name/>`. The tag-name requirement keeps
   // prose like `a < b > c` out of it — that stays text and gets escaped below.
   out = out.replace(/<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s[^<>]*)?\/?>/g, (tag) =>
