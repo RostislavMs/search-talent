@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   DEFAULT_GITHUB_DISPLAY_OPTIONS,
   type GithubDisplayOptions,
   type GithubProjectStats,
 } from "@/lib/constants/github";
+import { renderGithubReadme } from "@/lib/github-readme";
 import { useDictionary } from "@/lib/i18n/client";
 
 type Props = {
@@ -91,6 +92,13 @@ export default function GithubInsightsPanel({
   const dictionary = useDictionary();
   const dict = dictionary.githubIntegration;
   const [readmeOpen, setReadmeOpen] = useState(false);
+  // Rendered only once the card is opened: a README runs to 50k characters
+  // (`GITHUB_README_FETCH_CHAR_LIMIT`), and most visitors never expand it.
+  const readmeHtml = useMemo(
+    () =>
+      readmeOpen && readme ? renderGithubReadme(readme, { fullName }) : "",
+    [readmeOpen, readme, fullName],
+  );
 
   const options: GithubDisplayOptions = {
     ...DEFAULT_GITHUB_DISPLAY_OPTIONS,
@@ -291,9 +299,13 @@ export default function GithubInsightsPanel({
             <span aria-hidden="true">{readmeOpen ? "▾" : "▸"}</span>
           </button>
           {readmeOpen ? (
-            <pre className="max-h-96 overflow-auto border-t app-border bg-[color:var(--surface-muted)] px-4 py-3 text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--foreground)]">
-              {readme}
-            </pre>
+            <div
+              // README markup comes from the linked repository, so it is rendered
+              // from the sanitizer's output (see `lib/github-readme`) — the raw
+              // Markdown source used to be printed verbatim here instead.
+              className="github-readme max-h-[32rem] overflow-auto border-t app-border px-4 py-4"
+              dangerouslySetInnerHTML={{ __html: readmeHtml }}
+            />
           ) : null}
         </div>
       ) : null}

@@ -1088,6 +1088,196 @@ select {
   color: var(--rich-text-accent, var(--foreground));
 }
 
+/* GitHub README rendered inside the project page's insights card (see
+   `lib/github-readme`). It is a quotation of an external document, not site copy,
+   so it keeps its own compact scale: one step down from the body text, headings
+   that stay below the card's own <h2>, and no decoration beyond what the markup
+   needs to be readable. */
+.github-readme {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+}
+
+.github-readme > :first-child {
+  margin-top: 0;
+}
+
+.github-readme > :last-child {
+  margin-bottom: 0;
+}
+
+.github-readme p {
+  margin: 0 0 0.85rem;
+}
+
+.github-readme :is(h1, h2, h3, h4, h5, h6) {
+  margin: 1.5rem 0 0.6rem;
+  color: var(--foreground);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+/* A README's own hierarchy is shifted down by two levels (`#` → <h3>), so the
+   scale starts here; h1/h2 only appear when the README wrote them as raw HTML. */
+.github-readme :is(h1, h2, h3) {
+  font-size: 1.15rem;
+}
+
+.github-readme h4 {
+  font-size: 1rem;
+}
+
+.github-readme :is(h5, h6) {
+  font-size: 0.9rem;
+}
+
+/* The first heading of a README is usually the repository name, right under the
+   card's own title — no extra gap above it. */
+.github-readme :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
+}
+
+.github-readme a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 0.2rem;
+}
+
+.github-readme :is(ul, ol) {
+  margin: 0 0 0.85rem;
+  padding-left: 1.35rem;
+}
+
+.github-readme ul {
+  list-style-type: disc;
+}
+
+.github-readme ol {
+  list-style-type: decimal;
+}
+
+.github-readme li {
+  margin-bottom: 0.3rem;
+}
+
+.github-readme li:last-child {
+  margin-bottom: 0;
+}
+
+.github-readme li > :is(ul, ol) {
+  margin: 0.3rem 0 0;
+}
+
+.github-readme li::marker {
+  color: var(--soft-foreground);
+}
+
+.github-readme code {
+  border-radius: 0.4rem;
+  background: var(--surface-muted);
+  padding: 0.1rem 0.35rem;
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 0.85em;
+  color: var(--foreground);
+}
+
+/* Code blocks scroll on their own instead of stretching the card: install
+   commands and config snippets are the one thing in a README that must not wrap. */
+.github-readme pre {
+  margin: 0 0 0.9rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-muted);
+  padding: 0.8rem 0.9rem;
+}
+
+.github-readme pre code {
+  display: block;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.github-readme blockquote {
+  margin: 0 0 0.85rem;
+  border-left: 3px solid var(--border);
+  padding: 0.15rem 0 0.15rem 0.85rem;
+}
+
+.github-readme blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.github-readme hr {
+  margin: 1.25rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* display:block turns the table into its own scroll container, so a wide tech-stack
+   table (the shape almost every README uses) never pushes the card sideways. */
+.github-readme table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 0 0.9rem;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.github-readme :is(th, td) {
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.github-readme th {
+  background: var(--surface-muted);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* Badges sit inline in a row; a screenshot behaves as a block image. */
+.github-readme img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+.github-readme :is(kbd, samp) {
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.github-readme kbd {
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  padding: 0.05rem 0.3rem;
+  color: var(--foreground);
+}
+
+.github-readme summary {
+  cursor: pointer;
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.github-readme details {
+  margin: 0 0 0.85rem;
+}
+
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
