@@ -20,7 +20,10 @@
   --surface-muted: #eef3f8;
   --border: #d7e0ea;
   --muted-foreground: #526277;
-  --soft-foreground: #6d7d91;
+  /* Keep at or below #5f6f83 in light mode: `.app-soft` is used on 12px text
+     over --surface-muted, where the previous #6d7d91 landed at 3.83:1 and
+     failed WCAG AA. This value is 4.68:1 there and 5.14:1 on --surface. */
+  --soft-foreground: #5f6f83;
   --ring: #94a3b8;
   --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
   --scrollbar-track: rgba(215, 224, 234, 0.55);
@@ -30,6 +33,11 @@
 
   --brand: #f59e0b;
   --brand-strong: #d97706;
+  /* Brand colour for *text*. --brand-strong is a fill/hover colour: on
+     --surface it is only 3.15:1, which clears the 3:1 bar for icons and
+     borders but not the 4.5:1 one for the 12-14px labels that were using it.
+     Keep the two separate so darkening text never drags the buttons with it. */
+  --brand-ink: #a85d05;
   --brand-soft: #fef3c7;
   --brand-on-soft: #92400e;
   --brand-foreground: #18181b;
@@ -49,7 +57,9 @@
   --chart-series-2: #0284c7;
   --chart-track: #eef3f8;
   --chart-grid: rgba(82, 98, 119, 0.18);
-  --chart-axis: #6d7d91;
+  /* Axis labels render as 9px <text>, so they need the same AA-safe value as
+     --soft-foreground rather than the old #6d7d91. */
+  --chart-axis: #5f6f83;
 }
 
 @theme inline {
@@ -57,6 +67,7 @@
   --color-foreground: var(--foreground);
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
+  --color-brand-ink: var(--brand-ink);
   --color-brand-soft: var(--brand-soft);
   --color-brand-on-soft: var(--brand-on-soft);
   --color-brand-foreground: var(--brand-foreground);
@@ -86,6 +97,10 @@ html[data-theme="dark"] {
 
   --brand: #fbbf24;
   --brand-strong: #f59e0b;
+  /* On the dark surfaces --brand-strong already measures 8.4:1, so brand text
+     needs no separate darkening here — the token exists purely so components
+     can reference one name across both themes. */
+  --brand-ink: #f59e0b;
   --brand-soft: #422006;
   --brand-on-soft: #fde68a;
   --brand-foreground: #18181b;
@@ -212,6 +227,66 @@ select {
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Scroll-driven reveal.
+ *
+ * Progressive enhancement, deliberately dependency-free: the idea comes from
+ * MagicUI's blur-fade, but that ships as a client component on top of `motion`.
+ * A CSS scroll timeline keeps About//rating/etc. fully server-rendered and adds
+ * zero JS.
+ *
+ * The global `prefers-reduced-motion` reset above only clamps
+ * `animation-duration`, which a scroll-driven animation ignores (its progress
+ * comes from scroll position, not time). Hence the explicit
+ * `no-preference` guard here — without it this would still animate for users
+ * who asked us not to.
+ *
+ * Unsupported browsers simply get the content, unanimated.
+ * --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .app-reveal {
+      animation: app-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 28%;
+    }
+  }
+}
+
+/* Movement only — deliberately no opacity or blur.
+ *
+ * A fade leaves every not-yet-scrolled section sitting at partial opacity,
+ * and contrast is computed against the *blended* colour: axe read
+ * --brand-strong as #e19c4c (2.25:1) and --muted-foreground as #818d9d
+ * (3.27:1) on the About page, turning a passing page into 8 contrast
+ * failures. Translating alone keeps every colour at its declared value, and
+ * transform is compositor-only so it stays cheap. */
+@keyframes app-reveal-in {
+  from {
+    transform: translateY(16px);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+/* Short brand rule under a section heading. Gives long stacks of identical
+ * cards a rhythm without adding another border or shadow. */
+.app-heading-rule::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 3px;
+  margin-top: 0.85rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--brand-strong),
+    color-mix(in srgb, var(--brand) 35%, transparent)
+  );
+}
+
 ::selection {
   background: color-mix(in srgb, var(--brand) 22%, transparent);
   color: var(--foreground);
@@ -277,6 +352,18 @@ select {
 .app-panel {
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-muted) 86%, transparent);
+}
+
+/* Warm variant of .app-panel for illustration wells. The line art is drawn in
+ * brand tones, so a neutral grey well leaves it looking washed out; this keeps
+ * the tint low enough to stay inside the minimal palette. */
+.app-panel-brand {
+  border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--border));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--brand) 10%, var(--surface-muted)),
+    color-mix(in srgb, var(--surface-muted) 88%, transparent)
+  );
 }
 
 .app-panel-dashed {

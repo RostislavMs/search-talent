@@ -134,11 +134,14 @@ const FEATURE_ICONS: Array<() => ReactElement> = [
   HeartIcon,
 ];
 
-const SECTION = "mt-6 rounded-none sm:rounded-hero app-card p-6 sm:mt-8 sm:p-10";
+// `app-reveal` is the CSS scroll-timeline reveal from globals.css: no JS, no
+// client boundary, and it self-disables under prefers-reduced-motion.
+const SECTION =
+  "mt-6 rounded-none sm:rounded-hero app-card p-6 sm:mt-8 sm:p-10 app-reveal";
 const HEADING =
-  "font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl";
+  "font-display app-heading-rule text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl";
 const BODY = "text-sm leading-7 app-muted sm:text-base sm:leading-8";
-const ORDINAL = "text-xs font-semibold tracking-eyebrow text-[color:var(--brand-strong)]";
+const ORDINAL = "text-xs font-semibold tracking-eyebrow text-[color:var(--brand-ink)]";
 
 function ordinal(index: number) {
   return String(index + 1).padStart(2, "0");
@@ -217,7 +220,7 @@ export default async function AboutPage({
                 key={pillar.title}
                 className="flex flex-col rounded-3xl border app-border p-5"
               >
-                <div className="flex aspect-10/7 items-center justify-center rounded-2xl app-panel p-4">
+                <div className="flex aspect-10/7 items-center justify-center rounded-2xl app-panel-brand p-4">
                   <Vignette label={pillar.illustrationLabel} />
                 </div>
                 <p className={`mt-5 ${ORDINAL}`}>{ordinal(index)}</p>
@@ -237,7 +240,7 @@ export default async function AboutPage({
           {about.stepsTitle}
         </h2>
         <p className={`mt-3 max-w-3xl ${BODY}`}>{about.stepsDescription}</p>
-        <div className="mt-6 rounded-3xl app-panel px-4 py-7 sm:px-10 sm:py-9">
+        <div className="mt-6 rounded-3xl app-panel-brand px-4 py-7 sm:px-10 sm:py-9">
           <StepFlowIllustration label={about.stepsIllustrationLabel} />
         </div>
         <ol className="mt-4 grid gap-4 md:grid-cols-3">
