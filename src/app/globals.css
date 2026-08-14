@@ -1122,17 +1122,35 @@ select {
 }
 
 /* A README's own hierarchy is shifted down by two levels (`#` → <h3>), so the
-   scale starts here; h1/h2 only appear when the README wrote them as raw HTML. */
+   scale starts here; h1/h2 only appear when the README wrote them as raw HTML.
+   READMEs routinely use four levels (`## Features` → `### Profiles`), and at this
+   body size a size step alone runs out by the third one — so each level also
+   steps down in weight and in the air above it, and the deepest becomes an
+   eyebrow (the label treatment the rest of the site uses) rather than a 14px
+   heading indistinguishable from the paragraph under it. */
 .github-readme :is(h1, h2, h3) {
-  font-size: 1.15rem;
+  margin-top: 1.75rem;
+  font-size: 1.2rem;
+  font-weight: 700;
 }
 
 .github-readme h4 {
-  font-size: 1rem;
+  margin-top: 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
-.github-readme :is(h5, h6) {
-  font-size: 0.9rem;
+.github-readme h5 {
+  margin-top: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.github-readme h6 {
+  margin-top: 1.1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
 }
 
 /* The first heading of a README is usually the repository name, right under the
