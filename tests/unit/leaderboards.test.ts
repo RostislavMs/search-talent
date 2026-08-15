@@ -7,7 +7,37 @@ import {
   getProjectCompletenessScore,
   getWilsonScore,
   isWithinTimeframe,
+  PROFILE_WEIGHTS,
+  PROJECT_WEIGHTS,
 } from "@/lib/leaderboards";
+
+// ---------------------------------------------------------------------------
+// Weight tables
+// ---------------------------------------------------------------------------
+
+describe("weight tables", () => {
+  // Every rating is a weighted sum presented to readers as "out of 100", and
+  // the guide page prints these numbers verbatim. A row that is added, dropped
+  // or re-weighted without rebalancing its neighbours silently changes the
+  // ceiling — which is exactly what could have gone wrong when the profile's
+  // tech-breadth row was removed and its 10 points moved elsewhere.
+  it.each(["all", "month"] as const)("profile weights sum to 100 (%s)", (timeframe) => {
+    const total = Object.values(PROFILE_WEIGHTS[timeframe]).reduce((a, b) => a + b, 0);
+    expect(total).toBe(100);
+  });
+
+  it.each(["all", "month"] as const)("project weights sum to 100 (%s)", (timeframe) => {
+    const total = Object.values(PROJECT_WEIGHTS[timeframe]).reduce((a, b) => a + b, 0);
+    expect(total).toBe(100);
+  });
+
+  it("does not score a profile on how many technologies it lists", () => {
+    // Removed 2026-08-15: it rewarded typing more skills, so an honest
+    // three-technology front-end profile ranked below an inflated one.
+    expect(PROFILE_WEIGHTS.all).not.toHaveProperty("techBreadth");
+    expect(PROFILE_WEIGHTS.month).not.toHaveProperty("techBreadth");
+  });
+});
 
 // ---------------------------------------------------------------------------
 // clamp
@@ -391,7 +421,6 @@ function baseUserRatingInput() {
     recentProjectCount: 0,
     mediaCount: 0,
     recentMediaCount: 0,
-    technologyCount: 0,
     bestProjectRating: 0,
     averageProjectRating: 0,
     newestProjectCreatedAt: null as string | null,
@@ -418,7 +447,6 @@ describe("calculateUserRating", () => {
       profileCompleteness: 0.8,
       projectCount: 4,
       mediaCount: 10,
-      technologyCount: 7,
       bestProjectRating: 90,
       averageProjectRating: 75,
       newestProjectCreatedAt: "2026-05-15T00:00:00.000Z",
@@ -462,7 +490,6 @@ describe("calculateUserRating", () => {
       recentProjectCount: 100,
       mediaCount: 1000,
       recentMediaCount: 1000,
-      technologyCount: 1000,
       bestProjectRating: 100,
       averageProjectRating: 100,
       newestProjectCreatedAt: new Date().toISOString(),

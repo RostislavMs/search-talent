@@ -60,7 +60,6 @@ const COPY: Record<Locale, Copy> = {
       completeness: "Заповненість профілю",
       communityTrust: "Довіра спільноти",
       production: "Продуктивність",
-      techBreadth: "Широта стеку",
       freshness: "Свіжість",
     },
     projectRows: {
@@ -98,7 +97,6 @@ const COPY: Record<Locale, Copy> = {
       completeness: "Profile completeness",
       communityTrust: "Community trust",
       production: "Production output",
-      techBreadth: "Tech breadth",
       freshness: "Freshness",
     },
     projectRows: {

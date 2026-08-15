@@ -24,12 +24,22 @@ type ProjectWeights = {
   freshness: number;
 };
 
+/**
+ * Note the absence of a tech-breadth row, which profiles carried until
+ * 2026-08-15. It counted distinct skills across the profile *and* its published
+ * projects, so the cheapest way to raise it was to keep typing technologies
+ * into the profile — and a front-end developer honestly listing HTML/CSS/JS
+ * scored below someone who claimed twenty. Breadth of stack is not evidence of
+ * a better specialist, so the signal was removed rather than re-weighted, and
+ * its 10 points went to the two rows that *are* evidence: the work itself and
+ * how the community answered it. Projects keep their own stack row — there the
+ * tag list describes one piece of work rather than a person.
+ */
 type ProfileWeights = {
   completeness: number;
   portfolio: number;
   communityTrust: number;
   production: number;
-  techBreadth: number;
   freshness: number;
 };
 
@@ -53,18 +63,16 @@ export const PROJECT_WEIGHTS: Record<LeaderboardTimeframe, ProjectWeights> = {
 export const PROFILE_WEIGHTS: Record<LeaderboardTimeframe, ProfileWeights> = {
   all: {
     completeness: 25,
-    portfolio: 30,
-    communityTrust: 20,
+    portfolio: 36,
+    communityTrust: 24,
     production: 15,
-    techBreadth: 10,
     freshness: 0,
   },
   month: {
     completeness: 18,
-    portfolio: 28,
-    communityTrust: 22,
+    portfolio: 33,
+    communityTrust: 25,
     production: 18,
-    techBreadth: 8,
     freshness: 6,
   },
 };
@@ -74,7 +82,6 @@ export const SATURATION = {
   media: 6,
   technologies: 10,
   projects: 8,
-  profileTechnologies: 12,
 } as const;
 
 // Half-life in days — how quickly freshness decays by timeframe.
@@ -360,7 +367,6 @@ export function calculateUserRating(input: {
   recentProjectCount: number;
   mediaCount: number;
   recentMediaCount: number;
-  technologyCount: number;
   bestProjectRating: number; // 0-100
   averageProjectRating: number; // 0-100
   newestProjectCreatedAt: string | null;
@@ -399,7 +405,6 @@ export function calculateUserRating(input: {
         portfolio * w.portfolio +
         communityTrust * w.communityTrust +
         production * w.production +
-        diminishing(input.technologyCount, SATURATION.profileTechnologies) * w.techBreadth +
         freshness(input.newestProjectCreatedAt, HALF_LIFE_DAYS[input.timeframe]) * w.freshness,
     ) + (input.badgeBonus ?? 0),
     0,

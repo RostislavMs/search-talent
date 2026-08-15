@@ -5,7 +5,15 @@
 // from the icon set, adapts to both themes through currentColor and the chart
 // tokens, and stays sharp at any size. Each one diagrams the idea in its
 // section instead of decorating it.
+//
+// Motion works exactly as it does for the About set: these files mark *what*
+// moves via the `data-*` hooks, the `Art` wrapper decides *when*, and the rules
+// live in globals.css. Every animated stroke carries `pathLength="1"`, and each
+// drawing renders complete when nothing animates.
 // ---------------------------------------------------------------------------
+
+import type { CSSProperties } from "react";
+import { beat } from "@/lib/motion";
 
 const ACCENT = "var(--chart-series-1)";
 const SECOND = "var(--chart-series-2)";
@@ -43,47 +51,70 @@ export function SignalsToScoreIllustration({ label }: { label: string }) {
         stroke="currentColor"
         strokeOpacity="0.45"
         strokeWidth="1.5"
+        pathLength="1"
+        data-draw
       />
-      <circle cx="58" cy="76" r="12" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.5" />
-      <path
-        d="M80 71h64M80 82h40"
-        stroke="currentColor"
-        strokeOpacity="0.35"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      {bars.map((bar) => (
-        <rect
-          key={bar.y}
-          x="46"
-          y={bar.y}
-          width={bar.width}
-          height="7"
-          rx="3.5"
-          fill={ACCENT}
-          fillOpacity="0.9"
-        />
-      ))}
-      <path
-        d="M46 186h114M46 198h72"
-        stroke="currentColor"
-        strokeOpacity="0.25"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-
-      {/* Signals flowing into the score */}
-      {bars.map((bar, index) => (
+      <g data-fade>
+        <circle cx="58" cy="76" r="12" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.5" />
         <path
-          key={`link-${bar.y}`}
-          d={`M${46 + bar.width + 6} ${bar.y + 3.5}C${224 + index * 6} ${bar.y + 3.5} ${232} ${132} ${246} ${132}`}
+          d="M80 71h64M80 82h40"
           stroke="currentColor"
-          strokeOpacity="0.28"
+          strokeOpacity="0.35"
           strokeWidth="1.5"
+          strokeLinecap="round"
         />
-      ))}
+        {bars.map((bar) => (
+          <rect
+            key={bar.y}
+            x="46"
+            y={bar.y}
+            width={bar.width}
+            height="7"
+            rx="3.5"
+            fill={ACCENT}
+            fillOpacity="0.9"
+          />
+        ))}
+        <path
+          d="M46 186h114M46 198h72"
+          stroke="currentColor"
+          strokeOpacity="0.25"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </g>
 
-      {/* Score ring */}
+      {/* Signals flowing into the score — the pulses are the whole idea of the
+          drawing: separate measurements arriving at one number. */}
+      {bars.map((bar, index) => {
+        const d = `M${46 + bar.width + 6} ${bar.y + 3.5}C${224 + index * 6} ${bar.y + 3.5} ${232} ${132} ${246} ${132}`;
+        return (
+          <g key={`link-${bar.y}`}>
+            <path
+              d={d}
+              stroke="currentColor"
+              strokeOpacity="0.28"
+              strokeWidth="1.5"
+              pathLength="1"
+              data-draw
+              style={beat(index + 1)}
+            />
+            <path
+              d={d}
+              stroke={ACCENT}
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              pathLength="1"
+              data-flow
+              style={beat(index)}
+            />
+          </g>
+        );
+      })}
+
+      {/* Score ring. The arc sweeps up to 78 % rather than appearing at it —
+          `data-sweep` animates the offset only, so the authored dash length
+          (the 78 %) survives the animation. */}
       <circle cx="302" cy="132" r={radius} stroke="currentColor" strokeOpacity="0.25" strokeWidth="8" />
       <circle
         cx="302"
@@ -94,6 +125,8 @@ export function SignalsToScoreIllustration({ label }: { label: string }) {
         strokeLinecap="round"
         strokeDasharray={`${circumference * 0.78} ${circumference}`}
         transform="rotate(-90 302 132)"
+        data-sweep
+        style={{ "--sweep-from": `${circumference * 0.78}` } as CSSProperties}
       />
       <text
         x="302"
@@ -151,14 +184,16 @@ export function BalanceIllustration({ label }: { label: string }) {
       aria-label={label}
     >
       {/* Column and base */}
-      <path d={`M${pivot.x} ${pivot.y}v108`} stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d={`M${pivot.x} ${pivot.y}v108`} stroke="currentColor" strokeWidth="2" strokeLinecap="round" pathLength="1" data-draw />
       <path
         d={`M${pivot.x - 34} 182h68l-10-12h-48Z`}
         stroke="currentColor"
         strokeWidth="2"
         strokeLinejoin="round"
+        pathLength="1"
+        data-draw
       />
-      <path d={`M${pivot.x - 48} 190h96`} stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d={`M${pivot.x - 48} 190h96`} stroke="currentColor" strokeWidth="2" strokeLinecap="round" pathLength="1" data-draw />
 
       {/* Beam and cords */}
       <path
@@ -166,19 +201,26 @@ export function BalanceIllustration({ label }: { label: string }) {
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
+        pathLength="1"
+        data-draw
+        style={beat(1)}
       />
-      <circle cx={pivot.x} cy={pivot.y} r="4" fill="currentColor" />
+      <circle cx={pivot.x} cy={pivot.y} r="4" fill="currentColor" data-fade />
       <path
         d={`M${left.x} ${left.y}v${cord}M${right.x} ${right.y}v${cord}`}
         stroke="currentColor"
         strokeOpacity="0.6"
         strokeWidth="1.5"
         strokeLinecap="round"
+        pathLength="1"
+        data-draw
+        style={beat(2)}
       />
 
-      {/* Left pan: one dense, earned signal — the side that drops */}
-      <path d={pan(left.x, leftPanTop)} stroke={ACCENT} strokeWidth="2" strokeLinejoin="round" />
-      <circle cx={left.x} cy={leftPanTop - 12} r="12" fill={ACCENT} fillOpacity="0.9" />
+      {/* Left pan: one dense, earned signal — the side that drops. The weight
+          keeps beating, because it is the point the drawing is making. */}
+      <path d={pan(left.x, leftPanTop)} stroke={ACCENT} strokeWidth="2" strokeLinejoin="round" pathLength="1" data-draw style={beat(3)} />
+      <circle cx={left.x} cy={leftPanTop - 12} r="12" fill={ACCENT} fillOpacity="0.9" data-pulse />
 
       {/* Right pan: many weightless ones */}
       <path
@@ -187,18 +229,23 @@ export function BalanceIllustration({ label }: { label: string }) {
         strokeOpacity="0.55"
         strokeWidth="2"
         strokeLinejoin="round"
+        pathLength="1"
+        data-draw
+        style={beat(3)}
       />
-      {beads.map(([cx, cy]) => (
-        <circle
-          key={`${cx}-${cy}`}
-          cx={cx}
-          cy={cy}
-          r="5"
-          stroke="currentColor"
-          strokeOpacity="0.5"
-          strokeWidth="1.5"
-        />
-      ))}
+      <g data-fade>
+        {beads.map(([cx, cy]) => (
+          <circle
+            key={`${cx}-${cy}`}
+            cx={cx}
+            cy={cy}
+            r="5"
+            stroke="currentColor"
+            strokeOpacity="0.5"
+            strokeWidth="1.5"
+          />
+        ))}
+      </g>
     </svg>
   );
 }
@@ -234,6 +281,9 @@ export function TemplateGridIllustration({ label }: { label: string }) {
               stroke="currentColor"
               strokeOpacity="0.35"
               strokeWidth="1.5"
+              pathLength="1"
+              data-draw
+              style={beat(row)}
             />
           );
         }),
@@ -250,26 +300,34 @@ export function TemplateGridIllustration({ label }: { label: string }) {
         strokeOpacity="0.2"
         strokeWidth="1.5"
         strokeDasharray="4 4"
+        data-fade
       />
 
-      {/* Lifted duplicate, marked */}
+      {/* Lifted duplicate, marked. It arrives last and from below, so the
+          drawing reads as "this one got pulled out", not "this one was
+          always crossed off". */}
       <g transform="translate(112 100)">
-        <rect
-          x="0"
-          y="0"
-          width="52"
-          height="34"
-          rx="6"
-          stroke="#f43f5e"
-          strokeWidth="2"
-          fill="var(--surface)"
-        />
-        <path
-          d="m19 11 14 12M33 11 19 23"
-          stroke="#f43f5e"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
+        <g data-slide style={{ ...beat(4), "--slide-x": "0", "--slide-y": "16px" } as CSSProperties}>
+          <rect
+            x="0"
+            y="0"
+            width="52"
+            height="34"
+            rx="6"
+            stroke="#f43f5e"
+            strokeWidth="2"
+            fill="var(--surface)"
+          />
+          <path
+            d="m19 11 14 12M33 11 19 23"
+            stroke="#f43f5e"
+            strokeWidth="2"
+            strokeLinecap="round"
+            pathLength="1"
+            data-draw
+            style={beat(5)}
+          />
+        </g>
       </g>
     </svg>
   );
@@ -305,9 +363,12 @@ export function TwoBoardsIllustration({ label }: { label: string }) {
               stroke="currentColor"
               strokeOpacity="0.3"
               strokeWidth="1.5"
+              pathLength="1"
+              data-draw
+              style={beat(board)}
             />
             {values.map((value, index) => (
-              <g key={index}>
+              <g key={index} data-fade style={beat(board * 2 + index)}>
                 <circle
                   cx={offsetX + 22}
                   cy={46 + index * 24}
