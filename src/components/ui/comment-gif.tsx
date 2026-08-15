@@ -22,7 +22,7 @@ export default function CommentGif({ url, alt, className }: CommentGifProps) {
       loading="lazy"
       className={
         className ??
-        "mt-2 block max-h-72 w-auto max-w-full rounded-xl border app-border"
+        "mt-2 block max-h-56 w-auto max-w-full rounded-xl border app-border sm:max-h-72"
       }
     />
   );
