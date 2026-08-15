@@ -5,6 +5,7 @@ import type { RankedCreator, RankedProject } from "@/lib/db/leaderboards";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { buildProjectPath } from "@/lib/projects";
 import { toPlainText } from "@/lib/plain-text";
+import { beat } from "@/lib/motion";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 
@@ -71,6 +72,10 @@ export default function HomeTopRated({
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      {/* The four rating-signal blocks are the only thing that animates in this
+          whole component — the two leaderboards below stay still. Long lists of
+          near-identical rows are exactly where staggered entrances stop reading
+          as craft and start reading as noise. */}
       <section className="bg-brand-hero rounded-none border app-border p-5 text-center text-white shadow-[0_30px_80px_rgba(15,23,42,0.24)] sm:rounded-hero sm:p-7 sm:text-left md:p-8">
         <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
           {dictionary.home.topRatedEyebrow}
@@ -100,10 +105,11 @@ export default function HomeTopRated({
           </LocalizedLink>
         </div>
 
-        <div className="mt-5 grid gap-3 text-left sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {Object.values(dictionary.home.ratingSignals).map((item) => (
+        <div className="app-cascade mt-5 grid gap-3 text-left sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {Object.values(dictionary.home.ratingSignals).map((item, index) => (
             <div
               key={item.title}
+              style={beat(index)}
               className="rounded-3xl border border-white/10 bg-black/25 p-4 backdrop-blur"
             >
               <p className="text-sm font-semibold text-white">{item.title}</p>

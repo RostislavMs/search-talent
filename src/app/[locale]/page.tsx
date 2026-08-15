@@ -15,6 +15,7 @@ import { getLeaderboards } from "@/lib/db/leaderboards";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
+import { beat } from "@/lib/motion";
 import { buildProjectPath } from "@/lib/projects";
 import { getCurrentUser } from "@/lib/supabase/current-user";
 import {
@@ -197,15 +198,31 @@ export default async function LocalizedHomePage({
       */}
       <section className="bg-brand-hero mx-4 overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:mx-0 sm:rounded-hero sm:p-8 md:p-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:gap-8">
-          <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
-            <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
+          {/*
+            The hero is above the fold, so it enters on a clock (`app-enter`),
+            not on scroll: a view timeline would report it as already covered
+            and skip straight to the finished state. Transform only — the
+            headline is the LCP element and paints at full opacity on the first
+            frame, and nothing here moves in a way CLS can see.
+          */}
+          <div className="app-enter flex flex-col items-center text-center sm:items-start sm:text-left">
+            <p
+              style={beat(0)}
+              className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm"
+            >
               {dictionary.home.eyebrow}
             </p>
-            <h1 className="font-display mt-4 max-w-3xl text-4xl font-medium leading-[1.05] tracking-tight sm:mt-5 md:text-5xl lg:text-6xl">
+            <h1
+              style={beat(1)}
+              className="font-display mt-4 max-w-3xl text-4xl font-medium leading-[1.05] tracking-tight sm:mt-5 md:text-5xl lg:text-6xl"
+            >
               {dictionary.home.titleLead}{" "}
               <RotatingWord words={dictionary.home.titleWords} />
             </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/80 sm:mt-5 sm:text-base sm:leading-8">
+            <p
+              style={beat(2)}
+              className="mt-4 max-w-2xl text-sm leading-7 text-white/80 sm:mt-5 sm:text-base sm:leading-8"
+            >
               {dictionary.home.description}
             </p>
             {/*
@@ -214,7 +231,10 @@ export default async function LocalizedHomePage({
               plain text — deliberately not chips/buttons — and the arrows are
               decorative, so nothing here carries a hover state.
             */}
-            <ol className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-sm font-medium text-white/80 sm:mt-7 sm:justify-start sm:gap-x-2.5 sm:text-base">
+            <ol
+              style={beat(3)}
+              className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-sm font-medium text-white/80 sm:mt-7 sm:justify-start sm:gap-x-2.5 sm:text-base"
+            >
               {dictionary.home.descriptionHighlights.map((item, index) => (
                 <li key={item} className="flex items-center gap-x-2 sm:gap-x-2.5">
                   {index > 0 ? (
@@ -227,7 +247,10 @@ export default async function LocalizedHomePage({
               ))}
             </ol>
 
-            <div className="mt-8 flex w-full flex-col items-center gap-3 sm:mt-10 sm:w-auto sm:flex-row sm:flex-wrap sm:items-stretch lg:mt-auto lg:pt-8">
+            <div
+              style={beat(4)}
+              className="mt-8 flex w-full flex-col items-center gap-3 sm:mt-10 sm:w-auto sm:flex-row sm:flex-wrap sm:items-stretch lg:mt-auto lg:pt-8"
+            >
               <ButtonLink
                 href={isSignedIn ? "/projects/new" : "/signup"}
                 size="lg"
@@ -252,6 +275,12 @@ export default async function LocalizedHomePage({
             </div>
           </div>
 
+          {/*
+            Deliberately still. These cards arrive behind Suspense, so an
+            entrance here plays twice — once as the skeleton paints, once as the
+            real card lands on top of it — and the hero already has the copy
+            column's sequence carrying its arrival.
+          */}
           <div className="space-y-3 sm:space-y-3.5">
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
               {dictionary.home.cards.eyebrow}
@@ -377,7 +406,13 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
 
   return (
     <>
-      {/* Interest — навіщо це користувачу */}
+      {/* Interest — навіщо це користувачу.
+          Motion below the hero is deliberately rationed: only the three card
+          rows marked `app-cascade` animate, and their section shells stay put.
+          Revealing every section as well read as too much, and a shell the size
+          of the viewport moving as one block is the least legible motion on the
+          page anyway. Movement only, never text opacity — a mid-flight fade is
+          measured as blended colour and turns passing contrast into failures. */}
       <section
         aria-labelledby="home-why-heading"
         className="mt-6 rounded-none app-card p-5 sm:mt-8 sm:rounded-hero sm:p-7"
@@ -388,10 +423,11 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
         >
           {marketing.home.whyTitle}
         </h2>
-        <ul className="mt-6 grid gap-4 md:grid-cols-3 sm:mt-7">
+        <ul className="app-cascade mt-6 grid gap-4 md:grid-cols-3 sm:mt-7">
           {marketing.home.whyBullets.map((item, index) => (
             <li
               key={item}
+              style={beat(index)}
               className="relative overflow-hidden rounded-3xl app-panel p-5"
             >
               <span
@@ -435,7 +471,10 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
             </h3>
             <div className="mt-4 space-y-3">
               {marketing.home.talentSteps.map((step, index) => (
-                <div key={step.title} className="rounded-2xl bg-[color:var(--surface)] p-3.5">
+                <div
+                  key={step.title}
+                  className="rounded-2xl bg-[color:var(--surface)] p-3.5"
+                >
                   <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     {index + 1}
                   </p>
@@ -454,7 +493,10 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
             </h3>
             <div className="mt-4 space-y-3">
               {marketing.home.explorerSteps.map((step, index) => (
-                <div key={step.title} className="rounded-2xl bg-[color:var(--surface)] p-3.5">
+                <div
+                  key={step.title}
+                  className="rounded-2xl bg-[color:var(--surface)] p-3.5"
+                >
                   <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
                     {index + 1}
                   </p>
@@ -486,14 +528,17 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
           </p>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* `--auto` rather than `beat()`: ArticleCard is shared with the feeds
+            and takes no style prop, so the stagger index is read off the card's
+            position in the row instead. */}
+        <div className="app-cascade app-cascade--auto mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {latestArticles.map((article) => (
             <ArticleCard key={article.id} article={article} locale={locale} compact />
           ))}
         </div>
       </section>
 
-      {/* Закриття об'єкцій — FAQ */}
+      {/* Закриття об'єкцій — FAQ. Deliberately unanimated. */}
       <div className="mt-6 sm:mt-8">
         <SeoFaqSection
           title={marketing.home.faqTitle}

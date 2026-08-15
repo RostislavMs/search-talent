@@ -228,28 +228,39 @@ select {
 }
 
 /* ---------------------------------------------------------------------------
- * Scroll-driven reveal.
+ * Entry reveal.
  *
- * Progressive enhancement, deliberately dependency-free: the idea comes from
- * MagicUI's blur-fade, but that ships as a client component on top of `motion`.
- * A CSS scroll timeline keeps About//rating/etc. fully server-rendered and adds
- * zero JS.
+ * Put `.app-reveal` on a section, or `.app-cascade` on a row/stack to bring its
+ * children in one after another. `RevealObserver` (mounted once in AppShell)
+ * flips `data-reveal="in"` as each element reaches the viewport, and the
+ * animation below runs on its own 620ms clock from there.
  *
- * The global `prefers-reduced-motion` reset above only clamps
- * `animation-duration`, which a scroll-driven animation ignores (its progress
- * comes from scroll position, not time). Hence the explicit
- * `no-preference` guard here — without it this would still animate for users
- * who asked us not to.
+ * This deliberately replaced a pure CSS scroll timeline
+ * (`animation-timeline: view()`), which was dependency-free and fully
+ * server-rendered but could not produce a reveal anyone could see. Scroll-linked
+ * progress means the element only ever moves *relative to the scroll*: while the
+ * wheel carried the page at 1px per pixel, the section moved at 1.1px. Measured
+ * on the homepage that was 0.05–0.11px of travel per pixel of scroll — an ~11%
+ * differential against its own surroundings, which reads as nothing at all. No
+ * amount of tuning the range fixes it, because the problem is the coupling, not
+ * the distance. Time-based motion is what makes an entrance legible.
  *
- * Unsupported browsers simply get the content, unanimated.
+ * There is no "before" state on purpose: an element that has not been revealed
+ * yet is styled exactly like a finished one, and the animation only attaches
+ * once the observer has marked it. So if the JS never runs, every section is
+ * present, in place and readable — nothing is hidden waiting to be un-hidden.
+ *
+ * `prefers-reduced-motion` is honoured twice, here and in the observer, so a
+ * reader who asked for stillness never even gets the elements observed.
  * --------------------------------------------------------------------------- */
+/* Long and gentle on purpose. `cubic-bezier(0.16, 1, 0.3, 1)` is an expo-out
+ * curve: most of the distance is covered in the first third and the rest is a
+ * long settle, so the element never appears to start or stop abruptly. Paired
+ * with a short travel it reads as drifting into place rather than sliding. */
 @media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .app-reveal {
-      animation: app-reveal-in linear both;
-      animation-timeline: view();
-      animation-range: entry 8% cover 28%;
-    }
+  .app-reveal[data-reveal="in"],
+  .app-cascade > [data-reveal="in"] {
+    animation: app-reveal-in 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
@@ -263,7 +274,7 @@ select {
  * transform is compositor-only so it stays cheap. */
 @keyframes app-reveal-in {
   from {
-    transform: translateY(16px);
+    transform: translateY(var(--app-travel, 20px));
   }
 
   to {
@@ -296,10 +307,13 @@ select {
  * after the one above it. Set `--i` per child to order them. Transform only, so
  * a headline inside still paints at full opacity on the first frame (it is
  * usually the LCP element) and the movement is invisible to CLS. */
+/* Keep this off any stack whose children arrive behind Suspense: the skeleton
+ * plays the entrance, then the real content plays it again as it streams in,
+ * and the reader watches the same card rise twice. */
 @media (prefers-reduced-motion: no-preference) {
   .app-enter > * {
-    animation: app-enter-up 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(var(--i, 0) * 90ms);
+    animation: app-enter-up 840ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--i, 0) * 100ms);
   }
 }
 
@@ -313,18 +327,62 @@ select {
   }
 }
 
-/* A row of cards shares one scroll position, so `.app-reveal` would pop all of
- * them at once. A scroll-driven animation has no clock to delay against, so the
- * stagger comes from shifting each child's *range* by its index instead. */
+/* `.app-cascade` brings a row or stack in child by child; set `--i` per child
+ * to order them (see `beat` in lib/motion, or `.app-cascade--auto` below).
+ *
+ * Safe to put on a grid of *hoverable* cards, which is not obvious: the kit
+ * animates `transform`, while Tailwind v4 compiles `hover:-translate-y-0.5` and
+ * `group-hover:scale-*` to the standalone `translate` / `scale` properties. They
+ * are separate properties that compose, so the card still lifts on hover even
+ * though the animation is holding a `transform` at its `both` fill. (Under
+ * Tailwind v3 this was one shared `transform` and the animation would have won,
+ * silently killing every hover lift — worth re-checking on a major upgrade.) */
 @media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .app-cascade > * {
-      animation: app-reveal-in linear both;
-      animation-timeline: view();
-      animation-range: entry calc(4% + var(--i, 0) * 6%) cover
-        calc(30% + var(--i, 0) * 6%);
-    }
+  .app-cascade > [data-reveal="in"] {
+    /* Cards are the page's featured motion, so they travel a little further
+       than the section shells they sit in. */
+    --app-travel: 26px;
+
+    /* A row of cards crosses the fold together, so left-to-right order has to
+       come from a real delay. This is the one thing a scroll timeline could
+       never express: with no clock to delay against, the old stagger had to be
+       faked by shifting each card's scroll *range*, which made later cards
+       slower rather than later. */
+    animation-delay: calc(var(--i, 0) * 100ms);
   }
+}
+
+/* Same cascade, but for a row built from a *shared* component that takes no
+ * style prop (ArticleCard, say), so `--i` cannot travel with the element. The
+ * position in the row is the index, so read it off the DOM instead. Stops at
+ * eight because that is the widest row the site lays out; a ninth card simply
+ * reveals on the last beat rather than breaking. */
+.app-cascade--auto > *:nth-child(2) {
+  --i: 1;
+}
+
+.app-cascade--auto > *:nth-child(3) {
+  --i: 2;
+}
+
+.app-cascade--auto > *:nth-child(4) {
+  --i: 3;
+}
+
+.app-cascade--auto > *:nth-child(5) {
+  --i: 4;
+}
+
+.app-cascade--auto > *:nth-child(6) {
+  --i: 5;
+}
+
+.app-cascade--auto > *:nth-child(7) {
+  --i: 6;
+}
+
+.app-cascade--auto > *:nth-child(n + 8) {
+  --i: 7;
 }
 
 /* Brand marker sweeping in behind a phrase. Only the background grows — the
