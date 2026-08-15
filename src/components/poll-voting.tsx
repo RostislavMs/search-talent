@@ -241,7 +241,7 @@ export default function PollVoting({
                           <span className="font-medium text-[color:var(--foreground)]">
                             {option.label}
                             {option.selected ? (
-                              <span className="ml-2 text-xs text-[color:var(--brand-strong)]">
+                              <span className="ml-2 text-xs text-[color:var(--brand-ink)]">
                                 ✓ {ui.yourAnswer}
                               </span>
                             ) : null}
@@ -346,7 +346,7 @@ function RatingInput({
           {averageLabel} · {question.responsesCount} {responsesLabel}
         </p>
         {value !== null ? (
-          <p className="mt-1 text-xs text-[color:var(--brand-strong)]">
+          <p className="mt-1 text-xs text-[color:var(--brand-ink)]">
             ✓ {value}
           </p>
         ) : null}

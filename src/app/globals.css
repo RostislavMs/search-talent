@@ -20,7 +20,10 @@
   --surface-muted: #eef3f8;
   --border: #d7e0ea;
   --muted-foreground: #526277;
-  --soft-foreground: #6d7d91;
+  /* Keep at or below #5f6f83 in light mode: `.app-soft` is used on 12px text
+     over --surface-muted, where the previous #6d7d91 landed at 3.83:1 and
+     failed WCAG AA. This value is 4.68:1 there and 5.14:1 on --surface. */
+  --soft-foreground: #5f6f83;
   --ring: #94a3b8;
   --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
   --scrollbar-track: rgba(215, 224, 234, 0.55);
@@ -30,6 +33,11 @@
 
   --brand: #f59e0b;
   --brand-strong: #d97706;
+  /* Brand colour for *text*. --brand-strong is a fill/hover colour: on
+     --surface it is only 3.15:1, which clears the 3:1 bar for icons and
+     borders but not the 4.5:1 one for the 12-14px labels that were using it.
+     Keep the two separate so darkening text never drags the buttons with it. */
+  --brand-ink: #a85d05;
   --brand-soft: #fef3c7;
   --brand-on-soft: #92400e;
   --brand-foreground: #18181b;
@@ -49,7 +57,9 @@
   --chart-series-2: #0284c7;
   --chart-track: #eef3f8;
   --chart-grid: rgba(82, 98, 119, 0.18);
-  --chart-axis: #6d7d91;
+  /* Axis labels render as 9px <text>, so they need the same AA-safe value as
+     --soft-foreground rather than the old #6d7d91. */
+  --chart-axis: #5f6f83;
 }
 
 @theme inline {
@@ -57,6 +67,7 @@
   --color-foreground: var(--foreground);
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
+  --color-brand-ink: var(--brand-ink);
   --color-brand-soft: var(--brand-soft);
   --color-brand-on-soft: var(--brand-on-soft);
   --color-brand-foreground: var(--brand-foreground);
@@ -86,6 +97,10 @@ html[data-theme="dark"] {
 
   --brand: #fbbf24;
   --brand-strong: #f59e0b;
+  /* On the dark surfaces --brand-strong already measures 8.4:1, so brand text
+     needs no separate darkening here — the token exists purely so components
+     can reference one name across both themes. */
+  --brand-ink: #f59e0b;
   --brand-soft: #422006;
   --brand-on-soft: #fde68a;
   --brand-foreground: #18181b;
@@ -212,6 +227,426 @@ select {
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Scroll-driven reveal.
+ *
+ * Progressive enhancement, deliberately dependency-free: the idea comes from
+ * MagicUI's blur-fade, but that ships as a client component on top of `motion`.
+ * A CSS scroll timeline keeps About//rating/etc. fully server-rendered and adds
+ * zero JS.
+ *
+ * The global `prefers-reduced-motion` reset above only clamps
+ * `animation-duration`, which a scroll-driven animation ignores (its progress
+ * comes from scroll position, not time). Hence the explicit
+ * `no-preference` guard here — without it this would still animate for users
+ * who asked us not to.
+ *
+ * Unsupported browsers simply get the content, unanimated.
+ * --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .app-reveal {
+      animation: app-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 28%;
+    }
+  }
+}
+
+/* Movement only — deliberately no opacity or blur.
+ *
+ * A fade leaves every not-yet-scrolled section sitting at partial opacity,
+ * and contrast is computed against the *blended* colour: axe read
+ * --brand-strong as #e19c4c (2.25:1) and --muted-foreground as #818d9d
+ * (3.27:1) on the About page, turning a passing page into 8 contrast
+ * failures. Translating alone keeps every colour at its declared value, and
+ * transform is compositor-only so it stays cheap. */
+@keyframes app-reveal-in {
+  from {
+    transform: translateY(16px);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion kit.
+ *
+ * Everything below follows the two rules `.app-reveal` set above:
+ *
+ *  1. Never animate the opacity or the colour of *text*. Contrast is measured
+ *     against the blended colour, so a mid-flight fade turns a passing page
+ *     into a wall of contrast failures. Transforms, background geometry and the
+ *     strokes of line art are all safe; text opacity is not.
+ *  2. Nothing is load-bearing. Every rule sits behind
+ *     `prefers-reduced-motion: no-preference`, the scroll-driven ones behind
+ *     `@supports (animation-timeline: view())` as well, and the un-animated
+ *     state is always the *finished* state — a browser with none of this still
+ *     gets the whole page, drawn, readable and in place.
+ *
+ * The scroll-driven pieces read their progress from a *named* view timeline,
+ * because a name declared on an element is visible to all of its descendants.
+ * That is what lets a wrapper `<div>` drive the strokes of the SVG inside it:
+ * SVG children are not reliable timeline subjects of their own.
+ * --------------------------------------------------------------------------- */
+
+/* One orchestrated entrance for a stack of elements — each child starts a beat
+ * after the one above it. Set `--i` per child to order them. Transform only, so
+ * a headline inside still paints at full opacity on the first frame (it is
+ * usually the LCP element) and the movement is invisible to CLS. */
+@media (prefers-reduced-motion: no-preference) {
+  .app-enter > * {
+    animation: app-enter-up 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+}
+
+@keyframes app-enter-up {
+  from {
+    transform: translateY(14px);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+/* A row of cards shares one scroll position, so `.app-reveal` would pop all of
+ * them at once. A scroll-driven animation has no clock to delay against, so the
+ * stagger comes from shifting each child's *range* by its index instead. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .app-cascade > * {
+      animation: app-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry calc(4% + var(--i, 0) * 6%) cover
+        calc(30% + var(--i, 0) * 6%);
+    }
+  }
+}
+
+/* Brand marker sweeping in behind a phrase. Only the background grows — the
+ * text keeps its declared colour for the whole run (see rule 1).
+ *
+ * The range ends at `cover 32%`, roughly when the phrase reaches the upper
+ * third of the screen. That is also the practical ceiling: a phrase in a page's
+ * *last* section stops moving once the document bottom is reached, so a range
+ * ending much later than this would leave the marker permanently short of the
+ * final word. Keep the marker off closing sections. */
+.app-mark {
+  padding: 0 0.14em;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--brand) 34%, transparent),
+    color-mix(in srgb, var(--brand) 14%, transparent)
+  );
+  background-repeat: no-repeat;
+  background-position: 0 84%;
+  background-size: 100% 0.44em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .app-mark {
+      animation: app-mark-in linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 32%;
+    }
+  }
+}
+
+@keyframes app-mark-in {
+  from {
+    background-size: 0 0.44em;
+  }
+
+  to {
+    background-size: 100% 0.44em;
+  }
+}
+
+/* The thread down a numbered sequence: a hairline track that fills as its
+ * column scrolls past. The fill is a background, not a pseudo-element, so the
+ * timeline subject is the element itself. `cover` is the only range that stays
+ * meaningful on a subject taller than the viewport. */
+.app-spine {
+  background-color: color-mix(in srgb, var(--border) 92%, transparent);
+  background-image: linear-gradient(
+    to bottom,
+    var(--brand-strong),
+    color-mix(in srgb, var(--brand) 28%, transparent)
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .app-spine {
+      animation: app-spine-fill linear both;
+      animation-timeline: view();
+      animation-range: cover 14% cover 74%;
+    }
+  }
+}
+
+@keyframes app-spine-fill {
+  from {
+    background-size: 100% 0;
+  }
+
+  to {
+    background-size: 100% 100%;
+  }
+}
+
+/* ---- Line art -------------------------------------------------------------
+ *
+ * Put `.app-art` on the element wrapping an inline SVG, then mark shapes inside
+ * it:
+ *
+ *   data-draw   the shape draws itself on
+ *   data-flow   a pulse runs along the shape (draw it as a duplicate sitting on
+ *               top of the static stroke)
+ *   data-sweep  like data-draw, but for a shape that already carries its own
+ *               dash pattern — a progress arc, say. Only the *offset* is
+ *               animated, so the authored `stroke-dasharray` survives; start it
+ *               with `--sweep-from` set to the arc's own dash length.
+ *   data-pulse  the shape breathes in place
+ *   data-fade   the shape fades in (safe: line art carries no text)
+ *   data-slide  the shape travels into position
+ *   data-grow-x a bar grows from its left edge
+ *   data-grow-y a column grows from its baseline
+ *
+ * The two `grow` hooks are for the HTML bars the chart primitives render, not
+ * for SVG: they scale rather than animate width/height, so a chart of twenty
+ * bars still costs nothing to paint, and the value beside each bar never
+ * reflows while it runs.
+ *
+ * Every drawn or flowing shape needs `pathLength="1"` so a single dash length
+ * covers any stroke regardless of its real geometry. The dash *offset* only
+ * ever exists inside the keyframes: if the animation never runs, the shape
+ * keeps its default offset of 0 and renders complete.
+ *
+ * `--app-art` is the wrapper's own view timeline; `--i` staggers a set of
+ * shapes the same way `.app-cascade` staggers cards.
+ * --------------------------------------------------------------------------- */
+.app-art [data-draw] {
+  stroke-dasharray: 1;
+}
+
+.app-art [data-flow] {
+  stroke-dasharray: 0.07 0.93;
+}
+
+.app-art [data-pulse],
+.app-art [data-slide] {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.app-art [data-grow-x] {
+  transform-origin: left center;
+}
+
+.app-art [data-grow-y] {
+  transform-origin: center bottom;
+}
+
+/* Time-based variant, for art that is already on screen when the page opens —
+ * a scroll timeline would report it as fully covered and skip straight to the
+ * finished drawing. */
+@media (prefers-reduced-motion: no-preference) {
+  .app-art--load [data-draw] {
+    animation: app-draw-in 1500ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    animation-delay: calc(var(--i, 0) * 130ms);
+  }
+
+  .app-art--load [data-sweep] {
+    animation: app-sweep-in 1600ms cubic-bezier(0.33, 1, 0.68, 1) both;
+    animation-delay: calc(300ms + var(--i, 0) * 130ms);
+  }
+
+  .app-art--load [data-fade] {
+    animation: app-art-fade 900ms ease-out both;
+    animation-delay: calc(600ms + var(--i, 0) * 130ms);
+  }
+
+  .app-art [data-flow] {
+    animation: app-draw-in 3400ms linear infinite;
+    animation-delay: calc(var(--i, 0) * -850ms);
+  }
+
+  .app-art [data-pulse] {
+    animation: app-art-pulse 3600ms ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * 400ms);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .app-art--scroll {
+      view-timeline-name: --app-art;
+    }
+
+    .app-art--scroll [data-draw] {
+      animation: app-draw-in linear both;
+      animation-timeline: --app-art;
+      animation-range: entry calc(8% + var(--i, 0) * 5%) cover
+        calc(40% + var(--i, 0) * 5%);
+    }
+
+    .app-art--scroll [data-sweep] {
+      animation: app-sweep-in linear both;
+      animation-timeline: --app-art;
+      animation-range: entry 12% cover 46%;
+    }
+
+    .app-art--scroll [data-slide] {
+      animation: app-art-slide linear both;
+      animation-timeline: --app-art;
+      animation-range: entry calc(6% + var(--i, 0) * 5%) cover
+        calc(44% + var(--i, 0) * 5%);
+    }
+
+    .app-art--scroll [data-fade] {
+      animation: app-art-fade linear both;
+      animation-timeline: --app-art;
+      animation-range: entry 30% cover 56%;
+    }
+
+    /* `linear` like every other scroll-driven rule here, and not merely for
+       consistency: progress comes from the scroll position, so an eased curve
+       would make the bar drift out of step with the wheel. */
+    .app-art--scroll [data-grow-x] {
+      animation: app-grow-x linear both;
+      animation-timeline: --app-art;
+      animation-range: entry calc(10% + var(--i, 0) * 5%) cover
+        calc(36% + var(--i, 0) * 5%);
+    }
+
+    .app-art--scroll [data-grow-y] {
+      animation: app-grow-y linear both;
+      animation-timeline: --app-art;
+      animation-range: entry calc(10% + var(--i, 0) * 5%) cover
+        calc(36% + var(--i, 0) * 5%);
+    }
+  }
+}
+
+@keyframes app-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+@keyframes app-grow-y {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+@keyframes app-draw-in {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Offset only — the shape keeps whatever `stroke-dasharray` it was authored
+ * with, which is the whole point: a 78 %-of-a-ring arc has to stay 78 % once it
+ * arrives. `--sweep-from` is that dash length, so the arc starts pushed
+ * entirely off the visible part of the path. */
+@keyframes app-sweep-in {
+  from {
+    stroke-dashoffset: var(--sweep-from, 1);
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes app-art-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes app-art-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.16);
+  }
+}
+
+/* Travels along the drawing's own axis: the mission fragments converge on the
+ * page they end up inside. */
+@keyframes app-art-slide {
+  from {
+    transform: translate(var(--slide-x, -18px), var(--slide-y, 0));
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+/* Slow rotation for a tick ring — the only thing on the page that keeps moving
+ * once you stop scrolling, which is what makes the hero read as live. */
+@media (prefers-reduced-motion: no-preference) {
+  .app-art [data-orbit] {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: app-art-orbit 48s linear infinite;
+  }
+}
+
+@keyframes app-art-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Short brand rule under a section heading. Gives long stacks of identical
+ * cards a rhythm without adding another border or shadow. */
+.app-heading-rule::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 3px;
+  margin-top: 0.85rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--brand-strong),
+    color-mix(in srgb, var(--brand) 35%, transparent)
+  );
+}
+
 ::selection {
   background: color-mix(in srgb, var(--brand) 22%, transparent);
   color: var(--foreground);
@@ -277,6 +712,18 @@ select {
 .app-panel {
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-muted) 86%, transparent);
+}
+
+/* Warm variant of .app-panel for illustration wells. The line art is drawn in
+ * brand tones, so a neutral grey well leaves it looking washed out; this keeps
+ * the tint low enough to stay inside the minimal palette. */
+.app-panel-brand {
+  border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--border));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--brand) 10%, var(--surface-muted)),
+    color-mix(in srgb, var(--surface-muted) 88%, transparent)
+  );
 }
 
 .app-panel-dashed {

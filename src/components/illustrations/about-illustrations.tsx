@@ -6,7 +6,18 @@
 // two chart slots. That keeps a single drawing usable on the light cards and
 // on the dark hero without a second asset, and keeps the page free of raster
 // artwork the rest of the site does not have.
+//
+// Motion: the `data-draw` / `data-flow` / `data-pulse` / `data-fade` /
+// `data-slide` / `data-orbit` hooks are driven entirely by the motion kit in
+// globals.css — the page decides *when* by putting `.app-art--load` or
+// `.app-art--scroll` on the wrapper, and these files only say *what* moves.
+// Every animated stroke carries `pathLength="1"` so one dash length spans it
+// whatever its real geometry, and every drawing renders complete when nothing
+// animates (no support, or reduced motion).
 // ---------------------------------------------------------------------------
+
+import type { CSSProperties } from "react";
+import { beat } from "@/lib/motion";
 
 const ACCENT = "var(--chart-series-1)";
 const SECOND = "var(--chart-series-2)";
@@ -66,7 +77,8 @@ export function PlatformMapIllustration({ label }: { label: string }) {
       role="img"
       aria-label={label}
     >
-      {/* Orbit the surfaces sit on */}
+      {/* Orbit the surfaces sit on, plus a tick ring that keeps turning: the
+          one thing still moving once the reader stops scrolling. */}
       <circle
         cx={ring.cx}
         cy={ring.cy}
@@ -74,6 +86,20 @@ export function PlatformMapIllustration({ label }: { label: string }) {
         stroke={ACCENT}
         strokeOpacity="0.55"
         strokeWidth="1.5"
+        pathLength="1"
+        data-draw
+        style={beat(1)}
+      />
+      <circle
+        cx={ring.cx}
+        cy={ring.cy}
+        r={ring.r - 9}
+        stroke={ACCENT}
+        strokeOpacity="0.3"
+        strokeWidth="1.5"
+        strokeDasharray="0.006 0.019"
+        pathLength="1"
+        data-orbit
       />
 
       {/* The profile everything starts from */}
@@ -86,48 +112,70 @@ export function PlatformMapIllustration({ label }: { label: string }) {
         stroke="currentColor"
         strokeOpacity="0.5"
         strokeWidth="1.5"
+        pathLength="1"
+        data-draw
+        style={beat(0)}
       />
-      <circle
-        cx={card.x + 28}
-        cy={card.y + 30}
-        r="12"
-        stroke={ACCENT}
-        strokeWidth="1.5"
-      />
-      <path
-        d={`M${card.x + 20} ${card.y + 36}a8 8 0 0 1 16 0`}
-        stroke={ACCENT}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <circle cx={card.x + 28} cy={card.y + 25} r="4.5" stroke={ACCENT} strokeWidth="1.5" />
-      <path
-        d={`M${card.x + 50} ${card.y + 24}h60M${card.x + 50} ${card.y + 34}h44`}
-        stroke="currentColor"
-        strokeOpacity="0.4"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d={`M${card.x + 20} ${card.y + 60}h92M${card.x + 20} ${card.y + 70}h58`}
-        stroke="currentColor"
-        strokeOpacity="0.25"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-
-      {/* Connectors fanning out to each surface */}
-      {surfaces.map((surface) => (
-        <path
-          key={`link-${surface.degrees}`}
-          d={`M${exit.x} ${exit.y}C${exit.x + 58} ${exit.y} ${
-            surface.cx - 70
-          } ${surface.cy} ${surface.cx - tile.width / 2 - 4} ${surface.cy}`}
-          stroke="currentColor"
-          strokeOpacity="0.3"
+      <g data-fade style={beat(0)}>
+        <circle
+          cx={card.x + 28}
+          cy={card.y + 30}
+          r="12"
+          stroke={ACCENT}
           strokeWidth="1.5"
         />
-      ))}
+        <path
+          d={`M${card.x + 20} ${card.y + 36}a8 8 0 0 1 16 0`}
+          stroke={ACCENT}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <circle cx={card.x + 28} cy={card.y + 25} r="4.5" stroke={ACCENT} strokeWidth="1.5" />
+        <path
+          d={`M${card.x + 50} ${card.y + 24}h60M${card.x + 50} ${card.y + 34}h44`}
+          stroke="currentColor"
+          strokeOpacity="0.4"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <path
+          d={`M${card.x + 20} ${card.y + 60}h92M${card.x + 20} ${card.y + 70}h58`}
+          stroke="currentColor"
+          strokeOpacity="0.25"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* Connectors fanning out to each surface, each with a pulse riding it —
+          the profile is not a page that sits there, it feeds the rest. */}
+      {surfaces.map((surface, index) => {
+        const d = `M${exit.x} ${exit.y}C${exit.x + 58} ${exit.y} ${
+          surface.cx - 70
+        } ${surface.cy} ${surface.cx - tile.width / 2 - 4} ${surface.cy}`;
+        return (
+          <g key={`link-${surface.degrees}`}>
+            <path
+              d={d}
+              stroke="currentColor"
+              strokeOpacity="0.3"
+              strokeWidth="1.5"
+              pathLength="1"
+              data-draw
+              style={beat(index + 1)}
+            />
+            <path
+              d={d}
+              stroke={ACCENT}
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              pathLength="1"
+              data-flow
+              style={beat(index)}
+            />
+          </g>
+        );
+      })}
 
       {/* The surfaces themselves */}
       {surfaces.map((surface, index) => {
@@ -144,10 +192,13 @@ export function PlatformMapIllustration({ label }: { label: string }) {
               stroke="currentColor"
               strokeOpacity="0.5"
               strokeWidth="1.5"
+              pathLength="1"
+              data-draw
+              style={beat(index + 2)}
             />
             {index === 0 ? (
               // Project media
-              <g>
+              <g data-fade style={beat(index + 2)}>
                 <rect
                   x={x + 14}
                   y={y + 12}
@@ -176,11 +227,13 @@ export function PlatformMapIllustration({ label }: { label: string }) {
                 strokeOpacity="0.55"
                 strokeWidth="1.5"
                 strokeLinecap="round"
+                data-fade
+                style={beat(index + 2)}
               />
             ) : null}
             {index === 2 ? (
               // Leaderboard
-              <g>
+              <g data-fade style={beat(index + 2)}>
                 {[10, 18, 26].map((height, bar) => (
                   <rect
                     key={height}
@@ -203,8 +256,9 @@ export function PlatformMapIllustration({ label }: { label: string }) {
               </g>
             ) : null}
             {index === 3 ? (
-              // Rating mark
-              <g>
+              // Rating mark — the one glyph that keeps breathing, because it is
+              // the thing the whole diagram is pointing at.
+              <g data-fade style={beat(index + 2)}>
                 <circle
                   cx={x + tile.width / 2}
                   cy={y + tile.height / 2}
@@ -216,6 +270,7 @@ export function PlatformMapIllustration({ label }: { label: string }) {
                   points={starPoints(x + tile.width / 2, y + tile.height / 2, 6, 2.6)}
                   fill={ACCENT}
                   fillOpacity="0.9"
+                  data-pulse
                 />
               </g>
             ) : null}
@@ -251,59 +306,86 @@ export function ScatteredToProfileIllustration({ label }: { label: string }) {
       role="img"
       aria-label={label}
     >
-      {/* Converging guides */}
-      {fragments.map((fragment) => (
-        <path
-          key={`guide-${fragment.y}`}
-          d={`M${fragment.x + 40} ${fragment.y + 14}L${focus.x} ${focus.y}`}
-          stroke={ACCENT}
-          strokeOpacity="0.45"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      ))}
+      {/* Converging guides, each carrying a pulse: the drawing is about work
+          moving off a dozen services and onto one page, so it should move. */}
+      {fragments.map((fragment, index) => {
+        const d = `M${fragment.x + 40} ${fragment.y + 14}L${focus.x} ${focus.y}`;
+        return (
+          <g key={`guide-${fragment.y}`}>
+            <path
+              d={d}
+              stroke={ACCENT}
+              strokeOpacity="0.45"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              pathLength="1"
+              data-draw
+              style={beat(index)}
+            />
+            <path
+              d={d}
+              stroke={ACCENT}
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              pathLength="1"
+              data-flow
+              style={beat(index)}
+            />
+          </g>
+        );
+      })}
       <path
         d={`M${focus.x} ${focus.y}h${card.x - focus.x}`}
         stroke={ACCENT}
         strokeWidth="1.5"
         strokeLinecap="round"
+        pathLength="1"
+        data-draw
+        style={beat(5)}
       />
 
-      {/* Fragments */}
+      {/* Fragments. The rotation stays on the inner `<g>` as an attribute — a
+          CSS transform on the same element would replace it, not compose with
+          it — so the travel goes on an outer wrapper. */}
       {fragments.map((fragment, index) => (
         <g
           key={`fragment-${fragment.y}`}
-          transform={`rotate(${fragment.rotate} ${fragment.x + 14} ${fragment.y + 14})`}
+          data-slide
+          style={{ ...beat(index), "--slide-x": "-22px" } as CSSProperties}
         >
-          <rect
-            x={fragment.x}
-            y={fragment.y}
-            width="30"
-            height="28"
-            rx="6"
-            stroke="currentColor"
-            strokeOpacity="0.35"
-            strokeWidth="1.5"
-          />
-          {index % 2 === 0 ? (
-            <path
-              d={`M${fragment.x + 7} ${fragment.y + 20}l6-7 4 4 5-6`}
+          <g
+            transform={`rotate(${fragment.rotate} ${fragment.x + 14} ${fragment.y + 14})`}
+          >
+            <rect
+              x={fragment.x}
+              y={fragment.y}
+              width="30"
+              height="28"
+              rx="6"
               stroke="currentColor"
               strokeOpacity="0.35"
               strokeWidth="1.5"
-              strokeLinejoin="round"
             />
-          ) : (
-            <path
-              d={`M${fragment.x + 8} ${fragment.y + 11}h14M${fragment.x + 8} ${
-                fragment.y + 18
-              }h9`}
-              stroke="currentColor"
-              strokeOpacity="0.35"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          )}
+            {index % 2 === 0 ? (
+              <path
+                d={`M${fragment.x + 7} ${fragment.y + 20}l6-7 4 4 5-6`}
+                stroke="currentColor"
+                strokeOpacity="0.35"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+            ) : (
+              <path
+                d={`M${fragment.x + 8} ${fragment.y + 11}h14M${fragment.x + 8} ${
+                  fragment.y + 18
+                }h9`}
+                stroke="currentColor"
+                strokeOpacity="0.35"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            )}
+          </g>
         </g>
       ))}
 
@@ -317,36 +399,41 @@ export function ScatteredToProfileIllustration({ label }: { label: string }) {
         stroke="currentColor"
         strokeOpacity="0.6"
         strokeWidth="1.8"
+        pathLength="1"
+        data-draw
+        style={beat(2)}
       />
-      <circle cx={card.x + 63} cy={card.y + 46} r="21" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.8" />
-      <circle cx={card.x + 63} cy={card.y + 39} r="8" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.8" />
-      <path
-        d={`M${card.x + 50} ${card.y + 58}a13 13 0 0 1 26 0`}
-        stroke="currentColor"
-        strokeOpacity="0.6"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-      <path
-        d={`M${card.x + 20} ${card.y + 84}h86M${card.x + 32} ${card.y + 96}h62`}
-        stroke="currentColor"
-        strokeOpacity="0.45"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-      {[0, 1, 2].map((pill) => (
-        <rect
-          key={pill}
-          x={card.x + 18 + pill * 34}
-          y={card.y + 112}
-          width="28"
-          height="12"
-          rx="6"
-          stroke={pill === 0 ? ACCENT : "currentColor"}
-          strokeOpacity={pill === 0 ? 1 : 0.45}
-          strokeWidth="1.6"
+      <g data-fade>
+        <circle cx={card.x + 63} cy={card.y + 46} r="21" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.8" />
+        <circle cx={card.x + 63} cy={card.y + 39} r="8" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.8" />
+        <path
+          d={`M${card.x + 50} ${card.y + 58}a13 13 0 0 1 26 0`}
+          stroke="currentColor"
+          strokeOpacity="0.6"
+          strokeWidth="1.8"
+          strokeLinecap="round"
         />
-      ))}
+        <path
+          d={`M${card.x + 20} ${card.y + 84}h86M${card.x + 32} ${card.y + 96}h62`}
+          stroke="currentColor"
+          strokeOpacity="0.45"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+        {[0, 1, 2].map((pill) => (
+          <rect
+            key={pill}
+            x={card.x + 18 + pill * 34}
+            y={card.y + 112}
+            width="28"
+            height="12"
+            rx="6"
+            stroke={pill === 0 ? ACCENT : "currentColor"}
+            strokeOpacity={pill === 0 ? 1 : 0.45}
+            strokeWidth="1.6"
+          />
+        ))}
+      </g>
     </svg>
   );
 }
@@ -372,28 +459,44 @@ export function StepFlowIllustration({ label }: { label: string }) {
       role="img"
       aria-label={label}
     >
-      {/* Connectors between the steps */}
+      {/* Connectors between the steps. Drawn left to right on the section's own
+          timeline, so the diagram builds in the same order the reader is
+          working down the three cards beside it. */}
       {[0, 1].map((gap) => {
         const from = steps[gap] + size;
         const to = steps[gap + 1];
         const node = (from + to) / 2;
+        const d = `M${from + 6} ${midY}h${to - from - 12}`;
         return (
           <g key={gap}>
             <path
-              d={`M${from + 6} ${midY}h${to - from - 12}`}
+              d={d}
               stroke={ACCENT}
               strokeOpacity="0.75"
               strokeWidth="1.6"
               strokeLinecap="round"
+              pathLength="1"
+              data-draw
+              style={beat(gap * 2 + 1)}
             />
-            <circle cx={node} cy={midY} r="6" stroke={ACCENT} strokeWidth="1.6" />
-            <circle cx={node} cy={midY} r="2.4" fill={ACCENT} />
+            <path
+              d={d}
+              stroke={ACCENT}
+              strokeWidth="3"
+              strokeLinecap="round"
+              pathLength="1"
+              data-flow
+              style={beat(gap)}
+            />
+            <circle cx={node} cy={midY} r="6" stroke={ACCENT} strokeWidth="1.6" data-fade />
+            <circle cx={node} cy={midY} r="2.4" fill={ACCENT} data-pulse style={beat(gap)} />
             <path
               d={`M${to - 14} ${midY - 5}l5 5-5 5`}
               stroke={ACCENT}
               strokeWidth="1.6"
               strokeLinecap="round"
               strokeLinejoin="round"
+              data-fade
             />
           </g>
         );
@@ -410,10 +513,13 @@ export function StepFlowIllustration({ label }: { label: string }) {
             stroke="currentColor"
             strokeOpacity="0.45"
             strokeWidth="1.6"
+            pathLength="1"
+            data-draw
+            style={beat(index * 2)}
           />
           {index === 0 ? (
             // Fill the profile
-            <g>
+            <g data-fade>
               <circle cx="42" cy="40" r="22" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.6" />
               <circle cx="42" cy="33" r="8" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.6" />
               <path
@@ -434,7 +540,7 @@ export function StepFlowIllustration({ label }: { label: string }) {
           ) : null}
           {index === 1 ? (
             // Publish work
-            <g>
+            <g data-fade>
               {[0, 1, 2].map((sheet) => (
                 <rect
                   key={sheet}
@@ -459,7 +565,7 @@ export function StepFlowIllustration({ label }: { label: string }) {
           ) : null}
           {index === 2 ? (
             // Get ranked
-            <g>
+            <g data-fade>
               <path
                 d="m20 52 12-13 9 8 15-19"
                 stroke={ACCENT}
@@ -540,9 +646,30 @@ export function CommunityLoopIllustration({ label }: { label: string }) {
       role="img"
       aria-label={label}
     >
-      {segments.map((segment) => (
+      {/* The loop, with a signal running round it. Segment order is the
+          direction of travel, so the staggered pulses read as one circuit
+          rather than five blinking arcs. */}
+      {segments.map((segment, index) => (
         <g key={segment.d}>
-          <path d={segment.d} stroke={ACCENT} strokeOpacity="0.8" strokeWidth="1.8" strokeLinecap="round" />
+          <path
+            d={segment.d}
+            stroke={ACCENT}
+            strokeOpacity="0.8"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            pathLength="1"
+            data-draw
+            style={beat(index)}
+          />
+          <path
+            d={segment.d}
+            stroke={ACCENT}
+            strokeWidth="3.2"
+            strokeLinecap="round"
+            pathLength="1"
+            data-flow
+            style={beat(index)}
+          />
           {segment.arrow !== undefined
             ? (() => {
                 const tip = point(segment.arrow);
@@ -617,6 +744,7 @@ export function CommunityLoopIllustration({ label }: { label: string }) {
         stroke={ACCENT}
         strokeWidth="1.8"
         strokeLinejoin="round"
+        data-pulse
       />
       <path
         d={`M${bubble.x - 15} ${bubble.y - 11}h30a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5h-11l-7 7v-7h-12a5 5 0 0 1-5-5v-8a5 5 0 0 1 5-5Z`}
@@ -653,27 +781,42 @@ export function OpenBuildIllustration({ label }: { label: string }) {
       role="img"
       aria-label={label}
     >
-      {/* Contributions arriving */}
-      {inbound.map((node) => (
-        <g key={node.x}>
-          <path
-            d={`M${node.x} ${node.y + 12}L${node.x + (180 - node.x) * 0.42} ${panel.y - 4}`}
-            stroke={ACCENT}
-            strokeOpacity="0.7"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeDasharray="1 6"
-          />
-          <circle
-            cx={node.x}
-            cy={node.y}
-            r="9"
-            stroke={ACCENT}
-            strokeWidth="1.8"
-            fill={node.filled ? ACCENT : "none"}
-          />
-        </g>
-      ))}
+      {/* Contributions arriving. The dotted guide stays put and a solid pulse
+          rides down it, so the drawing shows the direction of the traffic. */}
+      {inbound.map((node, index) => {
+        const d = `M${node.x} ${node.y + 12}L${node.x + (180 - node.x) * 0.42} ${panel.y - 4}`;
+        return (
+          <g key={node.x}>
+            <path
+              d={d}
+              stroke={ACCENT}
+              strokeOpacity="0.7"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeDasharray="1 6"
+            />
+            <path
+              d={d}
+              stroke={ACCENT}
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              pathLength="1"
+              data-flow
+              style={beat(index)}
+            />
+            <circle
+              cx={node.x}
+              cy={node.y}
+              r="9"
+              stroke={ACCENT}
+              strokeWidth="1.8"
+              fill={node.filled ? ACCENT : "none"}
+              data-pulse
+              style={beat(index)}
+            />
+          </g>
+        );
+      })}
 
       {/* The thing being built */}
       <rect
@@ -685,6 +828,8 @@ export function OpenBuildIllustration({ label }: { label: string }) {
         stroke="currentColor"
         strokeOpacity="0.55"
         strokeWidth="1.8"
+        pathLength="1"
+        data-draw
       />
       <rect
         x={panel.x + 18}
@@ -740,26 +885,57 @@ export function OpenBuildIllustration({ label }: { label: string }) {
 export function ProfileVignette({ label }: { label: string }) {
   return (
     <svg viewBox="0 0 160 112" className="h-full w-full" fill="none" role="img" aria-label={label}>
-      <rect x="44" y="6" width="72" height="70" rx="12" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.6" />
-      <circle cx="80" cy="27" r="11" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.6" />
-      <circle cx="80" cy="23" r="4" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.6" />
-      <path d="M73 34a7 7 0 0 1 14 0" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M58 48h44M66 55h28" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.6" strokeLinecap="round" />
-      {[0, 1, 2].map((pill) => (
-        <rect
-          key={pill}
-          x={54 + pill * 20}
-          y="62"
-          width="16"
-          height="8"
-          rx="4"
-          fill={pill === 0 ? ACCENT : "currentColor"}
-          fillOpacity={pill === 0 ? 0.9 : 0.3}
-        />
-      ))}
+      <rect
+        x="44"
+        y="6"
+        width="72"
+        height="70"
+        rx="12"
+        stroke="currentColor"
+        strokeOpacity="0.5"
+        strokeWidth="1.6"
+        pathLength="1"
+        data-draw
+      />
+      <g data-fade>
+        <circle cx="80" cy="27" r="11" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.6" />
+        <circle cx="80" cy="23" r="4" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.6" />
+        <path d="M73 34a7 7 0 0 1 14 0" stroke="currentColor" strokeOpacity="0.55" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M58 48h44M66 55h28" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.6" strokeLinecap="round" />
+        {[0, 1, 2].map((pill) => (
+          <rect
+            key={pill}
+            x={54 + pill * 20}
+            y="62"
+            width="16"
+            height="8"
+            rx="4"
+            fill={pill === 0 ? ACCENT : "currentColor"}
+            fillOpacity={pill === 0 ? 0.9 : 0.3}
+          />
+        ))}
+      </g>
       {/* Exported as a résumé */}
-      <path d="M80 80v16m0 0-5-5m5 5 5-5" stroke={ACCENT} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M62 96v8h36v-8" stroke={ACCENT} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M80 80v16m0 0-5-5m5 5 5-5"
+        stroke={ACCENT}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pathLength="1"
+        data-draw
+        style={beat(1)}
+      />
+      <path
+        d="M62 96v8h36v-8"
+        stroke={ACCENT}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pathLength="1"
+        data-draw
+        style={beat(2)}
+      />
     </svg>
   );
 }
@@ -771,13 +947,32 @@ export function PortfolioVignette({ label }: { label: string }) {
   const tagStart = 80 - (19 + 2 * 26) / 2;
   return (
     <svg viewBox="0 0 160 112" className="h-full w-full" fill="none" role="img" aria-label={label}>
-      <rect x="30" y="12" width="100" height="58" rx="12" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.6" />
+      <rect
+        x="30"
+        y="12"
+        width="100"
+        height="58"
+        rx="12"
+        stroke="currentColor"
+        strokeOpacity="0.5"
+        strokeWidth="1.6"
+        pathLength="1"
+        data-draw
+      />
       {/* Optically centred rather than geometrically: a triangle's mass sits
           behind its tip. */}
-      <path d="m72 27 22 14-22 14z" stroke={ACCENT} strokeWidth="1.8" strokeLinejoin="round" />
-      {[0, 1, 2].map((tag) => (
-        <Tag key={tag} x={tagStart + tag * 26} y={84} stroke="currentColor" />
-      ))}
+      <path
+        d="m72 27 22 14-22 14z"
+        stroke={ACCENT}
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+        data-pulse
+      />
+      <g data-fade>
+        {[0, 1, 2].map((tag) => (
+          <Tag key={tag} x={tagStart + tag * 26} y={84} stroke="currentColor" />
+        ))}
+      </g>
     </svg>
   );
 }
@@ -791,6 +986,7 @@ export function KnowledgeVignette({ label }: { label: string }) {
         stroke={ACCENT}
         strokeWidth="1.6"
         strokeLinejoin="round"
+        data-pulse
       />
       {/* Article on the left, poll on the right */}
       <path
@@ -799,6 +995,8 @@ export function KnowledgeVignette({ label }: { label: string }) {
         strokeOpacity="0.5"
         strokeWidth="1.6"
         strokeLinejoin="round"
+        pathLength="1"
+        data-draw
       />
       <path
         d="M146 48H88v52c0-4 26-6 58-4z"
@@ -806,27 +1004,32 @@ export function KnowledgeVignette({ label }: { label: string }) {
         strokeOpacity="0.5"
         strokeWidth="1.6"
         strokeLinejoin="round"
+        pathLength="1"
+        data-draw
+        style={beat(1)}
       />
-      <path d="M72 48v52M88 48v52" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" />
-      <path
-        d="M22 60h42M22 68h42M22 76h34M22 84h42"
-        stroke="currentColor"
-        strokeOpacity="0.3"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      {[12, 24, 32].map((height, bar) => (
-        <rect
-          key={height}
-          x={98 + bar * 14}
-          y={90 - height}
-          width="9"
-          height={height}
-          rx="2"
-          fill={bar === 2 ? SECOND : "currentColor"}
-          fillOpacity={bar === 2 ? 0.9 : 0.3}
+      <g data-fade>
+        <path d="M72 48v52M88 48v52" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" />
+        <path
+          d="M22 60h42M22 68h42M22 76h34M22 84h42"
+          stroke="currentColor"
+          strokeOpacity="0.3"
+          strokeWidth="1.6"
+          strokeLinecap="round"
         />
-      ))}
+        {[12, 24, 32].map((height, bar) => (
+          <rect
+            key={height}
+            x={98 + bar * 14}
+            y={90 - height}
+            width="9"
+            height={height}
+            rx="2"
+            fill={bar === 2 ? SECOND : "currentColor"}
+            fillOpacity={bar === 2 ? 0.9 : 0.3}
+          />
+        ))}
+      </g>
     </svg>
   );
 }
@@ -837,17 +1040,19 @@ export function RecognitionVignette({ label }: { label: string }) {
       {/* Wings framing the mark. Two symmetric pairs rather than full arcs:
           an arc wide enough to span the podium passes straight through the
           medal, which reads as a crossing-out. */}
-      <path d="M32 62Q36 36 62 30" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M128 62Q124 36 98 30" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M18 70Q22 26 58 16" stroke="currentColor" strokeOpacity="0.15" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M142 70Q138 26 102 16" stroke="currentColor" strokeOpacity="0.15" strokeWidth="1.6" strokeLinecap="round" />
-      <circle cx="80" cy="26" r="16" stroke={ACCENT} strokeWidth="1.8" />
-      <polygon points={starPoints(80, 26, 8.5, 3.6)} fill={ACCENT} fillOpacity="0.9" />
+      <path d="M32 62Q36 36 62 30" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" strokeLinecap="round" pathLength="1" data-draw style={beat(1)} />
+      <path d="M128 62Q124 36 98 30" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" strokeLinecap="round" pathLength="1" data-draw style={beat(1)} />
+      <path d="M18 70Q22 26 58 16" stroke="currentColor" strokeOpacity="0.15" strokeWidth="1.6" strokeLinecap="round" pathLength="1" data-draw style={beat(2)} />
+      <path d="M142 70Q138 26 102 16" stroke="currentColor" strokeOpacity="0.15" strokeWidth="1.6" strokeLinecap="round" pathLength="1" data-draw style={beat(2)} />
+      <circle cx="80" cy="26" r="16" stroke={ACCENT} strokeWidth="1.8" pathLength="1" data-draw />
+      <polygon points={starPoints(80, 26, 8.5, 3.6)} fill={ACCENT} fillOpacity="0.9" data-pulse />
       {/* Podium: second, first, third */}
-      <rect x="26" y="76" width="34" height="24" rx="3" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.6" />
-      <rect x="62" y="60" width="34" height="40" rx="3" stroke={ACCENT} strokeWidth="1.8" />
-      <rect x="98" y="84" width="34" height="16" rx="3" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.6" />
-      <path d="M18 104h124" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" strokeLinecap="round" />
+      <g data-fade>
+        <rect x="26" y="76" width="34" height="24" rx="3" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.6" />
+        <rect x="62" y="60" width="34" height="40" rx="3" stroke={ACCENT} strokeWidth="1.8" />
+        <rect x="98" y="84" width="34" height="16" rx="3" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.6" />
+        <path d="M18 104h124" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" strokeLinecap="round" />
+      </g>
     </svg>
   );
 }

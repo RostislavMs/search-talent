@@ -2284,33 +2284,36 @@ export const dictionaries = {
     },
     aboutPage: {
       eyebrow: "About the platform",
-      title: "About SearchTalent",
+      title: "SearchTalent — the community where work gets seen",
       description:
-        "An open community platform where specialists show real work: public profiles, project portfolios, articles, and a rating you can trace back to its inputs.",
+        "A platform for IT and digital specialists — show your portfolio, publish projects and articles, and build a professional reputation.",
+      heroPoints: ["Free to use", "Ukrainian and English", "Open source"],
       heroIllustrationLabel:
         "Diagram: one profile feeding a project, an article, a leaderboard, and a rating mark",
-      pillarsTitle: "The platform at a glance",
+      pillarsTitle: "What is inside",
+      pillarsDescription:
+        "Four parts that only work together: the profile gives context, the work gives proof, the community gives a response, the reputation gives reach.",
       pillars: [
         {
-          title: "Public profiles",
-          text: "One fast public page for skills, experience, and links — and a PDF résumé export.",
+          title: "A public profile",
+          text: "One fast public page for skills, experience, education, and links — and a PDF résumé export.",
           illustrationLabel:
             "A profile card with skill pills and a download arrow into a tray",
         },
         {
-          title: "Project portfolios",
-          text: "Real work with images, video, and tech stack. Every project gets its own page and votes.",
+          title: "Portfolio and projects",
+          text: "Real work with images, video, and tech stack. Every project gets its own page and its own score.",
           illustrationLabel: "A media frame with a play button and stack tags",
         },
         {
-          title: "Community knowledge",
-          text: "Articles, polls, and platform news in one Community hub.",
+          title: "Community and content",
+          text: "Articles, polls, and discussions in one Community hub.",
           illustrationLabel:
             "An open article spread with a poll chart and a speech bubble",
         },
         {
-          title: "Recognition",
-          text: "A transparent rating from community votes and badges, so strong work surfaces.",
+          title: "Reputation and rating",
+          text: "A transparent rating built from community scores and badges, so strong work surfaces.",
           illustrationLabel: "A podium with a star medal above the top place",
         },
       ],
@@ -2318,50 +2321,79 @@ export const dictionaries = {
       stepsDescription:
         "Three steps — and the third one runs by itself once the first two are done.",
       stepsIllustrationLabel:
-        "Diagram: three connected steps — fill in the profile, publish work, get ranked",
+        "Diagram: three connected steps — create the profile, show your work, build a reputation",
       steps: [
         {
-          title: "Fill in the profile",
-          text: "Skills, experience, links. The completeness pill shows what is still missing.",
+          title: "Create your profile",
+          text: "Fill in who you are: skills, experience, and education.",
         },
         {
-          title: "Publish your work",
-          text: "Projects, articles, and polls — on your own or with co-authors.",
+          title: "Show your work",
+          text: "Publish projects, articles, and other professional content.",
         },
         {
-          title: "Get ranked",
-          text: "Votes and badges feed the rating, search, and both leaderboards.",
+          title: "Build your reputation",
+          text: "Collect scores, engage with the community, and grow a professional profile.",
         },
       ],
-      missionTitle: "Our mission",
+      missionEyebrow: "Why this exists",
+      // The lead ships in two pieces so the claim can sit in its own span and
+      // pick up the marker sweep. Sentence-final punctuation belongs *inside*
+      // the marked half — a highlighter does not stop short of the full stop,
+      // and leaving it outside opens a visible gap after the marker's padding.
+      // Keep the marked half to one line: `box-decoration-break: clone` sizes
+      // the background per line box, so a phrase spanning three of them reads
+      // mid-sweep as three separate highlights instead of one moving marker.
+      missionLeadBefore:
+        "Experience is easy to put into words. What is hard is showing your level so that ",
+      missionLeadMark: "it reads at a glance.",
       missionText:
-        "Every developer, designer, and specialist deserves one clean page instead of a trail of links across a dozen services. That page is the product.",
+        "SearchTalent gives you one page where the profile, the real projects, the articles, and the community's response all sit side by side. Not a list of job titles — what you actually built, and how your peers answered it.",
       missionIllustrationLabel:
         "Diagram: scattered files, links, and screenshots converging into a single profile page",
       featuresTitle: "What you can do",
+      featuresDescription:
+        "Everything below is available from the moment you sign up.",
       features: [
         "A customizable public profile with a PDF résumé export",
         "Portfolio projects with images, video, and tech stacks",
         "Articles and polls, solo or with co-authors",
-        "A community rating and badges earned through contribution",
+        "Community scores and badges earned through contribution",
         "Discovery through search, topic pages, and leaderboards",
         "Follows, reactions, and comments on every surface",
       ],
-      communityTitle: "Community & quality",
+      communityTitle: "Reputation comes from the community",
       communityText:
-        "Ratings and badges reward genuine contribution, light moderation keeps the feeds trustworthy, and reactions turn portfolios into a community rather than a static gallery.",
+        "A profile is more than a set of facts about you. Your work, your articles, and your activity show your real level, and the community's reactions and scores are what turn that into a professional reputation.",
+      communityPrinciples: [
+        {
+          title: "So level shows, not volume",
+          text: "A score lands on a specific piece of work, so a strong project counts for more than a well-written summary of yourself.",
+        },
+        {
+          title: "So strong work finds readers",
+          text: "The rating feeds search, topic pages, and the leaderboards — that is how people who have never heard of you end up on your profile.",
+        },
+        {
+          title: "So it cannot be gamed",
+          text: "One vote per account, a weighted score, and time decay so an old win cannot sit on the board forever.",
+        },
+      ],
       communityIllustrationLabel:
         "Diagram: a closed loop between three people and the work they react to",
       openSourceTitle: "Built in the open",
       openSourceText:
-        "SearchTalent started as a university project and keeps growing on community input. Ideas and bug reports are welcome.",
+        "SearchTalent is being built as an independent platform for IT and digital specialists. We develop it in the open, adding capabilities step by step and listening to the community itself.",
       openSourceIllustrationLabel:
         "Diagram: the platform on a bench with contributions arriving from outside",
       ctaTitle: "Ready to show your work?",
       ctaText:
-        "Create a free profile, publish your first project, and join the conversation.",
+        "The profile is free, the first project takes about ten minutes, and after that the work speaks for itself.",
       ctaPrimary: "Create your profile",
-      ctaSecondary: "Explore talents",
+      // Shown instead of `ctaPrimary` once the reader is signed in — inviting
+      // someone with an account to "create a profile" reads as a dead end.
+      ctaPrimaryAuthed: "Publish a project",
+      ctaSecondary: "Explore specialists",
       backToHome: "Back to home",
     },
     faqPage: {
@@ -4727,33 +4759,36 @@ export const dictionaries = {
     },
     aboutPage: {
       eyebrow: "Про платформу",
-      title: "Про SearchTalent",
+      title: "SearchTalent — спільнота, де роботу видно",
       description:
-        "Відкрита платформа-спільнота, де фахівці показують реальні роботи: публічні профілі, портфоліо проєктів, статті та рейтинг, який можна розкласти на складові.",
+        "Платформа для IT- та digital-фахівців, де можна показувати портфоліо, публікувати проєкти й статті та будувати професійну репутацію.",
+      heroPoints: ["Безкоштовно", "Українською та англійською", "З відкритим кодом"],
       heroIllustrationLabel:
         "Схема: один профіль живить проєкт, статтю, лідерборд і рейтингову позначку",
-      pillarsTitle: "Платформа коротко",
+      pillarsTitle: "Що всередині",
+      pillarsDescription:
+        "Чотири частини, які працюють лише разом: профіль дає контекст, роботи — доказ, спільнота — реакцію, репутація — видимість.",
       pillars: [
         {
-          title: "Публічні профілі",
-          text: "Одна швидка публічна сторінка з навичками, досвідом і посиланнями — та експорт у PDF-резюме.",
+          title: "Публічний профіль",
+          text: "Одна швидка публічна сторінка з навичками, досвідом, освітою та посиланнями — і експорт у PDF-резюме.",
           illustrationLabel:
             "Картка профілю з пілюлями навичок і стрілкою завантаження в лоток",
         },
         {
-          title: "Портфоліо проєктів",
-          text: "Реальні роботи із зображеннями, відео та стеком. Кожен проєкт має власну сторінку й голоси.",
+          title: "Портфоліо та проєкти",
+          text: "Реальні роботи із зображеннями, відео та стеком. Кожен проєкт має власну сторінку й власну оцінку.",
           illustrationLabel: "Медіа-рамка з кнопкою відтворення та тегами стеку",
         },
         {
-          title: "Знання спільноти",
-          text: "Статті, опитування та новини платформи в одному розділі «Спільнота».",
+          title: "Спільнота та контент",
+          text: "Статті, опитування й обговорення в одному розділі «Спільнота».",
           illustrationLabel:
             "Розкрита стаття з діаграмою опитування та бульбашкою коментаря",
         },
         {
-          title: "Визнання",
-          text: "Прозорий рейтинг із голосів спільноти та бейджів, тож сильні роботи помітні.",
+          title: "Репутація та рейтинг",
+          text: "Прозорий рейтинг з оцінок спільноти та бейджів, тож сильні роботи помітні.",
           illustrationLabel: "Подіум із зірковою медаллю над першим місцем",
         },
       ],
@@ -4761,50 +4796,75 @@ export const dictionaries = {
       stepsDescription:
         "Три кроки — і третій починає працювати сам, коли зроблені перші два.",
       stepsIllustrationLabel:
-        "Схема: три пов'язані кроки — заповнити профіль, опублікувати роботи, потрапити в рейтинг",
+        "Схема: три пов'язані кроки — створити профіль, показати роботи, розвивати репутацію",
       steps: [
         {
-          title: "Заповніть профіль",
-          text: "Навички, досвід, посилання. Пілюля заповненості показує, чого бракує.",
+          title: "Створіть профіль",
+          text: "Заповніть інформацію про себе, навички, досвід та освіту.",
         },
         {
-          title: "Опублікуйте роботи",
-          text: "Проєкти, статті та опитування — самостійно або у співавторстві.",
+          title: "Покажіть свою роботу",
+          text: "Публікуйте проєкти, статті та інший професійний контент.",
         },
         {
-          title: "Потрапте в рейтинг",
-          text: "Голоси й бейджі живлять рейтинг, пошук і обидва лідерборди.",
+          title: "Розвивайте репутацію",
+          text: "Отримуйте оцінки, взаємодійте зі спільнотою та формуйте професійний профіль.",
         },
       ],
-      missionTitle: "Наша місія",
+      missionEyebrow: "Навіщо це",
+      // Тримайте позначену половину в один рядок: `box-decoration-break: clone`
+      // масштабує фон окремо для кожного рядка, тож фраза на три рядки в русі
+      // читається як три різні підсвітки, а не один рух маркера.
+      missionLeadBefore:
+        "Досвід легко описати словами. Значно важче — показати рівень так, щоб ",
+      missionLeadMark: "його було видно одразу.",
       missionText:
-        "Кожен розробник, дизайнер і фахівець заслуговує на одну чисту сторінку замість розсипу посилань по десятку сервісів. Ця сторінка і є продуктом.",
+        "SearchTalent дає одну сторінку, де поруч стоять профіль, реальні проєкти, статті та реакція спільноти. Не перелік місць роботи, а те, що ви справді зробили — і як на це відповіли колеги.",
       missionIllustrationLabel:
         "Схема: розрізнені файли, посилання та скриншоти сходяться в одну сторінку профілю",
       featuresTitle: "Що ви можете робити",
+      featuresDescription:
+        "Усе перелічене доступне з першої хвилини після реєстрації.",
       features: [
         "Кастомізований публічний профіль з експортом PDF-резюме",
         "Портфоліо-проєкти із зображеннями, відео та стеком технологій",
         "Статті й опитування — самостійно або у співавторстві",
-        "Рейтинг спільноти та бейджі за реальний внесок",
+        "Оцінки спільноти та бейджі за реальний внесок",
         "Видимість через пошук, тематичні сторінки та лідерборди",
         "Підписки, реакції та коментарі на всіх розділах",
       ],
-      communityTitle: "Спільнота та якість",
+      communityTitle: "Репутація формується спільнотою",
       communityText:
-        "Рейтинги й бейджі винагороджують справжній внесок, легка модерація тримає стрічки надійними, а реакції перетворюють портфоліо на спільноту, а не статичну галерею.",
+        "Профіль — це не просто набір інформації про себе. Роботи, статті та активність показують ваш реальний рівень, а реакції та оцінки спільноти допомагають формувати професійну репутацію.",
+      communityPrinciples: [
+        {
+          title: "Щоб було видно рівень, а не гучність",
+          text: "Оцінка ставиться конкретній роботі, тож сильний проєкт важить більше, ніж гарно написаний текст про себе.",
+        },
+        {
+          title: "Щоб сильні роботи знаходили читача",
+          text: "Рейтинг живить пошук, тематичні сторінки й лідерборди — саме так на ваш профіль потрапляють люди, які про вас не чули.",
+        },
+        {
+          title: "Щоб це не можна було накрутити",
+          text: "Один голос від акаунта, зважена оцінка й затухання з часом, щоб стара перемога не сиділа в топі вічно.",
+        },
+      ],
       communityIllustrationLabel:
         "Схема: замкнене коло між трьома людьми та роботою, на яку вони реагують",
       openSourceTitle: "Створено відкрито",
       openSourceText:
-        "SearchTalent розпочався як університетський проєкт і продовжує розвиватися завдяки відгукам спільноти. Ідеї та звіти про помилки вітаються.",
+        "SearchTalent створюється як незалежна платформа для IT- та digital-фахівців. Ми розвиваємо її відкрито, поступово додаючи нові можливості та прислухаючись до самої спільноти.",
       openSourceIllustrationLabel:
         "Схема: платформа на верстаті, а внески надходять іззовні",
       ctaTitle: "Готові показати свої роботи?",
       ctaText:
-        "Створіть безкоштовний профіль, опублікуйте перший проєкт і долучайтеся до спільноти.",
+        "Профіль безкоштовний, перший проєкт займе хвилин десять, а далі все залежить від самої роботи.",
       ctaPrimary: "Створити профіль",
-      ctaSecondary: "Переглянути таланти",
+      // Показуємо замість `ctaPrimary`, коли читач уже авторизований —
+      // пропозиція «створити профіль» людині з акаунтом веде в нікуди.
+      ctaPrimaryAuthed: "Опублікувати проєкт",
+      ctaSecondary: "Переглянути фахівців",
       backToHome: "На головну",
     },
     faqPage: {

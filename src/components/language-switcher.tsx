@@ -32,7 +32,11 @@ export default function LanguageSwitcher() {
                 ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
                 : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
             ].join(" ")}
-            aria-label={`${dictionary.language.switchLabel}: ${dictionary.language[item]}`}
+            // The visible label is the bare code ("UK"/"EN"), so the
+            // accessible name has to contain it verbatim — WCAG 2.5.3 Label in
+            // Name, and it is what voice-control users actually say. Naming
+            // only the language ("Мова: Українська") fails that check.
+            aria-label={`${dictionary.language.switchLabel}: ${item.toUpperCase()} — ${dictionary.language[item]}`}
           >
             {item.toUpperCase()}
           </a>

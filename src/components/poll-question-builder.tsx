@@ -277,7 +277,7 @@ export default function PollQuestionBuilder({
                   <button
                     type="button"
                     onClick={() => addOption(question)}
-                    className="cursor-pointer text-sm font-medium text-[color:var(--brand-strong)] hover:opacity-80"
+                    className="cursor-pointer text-sm font-medium text-[color:var(--brand-ink)] hover:opacity-80"
                   >
                     + {ui.addOption}
                   </button>

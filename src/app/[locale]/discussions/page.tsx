@@ -152,7 +152,7 @@ export default async function DiscussionsPage({
                     className={[
                       "inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 text-sm transition-colors",
                       active
-                        ? "bg-white font-medium text-[color:var(--brand-strong)]"
+                        ? "bg-white font-medium text-[color:var(--brand-ink)]"
                         : "border border-white/30 text-white/80 hover:bg-white/12 hover:text-white",
                     ].join(" ")}
                   >

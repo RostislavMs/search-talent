@@ -428,9 +428,10 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
         isWithinTimeframe(p.created_at, "month"),
       ).length;
 
-      // unified tech breadth (profile skills + owned project skills) — counted
-      // in the view as unified_tech_count.
-      const technologyCount = profile.unified_tech_count;
+      // The view still exposes `unified_tech_count`, but the profile rating no
+      // longer reads it: counting a person's technologies rewarded typing more
+      // of them (see the note on ProfileWeights). Left in the view so dropping
+      // it does not need a migration, and so a future signal can use it.
 
       // newest project date
       const newestProject = owned.reduce<string | null>((best, p) => {
@@ -489,7 +490,6 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
         recentProjectCount,
         mediaCount,
         recentMediaCount,
-        technologyCount,
         bestProjectRating: bestRating,
         averageProjectRating: avgRating,
         newestProjectCreatedAt: newestProject,

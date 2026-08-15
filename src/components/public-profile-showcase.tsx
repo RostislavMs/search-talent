@@ -210,6 +210,10 @@ function getThemeStyle(presentation: ProfilePresentation) {
     // the site-wide brand colour, so the "Accent" picker actually applies.
     "--brand": accent,
     "--brand-strong": `color-mix(in srgb, ${accent} 85%, #000)`,
+    // Accent-coloured *text* is darkened harder than the fill colour, mirroring
+    // the --brand-strong/--brand-ink split in globals.css. Without this the
+    // profile would keep the site-wide brand ink and ignore the accent.
+    "--brand-ink": `color-mix(in srgb, ${accent} 70%, #000)`,
     "--brand-soft": withAlpha(accent, 0.16),
     "--brand-on-soft": accent,
     // Legible label for accent-coloured controls, derived from the accent

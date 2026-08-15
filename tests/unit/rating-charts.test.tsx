@@ -28,7 +28,6 @@ describe("RatingWeightsChart", () => {
       ["Profile completeness", "completeness"],
       ["Community trust", "communityTrust"],
       ["Production output", "production"],
-      ["Tech breadth", "techBreadth"],
       ["Freshness", "freshness"],
     ] as const) {
       const row = within(figure).getByText(label).closest("li");

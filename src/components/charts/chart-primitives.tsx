@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { beat } from "@/lib/motion";
 
 // ---------------------------------------------------------------------------
 // Chart primitives. Server-rendered SVG/HTML, no client JS.
@@ -7,6 +8,11 @@ import type { ReactNode } from "react";
 // fixed order and never cycled: a chart that would need a third series gets
 // split instead. Every mark is direct-labelled, so identity and magnitude are
 // never carried by colour alone.
+//
+// Motion: `ChartFigure` names the view timeline every mark inside it animates
+// against (see the motion kit in globals.css), so bars grow and curves draw
+// themselves as the figure scrolls in. Marks only — never the labels or the
+// values beside them, which stay put and at full contrast throughout.
 // ---------------------------------------------------------------------------
 
 export type ChartTone = 1 | 2;
@@ -52,7 +58,14 @@ export function ChartFigure({
   children: ReactNode;
 }) {
   return (
-    <figure className={surface === "panel" ? "rounded-2xl app-panel p-4 sm:p-5" : ""}>
+    <figure
+      className={[
+        "app-art app-art--scroll",
+        surface === "panel" ? "rounded-2xl app-panel p-4 sm:p-5" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
         <span
           className={
@@ -90,9 +103,12 @@ export function BarRows({
 }) {
   return (
     <ul className="space-y-3.5">
-      {rows.map((row) => (
+      {rows.map((row, rowIndex) => (
         <li
           key={row.label}
+          // `--i` sits on the row so both of its bars share one beat and the
+          // table reads top-to-bottom rather than as ten independent bars.
+          style={beat(rowIndex)}
           className="grid gap-1.5 sm:grid-cols-[minmax(0,10rem)_1fr] sm:items-center sm:gap-4"
         >
           <span className="text-sm leading-5 text-[color:var(--foreground)]">{row.label}</span>
@@ -105,6 +121,7 @@ export function BarRows({
                   <span className="relative h-2 flex-1">
                     <span
                       className="absolute inset-y-0 left-0 rounded-r-[4px]"
+                      data-grow-x
                       style={{
                         width: isZero ? "3px" : `${(value / max) * 100}%`,
                         background: isZero ? "var(--chart-grid)" : toneColor(tone),
@@ -142,13 +159,18 @@ export function ColumnGroups({
 }) {
   return (
     <ul className="flex items-end justify-around gap-4">
-      {groups.map((group) => (
-        <li key={group.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+      {groups.map((group, groupIndex) => (
+        <li
+          key={group.label}
+          style={beat(groupIndex)}
+          className="flex min-w-0 flex-1 flex-col items-center gap-2"
+        >
           <span className="flex h-24 items-end gap-[2px]" aria-hidden="true">
             {group.values.map((value, index) => (
               <span
                 key={series[index]?.name ?? index}
                 className="w-5 rounded-t-[4px]"
+                data-grow-y
                 style={{
                   height: `${Math.max((value / max) * 100, 1.5)}%`,
                   background: toneColor(series[index]?.tone ?? 1),
@@ -247,10 +269,12 @@ export function CurveChart({
           </text>
         </>
       ) : null}
-      {series.map((line) => {
+      {series.map((line, index) => {
         const path = line.points.map(([x, y]) => `${toX(x)},${toY(y)}`).join(" ");
         return (
-          <g key={line.name}>
+          // The curve traces itself left to right, which is the direction the
+          // axis is read in — the shape of the decay *is* the explanation.
+          <g key={line.name} style={beat(index) as CSSProperties}>
             {line.fill ? (
               <polygon
                 points={`${toX(line.points[0][0])},${baseline} ${path} ${toX(
@@ -258,6 +282,7 @@ export function CurveChart({
                 )},${baseline}`}
                 fill={toneColor(line.tone)}
                 opacity="0.12"
+                data-fade
               />
             ) : null}
             <polyline
@@ -267,6 +292,8 @@ export function CurveChart({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              pathLength="1"
+              data-draw
             />
           </g>
         );
