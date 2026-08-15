@@ -10,6 +10,11 @@ import GifPicker from "@/components/ui/gif-picker";
 import MentionText from "@/components/ui/mention-text";
 import MentionTextarea from "@/components/ui/mention-textarea";
 import ReactionPicker from "@/components/ui/reaction-picker";
+import {
+  COMMENT_ROW_CLASS,
+  commentAvatarFlexClass,
+  commentRepliesClass,
+} from "@/components/ui/comment-thread-layout";
 import { apiFetch } from "@/lib/api-client";
 import type { ReactionSummary } from "@/lib/constants/reactions";
 import { isDiscussionOpen } from "@/lib/discussions";
@@ -90,8 +95,6 @@ function buildCommentTree(comments: Comment[]) {
   return { topLevel, childrenMap };
 }
 
-const MAX_INDENT_DEPTH = 3;
-
 function CommentItem({
   comment,
   childrenMap,
@@ -146,12 +149,16 @@ function CommentItem({
 
   const replies = childrenMap.get(comment.id);
   const replyCount = replies?.length ?? 0;
-  const showIndent = depth < MAX_INDENT_DEPTH;
   const nextDepth = depth + 1;
 
   return (
-    <article id={`comment-${comment.id}`} className="flex gap-2 sm:gap-3">
-      <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full app-panel text-xs font-semibold text-[color:var(--foreground)] sm:h-8 sm:w-8">
+    <article id={`comment-${comment.id}`} className={COMMENT_ROW_CLASS}>
+      <div
+        className={commentAvatarFlexClass(
+          depth,
+          "items-center justify-center app-panel text-xs font-semibold text-[color:var(--foreground)]",
+        )}
+      >
         {comment.author.avatar_url ? (
           <Image
             src={comment.author.avatar_url}
@@ -290,13 +297,7 @@ function CommentItem({
             </button>
 
             {repliesOpen && (
-              <div
-                className={
-                  showIndent
-                    ? "mt-3 space-y-4 border-l app-border pl-2.5 sm:mt-4 sm:space-y-5 sm:pl-4"
-                    : "mt-3 space-y-4 sm:mt-4 sm:space-y-5"
-                }
-              >
+              <div className={commentRepliesClass(depth)}>
                 {replies!.map((child) => (
                   <CommentItem
                     key={child.id}

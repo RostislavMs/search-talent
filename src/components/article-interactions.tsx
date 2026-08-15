@@ -12,6 +12,11 @@ import MentionTextarea from "@/components/ui/mention-textarea";
 import OptimizedImage from "@/components/ui/optimized-image";
 import ReactionPicker from "@/components/ui/reaction-picker";
 import {
+  COMMENT_ROW_CLASS,
+  commentAvatarClass,
+  commentRepliesClass,
+} from "@/components/ui/comment-thread-layout";
+import {
   CommentIcon,
   EyeIcon,
   LikeChip,
@@ -50,7 +55,6 @@ function formatCommentDate(value: string | null, locale: string) {
   }).format(date);
 }
 
-const MAX_INDENT_DEPTH = 3;
 
 function pluralizeReplies(count: number, locale: string, hide: boolean) {
   if (locale === "uk") {
@@ -119,7 +123,6 @@ function CommentNode({
 }) {
   const [repliesOpen, setRepliesOpen] = useState(false);
   const replyCount = comment.replies.length;
-  const showIndent = depth < MAX_INDENT_DEPTH;
   const canDelete =
     Boolean(viewerUserId) &&
     (comment.authorUserId === viewerUserId || viewerUserId === ownerUserId);
@@ -132,8 +135,13 @@ function CommentNode({
       (locale === "uk" ? "Користувач" : "User");
 
   return (
-    <article id={`comment-${comment.id}`} className="flex gap-2 sm:gap-3">
-      <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-[color:var(--surface-muted)] sm:h-8 sm:w-8">
+    <article id={`comment-${comment.id}`} className={COMMENT_ROW_CLASS}>
+      <div
+        className={commentAvatarClass(
+          depth,
+          "bg-[color:var(--surface-muted)]",
+        )}
+      >
         {comment.author?.avatarUrl ? (
           <OptimizedImage
             src={comment.author.avatarUrl}
@@ -282,13 +290,7 @@ function CommentNode({
             </button>
 
             {repliesOpen && (
-              <div
-                className={
-                  showIndent
-                    ? "mt-3 space-y-4 border-l app-border pl-2.5 sm:mt-4 sm:space-y-5 sm:pl-4"
-                    : "mt-3 space-y-4 sm:mt-4 sm:space-y-5"
-                }
-              >
+              <div className={commentRepliesClass(depth)}>
                 {comment.replies.map((child) => (
                   <CommentNode
                     key={child.id}
