@@ -60,7 +60,16 @@ export type ArticleFeedItem = {
   slug: string;
   title: string;
   excerpt: string | null;
-  content: string | null;
+  /**
+   * Precomputed on the server instead of shipping the article body.
+   *
+   * Cards only ever needed the body to count its words for the reading-time
+   * label, but `ArticleFeedItem` crosses into a client component — so the full
+   * rich-text of up to 60 articles, in both languages, was being serialized into
+   * the RSC payload. That put /articles at 1.1MB of HTML, 90% of it inline
+   * script. The count travels instead of the text.
+   */
+  readingMinutes: number;
   coverImageUrl: string | null;
   heroVideoUrl: string | null;
   publishedAt: string | null;
@@ -94,6 +103,12 @@ export type ArticleDetail = ArticleFeedItem & {
   moderationStatus: string | null;
   moderationNote: string | null;
   content: string;
+  /**
+   * True when the requested locale has no version of its own and the reader is
+   * seeing the primary language instead. Such a URL is served but not indexed —
+   * see `hasOwnLocaleVersion` in `@/lib/db/articles`.
+   */
+  isLocaleFallback: boolean;
   /** Last post-publish edit time; null until an already-published article is edited. */
   editedAt: string | null;
   coverImageStoragePath: string | null;
@@ -246,9 +261,56 @@ export function sortArticleCategories(
   );
 }
 
-export function getArticleReadingTime(content: string, locale: string) {
-  const words = content.trim().split(/\s+/).filter(Boolean).length;
-  const minutes = Math.max(1, Math.round(words / 180));
+/**
+ * Does this article carry its own version in `locale`?
+ *
+ * A missing translation falls back to the primary language when rendering, which
+ * is the right call for a reader who followed a link — but such a URL must not be
+ * indexed: it declares `lang="en"` and an `en` hreflang while serving Ukrainian
+ * text. The test is deliberately stricter than the render-time fallback's: a
+ * translated title over a primary-language body is still a wrong-language page,
+ * so both fields have to be present.
+ *
+ * Lives here rather than in the DB layer because the page metadata and the
+ * sitemap both depend on it, and the two must not drift.
+ */
+export function hasOwnLocaleVersion(
+  source: {
+    content_locale?: string | null;
+    translations?: Record<
+      string,
+      { title?: string | null; content?: string | null } | null | undefined
+    > | null;
+  },
+  locale: string | null | undefined,
+): boolean {
+  const primaryLocale = source.content_locale || "uk";
 
+  if (!locale || locale === primaryLocale) {
+    return true;
+  }
+
+  const alt = source.translations?.[locale];
+
+  return Boolean(alt?.title?.trim() && alt?.content?.trim());
+}
+
+/** Reading time in whole minutes, at 180 words per minute. */
+export function getReadingMinutes(content: string) {
+  const words = content.trim().split(/\s+/).filter(Boolean).length;
+
+  return Math.max(1, Math.round(words / 180));
+}
+
+export function formatReadingTime(minutes: number, locale: string) {
   return locale === "uk" ? `${minutes} хв читання` : `${minutes} min read`;
+}
+
+/**
+ * Reading-time label straight from the body. Used on detail pages, which already
+ * hold the content; listings carry `readingMinutes` instead and go through
+ * `formatReadingTime`.
+ */
+export function getArticleReadingTime(content: string, locale: string) {
+  return formatReadingTime(getReadingMinutes(content), locale);
 }

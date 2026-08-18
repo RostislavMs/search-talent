@@ -210,7 +210,11 @@ export default function ArticleDetailView({
         ? null
         : `${siteUrl}/${locale}/u/${author.username}`,
     datePublished: article.publishedAt || article.createdAt || null,
-    dateModified: null,
+    // `editedAt` is null until an already-published article is edited, so fall
+    // back to the publish date rather than omitting `dateModified` — Google reads
+    // it as a freshness signal and an absent value is a wasted one.
+    dateModified:
+      article.editedAt || article.publishedAt || article.createdAt || null,
     articleSection,
     keywords: articleKeywords,
     wordCount: countWords(articlePlainText),

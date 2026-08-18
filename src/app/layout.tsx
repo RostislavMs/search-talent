@@ -22,20 +22,8 @@ export const metadata: Metadata = {
   },
   description:
     "Community platform where developers, designers, and IT specialists publish portfolios, projects, and articles. Discover talent and showcase your work.",
-  keywords: [
-    "talent community",
-    "creative portfolio",
-    "IT projects",
-    "developer profiles",
-    "portfolio platform",
-    "talent showcase",
-    "portfolio online",
-    "пошук талантів",
-    "креативні портфоліо",
-    "портфоліо онлайн",
-    "IT проєкти",
-    "профілі розробників",
-  ],
+  // No `keywords`: Google has ignored the meta keywords tag since 2009, and a
+  // single site-wide list shipped on every page said nothing about any of them.
   icons: {
     icon: [{ url: "/favicon.webp", type: "image/webp" }],
     shortcut: "/favicon.webp",

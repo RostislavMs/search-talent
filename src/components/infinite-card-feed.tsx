@@ -71,12 +71,16 @@ export default function InfiniteCardFeed(props: Props) {
           there. */}
       {props.kind === "article" ? (
         <MasonryGrid className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-          {props.items.slice(0, visible).map((article) => (
+          {props.items.slice(0, visible).map((article, index) => (
             <ArticleCard
               key={article.id}
               article={article}
               locale={locale}
               section={props.section}
+              // The first cover is the LCP element on the listing pages. Lazy by
+              // default, it was discovered only after hydration — 2.6s of pure
+              // load delay. Everything below the first card stays lazy.
+              priority={index === 0}
             />
           ))}
         </MasonryGrid>

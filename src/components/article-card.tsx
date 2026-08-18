@@ -4,7 +4,7 @@ import AuthorList from "@/components/author-list";
 import type { ContentAuthor } from "@/lib/co-authors";
 import {
   formatArticleDate,
-  getArticleReadingTime,
+  formatReadingTime,
   getCategoryDisplayName,
   type ArticleFeedItem,
 } from "@/lib/articles";
@@ -14,6 +14,7 @@ export default function ArticleCard({
   locale,
   compact = false,
   section = "articles",
+  priority = false,
 }: {
   article: ArticleFeedItem;
   locale: string;
@@ -27,6 +28,12 @@ export default function ArticleCard({
    * else (the default) under /articles.
    */
   section?: "articles" | "news";
+  /**
+   * Eager-load this card's cover and mark it `fetchpriority="high"`. Set on the
+   * first card of a listing only — it is the LCP element there, and leaving it
+   * lazy delayed discovery until after hydration.
+   */
+  priority?: boolean;
 }) {
   const isUkrainian = locale === "uk";
   const authorLabel = article.authorDeleted
@@ -36,7 +43,7 @@ export default function ArticleCard({
     : article.author?.name || article.author?.username || (isUkrainian ? "Автор" : "Author");
   const authorInitial = authorLabel.slice(0, 1).toUpperCase();
   const publishedLabel = formatArticleDate(article.publishedAt || article.createdAt, locale);
-  const readingTime = getArticleReadingTime(article.content || article.excerpt || "", locale);
+  const readingTime = formatReadingTime(article.readingMinutes, locale);
   const categoryLabel = getCategoryDisplayName(article.category, locale) || (isUkrainian ? "Стаття" : "Article");
   const isPinned = article.pinnedUntil && new Date(article.pinnedUntil) > new Date();
   // News cards speak for the platform: no per-author byline, no category chip
@@ -74,6 +81,7 @@ export default function ArticleCard({
               alt={article.title}
               fill
               sizePreset="card"
+              priority={priority}
               className="object-cover transition duration-300 group-hover:scale-[1.02]"
             />
           ) : article.heroVideoUrl ? (
@@ -117,7 +125,7 @@ export default function ArticleCard({
         </h3>
 
         <p className="mt-3 line-clamp-2 text-sm leading-7 app-muted">
-          {article.excerpt || article.content || ""}
+          {article.excerpt || ""}
         </p>
 
         {/* Author + reading time and the stats row form the card footer. The

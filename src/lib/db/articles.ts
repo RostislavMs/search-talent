@@ -1,6 +1,8 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { slugify } from "@/lib/slug";
 import {
+  getReadingMinutes,
+  hasOwnLocaleVersion,
   normalizeArticleSort,
   normalizeArticleStatus,
   slugifyArticleTitle,
@@ -227,6 +229,20 @@ function firstArticleMedia(
   return { url: null, path: null };
 }
 
+/** Clip to `maxLength` on a word boundary, appending an ellipsis when clipped. */
+function truncateAtWord(value: string, maxLength: number) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  const clipped = normalized.slice(0, maxLength);
+  const lastSpace = clipped.lastIndexOf(" ");
+
+  return `${(lastSpace > maxLength * 0.6 ? clipped.slice(0, lastSpace) : clipped).trimEnd()}…`;
+}
+
 function pickLocalizedVersion(
   row: ArticleRow,
   locale?: string | null,
@@ -301,13 +317,19 @@ function toFeedItem(
   locale?: string | null,
 ): ArticleFeedItem {
   const localized = pickLocalizedVersion(row, locale);
+  const body = localized.content ?? "";
 
   return {
     id: row.id,
     slug: row.slug,
     title: localized.title,
-    excerpt: localized.excerpt,
-    content: localized.content,
+    // Cards fell back to `content` when there was no excerpt, which rendered the
+    // raw rich-text HTML as the preview. Derive a plain-text opening here instead
+    // — and it keeps the body itself off the wire (see `readingMinutes`).
+    excerpt:
+      localized.excerpt?.trim() ||
+      (body ? truncateAtWord(extractPlainTextFromRichText(body), 220) : null),
+    readingMinutes: getReadingMinutes(body),
     coverImageUrl: localized.cover_image_url,
     heroVideoUrl: localized.hero_video_url,
     publishedAt: row.published_at,
@@ -462,12 +484,25 @@ export async function getArticleFeed(params?: {
   // author filter above, this narrows within the 60-row feed window rather than
   // re-querying, so it stays a cheap, in-place refinement.
   const searchQuery = params?.search?.trim().toLowerCase();
+  // Feed items no longer carry the body (see `toFeedItem`), so read it back off
+  // the rows for the search pass. Built only when there is a query, which also
+  // spares the plain-text extraction on every unfiltered feed render.
+  const bodyTextById = searchQuery
+    ? new Map(
+        rows.map((row) => [
+          row.id,
+          extractPlainTextFromRichText(
+            pickLocalizedVersion(row, params?.locale).content ?? "",
+          ),
+        ]),
+      )
+    : null;
   const matchedItems = searchQuery
     ? items.filter((item) => {
         const haystack = [
           item.title,
           item.excerpt ?? "",
-          item.content ? extractPlainTextFromRichText(item.content) : "",
+          bodyTextById?.get(item.id) ?? "",
         ]
           .join(" ")
           .toLowerCase();
@@ -595,6 +630,7 @@ export async function getArticleDetail(slug: string, locale?: string | null) {
     moderationStatus: article.moderation_status,
     moderationNote: article.moderation_note,
     content: localized.content || "",
+    isLocaleFallback: !hasOwnLocaleVersion(article, locale),
     editedAt: article.edited_at,
     coverImageStoragePath: localized.cover_image_storage_path,
     heroVideoStoragePath: localized.hero_video_storage_path,

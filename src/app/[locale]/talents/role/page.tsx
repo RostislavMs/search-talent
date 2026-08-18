@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import BrowseFacets from "@/components/browse-facets";
+import JsonLd from "@/components/json-ld";
 import { ButtonLink } from "@/components/ui/Button";
 import { getProfileCategoryDirectory } from "@/lib/db/marketing";
 import { isLocale, type Locale } from "@/lib/i18n/config";
-import { buildMetadata } from "@/lib/seo";
+import {
+  buildItemListSchema,
+  buildMetadata,
+  getSiteUrl,
+  toBcp47,
+} from "@/lib/seo";
 import { notFound } from "next/navigation";
 
 // Rendered per request — consistent with the /talents/role/[role] facet pages,
@@ -62,8 +68,23 @@ export default async function TalentRoleDirectoryPage({
       count: role.count,
     }));
 
+  const siteUrl = getSiteUrl().replace(/\/$/, "");
+
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      {items.length > 0 && (
+        <JsonLd
+          data={buildItemListSchema({
+            url: `${siteUrl}/${locale}/talents/role`,
+            name: locale === "uk" ? "Напрямки фахівців" : "Talent directions",
+            inLanguage: toBcp47(locale),
+            items: items.map((item) => ({
+              url: `${siteUrl}/${locale}${item.href}`,
+              name: item.label,
+            })),
+          })}
+        />
+      )}
       <header className="max-w-3xl px-4 sm:px-0">
         <h1 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl">
           {locale === "uk" ? "Напрямки фахівців" : "Talent directions"}

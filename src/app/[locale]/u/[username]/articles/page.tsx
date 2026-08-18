@@ -4,7 +4,11 @@ import ArticleCard from "@/components/article-card";
 import DeleteArticleButton from "@/components/delete-article-button";
 import { ButtonLink } from "@/components/ui/Button";
 import Pagination from "@/components/ui/pagination";
-import { getCategoryDisplayName, type ArticleFeedItem } from "@/lib/articles";
+import {
+  getCategoryDisplayName,
+  getReadingMinutes,
+  type ArticleFeedItem,
+} from "@/lib/articles";
 import { getDashboardArticles } from "@/lib/db/articles";
 import { getUserArticlesPage } from "@/lib/db/public";
 import {
@@ -410,7 +414,7 @@ async function renderPublicView({
                   slug: item.slug,
                   title: item.title,
                   excerpt: item.excerpt,
-                  content: item.content,
+                  readingMinutes: getReadingMinutes(item.content ?? ""),
                   coverImageUrl: item.cover_image_url,
                   heroVideoUrl: item.hero_video_url,
                   publishedAt: item.published_at,

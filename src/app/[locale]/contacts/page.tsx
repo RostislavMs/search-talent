@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
+import JsonLd from "@/components/json-ld";
 import LocalizedLink from "@/components/ui/localized-link";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { buildMetadata } from "@/lib/seo";
+import {
+  buildMetadata,
+  buildWebPageSchema,
+  getMetadataBase,
+  toBcp47,
+} from "@/lib/seo";
 
 const CONTACT_EMAIL = "support.searchtalent@gmail.com";
 const GITHUB_URL = "https://github.com/RostislavMs/search-talent";
@@ -103,6 +109,15 @@ export default async function ContactsPage({
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-16">
+      <JsonLd
+        data={buildWebPageSchema({
+          type: "ContactPage",
+          url: new URL(`/${locale}/contacts`, getMetadataBase()).toString(),
+          name: dictionary.metadata.contacts.title,
+          description: dictionary.metadata.contacts.description,
+          inLanguage: toBcp47(locale),
+        })}
+      />
       <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
         {t.eyebrow}
       </p>

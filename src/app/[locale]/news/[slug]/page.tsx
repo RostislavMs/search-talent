@@ -36,7 +36,15 @@ export async function generateMetadata({
     pathname: `/news/${slug}`,
     title: data?.article.title || null,
     excerpt,
-    noindex: isThin,
+    // A locale with no version of its own renders the primary language, which
+    // must not be indexed under this locale's hreflang.
+    noindex: isThin || Boolean(data?.article.isLocaleFallback),
+    publishedTime: data?.article.publishedAt || data?.article.createdAt || null,
+    modifiedTime:
+      data?.article.editedAt ||
+      data?.article.publishedAt ||
+      data?.article.createdAt ||
+      null,
   });
 }
 
