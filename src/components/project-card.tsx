@@ -29,10 +29,17 @@ export default function ProjectCard({
   project,
   hideOwner = false,
   variant = "grid",
+  priority = false,
 }: {
   dictionary: Dictionary;
   project: ProjectCardData;
   hideOwner?: boolean;
+  /**
+   * Eager-load this card's cover and mark it `fetchpriority="high"`. Set on the
+   * first card of a listing only — it is the LCP element there, and leaving it
+   * lazy delays discovery until after hydration.
+   */
+  priority?: boolean;
   /**
    * `grid` (default): consistent 16:10 cover, image `object-cover`. Use in
    *   uniform grids (lists, related, dashboards) where visual rhythm matters.
@@ -87,7 +94,8 @@ export default function ProjectCard({
             <img
               src={project.cover_url}
               alt={project.title}
-              loading="lazy"
+              loading={priority ? "eager" : "lazy"}
+              fetchPriority={priority ? "high" : undefined}
               className="block h-auto w-full object-contain transition duration-300 group-hover:scale-[1.02]"
             />
           ) : (
@@ -96,6 +104,7 @@ export default function ProjectCard({
               alt={project.title}
               fill
               sizePreset="card"
+              priority={priority}
               className="object-cover transition duration-300 group-hover:scale-[1.02]"
             />
           )

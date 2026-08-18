@@ -1734,12 +1734,13 @@ export default function DiscoveryPage({
                     className="gap-6 [column-fill:balance] columns-1 md:columns-2 xl:columns-3"
                     aria-busy={loading}
                   >
-                    {projects.map((project) => (
+                    {projects.map((project, index) => (
                       <div key={project.id} className="mb-6 break-inside-avoid">
                         <ProjectCard
                           dictionary={dictionary}
                           project={project}
                           variant="masonry"
+                          priority={index === 0}
                         />
                       </div>
                     ))}
@@ -1749,11 +1750,12 @@ export default function DiscoveryPage({
                     className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3"
                     aria-busy={loading}
                   >
-                    {projects.map((project) => (
+                    {projects.map((project, index) => (
                       <ProjectCard
                         key={project.id}
                         dictionary={dictionary}
                         project={project}
+                        priority={index === 0}
                       />
                     ))}
                   </div>

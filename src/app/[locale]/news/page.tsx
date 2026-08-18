@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import InfiniteCardFeed from "@/components/infinite-card-feed";
+import JsonLd from "@/components/json-ld";
 import { ButtonLink } from "@/components/ui/Button";
 import { NEWS_CATEGORY_SLUG } from "@/lib/articles";
 import { getArticleFeed } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
-import { buildMetadata } from "@/lib/seo";
+import {
+  buildItemListSchema,
+  buildMetadata,
+  getSiteUrl,
+  toBcp47,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -46,8 +52,26 @@ export default async function NewsPage({
     getCurrentViewerRole(),
   ]);
 
+  const siteUrl = getSiteUrl().replace(/\/$/, "");
+  const newsListItems = feed.items
+    .filter((item) => item.slug)
+    .map((item) => ({
+      url: `${siteUrl}/${safeLocale}/news/${item.slug}`,
+      name: item.title,
+    }));
+
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6">
+      {newsListItems.length > 0 && (
+        <JsonLd
+          data={buildItemListSchema({
+            url: `${siteUrl}/${safeLocale}/news`,
+            name: dictionary.metadata.news.title,
+            inLanguage: toBcp47(safeLocale),
+            items: newsListItems,
+          })}
+        />
+      )}
       <section className="rounded-none sm:rounded-hero app-card p-4 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
           {ui.eyebrow}

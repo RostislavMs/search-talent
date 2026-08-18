@@ -12,6 +12,7 @@ import {
   ScatteredToProfileIllustration,
   StepFlowIllustration,
 } from "@/components/illustrations/about-illustrations";
+import JsonLd from "@/components/json-ld";
 import Art from "@/components/ui/art";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
@@ -19,7 +20,12 @@ import MediaSplit from "@/components/ui/media-split";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { beat } from "@/lib/motion";
-import { buildMetadata } from "@/lib/seo";
+import {
+  buildMetadata,
+  buildWebPageSchema,
+  getMetadataBase,
+  toBcp47,
+} from "@/lib/seo";
 import { getCurrentUser } from "@/lib/supabase/current-user";
 
 async function getLocaleValue(params: Promise<{ locale: string }>) {
@@ -182,6 +188,15 @@ export default async function AboutPage({
 
   return (
     <main className="mx-auto max-w-[88rem] px-0 py-10 sm:px-6">
+      <JsonLd
+        data={buildWebPageSchema({
+          type: "AboutPage",
+          url: new URL(`/${locale}/about`, getMetadataBase()).toString(),
+          name: dictionary.metadata.about.title,
+          description: dictionary.metadata.about.description,
+          inLanguage: toBcp47(locale),
+        })}
+      />
       {/* Hero: two columns from lg up so the artwork fills the space the copy
           leaves empty, matching the rating guide. The copy column enters as one
           orchestrated stack (`app-enter`, transform only — the headline is the

@@ -41,6 +41,14 @@ export function safeJsonLd(value: unknown) {
   );
 }
 
+/**
+ * Open Graph object type. Every page used to ship `website`, which told social
+ * and AI crawlers that an article was a generic site page — `article` and
+ * `profile` carry the extra properties (published/modified time, author) those
+ * consumers actually read.
+ */
+export type OpenGraphKind = "website" | "article" | "profile";
+
 export function buildMetadata({
   locale,
   pathname,
@@ -48,6 +56,13 @@ export function buildMetadata({
   description,
   noindex = false,
   feeds,
+  canonicalOverride,
+  absoluteTitle = false,
+  ogType = "website",
+  publishedTime,
+  modifiedTime,
+  authors,
+  section,
 }: {
   locale: Locale;
   pathname: string;
@@ -56,28 +71,55 @@ export function buildMetadata({
   noindex?: boolean;
   /** RSS feeds advertised via `<link rel="alternate" type="application/rss+xml">`. */
   feeds?: Array<{ url: string; title: string }>;
+  /**
+   * Point the canonical at a different path than the one being rendered. Used
+   * where two routes legitimately serve the same entity (a news post is
+   * reachable under both /articles/<slug> and /news/<slug>) and only one of
+   * them should be the indexed URL.
+   */
+  canonicalOverride?: string;
+  /**
+   * Treat `title` as final and skip the root layout's `%s | SearchTalent`
+   * template. Detail pages pass a title already composed by `composeSeoTitle`,
+   * which decides for itself whether the brand suffix fits.
+   */
+  absoluteTitle?: boolean;
+  ogType?: OpenGraphKind;
+  /** `article:published_time` — ISO string. Only read when ogType is "article". */
+  publishedTime?: string | null;
+  /** `article:modified_time` — ISO string. Only read when ogType is "article". */
+  modifiedTime?: string | null;
+  /** `article:author` — absolute profile URLs or plain names. */
+  authors?: string[];
+  /** `article:section` — the content category. */
+  section?: string | null;
 }): Metadata {
   const dictionary = getDictionary(locale);
-  const canonicalPath = createLocalePath(locale, pathname);
+  const canonicalPath = canonicalOverride
+    ? createLocalePath(locale, canonicalOverride)
+    : createLocalePath(locale, pathname);
 
   const metadata: Metadata = {
     metadataBase: getMetadataBase(),
-    title,
+    title: absoluteTitle ? { absolute: title } : title,
     description,
     alternates: {
       canonical: canonicalPath,
+      // When the canonical points at another route, the language cluster has to
+      // follow it — otherwise hreflang advertises the non-canonical URLs as the
+      // localized versions of a page that canonicalizes away from them.
       languages: {
         ...Object.fromEntries(
           locales.map((item) => [
             item,
             new URL(
-              createLocalePath(item, pathname),
+              createLocalePath(item, canonicalOverride ?? pathname),
               getMetadataBase(),
             ).toString(),
           ]),
         ),
         "x-default": new URL(
-          createLocalePath(xDefaultLocale, pathname),
+          createLocalePath(xDefaultLocale, canonicalOverride ?? pathname),
           getMetadataBase(),
         ).toString(),
       },
@@ -93,7 +135,17 @@ export function buildMetadata({
         : {}),
     },
     openGraph: {
-      type: "website",
+      ...(ogType === "article"
+        ? {
+            type: "article" as const,
+            ...(publishedTime ? { publishedTime } : {}),
+            ...(modifiedTime ? { modifiedTime } : {}),
+            ...(authors && authors.length > 0 ? { authors } : {}),
+            ...(section ? { section } : {}),
+          }
+        : ogType === "profile"
+          ? { type: "profile" as const }
+          : { type: "website" as const }),
       url: new URL(canonicalPath, getMetadataBase()),
       locale: locale === "uk" ? "uk_UA" : "en_US",
       title,
@@ -155,6 +207,43 @@ function truncateText(value: string, maxLength: number) {
 
 function joinList(values: string[]) {
   return values.filter(Boolean).join(", ");
+}
+
+/**
+ * Roughly where Google stops *displaying* a SERP title. Used to decide whether
+ * the brand suffix earns its space — not to cut the author's title.
+ */
+const SEO_TITLE_DISPLAY_MAX = 60;
+
+/**
+ * Guard against pathological input only. Google indexes the whole title tag, so
+ * there is no SEO reason to clip a descriptive title — this exists so a
+ * runaway value can't ship a kilobyte-long `<title>`.
+ */
+const SEO_TITLE_CEILING = 120;
+
+/**
+ * Compose a detail-page title.
+ *
+ * The defect this fixes was never that authored titles are descriptive — it was
+ * that the root layout's `%s | SearchTalent` template appended 15 characters of
+ * boilerplate on top, so the brand name survived in the SERP while the
+ * keyword-bearing tail of the real title got cut. So: keep the suffix when it
+ * fits inside the display width, drop it when the title needs that space, and
+ * never truncate the title itself — Google shortens the *display*, but it
+ * indexes the full tag, and clipping here would delete indexable keywords
+ * outright.
+ *
+ * Returns an `absolute` title so the root template does not re-append the suffix.
+ */
+export function composeSeoTitle(locale: Locale, contentTitle: string) {
+  const siteName = getDictionary(locale).site.name;
+  const normalized = normalizeWhitespace(contentTitle);
+  const suffixed = `${normalized} | ${siteName}`;
+
+  return suffixed.length <= SEO_TITLE_DISPLAY_MAX
+    ? suffixed
+    : truncateText(normalized, SEO_TITLE_CEILING);
 }
 
 function getWorkFormatLabel(locale: Locale, value: string) {
@@ -249,12 +338,20 @@ export function buildProfilePageMetadata({
   noindex?: boolean;
 }) {
   const titleName = name || (locale === "uk" ? "Фахівець" : "Specialist");
-  const roleLabel = role || (locale === "uk" ? "IT-фахівець" : "IT specialist");
+  const rawRoleLabel = role || (locale === "uk" ? "IT-фахівець" : "IT specialist");
+  // The role is free text on the profile ("Full-Stack Developer | Vibe-Coder"),
+  // so clamp the variable half of the template rather than the composed title —
+  // that way the person's name, the primary keyword here, always survives. Same
+  // approach `buildProjectPageMetadata` takes with the project name.
+  const roleLabel = truncateText(rawRoleLabel, 40);
   const title =
     locale === "uk"
       ? `${titleName} — портфоліо ${roleLabel}`
       : `${titleName} — ${roleLabel} Portfolio`;
-  const descriptionSource = bio?.trim() || fallbackParagraph || "";
+  // The bio is rich text, so it arrives wrapped in `<p>` tags. Left unstripped
+  // it shipped a description that literally opened with "&lt;p&gt;" in the SERP
+  // snippet and the OG card.
+  const descriptionSource = toPlainText(bio) || fallbackParagraph || "";
   const fallback =
     locale === "uk"
       ? `${roleLabel}${country ? ` з ${country}` : ""}. ${projectCount} проєктів у портфоліо на SearchTalent.`
@@ -264,9 +361,11 @@ export function buildProfilePageMetadata({
   return buildMetadata({
     locale,
     pathname,
-    title,
+    title: composeSeoTitle(locale, title),
+    absoluteTitle: true,
     description,
     noindex,
+    ogType: "profile",
   });
 }
 
@@ -320,12 +419,13 @@ export function buildProjectPageMetadata({
       : hasTech
         ? `${categoryLabel} built with ${stack}. Portfolio on SearchTalent.`
         : `${categoryLabel}. Portfolio on SearchTalent.`;
-  const description = truncateText(descriptionText || fallback, 155);
+  const description = truncateText(toPlainText(descriptionText) || fallback, 155);
 
   return buildMetadata({
     locale,
     pathname,
-    title,
+    title: composeSeoTitle(locale, title),
+    absoluteTitle: true,
     description,
     noindex,
   });
@@ -337,19 +437,39 @@ export function buildArticlePageMetadata({
   title,
   excerpt,
   noindex = false,
+  canonicalOverride,
+  publishedTime,
+  modifiedTime,
+  authors,
+  section,
 }: {
   locale: Locale;
   pathname: string;
   title: string | null;
   excerpt: string | null;
   noindex?: boolean;
+  canonicalOverride?: string;
+  publishedTime?: string | null;
+  modifiedTime?: string | null;
+  authors?: string[];
+  section?: string | null;
 }) {
   return buildMetadata({
     locale,
     pathname,
-    title: title || (locale === "uk" ? "Стаття" : "Article"),
+    canonicalOverride,
+    title: composeSeoTitle(
+      locale,
+      title || (locale === "uk" ? "Стаття" : "Article"),
+    ),
+    absoluteTitle: true,
+    ogType: "article",
+    publishedTime,
+    modifiedTime,
+    authors,
+    section,
     description: truncateText(
-      excerpt ||
+      toPlainText(excerpt) ||
         (locale === "uk"
           ? "Технічна стаття та матеріали спільноти SearchTalent."
           : "Technical article and community writing from SearchTalent."),
@@ -387,7 +507,8 @@ export function buildTalentCategoryMetadata({
   return buildMetadata({
     locale,
     pathname,
-    title,
+    title: composeSeoTitle(locale, title),
+    absoluteTitle: true,
     description,
     noindex,
   });
@@ -419,7 +540,8 @@ export function buildTechnologyTalentsMetadata({
   return buildMetadata({
     locale,
     pathname,
-    title,
+    title: composeSeoTitle(locale, title),
+    absoluteTitle: true,
     description,
     noindex,
   });
@@ -451,7 +573,8 @@ export function buildProjectsTagMetadata({
   return buildMetadata({
     locale,
     pathname,
-    title,
+    title: composeSeoTitle(locale, title),
+    absoluteTitle: true,
     description,
     noindex,
   });
@@ -480,7 +603,8 @@ export function buildArticleCategoryMetadata({
   return buildMetadata({
     locale,
     pathname,
-    title,
+    title: composeSeoTitle(locale, title),
+    absoluteTitle: true,
     description,
     noindex,
   });
@@ -956,6 +1080,40 @@ export function isProfileIndexable(args: {
   bio?: string | null;
 }): boolean {
   return args.projectCount > 0 || Boolean(args.bio?.trim());
+}
+
+/**
+ * A typed `WebPage` subtype for pages whose whole purpose is described by a
+ * schema.org page type — `AboutPage` for /about, `ContactPage` for /contacts.
+ * Cheap to emit and it tells crawlers what the page is for, which a bare
+ * untyped page cannot.
+ */
+export function buildWebPageSchema({
+  type,
+  url,
+  name,
+  description,
+  inLanguage,
+}: {
+  type: "AboutPage" | "ContactPage" | "CollectionPage";
+  url: string;
+  name: string;
+  description?: string | null;
+  inLanguage?: string | null;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": type,
+    url,
+    name,
+    ...(description ? { description } : {}),
+    ...(inLanguage ? { inLanguage } : {}),
+    isPartOf: {
+      "@type": "WebSite",
+      url: getMetadataBase().toString().replace(/\/$/, ""),
+      name: "SearchTalent",
+    },
+  };
 }
 
 export function buildBreadcrumbSchema(

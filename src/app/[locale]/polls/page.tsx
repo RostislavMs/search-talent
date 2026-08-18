@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import FeedFilterBrowser from "@/components/feed-filter-browser";
+import JsonLd from "@/components/json-ld";
 import { ButtonLink } from "@/components/ui/Button";
 import { getCategoryDisplayName, sortArticleCategories } from "@/lib/articles";
 import { getPollFeed } from "@/lib/db/polls";
 import { isLocale } from "@/lib/i18n/config";
-import { buildMetadata } from "@/lib/seo";
+import {
+  buildItemListSchema,
+  buildMetadata,
+  getSiteUrl,
+  toBcp47,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -88,8 +94,26 @@ export default async function PollsPage({
         empty: "No polls match these filters yet.",
       };
 
+  const siteUrl = getSiteUrl().replace(/\/$/, "");
+  const pollListItems = feed.items
+    .filter((item) => item.slug)
+    .map((item) => ({
+      url: `${siteUrl}/${safeLocale}/polls/${item.slug}`,
+      name: item.title,
+    }));
+
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6">
+      {pollListItems.length > 0 && (
+        <JsonLd
+          data={buildItemListSchema({
+            url: `${siteUrl}/${safeLocale}/polls`,
+            name: ui.title,
+            inLanguage: toBcp47(safeLocale),
+            items: pollListItems,
+          })}
+        />
+      )}
       <FeedFilterBrowser
         kind="poll"
         locale={safeLocale}

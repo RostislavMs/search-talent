@@ -4,7 +4,11 @@ import {
   getTalentSkillDirectory,
   getTechnologyDirectory,
 } from "@/lib/db/marketing";
-import { DISCUSSIONS_CATEGORY_SLUG } from "@/lib/articles";
+import {
+  DISCUSSIONS_CATEGORY_SLUG,
+  NEWS_CATEGORY_SLUG,
+  hasOwnLocaleVersion,
+} from "@/lib/articles";
 import { normalizeProjectKind } from "@/lib/projects";
 import {
   createLocalePath,
@@ -76,17 +80,28 @@ const staticRoutes: Array<{
   path: string;
   changeFrequency: ChangeFrequency;
   priority: number;
+  /**
+   * Listing pages change whenever anyone publishes, so a frozen STATIC_LASTMOD
+   * on them is a false signal — "changes daily" next to a months-old lastmod.
+   * Google ignores changefreq and trusts lastmod, so these omit it entirely
+   * rather than assert a date that is wrong either way. Only genuinely static
+   * copy (legal, info) keeps the frozen date.
+   */
+  listing?: boolean;
 }> = [
-  { path: "/", changeFrequency: "daily", priority: 1 },
-  { path: "/talents", changeFrequency: "daily", priority: 0.9 },
-  { path: "/projects", changeFrequency: "daily", priority: 0.9 },
-  { path: "/articles", changeFrequency: "daily", priority: 0.9 },
+  { path: "/", changeFrequency: "daily", priority: 1, listing: true },
+  { path: "/talents", changeFrequency: "daily", priority: 0.9, listing: true },
+  { path: "/projects", changeFrequency: "daily", priority: 0.9, listing: true },
+  { path: "/articles", changeFrequency: "daily", priority: 0.9, listing: true },
+  // News is an indexable section of its own (`index, follow`) and was missing
+  // from the sitemap entirely — only its individual posts were listed.
+  { path: "/news", changeFrequency: "weekly", priority: 0.7, listing: true },
   // Facet directory hubs — link the long-tail facet pages so they are not
   // orphaned (reachable only via the sitemap). See /talents/skill etc.
-  { path: "/talents/skill", changeFrequency: "weekly", priority: 0.6 },
-  { path: "/talents/role", changeFrequency: "weekly", priority: 0.6 },
-  { path: "/projects/tag", changeFrequency: "weekly", priority: 0.6 },
-  { path: "/polls", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/talents/skill", changeFrequency: "weekly", priority: 0.6, listing: true },
+  { path: "/talents/role", changeFrequency: "weekly", priority: 0.6, listing: true },
+  { path: "/projects/tag", changeFrequency: "weekly", priority: 0.6, listing: true },
+  { path: "/polls", changeFrequency: "weekly", priority: 0.8, listing: true },
   { path: "/about", changeFrequency: "monthly", priority: 0.5 },
   { path: "/rating-guide", changeFrequency: "monthly", priority: 0.5 },
   { path: "/faq", changeFrequency: "monthly", priority: 0.5 },
@@ -108,20 +123,46 @@ function buildEntries(
     lastModified?: Date;
     changeFrequency?: ChangeFrequency;
     priority?: number;
+    /**
+     * Restrict the entry (and its alternates) to the locales that actually have
+     * their own version of this content. Defaults to every locale.
+     *
+     * Translated content is served in every locale, but an untranslated article
+     * falls back to its primary language — so its /en/ URL declares `lang="en"`
+     * and an `en` hreflang while serving Ukrainian text. Those URLs are
+     * `noindex` at the page level, and a noindex URL must never appear in the
+     * sitemap or in another page's hreflang cluster.
+     */
+    availableLocales?: readonly Locale[];
   } = {},
 ): SitemapEntry[] {
+  const available =
+    options.availableLocales && options.availableLocales.length > 0
+      ? locales.filter((locale) => options.availableLocales!.includes(locale))
+      : locales;
+
+  if (available.length === 0) {
+    return [];
+  }
+
+  // x-default has to name a URL that exists: when the default locale is the
+  // missing one, the remaining version is the only sensible target.
+  const defaultLocale = available.includes(xDefaultLocale)
+    ? xDefaultLocale
+    : available[0];
+
   const alternates: SitemapEntry["alternates"] = [
-    ...locales.map((locale) => ({
+    ...available.map((locale) => ({
       locale,
       href: new URL(createLocalePath(locale, route), baseUrl).toString(),
     })),
     {
       locale: "x-default" as const,
-      href: new URL(createLocalePath(xDefaultLocale, route), baseUrl).toString(),
+      href: new URL(createLocalePath(defaultLocale, route), baseUrl).toString(),
     },
   ];
 
-  return locales.map((locale) => ({
+  return available.map((locale) => ({
     url: new URL(createLocalePath(locale, route), baseUrl).toString(),
     lastModified: options.lastModified,
     changeFrequency: options.changeFrequency,
@@ -130,13 +171,28 @@ function buildEntries(
   }));
 }
 
+/** Locales this article has a version of its own in — see `hasOwnLocaleVersion`. */
+function getArticleLocales(article: {
+  content_locale?: string | null;
+  translations?: unknown;
+}): Locale[] {
+  const source = {
+    content_locale: article.content_locale,
+    translations: (article.translations ?? null) as Parameters<
+      typeof hasOwnLocaleVersion
+    >[0]["translations"],
+  };
+
+  return locales.filter((locale) => hasOwnLocaleVersion(source, locale));
+}
+
 export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> {
   const baseUrl = getMetadataBase();
 
   if (id === "static") {
     return staticRoutes.flatMap((route) =>
       buildEntries(baseUrl, route.path, {
-        lastModified: STATIC_LASTMOD,
+        ...(route.listing ? {} : { lastModified: STATIC_LASTMOD }),
         changeFrequency: route.changeFrequency,
         priority: route.priority,
       }),
@@ -265,22 +321,29 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     // Discussion topics are `noindex` by product decision, and a noindex page
     // must never appear in the sitemap. News is deliberately NOT excluded here:
     // it has no sitemap section of its own, so dropping it would take news out
-    // of the sitemap entirely.
-    const { data: discussionsCategory } = await supabase
+    // of the sitemap entirely. It is emitted under /news/<slug> below, which is
+    // the URL the news post canonicalizes to.
+    const { data: sectionCategories } = await supabase
       .from("article_categories")
-      .select("id")
-      .eq("slug", DISCUSSIONS_CATEGORY_SLUG)
-      .maybeSingle();
+      .select("id, slug")
+      .in("slug", [DISCUSSIONS_CATEGORY_SLUG, NEWS_CATEGORY_SLUG]);
+
+    const discussionsCategoryId =
+      sectionCategories?.find((row) => row.slug === DISCUSSIONS_CATEGORY_SLUG)
+        ?.id ?? null;
+    const newsCategoryId =
+      sectionCategories?.find((row) => row.slug === NEWS_CATEGORY_SLUG)?.id ??
+      null;
 
     let articlesQuery = supabase
       .from("articles")
-      .select("slug, updated_at")
+      .select("slug, updated_at, category_id, content_locale, translations")
       .eq("status", "published")
       .eq("moderation_status", "approved");
 
-    if (discussionsCategory) {
+    if (discussionsCategoryId !== null) {
       articlesQuery = articlesQuery.or(
-        `category_id.is.null,category_id.neq.${discussionsCategory.id}`,
+        `category_id.is.null,category_id.neq.${discussionsCategoryId}`,
       );
     }
 
@@ -288,13 +351,21 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
       .order("updated_at", { ascending: false })
       .limit(SITEMAP_PAGE_SIZE);
 
-    return (data || []).flatMap((article) =>
-      buildEntries(baseUrl, `/articles/${article.slug}`, {
-        lastModified: new Date(article.updated_at),
-        changeFrequency: "monthly",
-        priority: 0.7,
-      }),
-    );
+    return (data || []).flatMap((article) => {
+      const isNews =
+        newsCategoryId !== null && article.category_id === newsCategoryId;
+
+      return buildEntries(
+        baseUrl,
+        `${isNews ? "/news" : "/articles"}/${article.slug}`,
+        {
+          lastModified: new Date(article.updated_at),
+          changeFrequency: "monthly",
+          priority: 0.7,
+          availableLocales: getArticleLocales(article),
+        },
+      );
+    });
   }
 
   if (id === "polls") {
