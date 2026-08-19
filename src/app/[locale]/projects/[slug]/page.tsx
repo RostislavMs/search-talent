@@ -70,6 +70,13 @@ import ProjectAudioDetails from "@/components/project-audio-details";
 import ProjectQaDetails from "@/components/project-qa-details";
 import ProjectMotionDetails from "@/components/project-motion-details";
 import ProjectWritingDetails from "@/components/project-writing-details";
+import ProjectSourcePanel from "@/components/project-source-panel";
+import ProviderSyncButton from "@/components/provider-sync-button";
+import {
+  normalizeProjectSourceLink,
+  PROVIDER_AUTO_SYNC_INTERVAL_MS,
+} from "@/lib/constants/provider-integrations";
+import { syncProjectFromProvider } from "@/lib/db/provider-sync";
 
 async function getRouteParams(
   params: Promise<{ locale: string; slug: string }>,
@@ -347,6 +354,28 @@ export default async function PublicProjectPage({
     }
   }
 
+  // Same auto-refresh for a project imported from GitLab / Figma.
+  let sourceLink = normalizeProjectSourceLink(project.source_integration);
+  const sourceSyncMs = sourceLink?.syncedAt
+    ? new Date(sourceLink.syncedAt).getTime()
+    : 0;
+  if (
+    isOwner &&
+    sourceLink &&
+    (!sourceLink.syncedAt ||
+      nowMs - sourceSyncMs > PROVIDER_AUTO_SYNC_INTERVAL_MS)
+  ) {
+    const supabase = await createClient();
+    const result = await syncProjectFromProvider(supabase, {
+      projectId: project.id,
+      ownerUserId: project.owner_id,
+    });
+    if (result.ok) {
+      sourceLink = result.link;
+      project.tech_stack = result.techStack;
+    }
+  }
+
   const siteUrl = getMetadataBase().toString().replace(/\/$/, "");
   const projectUrl = `${siteUrl}/${locale}/projects/${slug}`;
 
@@ -399,6 +428,13 @@ export default async function PublicProjectPage({
                 <GithubSyncButton
                   projectId={project.id}
                   initialSyncedAt={project.github_synced_at}
+                />
+              ) : null}
+              {isOwner && sourceLink ? (
+                <ProviderSyncButton
+                  projectId={project.id}
+                  provider={sourceLink.provider}
+                  initialSyncedAt={sourceLink.syncedAt}
                 />
               ) : null}
               {!isOwner && isAdmin && (
@@ -608,6 +644,14 @@ export default async function PublicProjectPage({
               <ProjectWritingDetails
                 dictionary={dictionary}
                 meta={writingMeta}
+              />
+            ) : null}
+
+            {sourceLink ? (
+              <ProjectSourcePanel
+                dictionary={dictionary}
+                locale={locale}
+                link={sourceLink}
               />
             ) : null}
 

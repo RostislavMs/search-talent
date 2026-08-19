@@ -32,6 +32,7 @@ import { compressImageFile } from "@/lib/image-compression";
 import {
   buildProjectPath,
   getProjectKindLabel,
+  isProjectTimelineFieldEditable,
   projectKinds,
   projectStatuses,
   slugify,
@@ -68,6 +69,13 @@ import {
   type GithubProjectRole,
 } from "@/lib/constants/github";
 import {
+  getProviderIntegrationDescriptor,
+  getProviderIntegrationsForKind,
+  normalizeProjectSourceLink,
+  type ProjectSourceLink,
+  type ProviderIntegrationId,
+} from "@/lib/constants/provider-integrations";
+import {
   detectVideoEmbed,
   inferProjectMediaKind,
   type ProjectMediaItem,
@@ -93,6 +101,12 @@ import {
   VideoDetailsFields,
   WritingDetailsFields,
 } from "@/components/project-form/kind-fields";
+import ProviderResourceImporter, {
+  type ProviderImportPayload,
+} from "@/components/provider-resource-importer";
+import SourceAiDraft, {
+  type SourceDraftFieldValues,
+} from "@/components/project-form/source-ai-draft";
 import VideoCoverPicker from "@/components/project-form/video-cover-picker";
 import CoverCropEditor from "@/components/project-form/cover-crop-editor";
 import { blobToFile, captureVideoPoster } from "@/lib/video-poster";
@@ -125,6 +139,9 @@ function bytesToMb(bytes: number): number {
 }
 const BASE_TOTAL_STEPS = 5;
 const DEFAULT_ASPECT_RATIO = 16 / 10;
+// Embedded videos are a highlight reel, not a playlist: a handful of players
+// on one project page already costs the visitor several provider iframes.
+const MAX_VIDEO_EMBEDS = 3;
 
 type MetaOption = {
   id: number;
@@ -139,6 +156,7 @@ export type EditableProject = {
   role: string | null;
   kind: ProjectKind | null;
   kind_metadata?: ProjectKindMetadata | null;
+  source_integration?: unknown;
   project_status: ProjectStatus | null;
   team_size: number | null;
   project_url: string | null;
@@ -183,6 +201,11 @@ type ProjectFormState = {
   motionMeta: MotionKindMetadata;
   motionDurationInput: string;
   writingMeta: WritingKindMetadata;
+  /**
+   * The provider resource this project is imported from (GitLab project,
+   * Figma file). `null` means "not linked" — sending that unlinks it.
+   */
+  sourceIntegration: ProjectSourceRequest | null;
   projectStatus: ProjectStatus | "";
   teamSize: string;
   hoursSpent: string;
@@ -206,6 +229,20 @@ type ProjectFormState = {
 };
 
 type SaveMode = "draft" | "publish";
+
+/** Form fields an AI draft is allowed to fill. All hold plain strings. */
+type SourceDraftTarget =
+  | "description"
+  | "role"
+  | "problem"
+  | "solution"
+  | "results";
+
+/** The subset of a source link the form owns and sends back on save. */
+type ProjectSourceRequest = Pick<
+  ProjectSourceLink,
+  "provider" | "ref" | "externalId" | "name" | "url"
+>;
 
 type LocalMediaItem = {
   id: string;
@@ -256,6 +293,7 @@ function getInitialFormState(
   const role = project?.github_role;
   const isValidRole =
     role && (GITHUB_PROJECT_ROLES as readonly string[]).includes(role);
+  const sourceLink = normalizeProjectSourceLink(project?.source_integration);
 
   return {
     title: project?.title || "",
@@ -296,6 +334,15 @@ function getInitialFormState(
     writingMeta: normalizeWritingKindMetadata(
       project?.kind_metadata?.writing ?? null,
     ),
+    sourceIntegration: sourceLink
+      ? {
+          provider: sourceLink.provider,
+          ref: sourceLink.ref,
+          externalId: sourceLink.externalId,
+          name: sourceLink.name,
+          url: sourceLink.url,
+        }
+      : null,
     projectStatus: project?.project_status || "",
     teamSize: project?.team_size ? String(project.team_size) : "",
     hoursSpent: project?.kind_metadata?.hoursSpent
@@ -394,9 +441,6 @@ export default function CreateProjectForm({
     () => (project?.media || []).map(toRemoteMediaItem),
   );
   const [mediaWorking, setMediaWorking] = useState(false);
-  const [isProjectOngoing, setIsProjectOngoing] = useState<boolean>(
-    () => Boolean(project) && !project?.completed_on,
-  );
   const [linkInput, setLinkInput] = useState("");
   const [coverPickerFile, setCoverPickerFile] = useState<File | null>(null);
   // A freshly-picked cover image waiting to be framed in the crop editor.
@@ -471,6 +515,31 @@ export default function CreateProjectForm({
       setForm((prev) => ({ ...prev, [field]: value }));
     },
     [],
+  );
+
+  // The status decides which timeline fields apply, so a field the status locks
+  // is saved as empty no matter what it still holds. The typed value stays in
+  // state — switch the status back to "completed" and the date returns instead
+  // of having to be retyped.
+  const timeline = useMemo(
+    () => ({
+      startedOn: isProjectTimelineFieldEditable("startedOn", form.projectStatus)
+        ? form.startedOn
+        : "",
+      completedOn: isProjectTimelineFieldEditable(
+        "completedOn",
+        form.projectStatus,
+      )
+        ? form.completedOn
+        : "",
+      hoursSpent: isProjectTimelineFieldEditable(
+        "hoursSpent",
+        form.projectStatus,
+      )
+        ? form.hoursSpent
+        : "",
+    }),
+    [form.completedOn, form.hoursSpent, form.projectStatus, form.startedOn],
   );
 
   const measureLocalAspectRatio = useCallback(
@@ -700,6 +769,19 @@ export default function CreateProjectForm({
     });
   }, []);
 
+  // Saved links come back as `remote` items carrying an embed, so both kinds
+  // count against the cap — otherwise editing a project would let the author
+  // add three more every visit.
+  const embedCount = useMemo(
+    () =>
+      mediaItems.filter(
+        (item) =>
+          (item.kind === "embed" || item.kind === "remote") &&
+          Boolean(item.embed),
+      ).length,
+    [mediaItems],
+  );
+
   const addLinkItem = useCallback(() => {
     const trimmed = linkInput.trim();
     if (!trimmed) return;
@@ -708,6 +790,16 @@ export default function CreateProjectForm({
 
     if (!embed) {
       toast.warning(dictionary.forms.mediaLinkInvalid);
+      return;
+    }
+
+    if (embedCount >= MAX_VIDEO_EMBEDS) {
+      toast.warning(
+        dictionary.forms.mediaLinkLimitReached.replace(
+          "{limit}",
+          String(MAX_VIDEO_EMBEDS),
+        ),
+      );
       return;
     }
 
@@ -733,7 +825,13 @@ export default function CreateProjectForm({
     });
 
     setLinkInput("");
-  }, [dictionary.forms.mediaLinkInvalid, linkInput, toast]);
+  }, [
+    dictionary.forms.mediaLinkInvalid,
+    dictionary.forms.mediaLinkLimitReached,
+    embedCount,
+    linkInput,
+    toast,
+  ]);
 
   // Sets the explicit project cover from an image the author picked or a frame
   // captured from a clip. The cover is a standalone image (uploaded at save
@@ -1132,14 +1230,15 @@ export default function CreateProjectForm({
                   client: form.writingMeta.client,
                 }
               : undefined,
-          hoursSpent: form.hoursSpent ? Number(form.hoursSpent) : null,
+          hoursSpent: timeline.hoursSpent ? Number(timeline.hoursSpent) : null,
         },
+        sourceIntegration: form.sourceIntegration,
         projectStatus: form.projectStatus || null,
         teamSize: form.teamSize ? Number(form.teamSize) : null,
         projectUrl: form.projectUrl,
         repositoryUrl: form.repositoryUrl,
-        startedOn: form.startedOn,
-        completedOn: form.completedOn,
+        startedOn: timeline.startedOn,
+        completedOn: timeline.completedOn,
         problem: form.problem,
         solution: form.solution,
         results: form.results,
@@ -1159,7 +1258,7 @@ export default function CreateProjectForm({
         status,
       };
     },
-    [form, skillIds, coAuthors, githubFullName],
+    [form, timeline, skillIds, coAuthors, githubFullName],
   );
 
   const applyGithubImport = useCallback(
@@ -1215,6 +1314,108 @@ export default function CreateProjectForm({
     [dictionary.githubIntegration.importApplied, metaSkills, toast],
   );
 
+  // Applies an imported GitLab project / Figma file to the form. Same rule as
+  // the GitHub import: only blank fields are filled, so a re-import never
+  // overwrites what the author already wrote.
+  const applyProviderImport = useCallback(
+    ({ provider, resource }: ProviderImportPayload) => {
+      setForm((prev) => ({
+        ...prev,
+        title: prev.title || resource.name,
+        description: prev.description || resource.description || "",
+        repositoryUrl: prev.repositoryUrl || resource.url,
+        projectUrl: prev.projectUrl || resource.homepageUrl || "",
+        startedOn:
+          prev.startedOn ||
+          (resource.createdAt ? resource.createdAt.slice(0, 10) : ""),
+        teamSize:
+          prev.teamSize ||
+          (resource.teamSize && resource.teamSize > 0
+            ? String(resource.teamSize)
+            : ""),
+        projectStatus:
+          prev.projectStatus || (resource.archived ? "completed" : ""),
+        sourceIntegration: {
+          provider,
+          ref: resource.ref,
+          externalId: resource.externalId,
+          name: resource.name,
+          url: resource.url,
+        },
+      }));
+
+      // Provider tags (languages, topics) only stick when the skills catalogue
+      // already knows them — the tag list is a curated taxonomy, not free text.
+      if (resource.tags.length > 0 && metaSkills.length > 0) {
+        const lookup = new Map(
+          metaSkills.map((skill) => [skill.name.toLowerCase(), skill.id]),
+        );
+        const matched: number[] = [];
+        for (const tag of resource.tags) {
+          const id = lookup.get(tag.toLowerCase());
+          if (id) matched.push(id);
+        }
+        if (matched.length > 0) {
+          setSkillIds((prev) => Array.from(new Set([...prev, ...matched])));
+        }
+      }
+
+      toast.success(
+        dictionary.providerIntegrations.importApplied.replace(
+          "{provider}",
+          getProviderIntegrationDescriptor(provider).label,
+        ),
+      );
+    },
+    [dictionary.providerIntegrations.importApplied, metaSkills, toast],
+  );
+
+  /**
+   * Writes an AI draft into the form. Blank fields only — the author's own
+   * words are never replaced. Returns the count so the panel can report it.
+   */
+  const applySourceDraft = useCallback(
+    (draft: SourceDraftFieldValues) => {
+      const targets: Array<[SourceDraftTarget, string]> = [
+        ["description", draft.description],
+        ["role", draft.projectRole],
+        ["problem", draft.problem],
+        ["solution", draft.solution],
+        ["results", draft.results],
+      ];
+
+      const patch: Partial<Record<SourceDraftTarget, string>> = {};
+
+      for (const [field, value] of targets) {
+        if (form[field].trim().length === 0 && value.trim().length > 0) {
+          patch[field] = value;
+        }
+      }
+
+      const applied = Object.keys(patch).length;
+
+      if (applied > 0) {
+        setForm((prev) => ({ ...prev, ...patch }));
+      }
+
+      return applied;
+    },
+    [form],
+  );
+
+  const clearProviderImport = useCallback(
+    (provider: ProviderIntegrationId) => {
+      setForm((prev) => ({ ...prev, sourceIntegration: null }));
+      toast.success(
+        dictionary.providerIntegrations.unlinkedMessage.replace(
+          "{provider}",
+          getProviderIntegrationDescriptor(provider).label,
+        ),
+      );
+    },
+    [dictionary.providerIntegrations.unlinkedMessage, toast],
+  );
+
   const updateGithubDisplayOption = useCallback(
     <K extends keyof GithubDisplayOptions>(
       key: K,
@@ -1261,9 +1462,9 @@ export default function CreateProjectForm({
       }
 
       if (
-        form.startedOn &&
-        form.completedOn &&
-        form.completedOn < form.startedOn
+        timeline.startedOn &&
+        timeline.completedOn &&
+        timeline.completedOn < timeline.startedOn
       ) {
         toast.warning(dictionary.forms.invalidProjectDateRange);
         setStep(2);
@@ -1477,9 +1678,9 @@ export default function CreateProjectForm({
       dictionary.forms.projectPublished,
       dictionary.forms.projectSavedAsDraft,
       dictionary.forms.projectUpdated,
-      form.completedOn,
-      form.startedOn,
       form.title,
+      timeline.completedOn,
+      timeline.startedOn,
       isEditMode,
       mediaItems,
       pendingSaveMode,
@@ -1672,17 +1873,14 @@ export default function CreateProjectForm({
             projectId={project?.id || null}
             onGithubImport={isEditMode ? undefined : applyGithubImport}
             onUnlinked={handleGithubUnlink}
+            onProviderImport={applyProviderImport}
+            onProviderUnlink={clearProviderImport}
+            onApplySourceDraft={applySourceDraft}
           />
         )}
 
         {currentStepKey === "details" && (
-          <StepDetails
-            dictionary={dictionary}
-            form={form}
-            update={update}
-            isOngoing={isProjectOngoing}
-            onOngoingChange={setIsProjectOngoing}
-          />
+          <StepDetails dictionary={dictionary} form={form} update={update} />
         )}
 
         {currentStepKey === "story" && (
@@ -1702,6 +1900,7 @@ export default function CreateProjectForm({
             linkInput={linkInput}
             onLinkInputChange={setLinkInput}
             onAddLink={addLinkItem}
+            embedCount={embedCount}
             onPickCoverFrame={setCoverPickerFile}
             currentCoverUrl={project?.cover_url ?? null}
             pendingCover={pendingCover}
@@ -1969,17 +2168,28 @@ function SidebarContent({
       >
         {publishLabel}
       </Button>
-      {!isLastStep ? (
+      {/* Back / Next are one control, so they share a row — the pair reads as
+          step navigation instead of two more stacked buttons. */}
+      <div className="flex items-center gap-2">
         <Button
           type="button"
           variant="secondary"
-          className="w-full justify-center"
+          className="flex-1 justify-center"
+          onClick={() => run(onBack)}
+          disabled={isFirstStep || submitting}
+        >
+          {dictionary.forms.stepBack}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          className="flex-1 justify-center"
           onClick={() => run(onNext)}
-          disabled={submitting}
+          disabled={isLastStep || submitting}
         >
           {dictionary.forms.stepNext}
         </Button>
-      ) : null}
+      </div>
       <Button
         type="button"
         variant="secondary"
@@ -1988,15 +2198,6 @@ function SidebarContent({
         disabled={submitting}
       >
         {draftLabel}
-      </Button>
-      <Button
-        type="button"
-        variant="secondary"
-        className="w-full justify-center"
-        onClick={() => run(onBack)}
-        disabled={isFirstStep || submitting}
-      >
-        {dictionary.forms.stepBack}
       </Button>
       {isEditMode ? (
         <button
@@ -2103,16 +2304,7 @@ function StepBasics({
   );
 }
 
-function StepSpecifics({
-  dictionary,
-  form,
-  update,
-  updateDisplayOption,
-  githubFullName,
-  projectId,
-  onGithubImport,
-  onUnlinked,
-}: {
+type StepSpecificsProps = {
   dictionary: Dictionary;
   form: ProjectFormState;
   update: <K extends keyof ProjectFormState>(
@@ -2127,7 +2319,66 @@ function StepSpecifics({
   projectId: string | null;
   onGithubImport?: (payload: GithubImportPayload) => void;
   onUnlinked: () => void;
-}) {
+  onProviderImport: (payload: ProviderImportPayload) => void;
+  onProviderUnlink: (provider: ProviderIntegrationId) => void;
+  /** Applies an AI draft to blank fields; returns how many it filled. */
+  onApplySourceDraft: (draft: SourceDraftFieldValues) => number;
+};
+
+// Kind-aware fields, preceded by the connect-and-import panels for whichever
+// providers cover this discipline (GitLab for code/QA, Figma for design/motion).
+// GitHub keeps its own panel inside the code branch, so the import options end
+// up next to each other.
+function StepSpecifics(props: StepSpecificsProps) {
+  const { form, onProviderImport, onProviderUnlink } = props;
+  const providers = getProviderIntegrationsForKind(form.kind);
+  const link = form.sourceIntegration;
+
+  return (
+    <div className="space-y-6">
+      {providers.map((descriptor) => (
+        <ProviderResourceImporter
+          key={descriptor.id}
+          provider={descriptor.id}
+          linkedName={
+            link && link.provider === descriptor.id
+              ? link.name || link.ref
+              : null
+          }
+          onImport={onProviderImport}
+          onUnlink={() => onProviderUnlink(descriptor.id)}
+          returnTo={props.projectId ? `/projects/edit/${props.projectId}` : "/projects/new"}
+        />
+      ))}
+      {link ? (
+        <SourceAiDraft
+          provider={link.provider}
+          ref_={link.ref}
+          existing={{
+            description: form.description,
+            projectRole: form.role,
+            problem: form.problem,
+            solution: form.solution,
+            results: form.results,
+          }}
+          onApply={props.onApplySourceDraft}
+        />
+      ) : null}
+      <KindSpecificFields {...props} />
+    </div>
+  );
+}
+
+function KindSpecificFields({
+  dictionary,
+  form,
+  update,
+  updateDisplayOption,
+  githubFullName,
+  projectId,
+  onGithubImport,
+  onUnlinked,
+}: StepSpecificsProps) {
   if (!form.kind) {
     return (
       <div className="rounded-2xl border app-border bg-(--surface-muted) p-6 text-sm app-muted">
@@ -2687,12 +2938,16 @@ function StepGithub({
   );
 }
 
+// Why a field is greyed out, shown under the input so the field headers in a
+// row stay aligned (a description would push the input down instead).
+function LockedFieldHint({ children }: { children: ReactNode }) {
+  return <p className="mt-1.5 text-xs app-soft">{children}</p>;
+}
+
 function StepDetails({
   dictionary,
   form,
   update,
-  isOngoing,
-  onOngoingChange,
 }: {
   dictionary: Dictionary;
   form: ProjectFormState;
@@ -2700,22 +2955,28 @@ function StepDetails({
     field: K,
     value: ProjectFormState[K],
   ) => void;
-  isOngoing: boolean;
-  onOngoingChange: (next: boolean) => void;
 }) {
-  const handleOngoingToggle = (checked: boolean) => {
-    onOngoingChange(checked);
-    if (checked) {
-      update("completedOn", "");
-    }
-  };
+  // The status is the switch for the timeline fields: a planned project has no
+  // start date, and only a finished one has a finish date and a total time.
+  // That replaces the old "project is still ongoing" checkbox, which said the
+  // same thing twice and could contradict the status.
+  const startedOnEnabled = isProjectTimelineFieldEditable(
+    "startedOn",
+    form.projectStatus,
+  );
+  const completedOnEnabled = isProjectTimelineFieldEditable(
+    "completedOn",
+    form.projectStatus,
+  );
+  const hoursSpentEnabled = isProjectTimelineFieldEditable(
+    "hoursSpent",
+    form.projectStatus,
+  );
+  const lockedUntilCompleted = dictionary.forms.fieldLockedUntilCompleted;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Field
-        label={dictionary.forms.projectStatus}
-        htmlFor="project-status"
-      >
+      <Field label={dictionary.forms.projectStatus} htmlFor="project-status">
         <FormSelect
           className="w-full"
           triggerClassName="w-full"
@@ -2755,10 +3016,14 @@ function StepDetails({
           step="0.5"
           inputMode="decimal"
           placeholder={dictionary.forms.hoursSpentPlaceholder}
-          className="app-input"
-          value={form.hoursSpent}
+          className="app-input disabled:cursor-not-allowed disabled:opacity-60"
+          value={hoursSpentEnabled ? form.hoursSpent : ""}
           onChange={(e) => update("hoursSpent", e.target.value)}
+          disabled={!hoursSpentEnabled}
         />
+        {hoursSpentEnabled ? null : (
+          <LockedFieldHint>{lockedUntilCompleted}</LockedFieldHint>
+        )}
       </Field>
 
       <Field label={dictionary.forms.startedOn} htmlFor="project-started-on">
@@ -2766,31 +3031,34 @@ function StepDetails({
           id="project-started-on"
           type="date"
           title={dictionary.forms.startedOn}
-          className="app-input"
-          value={form.startedOn}
+          className="app-input disabled:cursor-not-allowed disabled:opacity-60"
+          value={startedOnEnabled ? form.startedOn : ""}
           onChange={(e) => update("startedOn", e.target.value)}
+          disabled={!startedOnEnabled}
         />
+        {startedOnEnabled ? null : (
+          <LockedFieldHint>
+            {dictionary.forms.fieldLockedWhilePlanning}
+          </LockedFieldHint>
+        )}
       </Field>
 
-      <Field label={dictionary.forms.completedOn} htmlFor="project-completed-on">
+      <Field
+        label={dictionary.forms.completedOn}
+        htmlFor="project-completed-on"
+      >
         <input
           id="project-completed-on"
           type="date"
           title={dictionary.forms.completedOn}
           className="app-input disabled:cursor-not-allowed disabled:opacity-60"
-          value={isOngoing ? "" : form.completedOn}
+          value={completedOnEnabled ? form.completedOn : ""}
           onChange={(e) => update("completedOn", e.target.value)}
-          disabled={isOngoing}
+          disabled={!completedOnEnabled}
         />
-        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 text-sm app-muted">
-          <input
-            type="checkbox"
-            checked={isOngoing}
-            onChange={(e) => handleOngoingToggle(e.target.checked)}
-            className="h-4 w-4 cursor-pointer rounded border app-border accent-[color:var(--accent)]"
-          />
-          {dictionary.forms.projectStillOngoing}
-        </label>
+        {completedOnEnabled ? null : (
+          <LockedFieldHint>{lockedUntilCompleted}</LockedFieldHint>
+        )}
       </Field>
 
       <UrlField
@@ -2894,6 +3162,7 @@ function StepMedia({
   linkInput,
   onLinkInputChange,
   onAddLink,
+  embedCount,
   onPickCoverFrame,
   currentCoverUrl,
   pendingCover,
@@ -2914,6 +3183,7 @@ function StepMedia({
   linkInput: string;
   onLinkInputChange: (value: string) => void;
   onAddLink: () => void;
+  embedCount: number;
   onPickCoverFrame: (file: File) => void;
   currentCoverUrl: string | null;
   pendingCover: PendingCover | null;
@@ -2926,6 +3196,7 @@ function StepMedia({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const kindHint = getMediaHint(kind, dictionary);
+  const atEmbedLimit = embedCount >= MAX_VIDEO_EMBEDS;
 
   const coverPreview =
     pendingCover?.kind === "file"
@@ -3043,14 +3314,24 @@ function StepMedia({
       </div>
 
       <div className="rounded-3xl border app-border bg-[color:var(--surface)] p-4">
-        <label
-          htmlFor="project-media-url"
-          className="block text-sm font-medium text-[color:var(--foreground)]"
-        >
-          {dictionary.forms.mediaLinkLabel}
-        </label>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <label
+            htmlFor="project-media-url"
+            className="block text-sm font-medium text-[color:var(--foreground)]"
+          >
+            {dictionary.forms.mediaLinkLabel}
+          </label>
+          <span className="text-xs app-soft">
+            {dictionary.forms.mediaLinkCount
+              .replace("{current}", String(embedCount))
+              .replace("{limit}", String(MAX_VIDEO_EMBEDS))}
+          </span>
+        </div>
         <p className="mt-1 text-xs app-soft">
-          {dictionary.forms.mediaLinkHint}
+          {dictionary.forms.mediaLinkHint.replace(
+            "{limit}",
+            String(MAX_VIDEO_EMBEDS),
+          )}
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
@@ -3058,7 +3339,7 @@ function StepMedia({
             type="url"
             inputMode="url"
             placeholder={dictionary.forms.mediaLinkPlaceholder}
-            className="app-input flex-1"
+            className="app-input flex-1 disabled:cursor-not-allowed disabled:opacity-60"
             value={linkInput}
             onChange={(event) => onLinkInputChange(event.target.value)}
             onKeyDown={(event) => {
@@ -3067,18 +3348,27 @@ function StepMedia({
                 onAddLink();
               }
             }}
+            disabled={atEmbedLimit}
           />
           <Button
             type="button"
             variant="secondary"
             onClick={onAddLink}
-            disabled={!linkInput.trim()}
+            disabled={atEmbedLimit || !linkInput.trim()}
           >
-            {mediaItems.some((item) => item.kind === "embed")
+            {embedCount > 0
               ? dictionary.forms.mediaLinkAddAnother
               : dictionary.forms.mediaLinkAdd}
           </Button>
         </div>
+        {atEmbedLimit ? (
+          <p className="mt-2 text-xs app-soft">
+            {dictionary.forms.mediaLinkLimitReached.replace(
+              "{limit}",
+              String(MAX_VIDEO_EMBEDS),
+            )}
+          </p>
+        ) : null}
       </div>
 
       {mediaItems.length === 0 ? (

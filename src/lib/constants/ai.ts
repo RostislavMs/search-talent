@@ -2,7 +2,11 @@
  * AI feature catalog. Keep this list in sync with the
  * `ai_usage_feature_check` CHECK constraint in the database.
  */
-export const AI_FEATURES = ["github_draft", "profile_summary"] as const;
+export const AI_FEATURES = [
+  "github_draft",
+  "profile_summary",
+  "source_draft",
+] as const;
 
 /**
  * AI-summary on the public profile page: a 2-sentence elevator pitch.
@@ -48,6 +52,13 @@ export const AI_PROJECT_FIELD_LIMITS = {
   solution: 5000,
   results: 5000,
 } as const;
+
+/**
+ * Cap on the AI-drafted project description. The column allows 5000, but the
+ * description is the card blurb — a drafted wall of text there would be worse
+ * than none.
+ */
+export const AI_SOURCE_DESCRIPTION_LIMIT = 600;
 
 /**
  * Pricing per 1M tokens for usage tracking. Costs are recorded even on

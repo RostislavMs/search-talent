@@ -420,6 +420,11 @@ pnpm dev                         # http://localhost:3000
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Server-only; admin actions & notifications |
 | `GEMINI_API_KEY` | optional | Enables AI summaries and GitHub drafts |
 | `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` | optional | Enables GitHub project sync |
+| `GITLAB_OAUTH_CLIENT_ID` / `GITLAB_OAUTH_CLIENT_SECRET` | optional | Import a GitLab repo as a project + sync |
+| `FIGMA_OAUTH_CLIENT_ID` / `FIGMA_OAUTH_CLIENT_SECRET` | optional | Import a Figma file as a project + sync |
+| `VIMEO_OAUTH_CLIENT_ID` / `VIMEO_OAUTH_CLIENT_SECRET` | optional | Import a Vimeo video as a project + sync |
+| `SKETCHFAB_OAUTH_CLIENT_ID` / `SKETCHFAB_OAUTH_CLIENT_SECRET` | optional | Import a Sketchfab model as a project + sync |
+| `NOTION_OAUTH_CLIENT_ID` / `NOTION_OAUTH_CLIENT_SECRET` | optional | Import a Notion page as a project + sync |
 
 ### Useful scripts
 

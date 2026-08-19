@@ -3,6 +3,7 @@ import {
   buildProjectPath,
   generateUniqueProjectSlug,
   getProjectKindLabel,
+  isProjectTimelineFieldEditable,
   normalizeProjectKind,
   normalizeProjectPayload,
   normalizeProjectVisibilityStatus,
@@ -305,5 +306,35 @@ describe("generateUniqueProjectSlug", () => {
     const result = await generateUniqueProjectSlug(supabase, "Test", uuid);
 
     expect(result).toBe("test");
+  });
+});
+
+describe("isProjectTimelineFieldEditable", () => {
+  it("leaves every field open until a status is picked", () => {
+    for (const status of ["", null] as const) {
+      expect(isProjectTimelineFieldEditable("startedOn", status)).toBe(true);
+      expect(isProjectTimelineFieldEditable("completedOn", status)).toBe(true);
+      expect(isProjectTimelineFieldEditable("hoursSpent", status)).toBe(true);
+    }
+  });
+
+  it("locks the whole timeline while the project is only planned", () => {
+    expect(isProjectTimelineFieldEditable("startedOn", "planning")).toBe(false);
+    expect(isProjectTimelineFieldEditable("completedOn", "planning")).toBe(false);
+    expect(isProjectTimelineFieldEditable("hoursSpent", "planning")).toBe(false);
+  });
+
+  it("locks the finish date and total time for unfinished projects", () => {
+    for (const status of ["in_progress", "on_hold"] as const) {
+      expect(isProjectTimelineFieldEditable("startedOn", status)).toBe(true);
+      expect(isProjectTimelineFieldEditable("completedOn", status)).toBe(false);
+      expect(isProjectTimelineFieldEditable("hoursSpent", status)).toBe(false);
+    }
+  });
+
+  it("opens everything once the project is completed", () => {
+    expect(isProjectTimelineFieldEditable("startedOn", "completed")).toBe(true);
+    expect(isProjectTimelineFieldEditable("completedOn", "completed")).toBe(true);
+    expect(isProjectTimelineFieldEditable("hoursSpent", "completed")).toBe(true);
   });
 });
