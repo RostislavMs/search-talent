@@ -80,6 +80,31 @@ export function getProjectKindLabel(
   }
 }
 
+export type ProjectTimelineField = "startedOn" | "completedOn" | "hoursSpent";
+
+/**
+ * Which timeline fields the chosen project status leaves editable.
+ *
+ * The status is the single source of truth for "is this project finished?":
+ * a project still in planning has no start date yet, and only a completed one
+ * has a finish date and a total time spent. With no status picked the author
+ * gets everything, so nothing is hidden before they choose.
+ */
+export function isProjectTimelineFieldEditable(
+  field: ProjectTimelineField,
+  status: ProjectStatus | "" | null,
+): boolean {
+  if (!status) {
+    return true;
+  }
+
+  if (field === "startedOn") {
+    return status !== "planning";
+  }
+
+  return status === "completed";
+}
+
 export function normalizeProjectVisibilityStatus(
   value: unknown,
 ): ProjectVisibilityStatus {

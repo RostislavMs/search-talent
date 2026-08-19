@@ -8,6 +8,8 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
+import { buildProjectSourceColumns } from "@/lib/db/provider-sync";
+import { normalizeProjectSourceLink } from "@/lib/constants/provider-integrations";
 import {
   CLEAN_MODERATION_RESULT,
   collectProjectModerationText,
@@ -41,7 +43,9 @@ export async function PATCH(
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, owner_id, slug, moderation_status, followers_notified_at")
+    .select(
+      "id, owner_id, slug, moderation_status, followers_notified_at, source_integration",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -70,6 +74,34 @@ export async function PATCH(
     payload.slug === project.slug
       ? project.slug
       : await generateUniqueProjectSlug(supabase, payload.slug, project.id);
+
+  // Provider link (GitLab project, Figma file). An absent `sourceIntegration`
+  // means "unlink" — the wizard sends null after the author detaches it. An
+  // unchanged link is left as-is: an ordinary text edit must not cost a round
+  // trip to the provider (the owner's page view re-syncs on its own schedule).
+  const existingLink = normalizeProjectSourceLink(project.source_integration);
+  let sourceColumns: Record<string, unknown> = { source_integration: null };
+
+  if (payload.sourceIntegration) {
+    const unchanged =
+      existingLink?.provider === payload.sourceIntegration.provider &&
+      existingLink.ref === payload.sourceIntegration.ref;
+
+    sourceColumns = unchanged
+      ? {}
+      : ((await buildProjectSourceColumns(
+          supabase,
+          user.id,
+          payload.sourceIntegration,
+          {
+            description: payload.description,
+            repository_url: payload.repositoryUrl,
+            project_status: payload.projectStatus,
+            team_size: payload.teamSize,
+            started_on: payload.startedOn,
+          },
+        )) ?? { source_integration: null });
+  }
 
   const { data: updatedProject, error: projectError } = await supabase
     .from("projects")
@@ -105,6 +137,7 @@ export async function PATCH(
       github_display_options: payload.githubDisplayOptions ?? undefined,
       github_auto_sync: payload.githubAutoSync,
       allow_downloads: payload.allowDownloads,
+      ...sourceColumns,
     })
     .eq("id", project.id)
     .eq("owner_id", user.id)

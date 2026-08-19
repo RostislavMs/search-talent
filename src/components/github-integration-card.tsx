@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/Button";
+import IntegrationCard from "@/components/integration-card";
 import { apiFetch } from "@/lib/api-client";
 import type { GithubIntegrationSummary } from "@/lib/constants/github";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
@@ -88,91 +88,48 @@ export default function GithubIntegrationCard({
     setSuccess(dict.disconnectedMessage);
   };
 
+  const status = loading
+    ? dict.loading
+    : integration
+      ? `@${integration.githubLogin}`
+      : dict.description;
+
   return (
-    <section
-      aria-labelledby="github-integration-title"
-      className="rounded-hero app-card p-6 sm:p-8"
-    >
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2
-            id="github-integration-title"
-            className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]"
+    <IntegrationCard
+      brand="github"
+      name={dict.title}
+      status={status}
+      action={
+        integration ? (
+          <Button
+            variant="secondary"
+            className="w-full justify-center"
+            onClick={() => void disconnect()}
+            disabled={pending}
           >
-            {dict.title}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm app-muted">
-            {dict.description}
-          </p>
-        </div>
-        <svg
-          width="36"
-          height="36"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          aria-hidden="true"
-          className="text-[color:var(--foreground)] opacity-80"
-        >
-          <path d="M12 .5C5.6.5.5 5.6.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2.1c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.5-.3-5.2-1.3-5.2-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2.9-.3 1.9-.4 2.9-.4s2 .1 2.9.4c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.7.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.2 5.7.4.4.7 1.1.7 2.1v3.1c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.6 18.4.5 12 .5Z" />
-        </svg>
-      </header>
-
-      {error ? (
-        <p
-          role="alert"
-          className="mt-4 rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm text-rose-500"
-        >
-          {error}
-        </p>
-      ) : null}
-      {success ? (
-        <p
-          role="status"
-          className="mt-4 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-600"
-        >
-          {success}
-        </p>
-      ) : null}
-
-      <div className="mt-5">
-        {loading ? (
-          <p className="text-sm app-muted">{dict.loading}</p>
-        ) : integration ? (
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-3">
-              <span className="relative inline-flex h-10 w-10 overflow-hidden rounded-full app-panel">
-                {integration.githubAvatarUrl ? (
-                  <Image
-                    src={integration.githubAvatarUrl}
-                    alt={integration.githubLogin}
-                    fill
-                    sizes="40px"
-                    className="object-cover"
-                  />
-                ) : null}
-              </span>
-              <div>
-                <p className="text-sm font-medium text-[color:var(--foreground)]">
-                  @{integration.githubLogin}
-                </p>
-                <p className="text-xs app-muted">
-                  {dict.scopes}: {integration.scopes.join(", ") || "—"}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => void disconnect()}
-              disabled={pending}
-            >
-              {pending ? dict.disconnecting : dict.disconnect}
-            </Button>
-          </div>
+            {pending ? dict.disconnecting : dict.disconnect}
+          </Button>
         ) : (
-          <Button onClick={startConnect}>{dict.connect}</Button>
-        )}
-      </div>
-    </section>
+          <Button
+            className="w-full justify-center"
+            onClick={startConnect}
+            disabled={loading}
+          >
+            {dict.connect}
+          </Button>
+        )
+      }
+      message={
+        error ? (
+          <p role="alert" className="mt-3 text-xs text-rose-500">
+            {error}
+          </p>
+        ) : success ? (
+          <p role="status" className="mt-3 text-xs text-emerald-600">
+            {success}
+          </p>
+        ) : null
+      }
+    />
   );
 }

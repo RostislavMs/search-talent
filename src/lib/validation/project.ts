@@ -54,6 +54,7 @@ import {
   GITHUB_FIELD_LIMITS,
   GITHUB_PROJECT_ROLES,
 } from "@/lib/constants/github";
+import { providerIntegrationIds } from "@/lib/constants/provider-integrations";
 import { isValidPublicUrl } from "@/lib/url-validation";
 import { MAX_CO_AUTHORS } from "@/lib/co-authors";
 
@@ -661,6 +662,25 @@ export const projectPayloadSchema = z
       .nullable()
       .optional()
       .transform((value) => value ?? {}),
+    // "Link this project to a provider resource" (GitLab project, Figma file).
+    // The server re-checks the ref against the provider's own pattern and that
+    // the viewer actually has that provider connected before storing anything.
+    sourceIntegration: z
+      .object({
+        provider: z.enum(providerIntegrationIds),
+        ref: z
+          .string()
+          .trim()
+          .min(1)
+          .max(200)
+          .regex(/^[A-Za-z0-9][A-Za-z0-9._/-]*$/, "Invalid integration ref"),
+        externalId: optionalText("Integration id", 64),
+        name: optionalText("Integration name", 200),
+        url: optionalUrl("integration URL"),
+      })
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
     projectStatus: z
       .union([z.enum(projectStatuses), z.literal(""), z.null(), z.undefined()])
       .transform((value) => (value && projectStatuses.includes(value as ProjectStatus) ? value : null)),

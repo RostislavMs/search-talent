@@ -8,6 +8,7 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { getIntegrationForUser } from "@/lib/db/github-integrations";
 import { fetchRepoFullDetail } from "@/lib/integrations/github";
 import { mapRepoToProjectColumns } from "@/lib/db/github-sync";
+import { buildProjectSourceColumns } from "@/lib/db/provider-sync";
 import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import {
@@ -90,6 +91,24 @@ export async function POST(request: Request) {
     }
   }
 
+  // Same snapshot-on-create for the generic providers (GitLab, Figma).
+  let sourceColumns: Record<string, unknown> = {};
+  if (payload.sourceIntegration) {
+    sourceColumns =
+      (await buildProjectSourceColumns(
+        supabase,
+        user.id,
+        payload.sourceIntegration,
+        {
+          description: payload.description,
+          repository_url: payload.repositoryUrl,
+          project_status: payload.projectStatus,
+          team_size: payload.teamSize,
+          started_on: payload.startedOn,
+        },
+      )) ?? {};
+  }
+
   const { data: project, error } = await supabase
     .from("projects")
     .insert({
@@ -127,6 +146,7 @@ export async function POST(request: Request) {
       status: holdForCoAuthors ? "draft" : payload.status,
       publish_on_confirm: holdForCoAuthors,
       ...githubColumns,
+      ...sourceColumns,
     })
     .select("id, slug, status")
     .single();

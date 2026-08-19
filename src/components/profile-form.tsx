@@ -69,6 +69,8 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/toast";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import GithubIntegrationCard from "@/components/github-integration-card";
+import ProviderIntegrationCard from "@/components/provider-integration-card";
+import { providerIntegrationIds } from "@/lib/constants/provider-integrations";
 import DeleteAccountSection from "@/components/delete-account-section";
 import ChangePasswordSection from "@/components/change-password-section";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -3579,7 +3581,16 @@ export default function ProfileForm({
       <section
         className={activeSection === "integrations" ? "space-y-4" : "hidden"}
       >
-        <GithubIntegrationCard returnTo="/profile/edit" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <GithubIntegrationCard returnTo="/profile/edit" />
+          {providerIntegrationIds.map((provider) => (
+            <ProviderIntegrationCard
+              key={provider}
+              provider={provider}
+              returnTo="/profile/edit"
+            />
+          ))}
+        </div>
       </section>
 
       <section
