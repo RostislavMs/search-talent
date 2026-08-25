@@ -19,6 +19,8 @@ const PRESETS = [
   { key: "9:16", value: 9 / 16, recommended: false },
 ] as const;
 
+export type CropPresetKey = (typeof PRESETS)[number]["key"];
+
 const STAGE_MARGIN = 28; // px of dimmed "will be cropped" bleed around the frame
 const OUTPUT_LONG_EDGE = 1600; // cap the exported crop; compression runs later
 
@@ -36,13 +38,31 @@ export default function CoverCropEditor({
   dictionary,
   onCancel,
   onConfirm,
+  presetKeys,
+  hint,
 }: {
   file: File;
   dictionary: Dictionary;
   onCancel: () => void;
   onConfirm: (file: File) => void;
+  /** Restrict the offered formats. A single key locks the ratio and turns the
+   * chip into a static label — use it where the surface renders covers in one
+   * fixed box (article cards / hero) and any other crop would be re-cut. */
+  presetKeys?: readonly CropPresetKey[];
+  /** Replaces the default modal hint — the default one says "pick a format",
+   * which is wrong once the ratio is locked. */
+  hint?: string;
 }) {
   const dict = dictionary.forms;
+
+  const presets = useMemo(() => {
+    if (!presetKeys?.length) {
+      return PRESETS;
+    }
+    const allowed = PRESETS.filter((preset) => presetKeys.includes(preset.key));
+    return allowed.length > 0 ? allowed : PRESETS;
+  }, [presetKeys]);
+  const ratioLocked = presets.length === 1;
 
   const stageWrapRef = useRef<HTMLDivElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -50,11 +70,12 @@ export default function CoverCropEditor({
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+  const [decodeFailed, setDecodeFailed] = useState(false);
   const [avail, setAvail] = useState<{ w: number; h: number }>({
     w: 320,
     h: 360,
   });
-  const [aspect, setAspect] = useState<number>(PRESETS[0].value);
+  const [aspect, setAspect] = useState<number>(presets[0].value);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
@@ -67,7 +88,15 @@ export default function CoverCropEditor({
     const img = new Image();
     img.onload = () => {
       imgRef.current = img;
+      setDecodeFailed(false);
       setNatural({ w: img.naturalWidth, h: img.naturalHeight });
+    };
+    // A format the browser can't decode (HEIC from an iPhone, a corrupt file)
+    // would otherwise leave the stage permanently black with no way forward.
+    img.onerror = () => {
+      imgRef.current = null;
+      setNatural(null);
+      setDecodeFailed(true);
     };
     img.src = url;
     return () => URL.revokeObjectURL(url);
@@ -230,6 +259,33 @@ export default function CoverCropEditor({
     }
   };
 
+  // Undecodable file: there is nothing to frame, so say so and offer the only
+  // way out instead of leaving a black stage with a dead Apply button.
+  if (decodeFailed) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label={dict.coverEditorTitle}
+      >
+        <div className="w-full max-w-md rounded-3xl border app-border bg-[color:var(--surface)] p-5">
+          <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
+            {dict.coverEditorTitle}
+          </h3>
+          <p className="mt-2 text-sm text-rose-500">
+            {dict.coverEditorDecodeError}
+          </p>
+          <div className="mt-5 flex justify-end">
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              {dict.coverEditorCancel}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
@@ -241,23 +297,18 @@ export default function CoverCropEditor({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dict.coverEditorTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">{dict.coverEditorHint}</p>
+        <p className="mt-1 text-sm app-muted">{hint ?? dict.coverEditorHint}</p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {PRESETS.map((preset) => {
+          {presets.map((preset) => {
             const active = Math.abs(aspect - preset.value) < 0.001;
-            return (
-              <button
-                key={preset.key}
-                type="button"
-                onClick={() => setAspect(preset.value)}
-                aria-pressed={active}
-                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  active
-                    ? "border-transparent bg-[color:var(--brand)] text-[color:var(--brand-foreground)]"
-                    : "app-border bg-[color:var(--surface)] app-muted hover:bg-[color:var(--surface-muted)]"
-                }`}
-              >
+            const chipClassName = `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+              active
+                ? "border-transparent bg-[color:var(--brand)] text-[color:var(--brand-foreground)]"
+                : "app-border bg-[color:var(--surface)] app-muted hover:bg-[color:var(--surface-muted)]"
+            }`;
+            const chipContent = (
+              <>
                 {preset.key}
                 {preset.recommended ? (
                   <span
@@ -270,6 +321,28 @@ export default function CoverCropEditor({
                     {dict.coverEditorRecommended}
                   </span>
                 ) : null}
+              </>
+            );
+
+            // Nothing to switch between when the ratio is locked, so the chip
+            // reads as a label instead of a button that does nothing.
+            if (ratioLocked) {
+              return (
+                <span key={preset.key} className={chipClassName}>
+                  {chipContent}
+                </span>
+              );
+            }
+
+            return (
+              <button
+                key={preset.key}
+                type="button"
+                onClick={() => setAspect(preset.value)}
+                aria-pressed={active}
+                className={`cursor-pointer ${chipClassName}`}
+              >
+                {chipContent}
               </button>
             );
           })}

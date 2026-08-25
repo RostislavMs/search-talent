@@ -1968,8 +1968,10 @@ export default function CreateProjectForm({
         <aside className="hidden lg:block">
           {/* Capped to the viewport with its own scrollbar: a sticky rail
               taller than the screen pins in place and its lower actions
-              become unreachable no matter how far the page is scrolled. */}
-          <div className="app-sticky-pane sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto rounded-hero app-card p-5">
+              become unreachable no matter how far the page is scrolled.
+              `top-24` clears the sticky site header — a smaller offset parks
+              the rail (and its actions) underneath it. */}
+          <div className="app-sticky-pane sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-hero app-card p-5">
             {sidebarHeader ? (
               <div className="mb-4 border-b border-dashed app-border pb-4">
                 {sidebarHeader}

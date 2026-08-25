@@ -2223,6 +2223,10 @@ export const dictionaries = {
       coverEditorTitle: "Crop cover",
       coverEditorHint:
         "Pick a format, then zoom and drag to frame the photo. The dimmed area will be cropped. 16:9 is recommended — that's how covers appear on cards.",
+      coverEditorFixedHint:
+        "Zoom and drag to frame the photo. The dimmed area will be cropped. The frame is locked to the recommended 16:9 — exactly how the cover appears on cards and at the top of the article.",
+      coverEditorDecodeError:
+        "This file could not be opened as an image. Pick a JPG, PNG, or WebP photo.",
       coverEditorRecommended: "Recommended",
       coverEditorZoom: "Zoom",
       coverEditorReset: "Reset",
@@ -4774,6 +4778,10 @@ export const dictionaries = {
       coverEditorTitle: "Кадрування обкладинки",
       coverEditorHint:
         "Оберіть формат, потім наблизьте та перетягніть фото, щоб скадрувати. Затемнена область буде обрізана. 16:9 рекомендовано — саме так обкладинка показується в картках.",
+      coverEditorFixedHint:
+        "Наблизьте та перетягніть фото, щоб скадрувати. Затемнена область буде обрізана. Формат зафіксовано на рекомендованому 16:9 — саме так обкладинка показується в картках і на початку статті.",
+      coverEditorDecodeError:
+        "Не вдалося відкрити цей файл як зображення. Оберіть фото у форматі JPG, PNG або WebP.",
       coverEditorRecommended: "Рекомендовано",
       coverEditorZoom: "Масштаб",
       coverEditorReset: "Скинути",

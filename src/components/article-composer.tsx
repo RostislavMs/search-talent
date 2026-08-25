@@ -12,12 +12,14 @@ import InfoHint from "@/components/ui/info-hint";
 import CoAuthorPicker, {
   type CoAuthorOption,
 } from "@/components/co-author-picker";
+import CoverCropEditor from "@/components/project-form/cover-crop-editor";
 import { apiFetch } from "@/lib/api-client";
 import {
   getCategoryDisplayName,
   sortArticleCategories,
   type ArticleCategory,
 } from "@/lib/articles";
+import { MAX_CO_AUTHORS } from "@/lib/co-authors";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { compressImageFile } from "@/lib/image-compression";
@@ -61,6 +63,10 @@ const LOCALE_NAMES: Record<ArticleLocale, string> = {
 
 // One language version: title, summary, body and media are all per-language.
 // The category and status are shared across languages.
+//
+// heroVideo* is legacy: the composer no longer offers a hero video, but the
+// fields are still loaded and saved back untouched so editing an older article
+// doesn't silently drop the video it was published with.
 type LangVersion = {
   title: string;
   excerpt: string;
@@ -223,8 +229,12 @@ export default function ArticleComposer({
   );
   const [saving, setSaving] = useState<null | "draft" | "published">(null);
   const [uploadingAsset, setUploadingAsset] = useState<
-    null | "cover" | "hero" | "inline"
+    null | "cover" | "inline"
   >(null);
+  // Picked cover file waiting to be framed. It becomes the cover only after the
+  // crop editor bakes it to the 16:9 the cards and the article hero render.
+  const [coverEditorFile, setCoverEditorFile] = useState<File | null>(null);
+  const [coverDragActive, setCoverDragActive] = useState(false);
   const isEditing = Boolean(editArticle?.id);
   // Editing an already-published article: "Publish" would just re-save it, and
   // "Save draft" would silently unpublish it — so relabel both to say what they
@@ -262,8 +272,9 @@ export default function ArticleComposer({
   const isDirty =
     saving === null && currentSnapshot !== (savedSnapshot ?? initialSnapshot);
 
-  const dictionaryCommon = getDictionary(isLocale(locale) ? locale : "en").common;
-  const coAuthorsDict = getDictionary(isLocale(locale) ? locale : "en").coAuthors;
+  const dictionary = getDictionary(isLocale(locale) ? locale : "en");
+  const dictionaryCommon = dictionary.common;
+  const coAuthorsDict = dictionary.coAuthors;
   const { isWarningOpen, confirmLeave, cancelLeave } =
     useUnsavedChangesGuard(isDirty);
 
@@ -304,11 +315,18 @@ export default function ArticleComposer({
         draft: "Чернетка",
         published: "Опублікувати",
         coverTitle: "Обкладинка",
-        coverHint: "Широке фото або gif для картки та hero-блоку.",
-        heroTitle: "Hero-відео",
-        heroHint: "Коротке відео для верхнього блоку статті.",
+        coverTooltipLabel: "Пояснення про обкладинку",
+        coverTooltip:
+          "Широке фото для картки статті та верхнього блоку. Після вибору файлу скадруєте його під рекомендований формат 16:9 — саме так обкладинка й показується.",
+        coAuthorsTooltipLabel: "Пояснення про співавторів",
         uploadCover: "Завантажити обкладинку",
-        uploadHero: "Завантажити hero-відео",
+        replaceCover: "Замінити обкладинку",
+        coverDropTitle: "Перетягніть фото сюди",
+        coverDropActive: "Відпустіть фото",
+        coverDropOr: "або",
+        coverFormats: "JPG, PNG або WebP · рекомендовано 16:9",
+        coverInvalidType:
+          "Обкладинкою може бути лише фото — оберіть файл JPG, PNG або WebP.",
         uploading: "Завантаження...",
         saveDraft: "Зберегти чернетку",
         publishNow: "Опублікувати",
@@ -351,11 +369,18 @@ export default function ArticleComposer({
         draft: "Draft",
         published: "Publish",
         coverTitle: "Cover image",
-        coverHint: "A wide image or gif for the card and article hero block.",
-        heroTitle: "Hero video",
-        heroHint: "A short video for the top article section.",
+        coverTooltipLabel: "About the cover image",
+        coverTooltip:
+          "A wide photo for the article card and the top of the article. After picking a file you frame it into the recommended 16:9 — exactly how the cover is displayed.",
+        coAuthorsTooltipLabel: "About co-authors",
         uploadCover: "Upload cover",
-        uploadHero: "Upload hero video",
+        replaceCover: "Replace cover",
+        coverDropTitle: "Drag & drop a photo here",
+        coverDropActive: "Drop the photo",
+        coverDropOr: "or",
+        coverFormats: "JPG, PNG or WebP · 16:9 recommended",
+        coverInvalidType:
+          "The cover has to be a photo — choose a JPG, PNG, or WebP file.",
         uploading: "Uploading...",
         saveDraft: "Save draft",
         publishNow: "Publish now",
@@ -371,7 +396,23 @@ export default function ArticleComposer({
           "Start writing, add headings, quotes, lists, and drop media right into the canvas.",
       };
 
-  const uploadAsset = async (rawFile: File, mode: "cover" | "hero" | "inline") => {
+  // Gate on the type before the crop editor opens. `accept="image/*"` is only a
+  // filter — the OS picker lets you switch to "all files", and a drop bypasses
+  // it entirely, which used to hand the editor a file it could never decode.
+  const handleCoverFile = (file: File | null | undefined) => {
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/") || file.type === "image/svg+xml") {
+      toast.error(ui.coverInvalidType);
+      return;
+    }
+
+    setCoverEditorFile(file);
+  };
+
+  const uploadAsset = async (rawFile: File, mode: "cover" | "inline") => {
     setUploadingAsset(mode);
 
     try {
@@ -417,14 +458,6 @@ export default function ArticleComposer({
         updateActive({
           coverImageUrl: publicUrl,
           coverImageStoragePath: storagePath,
-        });
-        return null;
-      }
-
-      if (mode === "hero") {
-        updateActive({
-          heroVideoUrl: publicUrl,
-          heroVideoStoragePath: storagePath,
         });
         return null;
       }
@@ -755,122 +788,148 @@ export default function ArticleComposer({
             </div>
 
             <div>
-              <label className="text-sm font-medium text-[color:var(--foreground)]">
-                {coAuthorsDict.sectionTitle}
-              </label>
+              <div className="flex items-center gap-1.5">
+                <label className="text-sm font-medium text-[color:var(--foreground)]">
+                  {coAuthorsDict.sectionTitle}
+                </label>
+                <InfoHint label={ui.coAuthorsTooltipLabel}>
+                  <span className="block">{coAuthorsDict.formHint}</span>
+                  <span className="mt-1.5 block">
+                    {coAuthorsDict.pickerHint.replace(
+                      "{max}",
+                      String(MAX_CO_AUTHORS),
+                    )}
+                  </span>
+                </InfoHint>
+              </div>
               <div className="mt-2">
                 <CoAuthorPicker
                   value={coAuthors}
                   onChange={setCoAuthors}
                   locale={locale}
+                  showHint={false}
                 />
               </div>
             </div>
 
-            <div className="space-y-3 rounded-[1.4rem] border app-border bg-[color:var(--surface-muted)] p-4">
-              <div>
+            {/* Drag-and-drop works over the whole block, so a photo can be
+                dropped onto the empty zone or onto an existing cover to
+                replace it. */}
+            <div
+              className="space-y-3 rounded-[1.4rem] border app-border bg-[color:var(--surface-muted)] p-4"
+              onDragOver={(event) => {
+                event.preventDefault();
+                setCoverDragActive(true);
+              }}
+              onDragLeave={() => setCoverDragActive(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setCoverDragActive(false);
+
+                if (uploadingAsset === null) {
+                  handleCoverFile(event.dataTransfer.files?.[0]);
+                }
+              }}
+            >
+              <div className="flex items-center gap-1.5">
                 <p className="text-sm font-medium text-[color:var(--foreground)]">
                   {ui.coverTitle}
                 </p>
-                <p className="mt-1 text-sm app-muted">{ui.coverHint}</p>
+                <InfoHint label={ui.coverTooltipLabel}>
+                  {ui.coverTooltip}
+                </InfoHint>
               </div>
-              <label className="inline-flex cursor-pointer">
-                <span className="inline-flex items-center rounded-full border app-border px-4 py-2 text-sm font-medium text-[color:var(--foreground)]">
-                  {uploadingAsset === "cover" ? ui.uploading : ui.uploadCover}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*,image/gif"
-                  className="sr-only"
-                  disabled={uploadingAsset !== null}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
 
-                    if (!file) {
-                      return;
-                    }
-
-                    void uploadAsset(file, "cover");
-                    event.target.value = "";
-                  }}
-                />
-              </label>
               {current.coverImageUrl ? (
-                <div className="relative overflow-hidden rounded-[1.15rem] border app-border bg-[color:var(--surface)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={current.coverImageUrl}
-                    alt=""
-                    className="block max-h-56 w-full object-contain"
-                  />
-                  <button
-                    type="button"
-                    aria-label={ui.remove}
-                    className="absolute right-2 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
-                    onClick={() =>
-                      updateActive({
-                        coverImageUrl: null,
-                        coverImageStoragePath: null,
-                      })
-                    }
+                <>
+                  <div className="relative overflow-hidden rounded-[1.15rem] border app-border bg-[color:var(--surface)]">
+                    {/* Shown in the same 16:9 box the card and the article hero
+                        use, so the framing chosen in the editor is what the
+                        author sees here. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={current.coverImageUrl}
+                      alt=""
+                      className="block aspect-video w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      aria-label={ui.remove}
+                      className="absolute right-2 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
+                      onClick={() =>
+                        updateActive({
+                          coverImageUrl: null,
+                          coverImageStoragePath: null,
+                        })
+                      }
+                    >
+                      <span aria-hidden>✕</span>
+                    </button>
+                  </div>
+                  <label className="inline-flex cursor-pointer">
+                    <span className="inline-flex items-center rounded-full border app-border bg-[color:var(--surface)] px-4 py-2 text-sm font-medium text-[color:var(--foreground)] transition-colors hover:bg-[color:var(--surface-muted)]">
+                      {uploadingAsset === "cover"
+                        ? ui.uploading
+                        : ui.replaceCover}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      disabled={uploadingAsset !== null}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        handleCoverFile(file);
+                      }}
+                    />
+                  </label>
+                </>
+              ) : (
+                <label
+                  className={cx(
+                    "flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-[1.15rem] border border-dashed px-4 text-center transition-colors",
+                    coverDragActive
+                      ? "border-[color:var(--accent)] bg-[color:var(--surface)]"
+                      : "app-border hover:border-[color:var(--accent)] hover:bg-[color:var(--surface)]",
+                  )}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-7 w-7 app-soft"
+                    aria-hidden="true"
                   >
-                    <span aria-hidden>✕</span>
-                  </button>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="space-y-3 rounded-[1.4rem] border app-border bg-[color:var(--surface-muted)] p-4">
-              <div>
-                <p className="text-sm font-medium text-[color:var(--foreground)]">
-                  {ui.heroTitle}
-                </p>
-                <p className="mt-1 text-sm app-muted">{ui.heroHint}</p>
-              </div>
-              <label className="inline-flex cursor-pointer">
-                <span className="inline-flex items-center rounded-full border app-border px-4 py-2 text-sm font-medium text-[color:var(--foreground)]">
-                  {uploadingAsset === "hero" ? ui.uploading : ui.uploadHero}
-                </span>
-                <input
-                  type="file"
-                  accept="video/*"
-                  className="sr-only"
-                  disabled={uploadingAsset !== null}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-
-                    if (!file) {
-                      return;
-                    }
-
-                    void uploadAsset(file, "hero");
-                    event.target.value = "";
-                  }}
-                />
-              </label>
-              {current.heroVideoUrl ? (
-                <div className="relative overflow-hidden rounded-[1.15rem] border app-border bg-[color:var(--surface)]">
-                  <video
-                    src={current.heroVideoUrl}
-                    controls
-                    preload="metadata"
-                    className="block max-h-56 w-full object-contain"
+                    <path d="M12 16V4" />
+                    <path d="m7 9 5-5 5 5" />
+                    <path d="M5 20h14" />
+                  </svg>
+                  <p className="text-sm font-medium text-[color:var(--foreground)]">
+                    {coverDragActive ? ui.coverDropActive : ui.coverDropTitle}
+                  </p>
+                  <p className="text-xs app-soft">{ui.coverDropOr}</p>
+                  <span className="inline-flex items-center rounded-full border app-border bg-[color:var(--surface)] px-4 py-2 text-sm font-medium text-[color:var(--foreground)]">
+                    {uploadingAsset === "cover" ? ui.uploading : ui.uploadCover}
+                  </span>
+                  <p className="text-[11px] app-soft">{ui.coverFormats}</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    disabled={uploadingAsset !== null}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      handleCoverFile(file);
+                    }}
                   />
-                  <button
-                    type="button"
-                    aria-label={ui.remove}
-                    className="absolute right-2 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
-                    onClick={() =>
-                      updateActive({
-                        heroVideoUrl: null,
-                        heroVideoStoragePath: null,
-                      })
-                    }
-                  >
-                    <span aria-hidden>✕</span>
-                  </button>
-                </div>
-              ) : null}
+                </label>
+              )}
             </div>
           </div>
 
@@ -904,6 +963,20 @@ export default function ArticleComposer({
           </div>
         </aside>
       </div>
+
+      {coverEditorFile ? (
+        <CoverCropEditor
+          file={coverEditorFile}
+          dictionary={dictionary}
+          presetKeys={["16:9"]}
+          hint={dictionary.forms.coverEditorFixedHint}
+          onCancel={() => setCoverEditorFile(null)}
+          onConfirm={(cropped) => {
+            setCoverEditorFile(null);
+            void uploadAsset(cropped, "cover");
+          }}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={isWarningOpen}
