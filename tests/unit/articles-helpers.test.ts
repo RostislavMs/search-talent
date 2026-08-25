@@ -3,6 +3,7 @@ import {
   formatArticleDate,
   getArticleReadingTime,
   getCategoryDisplayName,
+  getOwnLocales,
   normalizeArticleSort,
   normalizeArticleStatus,
   slugifyArticleTitle,
@@ -146,5 +147,37 @@ describe("formatArticleDate", () => {
     const formatted = formatArticleDate("2024-05-10T00:00:00Z", "en");
     expect(formatted).toMatch(/2024/);
     expect(formatted).toMatch(/May/);
+  });
+});
+
+describe("getOwnLocales", () => {
+  it("returns just the primary locale for an untranslated article", () => {
+    expect(getOwnLocales({ content_locale: "uk", translations: {} })).toEqual([
+      "uk",
+    ]);
+  });
+
+  it("returns both locales once a full translation exists", () => {
+    expect(
+      getOwnLocales({
+        content_locale: "uk",
+        translations: { en: { title: "Title", content: "<p>Body</p>" } },
+      }),
+    ).toEqual(["uk", "en"]);
+  });
+
+  it("ignores a translation that has a title but no body", () => {
+    expect(
+      getOwnLocales({
+        content_locale: "uk",
+        translations: { en: { title: "Title", content: "   " } },
+      }),
+    ).toEqual(["uk"]);
+  });
+
+  it("follows an English-primary article", () => {
+    expect(getOwnLocales({ content_locale: "en", translations: null })).toEqual([
+      "en",
+    ]);
   });
 });

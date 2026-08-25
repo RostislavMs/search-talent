@@ -1,3 +1,4 @@
+import { locales, type Locale } from "@/lib/i18n/config";
 import { slugify } from "@/lib/slug";
 
 export const articleStatuses = ["draft", "published"] as const;
@@ -109,6 +110,12 @@ export type ArticleDetail = ArticleFeedItem & {
    * see `hasOwnLocaleVersion` in `@/lib/db/articles`.
    */
   isLocaleFallback: boolean;
+  /**
+   * Locales this article carries its own version in. Drives the hreflang
+   * cluster in the page metadata, which has to name exactly the URLs the
+   * sitemap names — see `getOwnLocales`.
+   */
+  ownLocales: Locale[];
   /** Last post-publish edit time; null until an already-published article is edited. */
   editedAt: string | null;
   coverImageStoragePath: string | null;
@@ -293,6 +300,17 @@ export function hasOwnLocaleVersion(
   const alt = source.translations?.[locale];
 
   return Boolean(alt?.title?.trim() && alt?.content?.trim());
+}
+
+/**
+ * Every locale this article has a version of its own in — the hreflang cluster
+ * and the sitemap entries for it, in other words. Both the page metadata and
+ * the sitemap read this, so neither can drift from the other.
+ */
+export function getOwnLocales(
+  source: Parameters<typeof hasOwnLocaleVersion>[0],
+): Locale[] {
+  return locales.filter((locale) => hasOwnLocaleVersion(source, locale));
 }
 
 /** Reading time in whole minutes, at 180 words per minute. */

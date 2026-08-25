@@ -7,16 +7,12 @@ import {
 import {
   DISCUSSIONS_CATEGORY_SLUG,
   NEWS_CATEGORY_SLUG,
-  hasOwnLocaleVersion,
+  getOwnLocales,
 } from "@/lib/articles";
 import { normalizeProjectKind } from "@/lib/projects";
+import { createLocalePath, locales, type Locale } from "@/lib/i18n/config";
 import {
-  createLocalePath,
-  locales,
-  xDefaultLocale,
-  type Locale,
-} from "@/lib/i18n/config";
-import {
+  buildHreflangAlternates,
   getMetadataBase,
   isProfileIndexable,
   isProjectIndexable,
@@ -145,22 +141,13 @@ function buildEntries(
     return [];
   }
 
-  // x-default has to name a URL that exists: when the default locale is the
-  // missing one, the remaining version is the only sensible target.
-  const defaultLocale = available.includes(xDefaultLocale)
-    ? xDefaultLocale
-    : available[0];
-
-  const alternates: SitemapEntry["alternates"] = [
-    ...available.map((locale) => ({
-      locale,
-      href: new URL(createLocalePath(locale, route), baseUrl).toString(),
-    })),
-    {
-      locale: "x-default" as const,
-      href: new URL(createLocalePath(defaultLocale, route), baseUrl).toString(),
-    },
-  ];
+  // Same cluster the page's own hreflang tags declare — the two sources are
+  // merged by crawlers, so they have to agree exactly.
+  const alternates: SitemapEntry["alternates"] = buildHreflangAlternates(
+    route,
+    available,
+    baseUrl,
+  );
 
   return available.map((locale) => ({
     url: new URL(createLocalePath(locale, route), baseUrl).toString(),
@@ -171,19 +158,17 @@ function buildEntries(
   }));
 }
 
-/** Locales this article has a version of its own in — see `hasOwnLocaleVersion`. */
+/** Locales this article has a version of its own in — see `getOwnLocales`. */
 function getArticleLocales(article: {
   content_locale?: string | null;
   translations?: unknown;
 }): Locale[] {
-  const source = {
+  return getOwnLocales({
     content_locale: article.content_locale,
     translations: (article.translations ?? null) as Parameters<
-      typeof hasOwnLocaleVersion
+      typeof getOwnLocales
     >[0]["translations"],
-  };
-
-  return locales.filter((locale) => hasOwnLocaleVersion(source, locale));
+  });
 }
 
 export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> {

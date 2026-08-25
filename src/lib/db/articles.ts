@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { slugify } from "@/lib/slug";
 import {
+  getOwnLocales,
   getReadingMinutes,
   hasOwnLocaleVersion,
   normalizeArticleSort,
@@ -631,6 +632,7 @@ export async function getArticleDetail(slug: string, locale?: string | null) {
     moderationNote: article.moderation_note,
     content: localized.content || "",
     isLocaleFallback: !hasOwnLocaleVersion(article, locale),
+    ownLocales: getOwnLocales(article),
     editedAt: article.edited_at,
     coverImageStoragePath: localized.cover_image_storage_path,
     heroVideoStoragePath: localized.hero_video_storage_path,

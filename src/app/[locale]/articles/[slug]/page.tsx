@@ -61,6 +61,10 @@ export async function generateMetadata({
       isThin ||
       Boolean(data?.article.isLocaleFallback) ||
       categorySlug === DISCUSSIONS_CATEGORY_SLUG,
+    // ...and it stays out of every hreflang cluster too, on both sides: the
+    // translated URL must not be advertised, and the fallback URL must not
+    // advertise the cluster it is not part of.
+    hreflangLocales: data?.article.ownLocales,
     publishedTime: data?.article.publishedAt || data?.article.createdAt || null,
     modifiedTime:
       data?.article.editedAt ||

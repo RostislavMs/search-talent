@@ -39,6 +39,9 @@ export async function generateMetadata({
     // A locale with no version of its own renders the primary language, which
     // must not be indexed under this locale's hreflang.
     noindex: isThin || Boolean(data?.article.isLocaleFallback),
+    // The hreflang cluster names only the locales that exist, exactly as the
+    // sitemap does.
+    hreflangLocales: data?.article.ownLocales,
     publishedTime: data?.article.publishedAt || data?.article.createdAt || null,
     modifiedTime:
       data?.article.editedAt ||

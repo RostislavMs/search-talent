@@ -49,6 +49,49 @@ export function safeJsonLd(value: unknown) {
  */
 export type OpenGraphKind = "website" | "article" | "profile";
 
+/**
+ * The hreflang cluster for a route, as ordered `(hreflang, absolute URL)` pairs.
+ *
+ * Shared by the page metadata and the sitemap on purpose. Crawlers read both
+ * sources and merge them, so a cluster declared in the HTML that disagrees with
+ * the one declared in the sitemap invalidates the whole group: the merged set
+ * ends up with two pages for the same language and two different `x-default`
+ * targets, and the return-tags stop lining up.
+ *
+ * `availableLocales` narrows the cluster to the locales that carry their own
+ * version of the content. An untranslated article is still *served* under the
+ * other locale — a reader who followed the link gets the primary language — but
+ * that URL is `noindex`, stays out of the sitemap, and must therefore never
+ * appear in anyone's hreflang cluster either.
+ */
+export function buildHreflangAlternates(
+  route: string,
+  availableLocales?: readonly Locale[],
+  baseUrl: URL = getMetadataBase(),
+): Array<{ locale: Locale | "x-default"; href: string }> {
+  const available = availableLocales
+    ? locales.filter((locale) => availableLocales.includes(locale))
+    : locales;
+
+  if (available.length === 0) {
+    return [];
+  }
+
+  // x-default has to name a URL that exists: when the default target is the
+  // locale that is missing, the remaining version is the only sensible one.
+  const defaultTarget = available.includes(xDefaultLocale)
+    ? xDefaultLocale
+    : available[0];
+
+  const hrefFor = (locale: Locale) =>
+    new URL(createLocalePath(locale, route), baseUrl).toString();
+
+  return [
+    ...available.map((locale) => ({ locale, href: hrefFor(locale) })),
+    { locale: "x-default" as const, href: hrefFor(defaultTarget) },
+  ];
+}
+
 export function buildMetadata({
   locale,
   pathname,
@@ -63,6 +106,7 @@ export function buildMetadata({
   modifiedTime,
   authors,
   section,
+  hreflangLocales,
 }: {
   locale: Locale;
   pathname: string;
@@ -93,11 +137,41 @@ export function buildMetadata({
   authors?: string[];
   /** `article:section` — the content category. */
   section?: string | null;
+  /**
+   * Locales that have their own version of this content. Defaults to every
+   * locale, which is right for anything the UI merely translates. Pass the real
+   * list for content that can exist in one language only (articles) so the HTML
+   * cluster matches the sitemap. When the rendered locale is not in the list,
+   * the page is a fallback rendering of another language and gets no hreflang at
+   * all: advertising a cluster it is not itself a member of is what produces
+   * "no return-tag" on the pages it points at.
+   */
+  hreflangLocales?: readonly Locale[];
 }): Metadata {
   const dictionary = getDictionary(locale);
   const canonicalPath = canonicalOverride
     ? createLocalePath(locale, canonicalOverride)
     : createLocalePath(locale, pathname);
+
+  // When the canonical points at another route, the language cluster has to
+  // follow it — otherwise hreflang advertises the non-canonical URLs as the
+  // localized versions of a page that canonicalizes away from them.
+  const hreflangAlternates = buildHreflangAlternates(
+    canonicalOverride ?? pathname,
+    hreflangLocales,
+  );
+  const languages =
+    // A page outside its own cluster — a locale that is only served as a
+    // fallback — must not declare one at all.
+    (!hreflangLocales || hreflangLocales.includes(locale)) &&
+    hreflangAlternates.length > 0
+      ? Object.fromEntries(
+          hreflangAlternates.map((alternate) => [
+            alternate.locale,
+            alternate.href,
+          ]),
+        )
+      : undefined;
 
   const metadata: Metadata = {
     metadataBase: getMetadataBase(),
@@ -105,24 +179,7 @@ export function buildMetadata({
     description,
     alternates: {
       canonical: canonicalPath,
-      // When the canonical points at another route, the language cluster has to
-      // follow it — otherwise hreflang advertises the non-canonical URLs as the
-      // localized versions of a page that canonicalizes away from them.
-      languages: {
-        ...Object.fromEntries(
-          locales.map((item) => [
-            item,
-            new URL(
-              createLocalePath(item, canonicalOverride ?? pathname),
-              getMetadataBase(),
-            ).toString(),
-          ]),
-        ),
-        "x-default": new URL(
-          createLocalePath(xDefaultLocale, canonicalOverride ?? pathname),
-          getMetadataBase(),
-        ).toString(),
-      },
+      ...(languages ? { languages } : {}),
       ...(feeds && feeds.length > 0
         ? {
             types: {
@@ -442,6 +499,7 @@ export function buildArticlePageMetadata({
   modifiedTime,
   authors,
   section,
+  hreflangLocales,
 }: {
   locale: Locale;
   pathname: string;
@@ -453,11 +511,14 @@ export function buildArticlePageMetadata({
   modifiedTime?: string | null;
   authors?: string[];
   section?: string | null;
+  /** Locales this article has its own version in — see `buildMetadata`. */
+  hreflangLocales?: readonly Locale[];
 }) {
   return buildMetadata({
     locale,
     pathname,
     canonicalOverride,
+    hreflangLocales,
     title: composeSeoTitle(
       locale,
       title || (locale === "uk" ? "Стаття" : "Article"),
