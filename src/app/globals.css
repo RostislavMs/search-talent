@@ -1216,6 +1216,28 @@ select {
   }
 }
 
+/*
+ * Toast auto-dismiss countdown ring. An animation rather than a transition:
+ * hovering (or focusing) a toast pauses its dismiss timer, and only an
+ * animation can be frozen mid-flight with `animation-play-state: paused` so
+ * the ring keeps showing the time that is actually left. The duration and the
+ * play state are set inline by the component, along with the ring's
+ * circumference as `--toast-ring-length`.
+ */
+.toast-countdown {
+  animation: toast-countdown linear forwards;
+}
+
+@keyframes toast-countdown {
+  from {
+    stroke-dashoffset: 0;
+  }
+
+  to {
+    stroke-dashoffset: var(--toast-ring-length);
+  }
+}
+
 /* Long unbreakable tokens (a URL used as inline-link text, a long code span, a
    glued word) must wrap instead of forcing the column wider than the viewport —
    otherwise the article body overflows horizontally on mobile. */

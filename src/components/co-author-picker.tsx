@@ -20,6 +20,9 @@ type CoAuthorPickerProps = {
   max?: number;
   /** User ids to hide from results (e.g. the creator). */
   excludeUserIds?: string[];
+  /** Render the "up to {max}" line under the input. Turn it off where the
+   * surrounding form already explains the field (e.g. an ⓘ tooltip). */
+  showHint?: boolean;
 };
 
 function optionLabel(option: CoAuthorOption): string {
@@ -37,6 +40,7 @@ export default function CoAuthorPicker({
   locale,
   max = MAX_CO_AUTHORS,
   excludeUserIds = [],
+  showHint = true,
 }: CoAuthorPickerProps) {
   const dict = getDictionary(isLocale(locale) ? locale : "en").coAuthors;
   const [query, setQuery] = useState("");
@@ -163,9 +167,11 @@ export default function CoAuthorPicker({
         className="w-full rounded-2xl border app-border bg-[color:var(--surface)] px-4 py-2.5 text-sm text-[color:var(--foreground)] outline-none transition focus:border-[color:var(--foreground)] disabled:opacity-60"
       />
 
-      <p className="mt-1.5 text-xs app-soft">
-        {dict.pickerHint.replace("{max}", String(max))}
-      </p>
+      {showHint ? (
+        <p className="mt-1.5 text-xs app-soft">
+          {dict.pickerHint.replace("{max}", String(max))}
+        </p>
+      ) : null}
 
       {open && (loading || visibleResults.length > 0) && (
         <ul className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-2xl border app-border bg-[color:var(--surface)] py-1 shadow-xl">

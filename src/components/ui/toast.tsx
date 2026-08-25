@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 
@@ -135,7 +136,9 @@ const VARIANT_STYLES: Record<
   },
 };
 
-// Countdown ring geometry (viewBox 0 0 24 24).
+// Countdown ring geometry (viewBox 0 0 24 24). The circumference is handed to
+// the CSS keyframes as a custom property — `pathLength` would be tidier, but
+// its support on basic shapes is uneven.
 const RING_RADIUS = 10;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
@@ -150,8 +153,14 @@ function ToastItem({
   // out-states park the toast off to the right so it hides rightward.
   const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [paused, setPaused] = useState(false);
   const closedRef = useRef(false);
   const exitTimerRef = useRef<number | null>(null);
+  const autoTimerRef = useRef<number | null>(null);
+  // What is left of the toast's lifetime, and when the running timer started —
+  // together they let a paused countdown resume instead of restarting.
+  const remainingRef = useRef(TOAST_DURATION_MS);
+  const startedAtRef = useRef(0);
 
   const close = useCallback(() => {
     if (closedRef.current) return;
@@ -163,19 +172,52 @@ function ToastItem({
     );
   }, [onDismiss, toast.id]);
 
+  const clearAutoTimer = useCallback(() => {
+    if (autoTimerRef.current !== null) {
+      window.clearTimeout(autoTimerRef.current);
+      autoTimerRef.current = null;
+    }
+  }, []);
+
+  const startAutoTimer = useCallback(() => {
+    clearAutoTimer();
+    startedAtRef.current = Date.now();
+    autoTimerRef.current = window.setTimeout(close, remainingRef.current);
+  }, [clearAutoTimer, close]);
+
+  // Hovering (or focusing) a toast freezes the auto-dismiss: a reader who
+  // reaches for a message shouldn't have it vanish mid-sentence. The ring
+  // freezes with it — `animation-play-state` stops it at the same point the
+  // timer stopped, so what it shows stays true.
+  const pauseCountdown = useCallback(() => {
+    if (closedRef.current || autoTimerRef.current === null) return;
+    remainingRef.current = Math.max(
+      0,
+      remainingRef.current - (Date.now() - startedAtRef.current),
+    );
+    clearAutoTimer();
+    setPaused(true);
+  }, [clearAutoTimer]);
+
+  const resumeCountdown = useCallback(() => {
+    if (closedRef.current || autoTimerRef.current !== null) return;
+    setPaused(false);
+    startAutoTimer();
+  }, [startAutoTimer]);
+
   useEffect(() => {
-    // Slide in on the next frame so the transition (and the ring countdown)
-    // animate from their initial state.
+    // Slide in on the next frame so the transition animates from its initial
+    // state.
     const raf = requestAnimationFrame(() => setVisible(true));
-    const autoTimer = window.setTimeout(close, TOAST_DURATION_MS);
+    startAutoTimer();
     return () => {
       cancelAnimationFrame(raf);
-      window.clearTimeout(autoTimer);
+      clearAutoTimer();
       if (exitTimerRef.current !== null) {
         window.clearTimeout(exitTimerRef.current);
       }
     };
-  }, [close]);
+  }, [startAutoTimer, clearAutoTimer]);
 
   const styles = VARIANT_STYLES[toast.variant];
   const shown = visible && !leaving;
@@ -184,6 +226,12 @@ function ToastItem({
     <div
       role={toast.variant === "error" ? "alert" : "status"}
       aria-live={toast.variant === "error" ? "assertive" : "polite"}
+      onMouseEnter={pauseCountdown}
+      onMouseLeave={resumeCountdown}
+      // onFocus/onBlur bubble in React, so tabbing to the close button pauses
+      // the countdown the same way hovering does.
+      onFocus={pauseCountdown}
+      onBlur={resumeCountdown}
       className={`pointer-events-auto w-full max-w-xs rounded-2xl border border-l-4 app-border bg-[color:var(--surface)] px-3.5 py-2.5 text-sm shadow-[0_20px_60px_rgba(2,6,23,0.35)] backdrop-blur transition-all duration-300 ease-out ${styles.accent} ${
         shown ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0"
       }`}
@@ -235,10 +283,14 @@ function ToastItem({
               strokeWidth={2}
               strokeLinecap="round"
               strokeDasharray={RING_CIRCUMFERENCE}
-              strokeDashoffset={visible ? RING_CIRCUMFERENCE : 0}
-              style={{
-                transition: `stroke-dashoffset ${TOAST_DURATION_MS}ms linear`,
-              }}
+              className="toast-countdown"
+              style={
+                {
+                  "--toast-ring-length": `${RING_CIRCUMFERENCE}`,
+                  animationDuration: `${TOAST_DURATION_MS}ms`,
+                  animationPlayState: paused ? "paused" : "running",
+                } as CSSProperties
+              }
             />
           </svg>
           <svg
