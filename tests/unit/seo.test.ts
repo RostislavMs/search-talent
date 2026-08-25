@@ -3,7 +3,9 @@ import {
   buildArticleSchema,
   buildBreadcrumbSchema,
   buildFaqSchema,
+  buildHreflangAlternates,
   buildItemListSchema,
+  buildMetadata,
   buildOrganizationSchema,
   buildPersonSameAs,
   buildPersonSchema,
@@ -12,6 +14,7 @@ import {
   buildWebSiteSchema,
   countWords,
   deriveArticleKeywords,
+  getSiteUrl,
   safeJsonLd,
   toBcp47,
 } from "@/lib/seo";
@@ -565,5 +568,109 @@ describe("deriveArticleKeywords", () => {
   it("returns just the seed for an empty title", () => {
     expect(deriveArticleKeywords("", ["Design"])).toEqual(["Design"]);
     expect(deriveArticleKeywords(null)).toEqual([]);
+  });
+});
+
+describe("buildHreflangAlternates", () => {
+  it("names every locale plus an x-default when nothing is missing", () => {
+    const alternates = buildHreflangAlternates("/articles/hello");
+
+    expect(alternates.map((entry) => entry.locale)).toEqual([
+      "uk",
+      "en",
+      "x-default",
+    ]);
+    expect(alternates[0].href).toBe(getSiteUrl() + "/uk/articles/hello");
+    expect(alternates[1].href).toBe(getSiteUrl() + "/en/articles/hello");
+    // x-default mirrors the root redirect, which sends unmatched languages to /en.
+    expect(alternates[2].href).toBe(getSiteUrl() + "/en/articles/hello");
+  });
+
+  it("drops the locales that have no version of their own", () => {
+    const alternates = buildHreflangAlternates("/articles/hello", ["uk"]);
+
+    expect(alternates).toEqual([
+      { locale: "uk", href: getSiteUrl() + "/uk/articles/hello" },
+      { locale: "x-default", href: getSiteUrl() + "/uk/articles/hello" },
+    ]);
+  });
+
+  it("keeps x-default on a URL that exists when the default locale is missing", () => {
+    const alternates = buildHreflangAlternates("/articles/hello", ["en"]);
+
+    expect(alternates).toEqual([
+      { locale: "en", href: getSiteUrl() + "/en/articles/hello" },
+      { locale: "x-default", href: getSiteUrl() + "/en/articles/hello" },
+    ]);
+  });
+
+  it("returns nothing when no locale is available", () => {
+    expect(buildHreflangAlternates("/articles/hello", [])).toEqual([]);
+  });
+});
+
+describe("buildMetadata hreflang", () => {
+  const page = (extra: Record<string, unknown> = {}) =>
+    buildMetadata({
+      locale: "uk",
+      pathname: "/articles/hello",
+      title: "Hello",
+      description: "Description",
+      ...extra,
+    });
+
+  it("declares the whole cluster for content that exists in both locales", () => {
+    expect(page().alternates?.languages).toEqual({
+      uk: getSiteUrl() + "/uk/articles/hello",
+      en: getSiteUrl() + "/en/articles/hello",
+      "x-default": getSiteUrl() + "/en/articles/hello",
+    });
+  });
+
+  it("names only the locales that exist, so it cannot point at a noindex URL", () => {
+    // The /en/ URL of a Ukrainian-only article is served but noindex and absent
+    // from the sitemap — advertising it here is what produced "no return-tag".
+    expect(page({ hreflangLocales: ["uk"] }).alternates?.languages).toEqual({
+      uk: getSiteUrl() + "/uk/articles/hello",
+      "x-default": getSiteUrl() + "/uk/articles/hello",
+    });
+  });
+
+  it("declares no cluster at all on a locale served only as a fallback", () => {
+    const metadata = buildMetadata({
+      locale: "en",
+      pathname: "/articles/hello",
+      title: "Hello",
+      description: "Description",
+      hreflangLocales: ["uk"],
+      noindex: true,
+    });
+
+    expect(metadata.alternates?.languages).toBeUndefined();
+    expect(metadata.alternates?.canonical).toBe("/en/articles/hello");
+  });
+
+  it("follows the canonical override into the cluster", () => {
+    const languages = page({ canonicalOverride: "/news/hello" }).alternates
+      ?.languages;
+
+    expect(languages).toEqual({
+      uk: getSiteUrl() + "/uk/news/hello",
+      en: getSiteUrl() + "/en/news/hello",
+      "x-default": getSiteUrl() + "/en/news/hello",
+    });
+  });
+
+  it("declares the same cluster the sitemap does", () => {
+    const languages = page({ hreflangLocales: ["uk"] }).alternates?.languages;
+
+    expect(languages).toEqual(
+      Object.fromEntries(
+        buildHreflangAlternates("/articles/hello", ["uk"]).map((entry) => [
+          entry.locale,
+          entry.href,
+        ]),
+      ),
+    );
   });
 });

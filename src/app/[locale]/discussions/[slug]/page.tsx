@@ -39,6 +39,7 @@ export async function generateMetadata({
     title: data?.article.title || null,
     excerpt,
     noindex: true,
+    hreflangLocales: data?.article.ownLocales,
   });
 }
 
