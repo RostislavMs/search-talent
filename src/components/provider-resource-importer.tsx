@@ -33,7 +33,7 @@ type Props = {
  * Four states, mirroring the GitHub importer:
  *   not configured → nothing;
  *   not connected  → "Connect <provider>";
- *   connected      → a picker (a list for GitLab, a pasted link for Figma);
+ *   connected      → a filterable list of what the account owns;
  *   linked         → what it is linked to, with an unlink action.
  */
 export default function ProviderResourceImporter({
@@ -59,7 +59,6 @@ export default function ProviderResourceImporter({
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
-  const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,29 +79,23 @@ export default function ProviderResourceImporter({
     })();
   }, [provider]);
 
-  const loadResources = useCallback(
-    async (searchQuery?: string) => {
-      setLoading(true);
-      setError(null);
+  const loadResources = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      const suffix = searchQuery
-        ? `?q=${encodeURIComponent(searchQuery)}`
-        : "";
-      const result = await apiFetch<{
-        resources: IntegrationResourceSummary[];
-      }>(`/api/integrations/${provider}/resources${suffix}`);
+    const result = await apiFetch<{
+      resources: IntegrationResourceSummary[];
+    }>(`/api/integrations/${provider}/resources`);
 
-      setLoading(false);
+    setLoading(false);
 
-      if (!result.ok) {
-        setError(result.error || dict.resourcesError);
-        return;
-      }
+    if (!result.ok) {
+      setError(result.error || dict.resourcesError);
+      return;
+    }
 
-      setResources(result.data.resources);
-    },
-    [dict.resourcesError, provider],
-  );
+    setResources(result.data.resources);
+  }, [dict.resourcesError, provider]);
 
   const togglePanel = () => {
     if (open) {
@@ -110,7 +103,7 @@ export default function ProviderResourceImporter({
       return;
     }
     setOpen(true);
-    if (!descriptor.requiresQuery && !resources) {
+    if (!resources) {
       void loadResources();
     }
   };
@@ -209,42 +202,14 @@ export default function ProviderResourceImporter({
 
       {open ? (
         <div className="mt-4 space-y-3">
-          {descriptor.requiresQuery ? (
-            <form
-              className="flex flex-col gap-2 sm:flex-row"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const trimmed = query.trim();
-                if (trimmed) void loadResources(trimmed);
-              }}
-            >
-              <input
-                type="url"
-                inputMode="url"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={dict.queryPlaceholder}
-                aria-label={dict.queryLabel}
-                className="app-input flex-1"
-              />
-              <Button type="submit" variant="secondary" disabled={!query.trim()}>
-                {dict.queryAction}
-              </Button>
-            </form>
-          ) : (
-            <input
-              type="search"
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-              placeholder={dict.filterPlaceholder}
-              aria-label={dict.filterPlaceholder}
-              className="w-full rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
-            />
-          )}
-
-          {descriptor.requiresQuery ? (
-            <p className="text-xs app-soft">{dict.queryHint}</p>
-          ) : null}
+          <input
+            type="search"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder={dict.filterPlaceholder}
+            aria-label={dict.filterPlaceholder}
+            className="w-full rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+          />
 
           {error ? (
             <p

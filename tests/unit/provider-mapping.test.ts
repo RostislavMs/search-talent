@@ -80,23 +80,23 @@ describe("mapResourceToProjectColumns", () => {
   });
 
   it("records the link with the resource identity and stats", () => {
-    const patch = mapResourceToProjectColumns("figma", makeDetail({
-      ref: "abcdefghij123",
-      url: "https://www.figma.com/design/abcdefghij123",
-      stats: [{ key: "pages", value: "3" }],
+    const patch = mapResourceToProjectColumns("gitlab", makeDetail({
+      ref: "group/app",
+      url: "https://gitlab.com/group/app",
+      stats: [{ key: "stars", value: "3" }],
     }), { description: null });
 
-    expect(patch.source_integration.provider).toBe("figma");
-    expect(patch.source_integration.ref).toBe("abcdefghij123");
+    expect(patch.source_integration.provider).toBe("gitlab");
+    expect(patch.source_integration.ref).toBe("group/app");
     expect(patch.source_integration.stats).toEqual([
-      { key: "pages", value: "3" },
+      { key: "stars", value: "3" },
     ]);
     expect(patch.source_integration.syncedAt).toBeTruthy();
   });
 
   it("leaves the timeline alone when the provider reports no dates", () => {
     const patch = mapResourceToProjectColumns(
-      "figma",
+      "gitlab",
       makeDetail({ createdAt: null, teamSize: null }),
       { description: null },
     );

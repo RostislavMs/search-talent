@@ -6,6 +6,8 @@ import {
 } from "@/lib/cookie-consent";
 import { getActivePopup, type ActivePopup } from "@/lib/db/popups";
 import { ensureProfileForUser } from "@/lib/db/profile";
+import { getSectionVisibility } from "@/lib/db/section-visibility";
+import type { SectionVisibility } from "@/lib/section-visibility";
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { createClient } from "@/lib/supabase/server";
@@ -68,16 +70,18 @@ export async function getAppShellData(locale: Locale): Promise<{
   isSignedIn: boolean;
   viewer: AppViewer;
   activePopup: ActivePopup | null;
+  sections: SectionVisibility;
 }> {
   noStore();
 
   const supabase = await createClient();
-  const [{ data: auth }, initialConsent, initialTheme, activePopup] =
+  const [{ data: auth }, initialConsent, initialTheme, activePopup, sections] =
     await Promise.all([
       supabase.auth.getUser(),
       getCookieConsentFromCookies(),
       getThemeFromCookies(),
       getActivePopup(supabase, locale),
+      getSectionVisibility(),
     ]);
 
   const user = auth.user;
@@ -111,5 +115,6 @@ export async function getAppShellData(locale: Locale): Promise<{
     isSignedIn: Boolean(user),
     viewer,
     activePopup,
+    sections,
   };
 }

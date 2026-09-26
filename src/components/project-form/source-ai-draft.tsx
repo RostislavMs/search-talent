@@ -29,8 +29,8 @@ type Props = {
 /**
  * "Draft with AI" for a project imported from a provider. The same deal as the
  * GitHub draft: the model reads what the platform gave us (title, description,
- * tags, metrics, and the long text — a README, a video description, a Notion
- * page body) and proposes the narrative fields. Only blanks are filled.
+ * tags, metrics, and the long text, e.g. a README) and proposes the narrative
+ * fields. Only blanks are filled.
  */
 export default function SourceAiDraft({
   provider,

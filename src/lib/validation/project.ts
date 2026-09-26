@@ -662,7 +662,7 @@ export const projectPayloadSchema = z
       .nullable()
       .optional()
       .transform((value) => value ?? {}),
-    // "Link this project to a provider resource" (GitLab project, Figma file).
+    // "Link this project to a provider resource" (e.g. a GitLab project).
     // The server re-checks the ref against the provider's own pattern and that
     // the viewer actually has that provider connected before storing anything.
     sourceIntegration: z

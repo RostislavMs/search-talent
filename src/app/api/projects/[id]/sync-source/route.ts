@@ -8,7 +8,7 @@ const routeSchema = z.object({ id: z.string().uuid() });
 
 /**
  * POST /api/projects/:id/sync-source
- * Re-pulls the linked provider resource (GitLab project, Figma file) and
+ * Re-pulls the linked provider resource (e.g. a GitLab project) and
  * refreshes the project's denormalised columns. Owner-only.
  */
 export async function POST(

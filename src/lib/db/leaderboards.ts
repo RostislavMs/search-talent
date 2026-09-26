@@ -23,6 +23,12 @@ import {
 } from "@/lib/leaderboards";
 import { getBadgeBonusPoints } from "@/lib/db/badges";
 import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
+import {
+  isLeaderboardSafeText,
+  selectFreshCreators,
+  selectTopCreators,
+  selectTopProjects,
+} from "@/lib/leaderboard-display";
 import { createAdminClient, createPublicReadOnlyClient } from "@/lib/supabase/admin";
 
 // ---- row types ------------------------------------------------------------
@@ -143,11 +149,19 @@ export type RankedCreator = {
   projectCount: number;
   topProjectTitle: string | null;
   topProjectScore: number;
+  /** Newest published project that passes the blocklist (fresh-portfolio order). */
+  latestProjectAt?: string | null;
 };
 
 export type LeaderboardsResult = {
   creators: Record<LeaderboardTimeframe, RankedCreator[]>;
   projects: Record<LeaderboardTimeframe, RankedProject[]>;
+  /**
+   * Newest portfolios, shown on the home page instead of the creators board
+   * while too few creators qualify for a ranking. Optional because snapshots
+   * written before it existed do not carry it.
+   */
+  freshCreators?: RankedCreator[];
 };
 
 type LeaderboardData = {
@@ -220,6 +234,7 @@ async function fetchAll<T>(build: () => PagedQuery<T>): Promise<T[]> {
 const EMPTY_RESULT: LeaderboardsResult = {
   creators: { all: [], month: [] },
   projects: { all: [], month: [] },
+  freshCreators: [],
 };
 
 async function loadLeaderboardData(): Promise<LeaderboardData> {
@@ -496,7 +511,22 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
         badgeBonus: getBadgeBonusPoints(badgeCounts.get(profile.user_id) ?? 0),
       });
 
-      const topProject = owned
+      // Display-only: the "top project" chip and the fresh-portfolio order skip
+      // work the blocklist would hide, so a flagged title never surfaces on
+      // the home page through its author's card. The rating above still
+      // counts every published project.
+      const displayableOwned = owned.filter((p) =>
+        isLeaderboardSafeText([p.title, p.description]),
+      );
+      const latestDisplayableProjectAt = displayableOwned.reduce<string | null>(
+        (best, p) => {
+          if (!p.created_at) return best;
+          return !best || p.created_at > best ? p.created_at : best;
+        },
+        null,
+      );
+
+      const topProject = displayableOwned
         .map((p) => ({
           title: p.title,
           score: projectRatingsMap[tf].get(p.id) || 0,
@@ -516,6 +546,7 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
         projectCount: owned.length,
         topProjectTitle: topProject?.title || null,
         topProjectScore: topProject?.score || 0,
+        latestProjectAt: latestDisplayableProjectAt,
       });
     }
 
@@ -641,16 +672,37 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
   return {
     result: {
       creators: {
-        all: rankedCreators.all.slice(0, 10),
-        month: rankedCreators.month.slice(0, 10),
+        all: selectTopCreators(rankedCreators.all),
+        month: selectTopCreators(rankedCreators.month),
       },
       projects: {
-        all: rankedProjects.all.slice(0, 10),
-        month: rankedProjects.month.slice(0, 10),
+        all: selectTopProjects(rankedProjects.all),
+        month: selectTopProjects(rankedProjects.month),
       },
+      freshCreators: selectFreshCreators(rankedCreators.all),
     },
     creatorRatings,
     projectRatings,
+  };
+}
+
+/**
+ * Re-applies the display rules to a stored snapshot. Snapshots persist between
+ * deploys, so one written before a rule existed would otherwise keep showing
+ * rows the current rules exclude until the next refresh. The rules only ever
+ * remove rows, so running them twice is harmless.
+ */
+function applyDisplayRules(result: LeaderboardsResult): LeaderboardsResult {
+  return {
+    creators: {
+      all: selectTopCreators(result.creators.all),
+      month: selectTopCreators(result.creators.month),
+    },
+    projects: {
+      all: selectTopProjects(result.projects.all),
+      month: selectTopProjects(result.projects.month),
+    },
+    freshCreators: selectFreshCreators(result.freshCreators ?? []),
   };
 }
 
@@ -760,7 +812,7 @@ async function readLeaderboardSnapshot(): Promise<LeaderboardData> {
 // the cron refresh job after it writes a new snapshot.
 const getLeaderboardData = unstable_cache(
   readLeaderboardSnapshot,
-  ["leaderboards-v3"],
+  ["leaderboards-v4"],
   {
     revalidate: LEADERBOARDS_CACHE_REVALIDATE_SECONDS,
     tags: [LEADERBOARDS_CACHE_TAG],
@@ -768,7 +820,7 @@ const getLeaderboardData = unstable_cache(
 );
 
 export async function getLeaderboards(): Promise<LeaderboardsResult> {
-  return (await getLeaderboardData()).result;
+  return applyDisplayRules((await getLeaderboardData()).result);
 }
 
 // All-time composite creator rating (0-100) keyed by profile id — the same

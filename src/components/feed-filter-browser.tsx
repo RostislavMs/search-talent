@@ -20,7 +20,14 @@ type FeedFilterUi = {
   discussed: string;
   apply: string;
   reset: string;
+  /** Shown when a filtered request comes back empty. */
   empty: string;
+  /**
+   * Shown when the unfiltered feed itself is empty. Falls back to `empty`;
+   * worth passing, because "nothing matches these filters" is wrong when no
+   * filter has been applied.
+   */
+  emptyFeed?: string;
   /**
    * Free-text keyword search. Optional: only feeds that pass both labels get a
    * search box (currently /articles). When omitted the field is not rendered
@@ -84,6 +91,10 @@ export default function FeedFilterBrowser({
       ? "Не вдалося завантажити результати. Спробуйте ще раз."
       : "Could not load results. Please try again.";
   const filtersLabel = locale === "uk" ? "Фільтри" : "Filters";
+  // With nothing published there is nothing to filter: a full filter panel
+  // over an empty list reads as a broken page. The panel appears once the
+  // default feed has at least one item.
+  const hasFilters = initialItems.length > 0;
 
   const applyFilters = async (event: FormEvent) => {
     event.preventDefault();
@@ -135,162 +146,172 @@ export default function FeedFilterBrowser({
   return (
     <>
       <section className="relative rounded-none sm:rounded-hero app-card">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
+        <div
+          className={`grid grid-cols-1 gap-6 ${
+            hasFilters
+              ? "lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]"
+              : ""
+          }`}
+        >
           {children}
 
-          {/* Minimal mobile toggle. It sits on the card surface (not inside the
-              gradient panel), so the collapsed state is a slim pill instead of a
-              full hero card — much lighter on phones. Hidden from lg up, where
-              the panel is always shown. */}
-          <div className="px-4 sm:px-8 lg:hidden">
-            <button
-              type="button"
-              onClick={() => setFiltersOpen((open) => !open)}
-              aria-expanded={filtersOpen}
-              aria-controls={filtersId}
-              className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-full border app-border bg-[color:var(--surface)] px-4 py-2.5 text-sm font-medium text-[color:var(--foreground)] transition-colors hover:bg-[color:var(--surface-muted)]"
-            >
-              <span className="flex items-center gap-2">
-                <svg
-                  aria-hidden="true"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+          {hasFilters ? (
+            <>
+              {/* Minimal mobile toggle. It sits on the card surface (not inside the
+                  gradient panel), so the collapsed state is a slim pill instead of a
+                  full hero card — much lighter on phones. Hidden from lg up, where
+                  the panel is always shown. */}
+              <div className="px-4 sm:px-8 lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen((open) => !open)}
+                  aria-expanded={filtersOpen}
+                  aria-controls={filtersId}
+                  className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-full border app-border bg-[color:var(--surface)] px-4 py-2.5 text-sm font-medium text-[color:var(--foreground)] transition-colors hover:bg-[color:var(--surface-muted)]"
                 >
-                  <path d="M3 5h18M6 12h12M10 19h4" />
-                </svg>
-                {filtersLabel}
-              </span>
-              <svg
-                aria-hidden="true"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                className={`transition-transform duration-200 ${
-                  filtersOpen ? "rotate-180" : ""
-                }`}
-              >
-                <path
-                  d="M6 9l6 6 6-6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <div
-            id={filtersId}
-            className={`bg-brand-hero rounded-panel border app-border p-6 text-white shadow-[0_22px_70px_rgba(15,23,42,0.18)] sm:p-8 lg:-my-px lg:-mr-px lg:block lg:rounded-l-panel lg:rounded-r-hero ${
-              filtersOpen ? "block" : "hidden"
-            }`}
-          >
-            <form className="space-y-4" onSubmit={applyFilters}>
-              {ui.filterSearch ? (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-white/78">
-                    {ui.filterSearch}
-                  </label>
-                  <div className="relative">
+                  <span className="flex items-center gap-2">
                     <svg
                       aria-hidden="true"
+                      width="15"
+                      height="15"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
                     >
-                      <circle cx="11" cy="11" r="7" />
-                      <path d="m21 21-4.3-4.3" />
+                      <path d="M3 5h18M6 12h12M10 19h4" />
                     </svg>
+                    {filtersLabel}
+                  </span>
+                  <svg
+                    aria-hidden="true"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className={`transition-transform duration-200 ${
+                      filtersOpen ? "rotate-180" : ""
+                    }`}
+                  >
+                    <path
+                      d="M6 9l6 6 6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div
+                id={filtersId}
+                className={`bg-brand-hero rounded-panel border app-border p-6 text-white shadow-[0_22px_70px_rgba(15,23,42,0.18)] sm:p-8 lg:-my-px lg:-mr-px lg:block lg:rounded-l-panel lg:rounded-r-hero ${
+                  filtersOpen ? "block" : "hidden"
+                }`}
+              >
+                <form className="space-y-4" onSubmit={applyFilters}>
+                  {ui.filterSearch ? (
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-white/78">
+                        {ui.filterSearch}
+                      </label>
+                      <div className="relative">
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                        >
+                          <circle cx="11" cy="11" r="7" />
+                          <path d="m21 21-4.3-4.3" />
+                        </svg>
+                        <input
+                          type="search"
+                          value={search}
+                          onChange={(event) => setSearch(event.target.value)}
+                          placeholder={ui.searchPlaceholder}
+                          className="w-full rounded-2xl border border-white/12 bg-white/96 py-3 pl-9 pr-3 text-slate-900 placeholder:text-slate-500"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-white/78">
+                      {ui.filterAuthor}
+                    </label>
                     <input
-                      type="search"
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder={ui.searchPlaceholder}
-                      className="w-full rounded-2xl border border-white/12 bg-white/96 py-3 pl-9 pr-3 text-slate-900 placeholder:text-slate-500"
+                      value={author}
+                      onChange={(event) => setAuthor(event.target.value)}
+                      placeholder={ui.authorPlaceholder}
+                      className="w-full rounded-2xl border border-white/12 bg-white/96 p-3 text-slate-900 placeholder:text-slate-500"
                     />
                   </div>
-                </div>
-              ) : null}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white/78">
-                  {ui.filterAuthor}
-                </label>
-                <input
-                  value={author}
-                  onChange={(event) => setAuthor(event.target.value)}
-                  placeholder={ui.authorPlaceholder}
-                  className="w-full rounded-2xl border border-white/12 bg-white/96 p-3 text-slate-900 placeholder:text-slate-500"
-                />
+                  {/* Category + sort share a row from sm up — two compact selects
+                      instead of two full-width stacked fields. */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-white/78">
+                        {ui.filterCategory}
+                      </label>
+                      <FormSelect
+                        value={category}
+                        onChange={setCategory}
+                        placeholder={ui.allCategories}
+                        className="w-full"
+                        triggerClassName="w-full border-white/12 bg-white/96 text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.14)]"
+                        dropdownClassName="bg-white text-slate-900"
+                        options={categoryOptions}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-white/78">
+                        {ui.filterSort}
+                      </label>
+                      <FormSelect
+                        value={sort}
+                        onChange={setSort}
+                        className="w-full"
+                        triggerClassName="w-full border-white/12 bg-white/96 text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.14)]"
+                        dropdownClassName="bg-white text-slate-900"
+                        options={[
+                          { value: "recent", label: ui.recent },
+                          { value: "popular", label: ui.popular },
+                          { value: "discussed", label: ui.discussed },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="inline-flex w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-950 shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    >
+                      {ui.apply}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="inline-flex w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-full border border-white/16 bg-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/16 sm:w-auto"
+                    >
+                      {ui.reset}
+                    </button>
+                  </div>
+                </form>
               </div>
-
-              {/* Category + sort share a row from sm up — two compact selects
-                  instead of two full-width stacked fields. */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-white/78">
-                    {ui.filterCategory}
-                  </label>
-                  <FormSelect
-                    value={category}
-                    onChange={setCategory}
-                    placeholder={ui.allCategories}
-                    className="w-full"
-                    triggerClassName="w-full border-white/12 bg-white/96 text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.14)]"
-                    dropdownClassName="bg-white text-slate-900"
-                    options={categoryOptions}
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-white/78">
-                    {ui.filterSort}
-                  </label>
-                  <FormSelect
-                    value={sort}
-                    onChange={setSort}
-                    className="w-full"
-                    triggerClassName="w-full border-white/12 bg-white/96 text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.14)]"
-                    dropdownClassName="bg-white text-slate-900"
-                    options={[
-                      { value: "recent", label: ui.recent },
-                      { value: "popular", label: ui.popular },
-                      { value: "discussed", label: ui.discussed },
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-950 shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                >
-                  {ui.apply}
-                </button>
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="inline-flex w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-full border border-white/16 bg-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/16 sm:w-auto"
-                >
-                  {ui.reset}
-                </button>
-              </div>
-            </form>
-          </div>
+            </>
+          ) : null}
         </div>
       </section>
 
@@ -324,7 +345,9 @@ export default function FeedFilterBrowser({
           </div>
         ) : (
           <p className="rounded-none sm:rounded-panel app-panel-dashed p-6 text-sm app-muted">
-            {ui.empty}
+            {/* An empty list with filters on offer can only follow a filter
+                request; without them the feed itself has nothing yet. */}
+            {hasFilters ? ui.empty : (ui.emptyFeed ?? ui.empty)}
           </p>
         )}
       </section>

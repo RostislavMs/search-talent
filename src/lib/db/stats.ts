@@ -3,6 +3,7 @@ import {
   excludeSectionCategories,
   getDiscussionsCategoryIds,
 } from "@/lib/db/article-sections";
+import { summarizeSalaryStats, type SalaryInput } from "@/lib/salary-stats";
 import { createClient } from "@/lib/supabase/server";
 
 type EmbeddedCount = { count: number }[] | null;
@@ -204,32 +205,10 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     ["complete", 0],
   ]);
   const experienceCounts = new Map<string, number>();
-  const salaryCounts = new Map<string, number>();
   const workFormatCounts = new Map<string, number>();
   const employmentTypeCounts = new Map<string, number>();
   const contactMethodCounts = new Map<string, number>();
-  const salaryByCountryAcc = new Map<string, { total: number; count: number }>();
-  const salaryByCategoryAcc = new Map<string, { total: number; count: number }>();
-
-  function parseSalaryNumeric(raw: string | null): number | null {
-    if (!raw) return null;
-    const numericMatch = raw.match(/\d[\d\s.,]*/);
-    if (!numericMatch) return null;
-    const cleaned = numericMatch[0].replace(/[\s,]/g, "").replace(/\.+$/, "");
-    const value = Number.parseInt(cleaned, 10);
-    return Number.isFinite(value) && value > 0 ? value : null;
-  }
-
-  function bucketSalary(raw: string | null): string | null {
-    const numeric = parseSalaryNumeric(raw);
-    if (numeric === null) return raw ? "custom" : null;
-    if (numeric < 500) return "under_500";
-    if (numeric < 1000) return "500_1000";
-    if (numeric < 2000) return "1000_2000";
-    if (numeric < 3500) return "2000_3500";
-    if (numeric < 5000) return "3500_5000";
-    return "5000_plus";
-  }
+  const salaryInputs: SalaryInput[] = [];
 
   const completionScores = profiles.map((profile) => {
     const score = Math.round(
@@ -287,10 +266,14 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       experienceCounts.set(expKey, (experienceCounts.get(expKey) || 0) + 1);
     }
 
-    const salaryBucket = bucketSalary(profile.salary_expectations);
-    if (salaryBucket) {
-      salaryCounts.set(salaryBucket, (salaryCounts.get(salaryBucket) || 0) + 1);
-    }
+    salaryInputs.push({
+      salary: profile.salary_expectations,
+      currency: profile.salary_currency,
+      country: profile.country_id ? countryMap.get(profile.country_id) ?? null : null,
+      category: profile.category_id
+        ? categoryMap.get(profile.category_id) ?? null
+        : null,
+    });
 
     for (const format of profile.work_formats || []) {
       if (!format) continue;
@@ -307,22 +290,10 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       contactMethodCounts.set(method, (contactMethodCounts.get(method) || 0) + 1);
     }
 
-    const numericSalary = parseSalaryNumeric(profile.salary_expectations);
-    if (numericSalary !== null) {
-      if (profile.country_id && countryMap.get(profile.country_id)) {
-        const cName = countryMap.get(profile.country_id) as string;
-        const prev = salaryByCountryAcc.get(cName) || { total: 0, count: 0 };
-        salaryByCountryAcc.set(cName, { total: prev.total + numericSalary, count: prev.count + 1 });
-      }
-      if (profile.category_id && categoryMap.get(profile.category_id)) {
-        const dName = categoryMap.get(profile.category_id) as string;
-        const prev = salaryByCategoryAcc.get(dName) || { total: 0, count: 0 };
-        salaryByCategoryAcc.set(dName, { total: prev.total + numericSalary, count: prev.count + 1 });
-      }
-    }
-
     return score;
   });
+
+  const salaryStats = summarizeSalaryStats(salaryInputs);
 
   const averageProfileCompletion =
     completionScores.length > 0
@@ -358,9 +329,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     experienceBreakdown: [...experienceCounts.entries()]
       .map(([key, value]) => ({ key, label: key, value }))
       .sort((left, right) => right.value - left.value),
-    salaryBreakdown: [...salaryCounts.entries()]
-      .map(([key, value]) => ({ key, label: key, value }))
-      .sort((left, right) => right.value - left.value),
+    salaryBreakdown: salaryStats.breakdown,
     workFormatBreakdown: [...workFormatCounts.entries()]
       .map(([key, value]) => ({ key, label: key, value }))
       .sort((left, right) => right.value - left.value),
@@ -370,14 +339,8 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     contactMethodBreakdown: [...contactMethodCounts.entries()]
       .map(([key, value]) => ({ key, label: key, value }))
       .sort((left, right) => right.value - left.value),
-    salaryByCountry: [...salaryByCountryAcc.entries()]
-      .map(([label, data]) => ({ label, avgSalary: Math.round(data.total / data.count), count: data.count }))
-      .sort((left, right) => right.avgSalary - left.avgSalary)
-      .slice(0, 10),
-    salaryByCategory: [...salaryByCategoryAcc.entries()]
-      .map(([label, data]) => ({ label, avgSalary: Math.round(data.total / data.count), count: data.count }))
-      .sort((left, right) => right.avgSalary - left.avgSalary)
-      .slice(0, 10),
+    salaryByCountry: salaryStats.byCountry,
+    salaryByCategory: salaryStats.byCategory,
   };
 }
 

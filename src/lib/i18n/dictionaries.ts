@@ -349,7 +349,7 @@ export const dictionaries = {
     },
     footer: {
       description:
-        "Find specialists, explore real projects, and publish your own work — all in one place.",
+        "A free portfolio for IT and digital specialists: your work, a score with tips, and one link to share it.",
       legal: "Legal",
       terms: "Terms of Service",
       privacy: "Privacy Policy",
@@ -425,9 +425,9 @@ export const dictionaries = {
     },
     metadata: {
       home: {
-        title: "Specialist Profiles, Projects & Professional Portfolios",
+        title: "Free Portfolio for IT & Digital Specialists",
         description:
-          "SearchTalent is a professional platform where developers, designers, video editors, and other digital specialists publish portfolios, projects, and articles, build their reputation, and unlock new opportunities.",
+          "Build a portfolio in 10 minutes: import code from GitHub or GitLab, add videos by link, get a score with tips and a PDF CV. For IT & digital specialists.",
       },
       search: {
         title: "Search Talent & IT Projects by Skills",
@@ -527,36 +527,36 @@ export const dictionaries = {
       contacts: {
         title: "Contacts — Get in Touch",
         description:
-          "Reach the SearchTalent team by email, GitHub, or Telegram, or send structured feedback through our form.",
+          "Reach the SearchTalent team by email or Telegram, or send structured feedback through our form.",
       },
     },
     home: {
-      eyebrow: "IT portfolio & project platform",
-      titleLead: "Find specialists by their",
-      titleWords: ["projects", "portfolios", "skills", "articles"],
+      eyebrow: "A free portfolio for IT and digital specialists",
+      titleLead: "Show your skills through",
+      titleWords: ["code", "design", "video editing", "3D work"],
       description:
-        "Publish projects, showcase your skills, build your reputation, and unlock new opportunities.",
+        "Import code from GitHub or GitLab; add video, design and 3D work as links or images. Get a portfolio score with tips to raise it. Share one link or a PDF.",
       descriptionHighlights: [
-        "Portfolios",
-        "Cases",
-        "Community",
-        "Reputation",
-        "Rating",
+        "Profile, 2 min",
+        "First project, 5 min",
+        "Score and tips",
+        "A link for your CV",
       ],
-      ctaCreateProfile: "Create profile",
+      ctaCreateProfile: "Create portfolio",
       ctaPublishProject: "Publish project",
       ctaViewProjects: "Browse projects",
+      ctaSeeExample: "See an example",
       topProjectsCta: "Open top projects",
       topCreatorsCta: "Open top talents",
       cards: {
-        eyebrow: "Live now",
-        topTalent: {
-          label: "Trending creator",
+        eyebrow: "Fresh on the platform",
+        examplePortfolio: {
+          label: "Example portfolio",
           cta: "View profile",
-          fallback: "Be the first to climb the leaderboard.",
+          fallback: "An example of a strong portfolio will appear here.",
         },
-        topProject: {
-          label: "Trending project",
+        latestProject: {
+          label: "Latest project",
           cta: "View project",
           fallback: "No projects published yet.",
         },
@@ -583,6 +583,9 @@ export const dictionaries = {
       topCreatorsTitle: "Top 10 talents",
       topCreatorsDescription:
         "Ranked by profile completeness, project quality, community feedback, and recent activity.",
+      freshCreatorsTitle: "New portfolios",
+      freshCreatorsDescription:
+        "Recently published portfolios. The ranking appears once more creators have published their work.",
       topProjectsTitle: "Top 10 projects",
       topProjectsDescription:
         "Ranked by community votes, completeness, media quality, and recent activity — not just a like counter.",
@@ -976,14 +979,6 @@ export const dictionaries = {
       cardTitle: "{provider}",
       gitlabDescription:
         "Import a repository as a project, with stats that stay current.",
-      figmaDescription:
-        "Import a design file as a project — pages, components, styles.",
-      vimeoDescription:
-        "Import a video as a project — duration, thumbnail, plays.",
-      sketchfabDescription:
-        "Import a 3D model as a project — polygons, views, licence.",
-      notionDescription:
-        "Import a page as a project. You pick the pages it can read.",
       aiDraftHint:
         "The AI reads what {provider} gave us — title, tags, metrics and the long text — and drafts the empty narrative fields.",
       connect: "Connect {provider}",
@@ -1004,11 +999,6 @@ export const dictionaries = {
       hidePicker: "Hide",
       unlink: "Unlink",
       filterPlaceholder: "Filter…",
-      queryLabel: "Figma link",
-      queryPlaceholder: "https://www.figma.com/design/…",
-      queryHint:
-        "Paste a link to the Figma file. Figma has no account-wide file list, so the link is how we find it.",
-      queryAction: "Find",
       loadingResources: "Loading…",
       noResources: "Nothing to import here.",
       resourcesError: "Could not load the list.",
@@ -1029,20 +1019,8 @@ export const dictionaries = {
         contributors: "Contributors",
         branch: "Default branch",
         languages: "Languages",
-        pages: "Pages",
-        components: "Components",
-        styles: "Styles",
-        version: "Version",
-        duration: "Duration",
-        plays: "Plays",
-        faces: "Polygons",
-        vertices: "Vertices",
-        views: "Views",
-        likes: "Likes",
-        words: "Words",
         license: "License",
         lastActivity: "Last activity",
-        lastModified: "Last edited",
       },
     },
     githubIntegration: {
@@ -2575,9 +2553,6 @@ export const dictionaries = {
       emailTitle: "Email",
       emailText:
         "General questions, partnerships, press, or appeals about moderation decisions.",
-      githubTitle: "GitHub",
-      githubText:
-        "Report bugs, open issues, or contribute — SearchTalent is open source.",
       telegramTitle: "Telegram",
       telegramText: "Follow updates and reach the team with quick questions.",
       feedbackText: "Have a specific idea, bug report, or complaint?",
@@ -2932,7 +2907,7 @@ export const dictionaries = {
     },
     footer: {
       description:
-        "Знаходьте фахівців, переглядайте реальні проєкти та публікуйте власні роботи — все в одному місці.",
+        "Безкоштовне портфоліо для IT- та digital-фахівців: ваші роботи, оцінка з порадами й одне посилання, щоб ними поділитися.",
       legal: "Правова інформація",
       terms: "Умови користування",
       privacy: "Політика конфіденційності",
@@ -3008,9 +2983,9 @@ export const dictionaries = {
     },
     metadata: {
       home: {
-        title: "Профілі спеціалістів, проєкти та професійне портфоліо",
+        title: "Безкоштовне портфоліо для IT- та digital-фахівців",
         description:
-          "SearchTalent — професійна платформа, де розробники, дизайнери, монтажери та інші digital-фахівці публікують портфоліо, проєкти й статті, будують репутацію та знаходять нові можливості.",
+          "Створіть портфоліо за 10 хвилин: імпорт коду з GitHub чи GitLab, відео за посиланням, оцінка з порадами й PDF-резюме. Для IT- та digital-фахівців.",
       },
       search: {
         title: "Пошук талантів та IT-проєктів за навичками",
@@ -3110,36 +3085,36 @@ export const dictionaries = {
       contacts: {
         title: "Контакти — зв'яжіться з нами",
         description:
-          "Зв'яжіться з командою SearchTalent через email, GitHub чи Telegram або надішліть відгук через форму.",
+          "Зв'яжіться з командою SearchTalent через email чи Telegram або надішліть відгук через форму.",
       },
     },
     home: {
-      eyebrow: "Платформа IT-портфоліо та проєктів",
-      titleLead: "Знайдіть фахівців за",
-      titleWords: ["проєктами", "портфоліо", "навичками", "статтями"],
+      eyebrow: "Безкоштовне портфоліо для IT- та digital-фахівців",
+      titleLead: "Покажіть свій рівень",
+      titleWords: ["кодом", "дизайном", "монтажем", "3D-моделями"],
       description:
-        "Публікуйте проєкти, демонструйте навички, будуйте репутацію та відкривайте нові можливості.",
+        "Імпортуйте код із GitHub чи GitLab, а відео, дизайн і 3D додайте посиланням або зображеннями. Отримайте оцінку портфоліо й поради, як її підняти. Діліться одним посиланням або PDF.",
       descriptionHighlights: [
-        "Портфоліо",
-        "Кейси",
-        "Спільнота",
-        "Репутація",
-        "Рейтинг",
+        "Профіль, 2 хв",
+        "Перший проєкт, 5 хв",
+        "Оцінка і поради",
+        "Посилання в резюме",
       ],
-      ctaCreateProfile: "Створити профіль",
+      ctaCreateProfile: "Створити портфоліо",
       ctaPublishProject: "Опублікувати проєкт",
       ctaViewProjects: "Переглянути проєкти",
+      ctaSeeExample: "Подивитися приклад",
       topProjectsCta: "Відкрити топ проєктів",
       topCreatorsCta: "Відкрити топ талантів",
       cards: {
-        eyebrow: "Зараз у спільноті",
-        topTalent: {
-          label: "Трендовий творець",
+        eyebrow: "Свіже на платформі",
+        examplePortfolio: {
+          label: "Приклад портфоліо",
           cta: "Дивитись профіль",
-          fallback: "Стань першим у рейтингу.",
+          fallback: "Тут з'явиться приклад сильного портфоліо.",
         },
-        topProject: {
-          label: "Трендовий проєкт",
+        latestProject: {
+          label: "Свіжий проєкт",
           cta: "Дивитись проєкт",
           fallback: "Поки немає опублікованих проєктів.",
         },
@@ -3166,6 +3141,9 @@ export const dictionaries = {
       topCreatorsTitle: "Топ 10 фахівців",
       topCreatorsDescription:
         "Вище піднімаються профілі з хорошим наповненням, сильними роботами та живою активністю.",
+      freshCreatorsTitle: "Нові портфоліо",
+      freshCreatorsDescription:
+        "Нещодавно опубліковані портфоліо. Рейтинг з'явиться, коли свої роботи опублікує більше авторів.",
       topProjectsTitle: "Топ 10 проєктів",
       topProjectsDescription:
         "У топі опиняються проєкти, які добре оформлені, мають сильну подачу й викликають помітний інтерес аудиторії.",
@@ -3529,14 +3507,6 @@ export const dictionaries = {
       cardTitle: "{provider}",
       gitlabDescription:
         "Імпортуйте репозиторій як проєкт — статистика оновлюється сама.",
-      figmaDescription:
-        "Імпортуйте дизайн-файл як проєкт — сторінки, компоненти, стилі.",
-      vimeoDescription:
-        "Імпортуйте відео як проєкт — тривалість, обкладинка, перегляди.",
-      sketchfabDescription:
-        "Імпортуйте 3D-модель як проєкт — полігони, перегляди, ліцензія.",
-      notionDescription:
-        "Імпортуйте сторінку як проєкт. Доступні сторінки обираєте ви.",
       aiDraftHint:
         "ШІ читає те, що дав {provider} — назву, теги, метрики й довгий текст — і пропонує чернетки для порожніх полів опису.",
       connect: "Підключити {provider}",
@@ -3557,11 +3527,6 @@ export const dictionaries = {
       hidePicker: "Сховати",
       unlink: "Відв’язати",
       filterPlaceholder: "Фільтр…",
-      queryLabel: "Посилання Figma",
-      queryPlaceholder: "https://www.figma.com/design/…",
-      queryHint:
-        "Вставте посилання на файл у Figma. У Figma немає списку всіх файлів акаунта, тому саме посилання нам його знаходить.",
-      queryAction: "Знайти",
       loadingResources: "Завантаження…",
       noResources: "Тут немає що імпортувати.",
       resourcesError: "Не вдалося завантажити список.",
@@ -3582,20 +3547,8 @@ export const dictionaries = {
         contributors: "Контриб’ютори",
         branch: "Основна гілка",
         languages: "Мови",
-        pages: "Сторінки",
-        components: "Компоненти",
-        styles: "Стилі",
-        version: "Версія",
-        duration: "Тривалість",
-        plays: "Перегляди",
-        faces: "Полігони",
-        vertices: "Вершини",
-        views: "Перегляди",
-        likes: "Лайки",
-        words: "Слів",
         license: "Ліцензія",
         lastActivity: "Остання активність",
-        lastModified: "Остання правка",
       },
     },
     githubIntegration: {
@@ -5126,9 +5079,6 @@ export const dictionaries = {
       emailTitle: "Email",
       emailText:
         "Загальні питання, партнерства, преса або оскарження рішень модерації.",
-      githubTitle: "GitHub",
-      githubText:
-        "Повідомляйте про помилки, відкривайте issues або долучайтеся — SearchTalent з відкритим кодом.",
       telegramTitle: "Telegram",
       telegramText:
         "Стежте за оновленнями та звертайтеся до команди з короткими питаннями.",

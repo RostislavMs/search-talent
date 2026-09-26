@@ -2,19 +2,11 @@ import "server-only";
 
 import type { ProviderIntegrationId } from "@/lib/constants/provider-integrations";
 import { getSiteUrl } from "@/lib/seo";
-import { figmaAdapter } from "./figma";
 import { gitlabAdapter } from "./gitlab";
-import { notionAdapter } from "./notion";
-import { sketchfabAdapter } from "./sketchfab";
-import { vimeoAdapter } from "./vimeo";
 import type { ProviderAdapter } from "./provider-types";
 
 const adapters: Record<ProviderIntegrationId, ProviderAdapter> = {
   gitlab: gitlabAdapter,
-  figma: figmaAdapter,
-  vimeo: vimeoAdapter,
-  sketchfab: sketchfabAdapter,
-  notion: notionAdapter,
 };
 
 export function getProviderAdapter(

@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // Same snapshot-on-create for the generic providers (GitLab, Figma).
+  // Same snapshot-on-create for the generic providers (GitLab).
   let sourceColumns: Record<string, unknown> = {};
   if (payload.sourceIntegration) {
     sourceColumns =

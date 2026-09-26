@@ -1,6 +1,7 @@
 import { getArticleFeed } from "@/lib/db/articles";
 import { getLeaderboards } from "@/lib/db/leaderboards";
 import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
+import { isLeaderboardSafeText } from "@/lib/leaderboard-display";
 import { slugifySegment } from "@/lib/marketing-content";
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -44,6 +45,72 @@ export async function getFeaturedTalents(limit = 8) {
 export async function getLatestArticles(limit = 6, locale?: string | null) {
   const feed = await getArticleFeed({ sort: "recent", locale });
   return feed.items.slice(0, limit);
+}
+
+export type LatestProject = {
+  id: string;
+  title: string;
+  slug: string | null;
+  createdAt: string | null;
+  ownerName: string | null;
+  ownerUsername: string | null;
+};
+
+/**
+ * A few candidates are read so the newest project that passes the blocklist
+ * can still be shown when the very latest one does not.
+ */
+const LATEST_PROJECT_CANDIDATES = 8;
+
+/**
+ * The newest public project, for the home hero. Runs the same text check as
+ * the leaderboards: the hero is the first thing a visitor sees, so it never
+ * shows content today's blocklist would catch.
+ */
+export async function getLatestProject(): Promise<LatestProject | null> {
+  const supabase = await getPublicReadClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id, title, slug, description, created_at, owner_id")
+    .eq("status", "published")
+    .eq("moderation_status", "approved")
+    .order("created_at", { ascending: false })
+    .limit(LATEST_PROJECT_CANDIDATES);
+
+  if (error) {
+    console.error("[marketing] latest project unavailable:", error.message);
+    return null;
+  }
+
+  const project = ((data || []) as Array<{
+    id: string;
+    title: string;
+    slug: string | null;
+    description: string | null;
+    created_at: string | null;
+    owner_id: string;
+  }>).find((row) => isLeaderboardSafeText([row.title, row.description]));
+
+  if (!project) {
+    return null;
+  }
+
+  const { data: owner } = await supabase
+    .from("profiles")
+    .select("name, username")
+    .eq("user_id", project.owner_id)
+    .maybeSingle();
+
+  const ownerRow = owner as { name: string | null; username: string | null } | null;
+
+  return {
+    id: project.id,
+    title: project.title,
+    slug: project.slug,
+    createdAt: project.created_at,
+    ownerName: ownerRow?.name ?? null,
+    ownerUsername: ownerRow?.username ?? null,
+  };
 }
 
 export type TechnologyDirectoryItem = {

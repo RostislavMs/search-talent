@@ -72,6 +72,7 @@ export default async function PollsPage({
         apply: "Застосувати",
         reset: "Скинути",
         empty: "Поки що немає опитувань за цими фільтрами.",
+        emptyFeed: "Опитувань поки немає. Створіть перше — і спільнота зможе проголосувати.",
       }
     : {
         eyebrow: "Community voice",
@@ -92,6 +93,7 @@ export default async function PollsPage({
         apply: "Apply filters",
         reset: "Reset filters",
         empty: "No polls match these filters yet.",
+        emptyFeed: "No polls yet. Create the first one and let the community vote.",
       };
 
   const siteUrl = getSiteUrl().replace(/\/$/, "");
@@ -133,6 +135,7 @@ export default async function PollsPage({
           apply: ui.apply,
           reset: ui.reset,
           empty: ui.empty,
+          emptyFeed: ui.emptyFeed,
         }}
       >
         <div className="p-4 sm:p-8">

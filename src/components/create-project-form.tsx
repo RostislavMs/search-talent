@@ -202,8 +202,8 @@ type ProjectFormState = {
   motionDurationInput: string;
   writingMeta: WritingKindMetadata;
   /**
-   * The provider resource this project is imported from (GitLab project,
-   * Figma file). `null` means "not linked" — sending that unlinks it.
+   * The provider resource this project is imported from (e.g. a GitLab
+   * project). `null` means "not linked" — sending that unlinks it.
    */
   sourceIntegration: ProjectSourceRequest | null;
   projectStatus: ProjectStatus | "";
@@ -1314,7 +1314,7 @@ export default function CreateProjectForm({
     [dictionary.githubIntegration.importApplied, metaSkills, toast],
   );
 
-  // Applies an imported GitLab project / Figma file to the form. Same rule as
+  // Applies an imported provider resource (GitLab project) to the form. Same rule as
   // the GitHub import: only blank fields are filled, so a re-import never
   // overwrites what the author already wrote.
   const applyProviderImport = useCallback(
@@ -2328,7 +2328,7 @@ type StepSpecificsProps = {
 };
 
 // Kind-aware fields, preceded by the connect-and-import panels for whichever
-// providers cover this discipline (GitLab for code/QA, Figma for design/motion).
+// providers cover this discipline (GitLab for code/QA).
 // GitHub keeps its own panel inside the code branch, so the import options end
 // up next to each other.
 function StepSpecifics(props: StepSpecificsProps) {

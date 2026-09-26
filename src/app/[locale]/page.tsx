@@ -10,8 +10,12 @@ import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 import RotatingWord from "@/components/ui/rotating-word";
 import { formatArticleDate } from "@/lib/articles";
-import { getLatestArticles } from "@/lib/db/marketing";
-import { getLeaderboards } from "@/lib/db/leaderboards";
+import { getLatestArticles, getLatestProject } from "@/lib/db/marketing";
+import {
+  getLeaderboards,
+  type LeaderboardsResult,
+  type RankedCreator,
+} from "@/lib/db/leaderboards";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
@@ -145,6 +149,50 @@ function HeroLiveCard({
   );
 }
 
+/**
+ * The portfolio the hero holds up as an example: the best all-time creator who
+ * passed the leaderboard thresholds, or — while nobody qualifies yet — the
+ * newest portfolio with published work. Chosen automatically so the example
+ * keeps up with the platform instead of pointing at a hand-picked profile.
+ */
+function pickExamplePortfolio(
+  leaderboards: LeaderboardsResult,
+): RankedCreator | null {
+  return leaderboards.creators.all[0] ?? leaderboards.freshCreators?.[0] ?? null;
+}
+
+const HERO_SECONDARY_LINK_CLASS =
+  "group inline-flex w-full items-center justify-center gap-1.5 rounded-full px-5 py-3 text-base font-medium text-white/75 transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:w-auto";
+
+function HeroSecondaryLink({ href, label }: { href: string; label: string }) {
+  return (
+    <LocalizedLink href={href} className={HERO_SECONDARY_LINK_CLASS}>
+      {label}
+      <span
+        aria-hidden="true"
+        className="inline-block transition-transform duration-200 group-hover:translate-x-1"
+      >
+        →
+      </span>
+    </LocalizedLink>
+  );
+}
+
+/**
+ * "See an example" for guests. The label never changes, so the fallback
+ * (browse talents) swaps for the real profile link without moving anything.
+ */
+async function HeroExampleLink({ dictionary }: { dictionary: Dictionary }) {
+  const example = pickExamplePortfolio(await getLeaderboards());
+
+  return (
+    <HeroSecondaryLink
+      href={example ? `/u/${example.username}` : "/talents"}
+      label={dictionary.home.ctaSeeExample}
+    />
+  );
+}
+
 function HeroFallbackCard({
   label,
   text,
@@ -260,18 +308,23 @@ export default async function LocalizedHomePage({
                   ? dictionary.home.ctaPublishProject
                   : dictionary.home.ctaCreateProfile}
               </ButtonLink>
-              <LocalizedLink
-                href="/projects"
-                className="group inline-flex w-full items-center justify-center gap-1.5 rounded-full px-5 py-3 text-base font-medium text-white/75 transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:w-auto"
-              >
-                {dictionary.home.ctaViewProjects}
-                <span
-                  aria-hidden="true"
-                  className="inline-block transition-transform duration-200 group-hover:translate-x-1"
+              {isSignedIn ? (
+                <HeroSecondaryLink
+                  href="/projects"
+                  label={dictionary.home.ctaViewProjects}
+                />
+              ) : (
+                <Suspense
+                  fallback={
+                    <HeroSecondaryLink
+                      href="/talents"
+                      label={dictionary.home.ctaSeeExample}
+                    />
+                  }
                 >
-                  →
-                </span>
-              </LocalizedLink>
+                  <HeroExampleLink dictionary={dictionary} />
+                </Suspense>
+              )}
             </div>
           </div>
 
@@ -314,58 +367,62 @@ async function HeroLiveCards({
   locale: Locale;
   dictionary: Dictionary;
 }) {
-  const [leaderboards, latestArticles] = await Promise.all([
+  const [leaderboards, latestProject, latestArticles] = await Promise.all([
     getLeaderboards(),
+    getLatestProject(),
     getLatestArticles(4, locale),
   ]);
-  // Hero highlights the last-30-days leaders, not all-time: the all-time #1 is
-  // almost always the same person, so the recent boards keep the hero rotating
-  // and reward current activity. Falls back to all-time only if a board is
-  // somehow empty (both are built from the same set, so this is defensive).
-  const topCreator = leaderboards.creators.month[0] ?? leaderboards.creators.all[0];
-  const topProject = leaderboards.projects.month[0] ?? leaderboards.projects.all[0];
+  // "Fresh on the platform", not "trending": with little traffic a trend
+  // label is a claim the numbers cannot back. The first card is an example of
+  // a strong portfolio (what a visitor could build), the other two are simply
+  // the newest work.
+  const example = pickExamplePortfolio(leaderboards);
   const topArticle = latestArticles[0];
 
   return (
     <>
-      {topCreator ? (
+      {example ? (
         <HeroLiveCard
-          href={`/u/${topCreator.username}`}
-          label={dictionary.home.cards.topTalent.label}
-          primary={topCreator.name || topCreator.username}
-          secondary={`@${topCreator.username}`}
-          meta={`${topCreator.rating} ${dictionary.home.leaderboardScore}`}
-          cta={dictionary.home.cards.topTalent.cta}
-          avatarUrl={topCreator.avatar_url}
-          avatarLabel={topCreator.name || topCreator.username}
+          href={`/u/${example.username}`}
+          label={dictionary.home.cards.examplePortfolio.label}
+          primary={example.name || example.username}
+          secondary={example.headline || `@${example.username}`}
+          meta={`${example.rating} ${dictionary.home.leaderboardScore}`}
+          cta={dictionary.home.cards.examplePortfolio.cta}
+          avatarUrl={example.avatar_url}
+          avatarLabel={example.name || example.username}
           tone={HERO_CARD_TONES[0]}
         />
       ) : (
         <HeroFallbackCard
-          label={dictionary.home.cards.topTalent.label}
-          text={dictionary.home.cards.topTalent.fallback}
+          label={dictionary.home.cards.examplePortfolio.label}
+          text={dictionary.home.cards.examplePortfolio.fallback}
           tone={HERO_CARD_TONES[0]}
         />
       )}
 
-      {topProject ? (
+      {latestProject ? (
         <HeroLiveCard
-          href={buildProjectPath(topProject.id, topProject.slug)}
-          label={dictionary.home.cards.topProject.label}
-          primary={topProject.title}
+          href={buildProjectPath(latestProject.id, latestProject.slug)}
+          label={dictionary.home.cards.latestProject.label}
+          primary={latestProject.title}
           secondary={
-            topProject.ownerName || topProject.ownerUsername
-              ? `${dictionary.common.by} ${topProject.ownerName || topProject.ownerUsername}`
+            latestProject.ownerName || latestProject.ownerUsername
+              ? `${dictionary.common.by} ${latestProject.ownerName || latestProject.ownerUsername}`
               : undefined
           }
-          meta={`${topProject.rating} ${dictionary.home.leaderboardScore}`}
-          cta={dictionary.home.cards.topProject.cta}
+          meta={
+            latestProject.createdAt
+              ? formatArticleDate(latestProject.createdAt, locale)
+              : undefined
+          }
+          cta={dictionary.home.cards.latestProject.cta}
           tone={HERO_CARD_TONES[1]}
         />
       ) : (
         <HeroFallbackCard
-          label={dictionary.home.cards.topProject.label}
-          text={dictionary.home.cards.topProject.fallback}
+          label={dictionary.home.cards.latestProject.label}
+          text={dictionary.home.cards.latestProject.fallback}
           tone={HERO_CARD_TONES[1]}
         />
       )}
@@ -449,6 +506,7 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
           dictionary={dictionary}
           creators={leaderboards.creators}
           projects={leaderboards.projects}
+          freshCreators={leaderboards.freshCreators}
         />
       </div>
 

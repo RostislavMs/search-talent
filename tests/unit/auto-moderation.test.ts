@@ -74,6 +74,14 @@ describe("screenContentForModeration — blocklist", () => {
     expect(result.categories).toContain("sexual");
   });
 
+  it("flags hentai in Latin, Cyrillic (inflected) and slug transliteration", () => {
+    for (const sample of ["Hentai edit", "Хентай ня", "дивлюся хентаї", "khentai-nya"]) {
+      const result = screenContentForModeration([sample]);
+      expect(result.flagged, sample).toBe(true);
+      expect(result.categories, sample).toContain("sexual");
+    }
+  });
+
   it("sees through light leet / symbol obfuscation", () => {
     expect(screenContentForModeration(["this is sh1t"]).flagged).toBe(true);
     expect(screenContentForModeration(["what an a$$hole"]).flagged).toBe(true);

@@ -25,16 +25,6 @@ function getStatLabel(stat: IntegrationStat, dictionary: Dictionary): string {
       return labels.license;
     case "languages":
       return labels.languages;
-    case "pages":
-      return labels.pages;
-    case "components":
-      return labels.components;
-    case "styles":
-      return labels.styles;
-    case "version":
-      return labels.version;
-    case "lastModified":
-      return labels.lastModified;
     default:
       return stat.key;
   }
@@ -45,7 +35,7 @@ function formatStatValue(
   stat: IntegrationStat,
   locale: string,
 ): string {
-  if (stat.key !== "lastActivity" && stat.key !== "lastModified") {
+  if (stat.key !== "lastActivity") {
     return stat.value;
   }
 
@@ -63,7 +53,7 @@ function formatStatValue(
 }
 
 /**
- * "Imported from GitLab / Figma" card on the project page: the live numbers the
+ * "Imported from GitLab" card on the project page: the live numbers the
  * last sync pulled, plus a link back to the source.
  */
 export default function ProjectSourcePanel({

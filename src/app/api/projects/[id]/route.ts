@@ -75,7 +75,7 @@ export async function PATCH(
       ? project.slug
       : await generateUniqueProjectSlug(supabase, payload.slug, project.id);
 
-  // Provider link (GitLab project, Figma file). An absent `sourceIntegration`
+  // Provider link (e.g. a GitLab project). An absent `sourceIntegration`
   // means "unlink" — the wizard sends null after the author detaches it. An
   // unchanged link is left as-is: an ordinary text edit must not cost a round
   // trip to the provider (the owner's page view re-syncs on its own schedule).

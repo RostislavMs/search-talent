@@ -139,6 +139,9 @@ const BLOCKLIST: BlocklistEntry[] = [
   { category: "sexual", term: "boobs", type: "word" },
   { category: "sexual", term: "tits", type: "word" },
   { category: "sexual", term: "titties", type: "word" },
+  { category: "sexual", term: "hentai", type: "stem" },
+  // Transliteration of the Ukrainian spelling, as it appears in slugs.
+  { category: "sexual", term: "khentai", type: "stem" },
   // --- Ukrainian / russian profanity (Cyrillic) ---
   { category: "profanity", term: "хуй", type: "stem" },
   { category: "profanity", term: "хуя", type: "word" },
@@ -191,6 +194,9 @@ const BLOCKLIST: BlocklistEntry[] = [
   { category: "hate", term: "педик", type: "word" },
   // --- Explicit sexual (Cyrillic) ---
   { category: "sexual", term: "порно", type: "stem" },
+  // "хента" rather than "хентай" so the stem also catches the inflected forms
+  // (хентаю, хентаї); no common Ukrainian word starts with it.
+  { category: "sexual", term: "хента", type: "stem" },
   // --- Latin transliteration of common mat ---
   { category: "profanity", term: "suka", type: "word" },
   { category: "profanity", term: "pizd", type: "stem" },
