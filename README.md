@@ -8,7 +8,7 @@ A bilingual (Ukrainian / English) community and portfolio platform for IT specia
 
 | Tool | Version | Role |
 | --- | --- | --- |
-| Next.js | 16.2.3 | React framework, App Router, server components |
+| Next.js | 16.3.5 | React framework, App Router, server components |
 | React | 19.2.3 | UI library |
 | TypeScript | 5 | Type system |
 | Tailwind CSS | 4 | Utility-first styling, design tokens via CSS vars |

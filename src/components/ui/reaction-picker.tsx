@@ -66,7 +66,9 @@ export default function ReactionPicker({
 }: ReactionPickerProps) {
   const dictionary = useDictionary();
   const router = useLocalizedRouter();
-  const loginPath = `/${router.locale}/login`;
+  // Guests are sent to sign in. A client-side push is enough: nothing about
+  // the session changes until they actually log in there.
+  const goToLogin = () => router.push("/login");
   const [reactions, setReactions] = useState<ReactionSummary[]>(
     [...initialReactions].sort(
       (a, b) =>
@@ -107,7 +109,7 @@ export default function ReactionPicker({
 
   const toggle = async (emoji: ReactionEmoji) => {
     if (!isAuthenticated) {
-      window.location.assign(loginPath);
+      goToLogin();
       return;
     }
 
@@ -177,7 +179,7 @@ export default function ReactionPicker({
           type="button"
           onClick={() => {
             if (!isAuthenticated) {
-              window.location.assign(loginPath);
+              goToLogin();
               return;
             }
             setPickerOpen((open) => !open);

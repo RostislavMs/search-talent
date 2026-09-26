@@ -1,13 +1,34 @@
 packages:
   - "."
 
+# Vercel enforces a supply-chain `minimumReleaseAge` policy at install time
+# (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION), so a lockfile holding a release
+# that is only days old fails the production build. Resolving with the same
+# 7-day window Dependabot's cooldown uses keeps local installs, overrides and
+# the lockfile inside that policy. Value is in minutes.
+minimumReleaseAge: 10080
+
 # Force patched versions of transitive deps flagged by `pnpm audit`. Scoped to
 # the vulnerable ranges so unrelated resolutions are untouched.
 #   ws  <8.21.0  — memory-exhaustion DoS (GHSA-96hv-2xvq-fx4p), via supabase/genai
-#   sharp <0.35.0 — libvips CVEs (GHSA-f88m-g3jw-g9cj), via next
+#   sharp <0.35.4 — libvips / libheif CVEs (GHSA-f88m-g3jw-g9cj, GHSA-g89c-p67h-r497), via next
+#   dompurify <3.4.13 — XSS via IN_PLACE hook removal, ALLOWED_ATTR pollution, via isomorphic-dompurify
+#   nanoid 3.x <3.3.18 — integer overflow / infinite loops, via postcss
+#   browserslist <4.28.7 — OOM and prototype write on untrusted stats
+#   baseline-browser-mapping <2.11.0 — DoS on invalid input, via next
+#   protobufjs 7.x <7.6.5 — DoS in .proto parsing, property shadowing, via @google/genai
+#   @babel/core 7.x <7.29.1 — file read via sourceMappingURL
+#   postcss <8.5.23 — source-map file disclosure, XSS in stringify
 overrides:
   "ws@>=8.0.0 <8.21.0": "^8.21.0"
-  "sharp@<0.35.0": "^0.35.0"
+  "sharp@<0.35.4": "^0.35.4"
+  "dompurify@<3.4.13": "^3.4.13"
+  "nanoid@>=3.0.0 <3.3.18": "^3.3.18"
+  "browserslist@<4.28.7": "^4.28.7"
+  "baseline-browser-mapping@<2.11.0": "^2.11.0"
+  "protobufjs@>=7.0.0 <7.6.5": "^7.6.5"
+  "@babel/core@>=7.0.0 <7.29.1": "^7.29.1"
+  "postcss@<8.5.23": "^8.5.23"
 
 # pnpm 11 requires an explicit boolean decision for dependency build scripts.
 # Supabase's postinstall downloads bin/supabase.EXE used by its package bin.
