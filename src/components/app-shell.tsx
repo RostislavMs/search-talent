@@ -24,6 +24,7 @@ export default async function AppShell({
     initialCanPersistTheme,
     viewer,
     activePopup,
+    sections,
   } = await getAppShellData(locale);
 
   return (
@@ -31,6 +32,7 @@ export default async function AppShell({
       <SiteHeader
         dictionary={dictionary}
         viewer={viewer}
+        sections={sections}
         initialTheme={initialTheme}
         initialCanPersistTheme={initialCanPersistTheme}
       />

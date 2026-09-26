@@ -21,7 +21,7 @@ import { AI_PER_USER_LIMIT, AI_PER_USER_WINDOW_MS } from "@/lib/constants/ai";
  * Body: { provider, ref, locale?, existing? }
  *
  * Drafts the project narrative from a resource imported through a provider
- * integration (GitLab, Figma, Vimeo, Sketchfab, Notion). Every returned field
+ * integration (GitLab). Every returned field
  * is a suggestion — the form only applies it where the author left a blank.
  */
 export async function POST(request: Request) {

@@ -27,14 +27,6 @@ function providerDescription(
   switch (provider) {
     case "gitlab":
       return dict.gitlabDescription;
-    case "figma":
-      return dict.figmaDescription;
-    case "vimeo":
-      return dict.vimeoDescription;
-    case "sketchfab":
-      return dict.sketchfabDescription;
-    case "notion":
-      return dict.notionDescription;
     default:
       return "";
   }

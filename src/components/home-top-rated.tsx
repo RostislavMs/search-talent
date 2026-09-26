@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TOP_CREATORS_MIN_BOARD_SIZE } from "@/lib/constants/visibility";
 import type { RankedCreator, RankedProject } from "@/lib/db/leaderboards";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { buildProjectPath } from "@/lib/projects";
@@ -19,6 +20,8 @@ type HomeTopRatedProps = {
     all: RankedProject[];
     month: RankedProject[];
   };
+  /** Newest portfolios, listed while too few creators qualify for a ranking. */
+  freshCreators?: RankedCreator[];
 };
 
 function ToggleButton({
@@ -64,10 +67,20 @@ export default function HomeTopRated({
   dictionary,
   creators,
   projects,
+  freshCreators = [],
 }: HomeTopRatedProps) {
   const [creatorTimeframe, setCreatorTimeframe] = useState<"all" | "month">("all");
   const [projectTimeframe, setProjectTimeframe] = useState<"all" | "month">("all");
-  const creatorItems = creators[creatorTimeframe];
+  // Numbering two or three people "#1, #2, #3" is not a ranking yet. Until
+  // enough creators qualify, the block keeps its place on the page but lists
+  // the newest portfolios instead — no ranks, no timeframe switch. Both
+  // timeframes rank the same eligible set, so the all-time size decides.
+  const showFreshCreators =
+    creators.all.length < TOP_CREATORS_MIN_BOARD_SIZE &&
+    freshCreators.length > 0;
+  const creatorItems = showFreshCreators
+    ? freshCreators
+    : creators[creatorTimeframe];
   const projectItems = projects[projectTimeframe];
 
   return (
@@ -123,27 +136,33 @@ export default function HomeTopRated({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl">
-              {dictionary.home.topCreatorsTitle}
+              {showFreshCreators
+                ? dictionary.home.freshCreatorsTitle
+                : dictionary.home.topCreatorsTitle}
             </h2>
             <p className="mt-1.5 text-sm app-muted sm:mt-2 sm:text-base">
-              {dictionary.home.topCreatorsDescription}
+              {showFreshCreators
+                ? dictionary.home.freshCreatorsDescription
+                : dictionary.home.topCreatorsDescription}
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <ToggleButton
-              active={creatorTimeframe === "all"}
-              onClick={() => setCreatorTimeframe("all")}
-            >
-              {dictionary.home.allTime}
-            </ToggleButton>
-            <ToggleButton
-              active={creatorTimeframe === "month"}
-              onClick={() => setCreatorTimeframe("month")}
-            >
-              {dictionary.home.thisMonth}
-            </ToggleButton>
-          </div>
+          {showFreshCreators ? null : (
+            <div className="flex flex-wrap gap-2">
+              <ToggleButton
+                active={creatorTimeframe === "all"}
+                onClick={() => setCreatorTimeframe("all")}
+              >
+                {dictionary.home.allTime}
+              </ToggleButton>
+              <ToggleButton
+                active={creatorTimeframe === "month"}
+                onClick={() => setCreatorTimeframe("month")}
+              >
+                {dictionary.home.thisMonth}
+              </ToggleButton>
+            </div>
+          )}
         </div>
 
         {creatorItems.length > 0 ? (
@@ -153,20 +172,22 @@ export default function HomeTopRated({
                 key={creator.id}
                 href={`/u/${creator.username}`}
                 className={`group rounded-2xl border app-border bg-[color:var(--surface)] p-4 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-4 ${
-                  index < 2 ? "lg:col-span-2" : ""
+                  !showFreshCreators && index < 2 ? "lg:col-span-2" : ""
                 }`}
               >
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-3 sm:gap-3.5">
-                    <div
-                      className={`font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-semibold sm:h-10 sm:w-10 sm:rounded-2xl sm:text-sm ${
-                        index < 3
-                          ? "bg-brand text-brand-foreground"
-                          : "border app-border bg-[color:var(--surface-muted)] text-[color:var(--muted-foreground)]"
-                      }`}
-                    >
-                      #{index + 1}
-                    </div>
+                    {showFreshCreators ? null : (
+                      <div
+                        className={`font-display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-semibold sm:h-10 sm:w-10 sm:rounded-2xl sm:text-sm ${
+                          index < 3
+                            ? "bg-brand text-brand-foreground"
+                            : "border app-border bg-[color:var(--surface-muted)] text-[color:var(--muted-foreground)]"
+                        }`}
+                      >
+                        #{index + 1}
+                      </div>
+                    )}
 
                     <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-sm font-semibold text-[color:var(--foreground)] sm:h-12 sm:w-12 sm:text-base">
                       {creator.avatar_url ? (

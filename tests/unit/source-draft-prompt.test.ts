@@ -18,7 +18,7 @@ function makeResource(
     ref: "123456789",
     name: "Brand loop",
     description: "A 12-second logo animation",
-    url: "https://vimeo.com/123456789",
+    url: "https://gitlab.com/kate/brand-loop",
     meta: null,
     thumbnailUrl: null,
     isPrivate: false,
@@ -29,7 +29,7 @@ function makeResource(
     teamSize: null,
     tags: ["after effects", "motion"],
     longText: "I animated the mark for a rebrand, using shape layers.",
-    stats: [{ key: "duration", value: "0:12" }],
+    stats: [{ key: "stars", value: "12" }],
     ...overrides,
   };
 }
@@ -50,24 +50,24 @@ describe("buildSourceDraftSystemInstruction", () => {
 describe("buildSourceDraftPrompt", () => {
   it("passes the platform facts and long-form text through", () => {
     const prompt = buildSourceDraftPrompt({
-      provider: "vimeo",
+      provider: "gitlab",
       resource: makeResource(),
       authorLogin: "kate",
       locale: "en",
       existing: {},
     });
 
-    expect(prompt).toContain("Vimeo");
+    expect(prompt).toContain("GitLab");
     expect(prompt).toContain("Brand loop");
     expect(prompt).toContain("after effects, motion");
-    expect(prompt).toContain("duration=0:12");
+    expect(prompt).toContain("stars=12");
     expect(prompt).toContain("shape layers");
     expect(prompt).toContain("kate");
   });
 
   it("omits lines the resource has no value for", () => {
     const prompt = buildSourceDraftPrompt({
-      provider: "sketchfab",
+      provider: "gitlab",
       resource: makeResource({
         description: null,
         tags: [],
@@ -87,7 +87,7 @@ describe("buildSourceDraftPrompt", () => {
 
   it("tells the model to skip fields the author already wrote", () => {
     const prompt = buildSourceDraftPrompt({
-      provider: "notion",
+      provider: "gitlab",
       resource: makeResource(),
       authorLogin: null,
       locale: "en",

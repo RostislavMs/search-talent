@@ -6,8 +6,12 @@
  * display toggles. Everything added after it goes through this generic layer
  * instead: one OAuth flow, one importer, one sync path, one adapter per
  * provider. Adding a provider means writing an adapter in
- * `@/lib/integrations/<provider>.ts` and registering it — no new routes, no
- * new UI, no migration.
+ * `@/lib/integrations/<provider>.ts`, registering it, and widening the
+ * `provider_integrations_provider_check` constraint.
+ *
+ * Only providers whose import fills a real share of the project stay here.
+ * Figma, Vimeo, Sketchfab and Notion were removed on 2026-09-26: each brought
+ * a title and a link and little else, which a pasted link does just as well.
  *
  * This module is client-safe: it holds ids, labels and shapes only. Endpoints,
  * scopes and secrets live in the server-only adapters.
@@ -15,13 +19,7 @@
 
 import type { ProjectKind } from "@/lib/projects";
 
-export const providerIntegrationIds = [
-  "gitlab",
-  "figma",
-  "vimeo",
-  "sketchfab",
-  "notion",
-] as const;
+export const providerIntegrationIds = ["gitlab"] as const;
 
 export type ProviderIntegrationId = (typeof providerIntegrationIds)[number];
 
@@ -40,32 +38,14 @@ export function isProviderIntegrationId(
  * and no provider gets to inject its own English wording.
  */
 export const integrationStatKeys = [
-  // Repositories
   "stars",
   "forks",
   "openIssues",
   "contributors",
   "branch",
   "languages",
-  // Design files
-  "pages",
-  "components",
-  "styles",
-  "version",
-  // Video
-  "duration",
-  "plays",
-  // 3D
-  "faces",
-  "vertices",
-  "views",
-  "likes",
-  // Documents
-  "words",
-  // Shared
   "license",
   "lastActivity",
-  "lastModified",
 ] as const;
 
 export type IntegrationStatKey = (typeof integrationStatKeys)[number];
@@ -85,10 +65,10 @@ export type ProviderIntegrationSummary = {
   connectedAt: string;
 };
 
-/** One importable thing inside the provider: a GitLab project, a Figma file. */
+/** One importable thing inside the provider, e.g. a GitLab project. */
 export type IntegrationResourceSummary = {
   externalId: string;
-  /** Provider-side handle used to re-fetch it (GitLab path, Figma file key). */
+  /** Provider-side handle used to re-fetch it (e.g. the GitLab project path). */
   ref: string;
   name: string;
   description: string | null;
@@ -110,9 +90,8 @@ export type IntegrationResourceDetail = IntegrationResourceSummary & {
   /** Languages / topics, matched against the skills catalogue on import. */
   tags: string[];
   /**
-   * Whatever long-form text the source carries — a repository README, a video
-   * description, a Notion page body. Never stored; it is the raw material the
-   * AI draft works from.
+   * Whatever long-form text the source carries, e.g. a repository README.
+   * Never stored; it is the raw material the AI draft works from.
    */
   longText: string | null;
   stats: IntegrationStat[];
@@ -134,12 +113,6 @@ export type ProviderIntegrationDescriptor = {
   label: string;
   /** Project kinds whose specifics step offers this importer. */
   kinds: readonly ProjectKind[];
-  /**
-   * true when the provider has no "list everything I own" endpoint, so the
-   * picker asks for a pasted link instead of showing a list. Figma is the
-   * case: files are only reachable by key, project id or team id.
-   */
-  requiresQuery: boolean;
 };
 
 export const providerIntegrationDescriptors: Record<
@@ -150,31 +123,6 @@ export const providerIntegrationDescriptors: Record<
     id: "gitlab",
     label: "GitLab",
     kinds: ["code", "qa", "other"],
-    requiresQuery: false,
-  },
-  figma: {
-    id: "figma",
-    label: "Figma",
-    kinds: ["design", "motion", "other"],
-    requiresQuery: true,
-  },
-  vimeo: {
-    id: "vimeo",
-    label: "Vimeo",
-    kinds: ["video", "motion", "other"],
-    requiresQuery: false,
-  },
-  sketchfab: {
-    id: "sketchfab",
-    label: "Sketchfab",
-    kinds: ["3d", "motion", "other"],
-    requiresQuery: false,
-  },
-  notion: {
-    id: "notion",
-    label: "Notion",
-    kinds: ["writing", "qa", "other"],
-    requiresQuery: false,
   },
 };
 

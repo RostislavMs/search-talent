@@ -16,6 +16,7 @@ import { buttonStyles } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { stripLocaleFromPathname } from "@/lib/i18n/config";
+import type { SectionVisibility } from "@/lib/section-visibility";
 import type { Theme } from "@/lib/theme";
 
 type Viewer = {
@@ -29,6 +30,12 @@ type Viewer = {
 type SiteHeaderProps = {
   dictionary: Dictionary;
   viewer: Viewer;
+  /**
+   * Audience-dependent sections (polls, discussions, news, analytics) only get
+   * a menu entry once there is enough activity to fill them — see
+   * lib/constants/visibility. Their pages stay reachable by URL either way.
+   */
+  sections: SectionVisibility;
   initialTheme: Theme;
   initialCanPersistTheme: boolean;
 };
@@ -36,6 +43,7 @@ type SiteHeaderProps = {
 export default function SiteHeader({
   dictionary,
   viewer,
+  sections,
   initialTheme,
   initialCanPersistTheme,
 }: SiteHeaderProps) {
@@ -162,24 +170,32 @@ export default function SiteHeader({
     dictionary.nav.search === "Search" ? "Articles" : "Статті";
   const talentsLabel =
     dictionary.nav.search === "Search" ? "Talents" : "Таланти";
+  // Community groups the content types (articles, polls, discussions, news)
+  // under one dropdown. Articles are always there; the rest join once their
+  // section clears its visibility threshold.
+  const communityLinks = [
+    { href: "/articles", label: articlesLabel },
+    ...(sections.polls ? [{ href: "/polls", label: dictionary.nav.polls }] : []),
+    ...(sections.discussions
+      ? [{ href: "/discussions", label: dictionary.discussions.pageTitle }]
+      : []),
+    ...(sections.news ? [{ href: "/news", label: dictionary.nav.news }] : []),
+  ];
+  // A dropdown with a single entry is just an extra click, so with articles
+  // alone the Community menu collapses into a plain top-level link.
+  const hasCommunityMenu = communityLinks.length > 1;
   const primaryLinks = [
     { href: "/", label: dictionary.nav.home },
     { href: "/talents", label: talentsLabel },
     { href: "/projects", label: dictionary.nav.projects },
-  ];
-  // Community groups the content types (articles, polls, discussions, news)
-  // under one dropdown.
-  const communityLinks = [
-    { href: "/articles", label: articlesLabel },
-    { href: "/polls", label: dictionary.nav.polls },
-    { href: "/discussions", label: dictionary.discussions.pageTitle },
-    { href: "/news", label: dictionary.nav.news },
+    ...(hasCommunityMenu ? [] : communityLinks),
   ];
   const communityActive =
-    pathname.startsWith("/articles") ||
-    pathname.startsWith("/polls") ||
-    pathname.startsWith("/discussions") ||
-    pathname.startsWith("/news");
+    hasCommunityMenu &&
+    communityLinks.some(
+      (link) =>
+        pathname === link.href || pathname.startsWith(`${link.href}/`),
+    );
 
   // The profile dropdown is split into groups: the account essentials
   // (public profile, edit profile, my space, analytics) come first, then a
@@ -196,7 +212,9 @@ export default function SiteHeader({
           : []),
         { href: "/profile/edit", label: dictionary.mySpace.editProfile },
         { href: "/my-space", label: dictionary.nav.mySpace },
-        { href: "/analytics", label: dictionary.nav.analytics },
+        ...(sections.analytics
+          ? [{ href: "/analytics", label: dictionary.nav.analytics }]
+          : []),
       ]
     : [];
 
@@ -210,14 +228,22 @@ export default function SiteHeader({
           href: `/u/${viewer.username}/articles`,
           label: dictionary.nav.myArticles,
         },
-        {
-          href: `/u/${viewer.username}/polls`,
-          label: dictionary.nav.myPolls,
-        },
-        {
-          href: `/u/${viewer.username}/discussions`,
-          label: dictionary.nav.myDiscussions,
-        },
+        ...(sections.polls
+          ? [
+              {
+                href: `/u/${viewer.username}/polls`,
+                label: dictionary.nav.myPolls,
+              },
+            ]
+          : []),
+        ...(sections.discussions
+          ? [
+              {
+                href: `/u/${viewer.username}/discussions`,
+                label: dictionary.nav.myDiscussions,
+              },
+            ]
+          : []),
       ]
     : [];
 
@@ -322,45 +348,47 @@ export default function SiteHeader({
             links={primaryLinks}
             trailingActive={communityActive}
             trailing={
-              <details ref={communityMenuRef} className="relative">
-                <summary className={communityTriggerClasses(communityActive)}>
-                  <span>{dictionary.nav.community}</span>
-                  <svg
-                    aria-hidden="true"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="transition-transform duration-300 ease-out in-[[open]]:rotate-180"
-                  >
-                    <path
-                      d="M6 9l6 6 6-6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </summary>
+              hasCommunityMenu ? (
+                <details ref={communityMenuRef} className="relative">
+                  <summary className={communityTriggerClasses(communityActive)}>
+                    <span>{dictionary.nav.community}</span>
+                    <svg
+                      aria-hidden="true"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="transition-transform duration-300 ease-out in-[[open]]:rotate-180"
+                    >
+                      <path
+                        d="M6 9l6 6 6-6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </summary>
 
-                <div className="absolute left-0 mt-3 w-60 rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-2 shadow-2xl">
-                  {communityLinks.map((link) => {
-                    const active =
-                      pathname === link.href ||
-                      pathname.startsWith(`${link.href}/`);
-                    return (
-                      <LocalizedLink
-                        key={link.href}
-                        href={link.href}
-                        onClick={closeCommunityMenu}
-                        className={menuLinkClasses(active)}
-                      >
-                        {link.label}
-                      </LocalizedLink>
-                    );
-                  })}
-                </div>
-              </details>
+                  <div className="absolute left-0 mt-3 w-60 rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-2 shadow-2xl">
+                    {communityLinks.map((link) => {
+                      const active =
+                        pathname === link.href ||
+                        pathname.startsWith(`${link.href}/`);
+                      return (
+                        <LocalizedLink
+                          key={link.href}
+                          href={link.href}
+                          onClick={closeCommunityMenu}
+                          className={menuLinkClasses(active)}
+                        >
+                          {link.label}
+                        </LocalizedLink>
+                      );
+                    })}
+                  </div>
+                </details>
+              ) : undefined
             }
           />
         </nav>
@@ -667,22 +695,24 @@ export default function SiteHeader({
                       ))}
                     </div>
 
-                    <div className="mt-3">
-                      <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                        {dictionary.nav.community}
-                      </p>
-                      <div className="space-y-1">
-                        {communityLinks.map((link) => (
-                          <NavLink
-                            key={link.href}
-                            href={link.href}
-                            label={link.label}
-                            mobile
-                            onClick={() => setNavOpen(false)}
-                          />
-                        ))}
+                    {hasCommunityMenu ? (
+                      <div className="mt-3">
+                        <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
+                          {dictionary.nav.community}
+                        </p>
+                        <div className="space-y-1">
+                          {communityLinks.map((link) => (
+                            <NavLink
+                              key={link.href}
+                              href={link.href}
+                              label={link.label}
+                              mobile
+                              onClick={() => setNavOpen(false)}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    ) : null}
                   </div>
 
                   <div className="shrink-0 border-t border-[color:var(--border)] p-3">

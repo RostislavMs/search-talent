@@ -12,7 +12,10 @@ import { projectKinds } from "@/lib/projects";
 describe("provider integration registry", () => {
   it("recognises only registered provider ids", () => {
     expect(isProviderIntegrationId("gitlab")).toBe(true);
-    expect(isProviderIntegrationId("figma")).toBe(true);
+    // Removed on 2026-09-26: their import carried a title and a link only.
+    for (const removed of ["figma", "vimeo", "sketchfab", "notion"]) {
+      expect(isProviderIntegrationId(removed)).toBe(false);
+    }
     expect(isProviderIntegrationId("github")).toBe(false);
     expect(isProviderIntegrationId(7)).toBe(false);
   });
@@ -33,31 +36,16 @@ describe("provider integration registry", () => {
     expect(getProviderIntegrationsForKind("code").map((d) => d.id)).toEqual([
       "gitlab",
     ]);
-    expect(getProviderIntegrationsForKind("design").map((d) => d.id)).toEqual([
-      "figma",
+    expect(getProviderIntegrationsForKind("qa").map((d) => d.id)).toEqual([
+      "gitlab",
     ]);
-    expect(getProviderIntegrationsForKind("video").map((d) => d.id)).toEqual([
-      "vimeo",
-    ]);
-    expect(getProviderIntegrationsForKind("3d").map((d) => d.id)).toEqual([
-      "sketchfab",
-    ]);
-    expect(getProviderIntegrationsForKind("writing").map((d) => d.id)).toEqual([
-      "notion",
-    ]);
-    // Photography has no provider with a usable API — Behance and 500px both
-    // closed theirs.
-    expect(getProviderIntegrationsForKind("photo")).toEqual([]);
+    // Visual and writing work is added by hand or as a pasted media link.
+    for (const kind of ["design", "video", "3d", "writing", "photo"] as const) {
+      expect(getProviderIntegrationsForKind(kind)).toEqual([]);
+    }
     expect(getProviderIntegrationsForKind("")).toEqual([]);
   });
 
-  it("only marks Figma as needing a pasted link", () => {
-    expect(providerIntegrationDescriptors.figma.requiresQuery).toBe(true);
-    for (const id of providerIntegrationIds) {
-      if (id === "figma") continue;
-      expect(providerIntegrationDescriptors[id].requiresQuery).toBe(false);
-    }
-  });
 });
 
 describe("normalizeIntegrationStats", () => {
@@ -109,12 +97,12 @@ describe("normalizeProjectSourceLink", () => {
 
   it("tolerates a link that has not synced yet", () => {
     const link = normalizeProjectSourceLink({
-      provider: "figma",
-      ref: "abcdefghij123",
+      provider: "gitlab",
+      ref: "group/app",
     });
     expect(link).toEqual({
-      provider: "figma",
-      ref: "abcdefghij123",
+      provider: "gitlab",
+      ref: "group/app",
       externalId: null,
       name: null,
       url: null,
@@ -131,5 +119,11 @@ describe("normalizeProjectSourceLink", () => {
     expect(normalizeProjectSourceLink(null)).toBeNull();
     expect(normalizeProjectSourceLink([])).toBeNull();
     expect(normalizeProjectSourceLink("gitlab")).toBeNull();
+  });
+
+  it("drops links to providers that were removed", () => {
+    expect(
+      normalizeProjectSourceLink({ provider: "figma", ref: "abcdefghij123" }),
+    ).toBeNull();
   });
 });

@@ -57,17 +57,8 @@ export type ProviderAdapter = {
 
   fetchAccount(accessToken: string): Promise<ProviderAccount | null>;
 
-  /** Everything the account owns. Empty for providers without such an API. */
+  /** Everything the account owns that can be imported. */
   listResources(accessToken: string): Promise<IntegrationResourceSummary[]>;
-
-  /**
-   * Resolves a pasted link or handle into importable resources. Required for
-   * providers whose descriptor sets `requiresQuery`.
-   */
-  searchResources?(
-    accessToken: string,
-    query: string,
-  ): Promise<IntegrationResourceSummary[]>;
 
   fetchResource(
     accessToken: string,

@@ -354,7 +354,7 @@ export default async function PublicProjectPage({
     }
   }
 
-  // Same auto-refresh for a project imported from GitLab / Figma.
+  // Same auto-refresh for a project imported through a provider (GitLab).
   let sourceLink = normalizeProjectSourceLink(project.source_integration);
   const sourceSyncMs = sourceLink?.syncedAt
     ? new Date(sourceLink.syncedAt).getTime()

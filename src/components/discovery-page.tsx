@@ -185,6 +185,8 @@ type DiscoveryCopy = {
     saveSearchPlaceholder: string;
     savedSearches: string;
     noSavedSearches: string;
+    savedSearchesSignIn: string;
+    signIn: string;
     resultsSummary: string;
     activeFilters: string;
     queryLabel: string;
@@ -365,6 +367,9 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
         saveSearchPlaceholder: "Назва пошуку…",
         savedSearches: "Збережені пошуки",
         noSavedSearches: "У вас ще немає збережених пошуків.",
+        savedSearchesSignIn:
+          "Увійдіть, щоб зберігати пошуки й повертатися до них пізніше.",
+        signIn: "Увійти",
         resultsSummary: "Зведення пошуку",
         activeFilters: "Активні фільтри",
         queryLabel: "Запит",
@@ -471,6 +476,8 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       saveSearchPlaceholder: "Search name…",
       savedSearches: "Saved searches",
       noSavedSearches: "You have no saved searches yet.",
+      savedSearchesSignIn: "Sign in to save searches and come back to them later.",
+      signIn: "Sign in",
       resultsSummary: "Search summary",
       activeFilters: "Active filters",
       queryLabel: "Query",
@@ -689,20 +696,26 @@ export default function DiscoveryPage({
     loadMeta();
   }, []);
 
+  // `canPersonalize` is exactly "the viewer is signed in" (see lib/db/search),
+  // which is also what saving a search needs.
+  const canSaveSearches = canPersonalize;
+
   useEffect(() => {
+    // Guests have nothing saved and the endpoint would only answer 401.
+    if (!canSaveSearches) return;
+
     async function loadSavedSearches() {
       const result = await apiFetch<{ searches?: unknown[] }>(
         "/api/saved-searches",
       );
 
-      // ignore failure — user might not be authenticated
       if (result.ok) {
         setSavedSearches((result.data.searches as typeof savedSearches) || []);
       }
     }
 
     loadSavedSearches();
-  }, []);
+  }, [canSaveSearches]);
 
   const saveCurrentSearch = async () => {
     if (!saveSearchName.trim()) return;
@@ -1592,7 +1605,7 @@ export default function DiscoveryPage({
               <h2 className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
                 {commonUi.savedSearches}
               </h2>
-              {hasFilters && (
+              {canSaveSearches && hasFilters && (
                 <button
                   type="button"
                   onClick={() => setShowSaveForm((v) => !v)}
@@ -1603,7 +1616,19 @@ export default function DiscoveryPage({
               )}
             </div>
 
-            {showSaveForm && (
+            {canSaveSearches ? null : (
+              <p className="mt-3 text-sm app-muted">
+                {commonUi.savedSearchesSignIn}{" "}
+                <LocalizedLink
+                  href="/login"
+                  className="font-medium text-[color:var(--foreground)] underline-offset-4 transition hover:underline"
+                >
+                  {commonUi.signIn}
+                </LocalizedLink>
+              </p>
+            )}
+
+            {canSaveSearches && showSaveForm && (
               <div className="mt-3 flex gap-2">
                 <input
                   type="text"
@@ -1626,7 +1651,7 @@ export default function DiscoveryPage({
               </div>
             )}
 
-            <div className="mt-3 space-y-1.5">
+            <div className={canSaveSearches ? "mt-3 space-y-1.5" : "hidden"}>
               {savedSearches.filter((s) => s.mode === mode).length === 0 ? (
                 <p className="text-sm app-muted">{commonUi.noSavedSearches}</p>
               ) : (

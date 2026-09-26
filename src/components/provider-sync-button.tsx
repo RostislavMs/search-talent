@@ -34,7 +34,7 @@ function relativeTime(iso: string | null, locale: string): string {
   return locale === "uk" ? `${days} дн тому` : `${days}d ago`;
 }
 
-/** Owner-only "Sync now" for a project linked to GitLab or Figma. */
+/** Owner-only "Sync now" for a project linked to a provider (GitLab). */
 export default function ProviderSyncButton({
   projectId,
   provider,

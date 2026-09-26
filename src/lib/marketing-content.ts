@@ -26,7 +26,7 @@ const marketingContent = {
         "Fresh technical writing, portfolio advice, and community insights from the SearchTalent network.",
       howItWorksTitle: "How it works",
       talentTrackTitle: "For creators",
-      explorerTrackTitle: "For explorers",
+      explorerTrackTitle: "For people who are looking",
       talentSteps: [
         {
           title: "Build a public profile",
@@ -36,7 +36,7 @@ const marketingContent = {
         {
           title: "Publish real projects",
           description:
-            "Show shipped work with stack details, screenshots, repositories, and outcomes.",
+            "Import code from GitHub or GitLab, or add work by hand — with media, video links, and outcomes.",
         },
         {
           title: "Get discovered by proof",
@@ -71,7 +71,17 @@ const marketingContent = {
         {
           question: "Who can create a profile on SearchTalent?",
           answer:
-            "Developers, designers, QA engineers, product specialists, analysts, DevOps engineers, and other IT professionals can create a public profile and publish project portfolios.",
+            "IT and digital specialists: developers, designers, video editors, motion and 3D designers, QA engineers, DevOps engineers, analysts, and product specialists. The profile is free, including for people just starting out without much experience.",
+        },
+        {
+          question: "How long does the first project take?",
+          answer:
+            "About ten minutes. The profile takes a few minutes. A code project can be imported from GitHub or GitLab, which fills in part of the fields for you to review and publish. Other work is added by hand: a title, a description, images or a video link.",
+        },
+        {
+          question: "Where can I import work from?",
+          answer:
+            "Code comes from GitHub and GitLab: the title, description, technologies and stats come across on their own, and AI can draft the write-up from the README. Videos from YouTube, Vimeo, TikTok or Instagram and 3D scenes from Sketchfab or Spline embed from a link, and design work can carry a Figma link. Everything else is added as images and a description.",
         },
         {
           question: "Can visitors browse without creating an account?",
@@ -209,7 +219,7 @@ const marketingContent = {
         "Свіжі технічні матеріали, поради щодо портфоліо та інсайти спільноти SearchTalent.",
       howItWorksTitle: "Як це працює",
       talentTrackTitle: "Для авторів",
-      explorerTrackTitle: "Для глядачів",
+      explorerTrackTitle: "Для тих, хто шукає",
       talentSteps: [
         {
           title: "Створіть публічний профіль",
@@ -219,7 +229,7 @@ const marketingContent = {
         {
           title: "Опублікуйте реальні проєкти",
           description:
-            "Покажіть виконані роботи зі стеком, скриншотами, репозиторіями та результатами.",
+            "Імпортуйте код із GitHub чи GitLab або додайте роботу вручну — з медіа, відео за посиланням і результатами.",
         },
         {
           title: "Ставайте видимими завдяки доказам",
@@ -254,7 +264,17 @@ const marketingContent = {
         {
           question: "Хто може створити профіль на SearchTalent?",
           answer:
-            "Профілі можуть створювати розробники, дизайнери, QA-фахівці, DevOps-інженери, аналітики, product-спеціалісти та інші IT-фахівці.",
+            "IT- та digital-фахівці: розробники, дизайнери, монтажери, моушн- і 3D-дизайнери, QA-фахівці, DevOps-інженери, аналітики, product-спеціалісти. Профіль безкоштовний, зокрема для тих, хто тільки починає і ще не має великого досвіду.",
+        },
+        {
+          question: "Скільки часу займе перший проєкт?",
+          answer:
+            "Близько десяти хвилин. Профіль заповнюється за кілька хвилин. Проєкт із кодом можна імпортувати з GitHub чи GitLab — частина полів заповниться сама, лишиться перевірити й опублікувати. Інші роботи додаються вручну: назва, опис, зображення або посилання на відео.",
+        },
+        {
+          question: "Звідки можна імпортувати роботи?",
+          answer:
+            "Код — з GitHub і GitLab: назва, опис, технології та статистика підтягуються самі, а з README AI може підготувати чернетку опису. Відео з YouTube, Vimeo, TikTok чи Instagram і 3D-сцени зі Sketchfab чи Spline вбудовуються посиланням, а до дизайну можна додати посилання на Figma. Решта робіт додається зображеннями та описом.",
         },
         {
           question: "Чи можна переглядати портфоліо без акаунта?",

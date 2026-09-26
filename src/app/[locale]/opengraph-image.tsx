@@ -17,8 +17,8 @@ export default async function Image({
   const isUk = safeLocale === "uk";
 
   const headline = isUk
-    ? "Платформа-спільнота для фахівців"
-    : "A community platform for specialists";
+    ? "Безкоштовне портфоліо для IT- та digital-фахівців"
+    : "A free portfolio for IT and digital specialists";
 
   return new ImageResponse(
     (
@@ -100,8 +100,8 @@ export default async function Image({
             }}
           >
             {isUk
-              ? "Портфоліо, проєкти, статті та рейтинг спільноти."
-              : "Portfolios, projects, articles, and community ratings."}
+              ? "Імпорт робіт, оцінка портфоліо з порадами й одне посилання, щоб поділитися."
+              : "Import your work, get a portfolio score with tips, share one link."}
           </div>
         </div>
 

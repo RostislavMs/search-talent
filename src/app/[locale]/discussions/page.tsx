@@ -6,6 +6,7 @@ import {
   getDiscussionsListing,
   type DiscussionListKind,
 } from "@/lib/db/discussions";
+import { COMMUNITY_COUNTER_MIN_VALUE } from "@/lib/constants/visibility";
 import { DISCUSSION_CONTENT_KINDS } from "@/lib/discussions";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -16,6 +17,14 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const FILTER_KINDS: DiscussionListKind[] = ["topic", ...DISCUSSION_CONTENT_KINDS];
+
+// Literal class names so Tailwind generates them; the count of visible
+// metrics picks one.
+const METRIC_GRID_COLUMNS: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+};
 
 function parseKind(value: string | undefined): DiscussionListKind | null {
   return FILTER_KINDS.includes(value as DiscussionListKind)
@@ -75,11 +84,18 @@ export default async function DiscussionsPage({
     poll: ui.kindPoll,
   };
 
+  // "0 topics · 0 threads · 0 comments" in display type tells a visitor the
+  // room is empty before they read a word, so each counter only appears once
+  // it has something to say. Same for the filter chips: filtering an empty
+  // list is noise, unless a filter is already applied and needs undoing.
   const metrics = [
     { value: listing.stats.topics, label: ui.statTopics },
     { value: listing.stats.threads, label: ui.statThreads },
     { value: listing.stats.comments, label: ui.statComments },
-  ];
+  ].filter((metric) => metric.value >= COMMUNITY_COUNTER_MIN_VALUE);
+  const hasAnyDiscussion = listing.stats.topics + listing.stats.threads > 0;
+  const showFilters = hasAnyDiscussion || activeKind !== null;
+  const showPanel = metrics.length > 0 || showFilters;
 
   function filterHref(kind: DiscussionListKind | null) {
     return kind ? `/discussions?kind=${kind}` : "/discussions";
@@ -97,7 +113,13 @@ export default async function DiscussionsPage({
           filters — on its own the metrics left most of it empty, and the
           filters cost a whole extra row between the hero and the list. */}
       <section className="rounded-none sm:rounded-hero app-card">
-        <div className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] lg:gap-6">
+        <div
+          className={`grid grid-cols-1 gap-0 ${
+            showPanel
+              ? "lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] lg:gap-6"
+              : ""
+          }`}
+        >
           <div className="p-5 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {ui.pageEyebrow}
@@ -119,49 +141,57 @@ export default async function DiscussionsPage({
             ) : null}
           </div>
 
-          <div className="bg-brand-hero flex flex-col justify-between gap-4 rounded-none border app-border p-5 text-white shadow-[0_22px_70px_rgba(15,23,42,0.18)] sm:gap-6 sm:rounded-panel sm:p-8 lg:-my-px lg:-mr-px lg:rounded-l-panel lg:rounded-r-hero">
-            {/* Three numbers say at a glance whether the room is alive, which a
-                list of links cannot. */}
-            <dl className="grid grid-cols-3 gap-4">
-              {metrics.map((metric) => (
-                <div key={metric.label}>
-                  <dt className="text-xs uppercase tracking-eyebrow text-white/70">
-                    {metric.label}
-                  </dt>
-                  <dd className="mt-0.5 font-display text-xl font-medium text-white sm:mt-1 sm:text-3xl">
-                    {metric.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+          {showPanel ? (
+            <div className="bg-brand-hero flex flex-col justify-between gap-4 rounded-none border app-border p-5 text-white shadow-[0_22px_70px_rgba(15,23,42,0.18)] sm:gap-6 sm:rounded-panel sm:p-8 lg:-my-px lg:-mr-px lg:rounded-l-panel lg:rounded-r-hero">
+              {/* The numbers say at a glance whether the room is alive, which a
+                  list of links cannot. */}
+              {metrics.length > 0 ? (
+                <dl className={`grid gap-4 ${METRIC_GRID_COLUMNS[metrics.length]}`}>
+                  {metrics.map((metric) => (
+                    <div key={metric.label}>
+                      <dt className="text-xs uppercase tracking-eyebrow text-white/70">
+                        {metric.label}
+                      </dt>
+                      <dd className="mt-0.5 font-display text-xl font-medium text-white sm:mt-1 sm:text-3xl">
+                        {metric.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
 
-            {/* Scrolls sideways on phones instead of wrapping onto a second
-                row — five chips would otherwise cost another 44px of height. */}
-            <nav
-              aria-label={ui.filterAll}
-              className="-mx-1 flex gap-2 overflow-x-auto border-t border-white/20 px-1 pt-4 sm:flex-wrap sm:pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {filters.map((filter) => {
-                const active = filter.value === activeKind;
+              {/* Scrolls sideways on phones instead of wrapping onto a second
+                  row — five chips would otherwise cost another 44px of height. */}
+              {showFilters ? (
+                <nav
+                  aria-label={ui.filterAll}
+                  className={`-mx-1 flex gap-2 overflow-x-auto px-1 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                    metrics.length > 0 ? "border-t border-white/20 pt-4 sm:pt-5" : ""
+                  }`}
+                >
+                  {filters.map((filter) => {
+                    const active = filter.value === activeKind;
 
-                return (
-                  <LocalizedLink
-                    key={filter.label}
-                    href={filterHref(filter.value)}
-                    aria-current={active ? "page" : undefined}
-                    className={[
-                      "inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 text-sm transition-colors",
-                      active
-                        ? "bg-white font-medium text-[color:var(--brand-ink)]"
-                        : "border border-white/30 text-white/80 hover:bg-white/12 hover:text-white",
-                    ].join(" ")}
-                  >
-                    {filter.label}
-                  </LocalizedLink>
-                );
-              })}
-            </nav>
-          </div>
+                    return (
+                      <LocalizedLink
+                        key={filter.label}
+                        href={filterHref(filter.value)}
+                        aria-current={active ? "page" : undefined}
+                        className={[
+                          "inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 text-sm transition-colors",
+                          active
+                            ? "bg-white font-medium text-[color:var(--brand-ink)]"
+                            : "border border-white/30 text-white/80 hover:bg-white/12 hover:text-white",
+                        ].join(" ")}
+                      >
+                        {filter.label}
+                      </LocalizedLink>
+                    );
+                  })}
+                </nav>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </section>
 
