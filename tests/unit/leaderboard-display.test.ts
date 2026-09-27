@@ -60,19 +60,51 @@ describe("selectTopCreators", () => {
 });
 
 describe("selectTopProjects", () => {
-  it("caps how many projects one author places", () => {
+  it("caps how many projects one author places when others can fill the board", () => {
+    const ranked = [
+      project("1", "nyx"),
+      project("2", "nyx"),
+      project("3", "nyx"),
+      project("4", "rostyslav"),
+      project("5", "edward"),
+    ];
+    const selected = selectTopProjects(ranked, 4);
+    expect(selected.map((p) => p.id)).toEqual(["1", "2", "4", "5"]);
+    expect(
+      selected.filter((p) => p.ownerUsername === "nyx"),
+    ).toHaveLength(TOP_PROJECTS_MAX_PER_OWNER);
+  });
+
+  it("tops up with the next-best projects when too few authors fill the board", () => {
     const ranked = [
       project("1", "nyx"),
       project("2", "nyx"),
       project("3", "nyx"),
       project("4", "rostyslav"),
       project("5", "nyx"),
+      project("6", "rostyslav"),
+      project("7", "rostyslav"),
     ];
-    const selected = selectTopProjects(ranked);
-    expect(selected.map((p) => p.id)).toEqual(["1", "2", "4"]);
-    expect(
-      selected.filter((p) => p.ownerUsername === "nyx"),
-    ).toHaveLength(TOP_PROJECTS_MAX_PER_OWNER);
+    // Different authors first, then the overflow in rank order.
+    expect(selectTopProjects(ranked).map((p) => p.id)).toEqual([
+      "1",
+      "2",
+      "4",
+      "6",
+      "3",
+      "5",
+      "7",
+    ]);
+    expect(selectTopProjects(ranked, 5).map((p) => p.id)).toEqual(["1", "2", "4", "6", "3"]);
+  });
+
+  it("never tops up with blocklisted projects", () => {
+    const ranked = [
+      project("1", "nyx"),
+      project("2", "nyx"),
+      project("3", "nyx", "Хентай ня"),
+    ];
+    expect(selectTopProjects(ranked).map((p) => p.id)).toEqual(["1", "2"]);
   });
 
   it("caps ownerless projects individually instead of as one author", () => {

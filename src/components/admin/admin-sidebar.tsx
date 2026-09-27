@@ -19,6 +19,7 @@ type Props = {
   locale: Locale;
   labels: {
     overview: string;
+    metrics: string;
     users: string;
     moderation: string;
     audit: string;
@@ -52,7 +53,10 @@ export default function AdminSidebar({
   const groups: SidebarGroup[] = [
     {
       label: groupLabels.main,
-      items: [{ href: "/admin", label: labels.overview, icon: "▦" }],
+      items: [
+        { href: "/admin", label: labels.overview, icon: "▦" },
+        { href: "/admin/metrics", label: labels.metrics, icon: "↗" },
+      ],
     },
     {
       label: groupLabels.users,

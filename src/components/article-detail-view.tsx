@@ -14,6 +14,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import MentionText from "@/components/ui/mention-text";
 import OptimizedImage from "@/components/ui/optimized-image";
 import ShareButton from "@/components/ui/share-button";
+import ViewBeacon from "@/components/view-beacon";
 import {
   formatArticleDate,
   getArticleReadingTime,
@@ -238,6 +239,7 @@ export default function ArticleDetailView({
 
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-10 sm:px-6">
+      <ViewBeacon targetType="article" targetId={article.id} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }}

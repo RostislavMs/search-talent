@@ -30,10 +30,11 @@ describe("home copy parity (uk/en)", () => {
     );
   });
 
-  it("the rotating headline offers the same number of words", () => {
-    expect(dictionaries.uk.home.titleWords).toHaveLength(
-      dictionaries.en.home.titleWords.length,
-    );
+  it("the headline has both of its halves in every locale", () => {
+    for (const locale of ["uk", "en"] as const) {
+      expect(dictionaries[locale].home.titleLead.trim(), locale).not.toBe("");
+      expect(dictionaries[locale].home.titleAccent.trim(), locale).not.toBe("");
+    }
   });
 
   it("the marketing home block (steps, FAQ) matches between locales", () => {

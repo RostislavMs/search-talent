@@ -14,6 +14,7 @@ import GithubSyncButton from "@/components/github-sync-button";
 import GithubInsightsPanel from "@/components/github-insights-panel";
 import GithubAuthorNarrative from "@/components/github-author-narrative";
 import VoteButtons from "@/components/vote-buttons";
+import ViewBeacon from "@/components/view-beacon";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import AuthorList from "@/components/author-list";
 import { ButtonLink } from "@/components/ui/Button";
@@ -402,6 +403,7 @@ export default async function PublicProjectPage({
 
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-6 sm:px-6 sm:py-10">
+      <ViewBeacon targetType="project" targetId={project.id} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(projectSchema) }}

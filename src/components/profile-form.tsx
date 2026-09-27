@@ -464,6 +464,17 @@ type EditorSectionId =
   | (typeof editorStyleSections)[number]
   | (typeof editorAccountSections)[number];
 
+const editorSectionIds: readonly string[] = [
+  ...editorDataSections,
+  ...editorStyleSections,
+  ...editorAccountSections,
+];
+
+/** For `/profile/edit?section=theme` links, e.g. "Style your page" on the home page. */
+function isEditorSectionId(value: string | null | undefined): value is EditorSectionId {
+  return Boolean(value) && editorSectionIds.includes(value as string);
+}
+
 function ControlGroup({
   title,
   children,
@@ -532,9 +543,12 @@ function navItemClass(active: boolean) {
 export default function ProfileForm({
   profile,
   email,
+  initialSection,
 }: {
   profile: ProfileRecord;
   email: string;
+  /** Editor tab to open first; anything unknown falls back to "basic". */
+  initialSection?: string | null;
 }) {
   const router = useRouter();
   const dictionary = useDictionary();
@@ -938,7 +952,9 @@ export default function ProfileForm({
   const [workExperience, setWorkExperience] = useState<
     ProfileWorkExperienceEntry[]
   >(profile.work_experience || []);
-  const [activeSection, setActiveSection] = useState<EditorSectionId>("basic");
+  const [activeSection, setActiveSection] = useState<EditorSectionId>(() =>
+    isEditorSectionId(initialSection) ? initialSection : "basic",
+  );
   const [navModalOpen, setNavModalOpen] = useState(false);
   // Which nav groups are expanded. Collapsing keeps the sidebar short; the
   // group holding the active section is always shown (see renderNav) so the

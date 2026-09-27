@@ -9,11 +9,24 @@ export type MarketingFaqItem = {
 const marketingContent = {
   en: {
     home: {
-      whyTitle: "Why portfolios beat resumes",
-      whyBullets: [
-        "Portfolios show how people solve real problems, not just which tools they list.",
-        "Visitors can review code samples, design decisions, and shipped outcomes in context.",
-        "Real project evidence makes discovery faster and reduces guesswork before opening a profile.",
+      featuresTitle: "What you get",
+      features: [
+        {
+          title: "Your own style",
+          description: "Colours, fonts, background and section order: the page looks the way you want.",
+        },
+        {
+          title: "A score with tips",
+          description: "See your portfolio's score and what to add to make it stronger.",
+        },
+        {
+          title: "A place in the ranking",
+          description: "Strong work rises to the top, where more people see it.",
+        },
+        {
+          title: "One link to share",
+          description: "Put it in your CV or on LinkedIn, or download your portfolio as a PDF.",
+        },
       ],
       browseByRoleTitle: "Browse by role",
       browseByRoleDescription:
@@ -22,96 +35,72 @@ const marketingContent = {
       featuredTalentsDescription:
         "A curated set of standout profiles with real work, clear positioning, and public portfolios.",
       latestArticlesTitle: "Latest articles",
-      latestArticlesDescription:
-        "Fresh technical writing, portfolio advice, and community insights from the SearchTalent network.",
+      latestArticlesDescription: "Tips on portfolios, careers and working in tech.",
       howItWorksTitle: "How it works",
-      talentTrackTitle: "For creators",
-      explorerTrackTitle: "For people who are looking",
+      talentTrackTitle: "If you're a specialist",
+      explorerTrackTitle: "If you're looking for one",
       talentSteps: [
         {
-          title: "Build a public profile",
-          description:
-            "Add your role, skills, work preferences, and the context that makes your craft visible.",
+          title: "Create a profile",
+          description: "Add your name, field and skills. It takes a few minutes.",
         },
         {
-          title: "Publish real projects",
-          description:
-            "Import code from GitHub or GitLab, or add work by hand — with media, video links, and outcomes.",
+          title: "Add your work",
+          description: "Import code from GitHub or GitLab, or upload images and videos.",
         },
         {
-          title: "Get discovered by proof",
-          description:
-            "Appear in role, technology, and portfolio discovery flows built around real project evidence.",
+          title: "Style it and share",
+          description: "Pick colours and a font, check your score and tips, and put the link in your CV.",
         },
       ],
       explorerSteps: [
         {
-          title: "Browse by role and stack",
-          description:
-            "Start from the topic you care about and narrow the list using real portfolio context.",
+          title: "Pick a field",
+          description: "Development, design, video, 3D and more.",
         },
         {
-          title: "Review projects and articles",
-          description:
-            "Compare delivered work, technology choices, and writing — everything in one public space.",
+          title: "Look at the work",
+          description: "Projects with a description and a result show how someone works.",
         },
         {
-          title: "Follow and engage",
-          description:
-            "Follow creators whose work resonates, leave reactions, and start conversations around their projects.",
+          title: "Follow the author",
+          description: "Keep up with their new work and leave comments.",
         },
       ],
       faqTitle: "FAQ",
       faq: [
         {
-          question: "What makes SearchTalent different from a resume database?",
+          question: "What is SearchTalent?",
           answer:
-            "SearchTalent focuses on public project portfolios. Instead of scanning job titles alone, visitors can review real work, technology stacks, and delivery details, then decide whose work to follow, learn from, or connect with.",
+            "A free portfolio platform. You style your page your way, add your work, get a score with tips to raise it, and share your profile with one link.",
         },
         {
-          question: "Who can create a profile on SearchTalent?",
+          question: "Who is it for?",
           answer:
-            "IT and digital specialists: developers, designers, video editors, motion and 3D designers, QA engineers, DevOps engineers, analysts, and product specialists. The profile is free, including for people just starting out without much experience.",
+            "Tech and creative professionals: developers, designers, video editors, 3D and motion designers, QA engineers and analysts. Beginners too.",
+        },
+        {
+          question: "Is it free?",
+          answer: "Yes. Creating a profile and publishing your work are free.",
         },
         {
           question: "How long does the first project take?",
           answer:
-            "About ten minutes. The profile takes a few minutes. A code project can be imported from GitHub or GitLab, which fills in part of the fields for you to review and publish. Other work is added by hand: a title, a description, images or a video link.",
+            "About 10 minutes. Code can be imported from GitHub or GitLab, which fills in the title, description and technologies for you. Other work is added by hand: a title, a description, images or a video link.",
         },
         {
-          question: "Where can I import work from?",
+          question: "How does the ranking work?",
           answer:
-            "Code comes from GitHub and GitLab: the title, description, technologies and stats come across on their own, and AI can draft the write-up from the README. Videos from YouTube, Vimeo, TikTok or Instagram and 3D scenes from Sketchfab or Spline embed from a link, and design work can carry a Figma link. Everything else is added as images and a description.",
+            "It looks at how fully your work and profile are described and how people respond to them. A few random likes won't lift weak work. The rating guide has the details.",
         },
         {
-          question: "Can visitors browse without creating an account?",
-          answer:
-            "Yes. Public portfolios, project pages, and articles are browseable without logging in, so anyone can explore work before deciding to join.",
+          question: "Can I browse portfolios without an account?",
+          answer: "Yes. Profiles, projects and articles are open to everyone.",
         },
         {
-          question: "What should a strong portfolio include?",
+          question: "Why a portfolio and not just a resume?",
           answer:
-            "The strongest portfolios include clear project descriptions, screenshots or media, technology stacks, the specialist's role, and outcomes or metrics where possible.",
-        },
-        {
-          question: "Are portfolios filtered by role and technology?",
-          answer:
-            "Yes. Visitors can explore talent by category, review projects by stack, and use discovery filters to narrow results to the most relevant specialists.",
-        },
-        {
-          question: "Can SearchTalent help me grow personal brand?",
-          answer:
-            "Yes. Public project pages and technical articles let you document how you think, what you build, and how you communicate — that becomes the surface people remember you by.",
-        },
-        {
-          question: "How does recognition work on SearchTalent?",
-          answer:
-            "Profiles and projects earn a community rating based on the depth of your work, profile completeness, and how the community responds over time. On top of that, badges are awarded automatically for milestones and achievements, so consistent contribution turns into visible recognition rather than just a number.",
-        },
-        {
-          question: "Is SearchTalent only about projects?",
-          answer:
-            "No. Alongside project portfolios you can publish articles, run community polls, and collaborate with others as co-authors on projects, articles, or polls. It is a space to share and discuss work, not just a static gallery.",
+            "A resume says what you can do. A portfolio shows it: real work, your decisions and the result.",
         },
       ] satisfies MarketingFaqItem[],
       footerCtaTitle: "Build a portfolio that proves what you can do",
@@ -202,11 +191,24 @@ const marketingContent = {
   },
   uk: {
     home: {
-      whyTitle: "Портфоліо показує більше, ніж резюме",
-      whyBullets: [
-        "У резюме — посади й навички. У портфоліо — реальні задачі, підхід до рішень і результат, який можна оцінити одразу.",
-        "Код, дизайн, стек, контекст виконання — все відкрито. Можна скласти враження про фахівця ще до першого контакту.",
-        "Замість здогадок — конкретика. Проєкти дають зрозуміти, як людина працює, краще за будь-який перелік скілів.",
+      featuresTitle: "Що ви отримуєте",
+      features: [
+        {
+          title: "Свій стиль",
+          description: "Кольори, шрифти, фон і порядок блоків: сторінка виглядає так, як хочете ви.",
+        },
+        {
+          title: "Оцінка і поради",
+          description: "Бачите бал свого портфоліо і що додати, щоб воно стало сильнішим.",
+        },
+        {
+          title: "Місце в рейтингу",
+          description: "Сильні роботи піднімаються в топ, і їх бачить більше людей.",
+        },
+        {
+          title: "Одне посилання",
+          description: "Додайте його в резюме чи LinkedIn або завантажте портфоліо в PDF.",
+        },
       ],
       browseByRoleTitle: "Перегляд за ролями",
       browseByRoleDescription:
@@ -215,96 +217,72 @@ const marketingContent = {
       featuredTalentsDescription:
         "Добірка сильних профілів з реальними роботами, чітким позиціонуванням і публічними кейсами.",
       latestArticlesTitle: "Останні статті",
-      latestArticlesDescription:
-        "Свіжі технічні матеріали, поради щодо портфоліо та інсайти спільноти SearchTalent.",
+      latestArticlesDescription: "Поради про портфоліо, кар'єру й роботу в IT.",
       howItWorksTitle: "Як це працює",
-      talentTrackTitle: "Для авторів",
-      explorerTrackTitle: "Для тих, хто шукає",
+      talentTrackTitle: "Якщо ви фахівець",
+      explorerTrackTitle: "Якщо ви шукаєте фахівця",
       talentSteps: [
         {
-          title: "Створіть публічний профіль",
-          description:
-            "Додайте роль, навички, формат роботи та контекст, який робить ваше ремесло видимим.",
+          title: "Створіть профіль",
+          description: "Вкажіть ім'я, напрям і навички. Це займе кілька хвилин.",
         },
         {
-          title: "Опублікуйте реальні проєкти",
-          description:
-            "Імпортуйте код із GitHub чи GitLab або додайте роботу вручну — з медіа, відео за посиланням і результатами.",
+          title: "Додайте роботи",
+          description: "Імпортуйте код із GitHub чи GitLab або завантажте зображення й відео.",
         },
         {
-          title: "Ставайте видимими завдяки доказам",
-          description:
-            "Потрапляйте у пошук за ролями, технологіями та портфоліо на основі реальних кейсів.",
+          title: "Оформіть і поділіться",
+          description: "Оберіть кольори й шрифт, подивіться оцінку з порадами і додайте посилання в резюме.",
         },
       ],
       explorerSteps: [
         {
-          title: "Шукайте за ролями та стеком",
-          description:
-            "Починайте з теми, яка вас цікавить, і звужуйте список за реальним контекстом портфоліо.",
+          title: "Оберіть напрям",
+          description: "Розробка, дизайн, відео, 3D та інші.",
         },
         {
-          title: "Переглядайте проєкти та статті",
-          description:
-            "Порівнюйте виконані роботи, технологічні рішення та публікації — усе в одному просторі.",
+          title: "Дивіться роботи",
+          description: "Проєкти з описом і результатом показують, як людина працює.",
         },
         {
-          title: "Підписуйтесь і взаємодійте",
-          description:
-            "Підписуйтесь на авторів, чия робота резонує, лишайте реакції та починайте розмови біля їхніх проєктів.",
+          title: "Підпишіться на автора",
+          description: "Слідкуйте за новими роботами й залишайте коментарі.",
         },
       ],
-      faqTitle: "FAQ",
+      faqTitle: "Питання й відповіді",
       faq: [
         {
-          question: "Чим SearchTalent відрізняється від бази резюме?",
+          question: "Що таке SearchTalent?",
           answer:
-            "SearchTalent робить акцент на публічних портфоліо проєктів. Замість перегляду лише назв посад ви бачите реальні роботи, стек технологій і деталі реалізації — і вирішуєте, чиї роботи читати, у кого вчитися та з ким налагодити звʼязок.",
+            "Безкоштовна платформа для портфоліо. Ви оформлюєте сторінку у своєму стилі, додаєте роботи, бачите оцінку з порадами, як її підняти, і ділитеся профілем одним посиланням.",
         },
         {
-          question: "Хто може створити профіль на SearchTalent?",
+          question: "Для кого ця платформа?",
           answer:
-            "IT- та digital-фахівці: розробники, дизайнери, монтажери, моушн- і 3D-дизайнери, QA-фахівці, DevOps-інженери, аналітики, product-спеціалісти. Профіль безкоштовний, зокрема для тих, хто тільки починає і ще не має великого досвіду.",
+            "Для людей IT- і творчих професій: розробників, дизайнерів, монтажерів, 3D- і моушн-дизайнерів, тестувальників, аналітиків. І для тих, хто тільки починає.",
+        },
+        {
+          question: "Це безкоштовно?",
+          answer: "Так. Створити профіль і публікувати роботи можна безкоштовно.",
         },
         {
           question: "Скільки часу займе перший проєкт?",
           answer:
-            "Близько десяти хвилин. Профіль заповнюється за кілька хвилин. Проєкт із кодом можна імпортувати з GitHub чи GitLab — частина полів заповниться сама, лишиться перевірити й опублікувати. Інші роботи додаються вручну: назва, опис, зображення або посилання на відео.",
+            "Близько 10 хвилин. Код можна імпортувати з GitHub чи GitLab — назва, опис і технології підтягнуться самі. Інші роботи додаються вручну: назва, опис, зображення чи посилання на відео.",
         },
         {
-          question: "Звідки можна імпортувати роботи?",
+          question: "Як працює рейтинг?",
           answer:
-            "Код — з GitHub і GitLab: назва, опис, технології та статистика підтягуються самі, а з README AI може підготувати чернетку опису. Відео з YouTube, Vimeo, TikTok чи Instagram і 3D-сцени зі Sketchfab чи Spline вбудовуються посиланням, а до дизайну можна додати посилання на Figma. Решта робіт додається зображеннями та описом.",
+            "Рейтинг дивиться, наскільки повно описані ваші роботи й профіль і як на них реагують люди. Кілька випадкових лайків не піднімуть слабку роботу. Докладніше — у гайді по рейтингу.",
         },
         {
-          question: "Чи можна переглядати портфоліо без акаунта?",
-          answer:
-            "Так. Публічні профілі, сторінки проєктів і статті доступні для перегляду без входу, тому оцінити роботи можна ще до реєстрації.",
+          question: "Чи можна дивитися портфоліо без реєстрації?",
+          answer: "Так. Профілі, проєкти й статті відкриті для всіх.",
         },
         {
-          question: "Що має бути в сильному портфоліо?",
+          question: "Чим портфоліо краще за резюме?",
           answer:
-            "Найкраще працюють портфоліо з чітким описом проєкту, медіа, стеком технологій, роллю фахівця та результатами або метриками, якщо вони доступні.",
-        },
-        {
-          question: "Чи можна шукати портфоліо за ролями й технологіями?",
-          answer:
-            "Так. На платформі можна переглядати таланти за категоріями, досліджувати проєкти за стеком і використовувати discovery-фільтри для точнішого пошуку.",
-        },
-        {
-          question: "Чи допоможе SearchTalent з особистим брендом?",
-          answer:
-            "Так. Публічні проєкти й технічні статті дозволяють зафіксувати, як ви мислите, що створюєте та як комунікуєте — це і стає поверхнею, за якою вас запам'ятовують.",
-        },
-        {
-          question: "Як працює визнання на SearchTalent?",
-          answer:
-            "Профілі та проєкти отримують рейтинг спільноти, що враховує глибину ваших робіт, заповненість профілю й реакцію спільноти з часом. А ще бейджі нараховуються автоматично за досягнення та етапи — тож послідовний внесок стає видимим визнанням, а не просто цифрою.",
-        },
-        {
-          question: "SearchTalent — це лише про проєкти?",
-          answer:
-            "Ні. Окрім портфоліо проєктів, ви можете публікувати статті, створювати опитування для спільноти й працювати над проєктами, статтями чи опитуваннями разом зі співавторами. Це простір, щоб ділитися роботами й обговорювати їх, а не статична галерея.",
+            "Резюме розповідає, що ви вмієте. Портфоліо це показує: реальні роботи, ваші рішення й результат.",
         },
       ] satisfies MarketingFaqItem[],
       footerCtaTitle: "Створіть портфоліо, яке доводить ваш рівень",

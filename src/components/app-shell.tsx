@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import CookieConsentBanner from "@/components/cookie-consent-banner";
+import FirstTouchTracker from "@/components/first-touch-tracker";
 import LinkPreviewProvider from "@/components/link-preview-provider";
 import RevealObserver from "@/components/motion/reveal-observer";
 import SiteFooter from "@/components/site-footer";
@@ -8,6 +9,7 @@ import SiteHeader from "@/components/site-header";
 import SitePopup from "@/components/site-popup";
 import { ToastProvider } from "@/components/ui/toast";
 import { getAppShellData } from "@/lib/app-shell";
+import { allowsCookieCategory } from "@/lib/cookie-consent";
 import type { Locale } from "@/lib/i18n/config";
 
 export default async function AppShell({
@@ -22,6 +24,7 @@ export default async function AppShell({
     initialConsent,
     initialTheme,
     initialCanPersistTheme,
+    isSignedIn,
     viewer,
     activePopup,
     sections,
@@ -42,6 +45,12 @@ export default async function AppShell({
       </SiteFooterSlot>
       <CookieConsentBanner initialConsent={initialConsent} />
       <SitePopup popup={activePopup} />
+      {/* Renders nothing; with analytics consent, remembers where a guest came
+          from and reports it once after sign-up (product metrics). */}
+      <FirstTouchTracker
+        initialAllowed={allowsCookieCategory(initialConsent, "analytics")}
+        isSignedIn={isSignedIn}
+      />
       {/* Renders nothing until a previewable link is hovered; the card copy
           itself arrives already localized from /api/link-preview, so only the
           loading label crosses into the client bundle. */}

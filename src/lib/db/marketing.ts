@@ -1,9 +1,22 @@
+import { unstable_cache } from "next/cache";
 import { getArticleFeed } from "@/lib/db/articles";
-import { getLeaderboards } from "@/lib/db/leaderboards";
+import {
+  getLeaderboards,
+  LEADERBOARDS_CACHE_REVALIDATE_SECONDS,
+  LEADERBOARDS_CACHE_TAG,
+} from "@/lib/db/leaderboards";
 import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
+import {
+  pickHeroExample,
+  toExampleTheme,
+  type ExampleCandidate,
+  type ExampleProject,
+  type HeroExamplePortfolio,
+} from "@/lib/home-example";
 import { isLeaderboardSafeText } from "@/lib/leaderboard-display";
 import { slugifySegment } from "@/lib/marketing-content";
-import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
+import { normalizeProfileSettings } from "@/lib/profile-presentation";
+import { createAdminClient, createPublicReadOnlyClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 async function getPublicReadClient() {
@@ -47,71 +60,152 @@ export async function getLatestArticles(limit = 6, locale?: string | null) {
   return feed.items.slice(0, limit);
 }
 
-export type LatestProject = {
-  id: string;
-  title: string;
-  slug: string | null;
-  createdAt: string | null;
-  ownerName: string | null;
-  ownerUsername: string | null;
-};
+/** Enough rows to cover every candidate's pinned and newest work. */
+const EXAMPLE_PROJECT_ROWS = 200;
 
-/**
- * A few candidates are read so the newest project that passes the blocklist
- * can still be shown when the very latest one does not.
- */
-const LATEST_PROJECT_CANDIDATES = 8;
-
-/**
- * The newest public project, for the home hero. Runs the same text check as
- * the leaderboards: the hero is the first thing a visitor sees, so it never
- * shows content today's blocklist would catch.
- */
-export async function getLatestProject(): Promise<LatestProject | null> {
-  const supabase = await getPublicReadClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .select("id, title, slug, description, created_at, owner_id")
-    .eq("status", "published")
-    .eq("moderation_status", "approved")
-    .order("created_at", { ascending: false })
-    .limit(LATEST_PROJECT_CANDIDATES);
-
-  if (error) {
-    console.error("[marketing] latest project unavailable:", error.message);
+async function loadHeroExample(): Promise<HeroExamplePortfolio | null> {
+  const supabase = createPublicReadOnlyClient();
+  if (!supabase) {
     return null;
   }
 
-  const project = ((data || []) as Array<{
-    id: string;
-    title: string;
-    slug: string | null;
-    description: string | null;
-    created_at: string | null;
-    owner_id: string;
-  }>).find((row) => isLeaderboardSafeText([row.title, row.description]));
+  const leaderboards = await getLeaderboards();
+  const ranked = [...leaderboards.creators.all, ...(leaderboards.freshCreators ?? [])];
+  const seen = new Set<string>();
+  const rankedUnique = ranked.filter((creator) => {
+    if (seen.has(creator.id)) {
+      return false;
+    }
+    seen.add(creator.id);
+    return true;
+  });
 
-  if (!project) {
+  if (rankedUnique.length === 0) {
     return null;
   }
 
-  const { data: owner } = await supabase
+  const { data: profileRows, error: profileError } = await supabase
     .from("profiles")
-    .select("name, username")
-    .eq("user_id", project.owner_id)
-    .maybeSingle();
+    .select("id, user_id, profile_visibility, profile_categories(name)")
+    .in(
+      "id",
+      rankedUnique.map((creator) => creator.id),
+    );
 
-  const ownerRow = owner as { name: string | null; username: string | null } | null;
+  if (profileError) {
+    console.error("[marketing] hero example unavailable:", profileError.message);
+    return null;
+  }
 
-  return {
-    id: project.id,
-    title: project.title,
-    slug: project.slug,
-    createdAt: project.created_at,
-    ownerName: ownerRow?.name ?? null,
-    ownerUsername: ownerRow?.username ?? null,
+  type ProfileRow = {
+    id: string;
+    user_id: string;
+    profile_visibility: unknown;
+    profile_categories: { name: string | null } | Array<{ name: string | null }> | null;
   };
+  const profileById = new Map(
+    ((profileRows || []) as ProfileRow[]).map((row) => [row.id, row]),
+  );
+  const candidates: ExampleCandidate[] = rankedUnique.flatMap((creator) => {
+    const row = profileById.get(creator.id);
+    if (!row) {
+      return [];
+    }
+    const category = Array.isArray(row.profile_categories)
+      ? row.profile_categories[0]
+      : row.profile_categories;
+    return [
+      {
+        profileId: creator.id,
+        userId: row.user_id,
+        username: creator.username,
+        name: creator.name,
+        headline: creator.headline,
+        avatarUrl: creator.avatar_url,
+        categoryName: category?.name ?? null,
+        rating: creator.rating,
+        projectCount: creator.projectCount,
+        // The same resolution the profile page applies, so the miniature shows
+        // the author's real styling.
+        theme: toExampleTheme(normalizeProfileSettings(row.profile_visibility).presentation),
+      },
+    ];
+  });
+  const userIds = candidates.map((candidate) => candidate.userId);
+
+  if (userIds.length === 0) {
+    return null;
+  }
+
+  // Admins are only readable with the service key; without it the hero simply
+  // does not push them down the list.
+  const admin = createAdminClient();
+  const [projectsResponse, adminsResponse] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id, owner_id, title, slug, description, cover_url, kind")
+      .in("owner_id", userIds)
+      .eq("status", "published")
+      .eq("moderation_status", "approved")
+      .order("is_pinned", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(EXAMPLE_PROJECT_ROWS),
+    admin
+      ? admin.from("platform_admins").select("user_id").in("user_id", userIds)
+      : Promise.resolve({ data: [] as Array<{ user_id: string }>, error: null }),
+  ]);
+
+  if (projectsResponse.error) {
+    console.error(
+      "[marketing] hero example projects unavailable:",
+      projectsResponse.error.message,
+    );
+    return null;
+  }
+
+  const projects: ExampleProject[] = (
+    (projectsResponse.data || []) as Array<{
+      id: string;
+      owner_id: string;
+      title: string;
+      slug: string | null;
+      description: string | null;
+      cover_url: string | null;
+      kind: string | null;
+    }>
+  )
+    // Same text check as the leaderboards: the hero never shows a project the
+    // blocklist would catch.
+    .filter((row) => isLeaderboardSafeText([row.title, row.description]))
+    .map((row) => ({
+      id: row.id,
+      ownerId: row.owner_id,
+      title: row.title,
+      slug: row.slug,
+      coverUrl: row.cover_url,
+      kind: row.kind,
+    }));
+
+  const adminUserIds = new Set(
+    ((adminsResponse.data || []) as Array<{ user_id: string }>).map((row) => row.user_id),
+  );
+
+  return pickHeroExample({ candidates, projects, adminUserIds });
 }
+
+/**
+ * The example portfolio for the home hero: its preview card and the "See an
+ * example" link both use it, so they always point at the same profile. Cached
+ * with the leaderboards it is derived from.
+ */
+export const getHeroExamplePortfolio = unstable_cache(
+  loadHeroExample,
+  ["hero-example-portfolio-v2"],
+  {
+    revalidate: LEADERBOARDS_CACHE_REVALIDATE_SECONDS,
+    tags: [LEADERBOARDS_CACHE_TAG],
+  },
+);
 
 export type TechnologyDirectoryItem = {
   id: number;

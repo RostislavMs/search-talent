@@ -96,6 +96,13 @@ export async function getAppShellData(locale: Locale): Promise<{
         .select("user_id")
         .eq("user_id", user.id)
         .maybeSingle(),
+      // Product metrics: last activity, for retention. The database only writes
+      // when the stored value is over an hour old, and a failure (e.g. before the
+      // migration) must not cost the page anything, so the result is ignored.
+      supabase.rpc("touch_user_activity").then(
+        () => null,
+        () => null,
+      ),
     ]);
 
     viewer = {
