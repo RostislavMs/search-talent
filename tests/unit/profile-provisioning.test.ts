@@ -32,7 +32,7 @@ describe("ensureProfileForUser", () => {
 
     const insert = mock.calls.find((call) => call.verb === "insert");
     const username = (insert?.payload as { username: string }).username;
-    expect(username).toMatch(/^user-[a-z0-9]{6}$/);
+    expect(username).toMatch(/^user-[0-9a-f]{6}$/);
     expect(username).not.toContain("olena");
     expect(profile?.username).toBe("user-ab12cd");
   });

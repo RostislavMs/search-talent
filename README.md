@@ -220,7 +220,8 @@ search-talent/
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/auth/callback` | Finishes OAuth (Google, GitHub) and the confirmation-email sign-in (`code` or `token_hash`), then redirects to `next`, the onboarding or My Space |
+| GET | `/api/auth/callback` | Finishes OAuth (Google, GitHub) and same-browser email links (`code`), then redirects to `next`, the onboarding or My Space |
+| GET | `/api/auth/confirm` | The sign-up confirmation email link (`token_hash`): signs in on any device and opens the onboarding |
 | GET | `/api/auth/continue` | Where the password login lands: same redirect rule as the callback |
 | POST | `/api/auth/logout` | Sign out |
 | PATCH/POST | `/api/onboarding` | Save the onboarding "who you are" step / record a milestone (`completed`, `link_shared`) |

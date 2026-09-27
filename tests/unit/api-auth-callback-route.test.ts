@@ -15,6 +15,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => holder
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "uk") }));
 
 import { GET as callback } from "@/app/api/auth/callback/route";
+import { GET as confirm } from "@/app/api/auth/confirm/route";
 import { GET as continueRoute } from "@/app/api/auth/continue/route";
 
 const USER_ID = "33333333-3333-4333-8333-333333333333";
@@ -104,23 +105,10 @@ describe("GET /api/auth/callback", () => {
     expect(await location(unsafe)).toBe("/uk/onboarding");
   });
 
-  it("confirms a sign-up from another device with token_hash", async () => {
+  it("does not verify email tokens (that is /api/auth/confirm)", async () => {
     setClient({ verify: signedIn });
     const response = await callback(
-      new Request(
-        "https://searchtalent.dev/api/auth/callback?token_hash=th&type=signup&flow=signup&locale=en",
-      ),
-    );
-    expect(holder.verifyOtp).toHaveBeenCalledWith({ token_hash: "th", type: "signup" });
-    expect(await location(response)).toBe("/en/onboarding");
-  });
-
-  it("ignores an unknown token type", async () => {
-    setClient({ verify: signedIn });
-    const response = await callback(
-      new Request(
-        "https://searchtalent.dev/api/auth/callback?token_hash=th&type=recovery&flow=signup",
-      ),
+      new Request("https://searchtalent.dev/api/auth/callback?token_hash=th&type=email&flow=signup"),
     );
     expect(holder.verifyOtp).not.toHaveBeenCalled();
     expect(await location(response)).toBe("/uk/verify?status=expired");
@@ -156,6 +144,40 @@ describe("GET /api/auth/callback", () => {
       new Request("https://searchtalent.dev/api/auth/callback?code=bad&next=%2Fuk%2Fmy-space"),
     );
     expect(await location(withNext)).toBe("/uk/login?next=%2Fuk%2Fmy-space&error=oauth");
+  });
+});
+
+describe("GET /api/auth/confirm", () => {
+  it("signs a new account in from the email on any device and opens the onboarding", async () => {
+    setClient({ verify: signedIn });
+    const response = await confirm(
+      new Request("https://searchtalent.dev/api/auth/confirm?token_hash=th&locale=en"),
+    );
+    expect(holder.verifyOtp).toHaveBeenCalledWith({ type: "email", token_hash: "th" });
+    expect(await location(response)).toBe("/en/onboarding");
+  });
+
+  it("never takes the token type from the URL", async () => {
+    setClient({ verify: signedIn });
+    await confirm(
+      new Request("https://searchtalent.dev/api/auth/confirm?token_hash=th&type=recovery"),
+    );
+    expect(holder.verifyOtp).toHaveBeenCalledWith({ type: "email", token_hash: "th" });
+  });
+
+  it("shows the expired screen for a used, forged or missing token", async () => {
+    setClient({});
+    const forged = await confirm(
+      new Request("https://searchtalent.dev/api/auth/confirm?token_hash=forged"),
+    );
+    expect(await location(forged)).toBe("/uk/verify?status=expired");
+
+    setClient({});
+    const missing = await confirm(
+      new Request("https://searchtalent.dev/api/auth/confirm?locale=en"),
+    );
+    expect(holder.verifyOtp).toHaveBeenCalledWith({ type: "email", token_hash: "" });
+    expect(await location(missing)).toBe("/en/verify?status=expired");
   });
 });
 

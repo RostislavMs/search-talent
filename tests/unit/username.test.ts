@@ -13,16 +13,17 @@ describe("generateTemporaryUsername", () => {
   it("makes a neutral user-xxxxxx nick that passes validation", () => {
     for (let index = 0; index < 50; index += 1) {
       const username = generateTemporaryUsername();
-      expect(username).toMatch(/^user-[a-z0-9]{6}$/);
+      expect(username).toMatch(/^user-[0-9a-f]{6}$/);
       expect(USERNAME_PATTERN.test(username)).toBe(true);
       expect(isTemporaryUsername(username)).toBe(true);
     }
   });
 
-  it("maps random bytes onto the alphabet", () => {
-    expect(generateTemporaryUsername(() => new Uint8Array([0, 1, 25, 26, 35, 36]))).toBe(
-      "user-abz09a",
+  it("takes the first hex digits of the random id as they are", () => {
+    expect(generateTemporaryUsername(() => "3F2A9C1B-7E4D-4C8A-9B1E-0D5F6A7B8C9D")).toBe(
+      "user-3f2a9c",
     );
+    expect(generateTemporaryUsername(() => "ab-cd-ef12-3456")).toBe("user-abcdef");
   });
 });
 
@@ -32,6 +33,7 @@ describe("isTemporaryUsername", () => {
     expect(isTemporaryUsername("USER-AB12CD")).toBe(true);
     expect(isTemporaryUsername("user-ab12c")).toBe(false);
     expect(isTemporaryUsername("user-ab12cde")).toBe(false);
+    expect(isTemporaryUsername("user-zz99zz")).toBe(false);
     expect(isTemporaryUsername("olena")).toBe(false);
     expect(isTemporaryUsername(null)).toBe(false);
   });

@@ -10,20 +10,15 @@ export const USERNAME_PATTERN = /^[a-z0-9._-]{3,32}$/i;
 // private address on a public URL.
 const TEMPORARY_PREFIX = "user-";
 const TEMPORARY_SUFFIX_LENGTH = 6;
-const TEMPORARY_PATTERN = /^user-[a-z0-9]{6}$/;
-const ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
+const TEMPORARY_PATTERN = /^user-[0-9a-f]{6}$/;
 
-export function generateTemporaryUsername(
-  randomBytes: (length: number) => Uint8Array = (length) =>
-    crypto.getRandomValues(new Uint8Array(length)),
-) {
-  const bytes = randomBytes(TEMPORARY_SUFFIX_LENGTH);
-  let suffix = "";
-
-  for (let index = 0; index < TEMPORARY_SUFFIX_LENGTH; index += 1) {
-    suffix += ALPHABET[(bytes[index] ?? 0) % ALPHABET.length];
-  }
-
+/**
+ * The suffix is the start of a random UUID: its leading hex digits are
+ * uniformly random as they are, with no modulo that would skew some characters
+ * (16^6 ≈ 16.7 million nicks; a collision is simply retried by the caller).
+ */
+export function generateTemporaryUsername(randomId: () => string = () => crypto.randomUUID()) {
+  const suffix = randomId().replace(/-/g, "").slice(0, TEMPORARY_SUFFIX_LENGTH).toLowerCase();
   return `${TEMPORARY_PREFIX}${suffix}`;
 }
 
