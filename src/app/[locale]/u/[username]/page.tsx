@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import PublicProfileShowcase from "@/components/public-profile-showcase";
 import RelatedCreators from "@/components/related-creators";
+import ViewBeacon from "@/components/view-beacon";
 import { CreatorCardGridSkeleton } from "@/components/skeletons/card-skeletons";
 import { getPublicProfilePageData } from "@/lib/db/public";
 import { isLocale, type Locale } from "@/lib/i18n/config";
@@ -148,6 +149,7 @@ export default async function PublicProfilePage({
 
   return (
     <>
+      <ViewBeacon targetType="profile" targetId={data.profile.id} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(profilePageSchema) }}

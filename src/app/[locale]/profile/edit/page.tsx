@@ -48,10 +48,13 @@ export async function generateMetadata({
 
 export default async function ProfileEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ section?: string | string[] }>;
 }) {
   const locale = await getLocaleValue(params);
+  const { section } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -125,7 +128,11 @@ export default async function ProfileEditPage({
       </section>
 
       <section className="mt-4 rounded-none app-card p-4 sm:mt-8 sm:rounded-hero sm:p-8">
-        <ProfileForm profile={profile} email={user.email ?? ""} />
+        <ProfileForm
+          profile={profile}
+          email={user.email ?? ""}
+          initialSection={typeof section === "string" ? section : null}
+        />
       </section>
     </main>
   );

@@ -18,24 +18,36 @@ function HeroBar({ className = "" }: { className?: string }) {
   );
 }
 
-/** Mirrors the live "top talent / project / article" card in the home hero. */
-export function HeroLiveCardSkeleton() {
+/** Mirrors the miniature profile page in the home hero (home-example-card). */
+export function HeroExampleSkeleton() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-3.5 sm:p-4.5">
-      <div className="flex items-center justify-between gap-2">
-        <HeroBar className="h-3 w-24 rounded-full" />
-        <HeroBar className="h-5 w-16 shrink-0 rounded-full" />
-      </div>
-      <div className="mt-3 flex items-center gap-3">
-        <div
-          aria-hidden="true"
-          className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-white/15"
-        />
-        <div className="min-w-0 flex-1 space-y-2">
-          <HeroBar className="h-4 w-3/4" />
-          <HeroBar className="h-3 w-1/2" />
+    <div>
+      <HeroBar className="h-3 w-28 rounded-full" />
+      <div className="mt-3 overflow-hidden rounded-2xl border border-white/15">
+        <div className="flex items-center gap-3 border-b border-white/10 bg-black/40 px-3 py-2">
+          <HeroBar className="h-2.5 w-10 rounded-full" />
+          <HeroBar className="h-5 flex-1 rounded-full" />
+        </div>
+        <div className="space-y-2.5 bg-black/25 p-2.5 sm:p-3">
+          <div className="flex items-center gap-3 rounded-xl bg-white/5 p-3 sm:p-3.5">
+            <HeroBar className="h-11 w-11 shrink-0 rounded-xl" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <HeroBar className="h-2 w-16" />
+              <HeroBar className="h-4 w-2/3" />
+              <HeroBar className="h-2.5 w-1/3" />
+            </div>
+          </div>
+          <div className="rounded-xl bg-white/5 p-2.5 sm:p-3">
+            <HeroBar className="h-3 w-20" />
+            <div className="mt-2 grid grid-cols-3 gap-1.5 sm:gap-2">
+              <HeroBar className="aspect-4/3 w-full rounded-lg" />
+              <HeroBar className="aspect-4/3 w-full rounded-lg" />
+              <HeroBar className="aspect-4/3 w-full rounded-lg" />
+            </div>
+          </div>
         </div>
       </div>
+      <HeroBar className="mt-2.5 h-3 w-1/2 rounded-full" />
     </div>
   );
 }
@@ -61,11 +73,8 @@ export function HomeHeroSkeleton() {
           </div>
         </div>
 
-        <div className="space-y-3 sm:space-y-3.5">
-          <HeroBar className="h-3 w-28 rounded-full" />
-          {Array.from({ length: 3 }).map((_, index) => (
-            <HeroLiveCardSkeleton key={index} />
-          ))}
+        <div className="lg:self-center">
+          <HeroExampleSkeleton />
         </div>
       </div>
     </section>

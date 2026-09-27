@@ -6,7 +6,6 @@ import type { RankedCreator, RankedProject } from "@/lib/db/leaderboards";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { buildProjectPath } from "@/lib/projects";
 import { toPlainText } from "@/lib/plain-text";
-import { beat } from "@/lib/motion";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 
@@ -57,7 +56,7 @@ function LeaderboardScore({
   dictionary: Dictionary;
 }) {
   return (
-    <span className="font-display rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
+    <span className="font-display shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
       {score} {dictionary.home.leaderboardScore}
     </span>
   );
@@ -85,15 +84,12 @@ export default function HomeTopRated({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* The four rating-signal blocks are the only thing that animates in this
-          whole component — the two leaderboards below stay still. Long lists of
-          near-identical rows are exactly where staggered entrances stop reading
-          as craft and start reading as noise. */}
+      {/* Intro only: how the ranking is computed lives on /rating-guide, so the
+          home page says it in one sentence and links there. The leaderboards
+          below stay still — long lists of near-identical rows are exactly where
+          staggered entrances stop reading as craft and start reading as noise. */}
       <section className="bg-brand-hero rounded-none border app-border p-5 text-center text-white shadow-[0_30px_80px_rgba(15,23,42,0.24)] sm:rounded-hero sm:p-7 sm:text-left md:p-8">
-        <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
-          {dictionary.home.topRatedEyebrow}
-        </p>
-        <h2 className="font-display mt-3 text-3xl font-medium leading-[1.05] tracking-tight sm:text-4xl md:text-5xl">
+        <h2 className="font-display text-3xl font-medium leading-[1.05] tracking-tight sm:text-4xl md:text-5xl">
           {dictionary.home.topRatedTitle}
         </h2>
         <p className="mt-3 text-sm leading-7 text-white/78 sm:text-base sm:leading-7">
@@ -117,19 +113,6 @@ export default function HomeTopRated({
             <span>{dictionary.home.topRatedGuideCta}</span>
           </LocalizedLink>
         </div>
-
-        <div className="app-cascade mt-5 grid gap-3 text-left sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {Object.values(dictionary.home.ratingSignals).map((item, index) => (
-            <div
-              key={item.title}
-              style={beat(index)}
-              className="rounded-3xl border border-white/10 bg-black/25 p-4 backdrop-blur"
-            >
-              <p className="text-sm font-semibold text-white">{item.title}</p>
-              <p className="mt-2 text-sm leading-6 text-white/72">{item.description}</p>
-            </div>
-          ))}
-        </div>
       </section>
 
       <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6 md:p-8">
@@ -140,11 +123,6 @@ export default function HomeTopRated({
                 ? dictionary.home.freshCreatorsTitle
                 : dictionary.home.topCreatorsTitle}
             </h2>
-            <p className="mt-1.5 text-sm app-muted sm:mt-2 sm:text-base">
-              {showFreshCreators
-                ? dictionary.home.freshCreatorsDescription
-                : dictionary.home.topCreatorsDescription}
-            </p>
           </div>
 
           {showFreshCreators ? null : (
@@ -207,8 +185,8 @@ export default function HomeTopRated({
                       )}
                     </div>
 
-                    <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                      <div className="min-w-0">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div className="min-w-0 flex-1">
                         <h3 className="truncate text-base font-semibold text-[color:var(--foreground)] sm:text-lg">
                           {creator.name || creator.username}
                         </h3>
@@ -254,9 +232,6 @@ export default function HomeTopRated({
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-3xl">
               {dictionary.home.topProjectsTitle}
             </h2>
-            <p className="mt-1.5 text-sm app-muted sm:mt-2 sm:text-base">
-              {dictionary.home.topProjectsDescription}
-            </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -278,15 +253,17 @@ export default function HomeTopRated({
         {projectItems.length > 0 ? (
           <div className="mt-5 grid grid-cols-1 gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-2">
             {projectItems.map((project, index) => (
-              <LocalizedLink
+              // Not a link itself: the title's link is stretched over the card
+              // (its ::after covers it), so the author's name can be a link of
+              // its own on top — links cannot nest.
+              <article
                 key={project.id}
-                href={buildProjectPath(project.id, project.slug)}
-                className="group overflow-hidden rounded-2xl border app-border bg-[color:var(--surface)] p-0 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-3"
+                className="group relative overflow-hidden rounded-2xl border app-border bg-[color:var(--surface)] p-0 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-3"
               >
                 <div className="flex flex-col gap-3 md:grid md:grid-cols-[12rem_minmax(0,1fr)] md:items-stretch md:gap-4">
                   <div className="relative h-44 w-full overflow-hidden rounded-none border-0 app-border bg-[color:var(--surface-muted)] sm:h-52 sm:rounded-2xl sm:border md:h-full md:min-h-[8.5rem]">
                     <div
-                      className={`font-display absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-xs font-semibold shadow-sm ${
+                      className={`font-display pointer-events-none absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-xs font-semibold shadow-sm ${
                         index < 3
                           ? "bg-brand text-brand-foreground"
                           : "border app-border bg-[color:var(--surface-muted)] text-[color:var(--muted-foreground)]"
@@ -312,19 +289,36 @@ export default function HomeTopRated({
                   </div>
 
                   <div className="flex min-w-0 flex-col justify-center px-3 pb-3 sm:p-0">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="truncate text-base font-semibold text-[color:var(--foreground)]">
+                    {/* The rating always sits at the end of the title row and
+                        never wraps under it, whatever the title's length. */}
+                    <div className="flex items-start gap-3">
+                      <h3 className="min-w-0 flex-1 truncate text-base font-semibold text-[color:var(--foreground)]">
+                        <LocalizedLink
+                          href={buildProjectPath(project.id, project.slug)}
+                          className="after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-[color:var(--ring)] sm:after:rounded-panel"
+                        >
                           {project.title}
-                        </h3>
-                        <p className="mt-0.5 text-sm app-muted">
-                          {project.ownerName || project.ownerUsername
-                            ? `${dictionary.common.by} ${project.ownerName || project.ownerUsername}`
-                            : dictionary.common.project}
-                        </p>
-                      </div>
+                        </LocalizedLink>
+                      </h3>
                       <LeaderboardScore score={project.rating} dictionary={dictionary} />
                     </div>
+                    <p className="mt-0.5 truncate text-sm app-muted">
+                      {project.ownerUsername ? (
+                        <>
+                          {dictionary.common.by}{" "}
+                          <LocalizedLink
+                            href={`/u/${project.ownerUsername}`}
+                            className="relative z-10 font-medium text-[color:var(--foreground)] underline-offset-4 hover:underline"
+                          >
+                            {project.ownerName || project.ownerUsername}
+                          </LocalizedLink>
+                        </>
+                      ) : project.ownerName ? (
+                        `${dictionary.common.by} ${project.ownerName}`
+                      ) : (
+                        dictionary.common.project
+                      )}
+                    </p>
 
                     {project.description && (
                       <p className="mt-2 line-clamp-2 text-sm leading-snug app-muted">
@@ -345,7 +339,7 @@ export default function HomeTopRated({
                     </div>
                   </div>
                 </div>
-              </LocalizedLink>
+              </article>
             ))}
           </div>
         ) : (

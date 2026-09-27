@@ -122,7 +122,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "This Privacy Policy explains what data SearchTalent handles, why it is needed, who processes it, and the rights you have over your information.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "July 27, 2026",
+      lastUpdatedValue: "September 26, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -144,6 +144,9 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Content and community activity: projects, articles, polls and your poll responses, comments, reactions, votes, follows, bookmarks, badges, notifications, and your position on the leaderboard.",
             "Feedback you send: the name, email, and message you submit through the feedback form.",
             "Technical and usage data: information needed for security, reliability, and performance, and aggregate view counts on content.",
+            "Page view statistics for profiles, projects, and articles: which page was viewed, whether the visitor came from another SearchTalent page, from another site (its domain only), or directly, and whether they were signed in. We do not store IP addresses or full referring links. A repeat view on the same day is recognized by a code computed from the IP address and browser details together with a random key that we delete the next day; after that, the code cannot be linked to anyone.",
+            "For registered users: the time of your last visit, updated at most once an hour.",
+            "Only if you allowed analytics cookies: where your first visit came from (the referring site's domain, UTM tags, and the page you landed on), saved to your account once when you sign up.",
           ],
         },
         {
@@ -151,6 +154,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "Your data is used to authenticate access, display the public pages and content you choose to publish, power search and discovery, calculate ratings, badges, and leaderboards, deliver notifications, and respond to feedback or reports.",
             "Some technical data is also used to keep the service secure, reliable, and performant, and to moderate content for the safety of the platform and its users.",
+            "View statistics, last-visit times, and sign-up sources are used only in aggregate: to see how many people sign up, publish a first project, come back, and get views of their portfolio from outside the platform. They are not used to profile individual visitors or for advertising.",
           ],
         },
         {
@@ -161,7 +165,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Performance of a contract — creating and running your account, publishing the profile and content you choose to share, and providing the community features described in the Terms of Service.",
             "Your consent — optional analytics and the cookie categories you allow, and the optional AI features. You can withdraw consent at any time, which does not affect processing that already happened.",
-            "Our legitimate interests — keeping the platform secure and reliable, preventing spam, abuse, and rating manipulation, and moderating content for the safety of users.",
+            "Our legitimate interests — keeping the platform secure and reliable, preventing spam, abuse, and rating manipulation, moderating content for the safety of users, and measuring in aggregate how the platform is used (view statistics and last-visit times). The sign-up source is recorded only with your consent.",
             "Legal obligations — where we are required to keep, provide, or remove data to comply with the law.",
           ],
         },
@@ -207,7 +211,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           title: "Analytics and cookies",
           paragraphs: [
             "Usage and performance analytics run only after you allow the analytics category through the cookie consent banner; until then they stay off. The Cookie Policy names every measurement tool we use.",
-            "View counts on content are stored in an aggregate form and are not used to build a profile of individual visitors. See the Cookie Policy for details on cookies and similar storage.",
+            "View counts on content are stored in an aggregate form and are not used to build a profile of individual visitors. SearchTalent's own view statistics use no cookies or browser storage and keep no IP addresses, as described above. See the Cookie Policy for details on cookies and similar storage.",
           ],
         },
         {
@@ -241,6 +245,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "We keep your data while your account is active and remove or anonymize it when you delete your account as described above.",
             "Limited records may persist for a short time where needed for security, backups, or legal obligations.",
+            "View statistics keep no data that identifies a visitor once the day's key is deleted. Statistics about views of your pages are deleted together with your account.",
           ],
         },
         {
@@ -260,7 +265,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "This Cookie Policy explains the role of cookies and similar browser storage on SearchTalent, and the choices you have.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "July 27, 2026",
+      lastUpdatedValue: "September 26, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -268,6 +273,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "SearchTalent uses cookies and similar browser storage to keep you signed in, remember your language and theme, record your cookie choices, and — only if you allow it — measure usage and performance.",
             "Optional categories stay off until you make a clear choice through the consent banner or cookie settings.",
+            "Counting page views on profiles, projects, and articles for SearchTalent's own statistics uses no cookies and stores nothing in your browser.",
           ],
         },
         {
@@ -298,6 +304,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Google Analytics 4 — aggregate usage statistics. It sets its own cookies and processes data on Google's infrastructure.",
             "Ahrefs Web Analytics — cookieless traffic measurement, gated together with the rest so that the analytics switch means what it says.",
             "Plerdy — click maps and heatmaps showing which parts of a page people interact with.",
+            "SearchTalent sign-up source — your browser keeps where your first visit came from (the referring site's domain, UTM tags, and the landing page) in local storage under st_first_touch until you sign up, then sends it to your account once. Withdrawing analytics consent deletes it.",
           ],
         },
         {
@@ -413,7 +420,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ця Політика конфіденційності пояснює, які дані обробляє SearchTalent, навіщо вони потрібні, хто їх обробляє та які права ви маєте щодо своєї інформації.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "27 липня 2026",
+      lastUpdatedValue: "26 вересня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -435,6 +442,9 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Контент і активність у спільноті: проєкти, статті, опитування та ваші відповіді на них, коментарі, реакції, голоси, підписки, закладки, бейджі, сповіщення й позиція в рейтингу.",
             "Звернення через форму зворотного зв'язку: ім'я, email і повідомлення, які ви надсилаєте.",
             "Технічні дані та дані використання: інформація, потрібна для безпеки, стабільності й продуктивності, та агреговані лічильники переглядів контенту.",
+            "Статистика переглядів профілів, проєктів і статей: яку сторінку переглянули, чи прийшов відвідувач з іншої сторінки SearchTalent, з іншого сайту (лише його домен) чи напряму, і чи був він у системі. IP-адреси й повні посилання, з яких прийшли, ми не зберігаємо. Повторний перегляд того ж дня розпізнається за кодом, обчисленим з IP-адреси й даних браузера разом із випадковим ключем, який ми видаляємо наступного дня; після цього код неможливо пов'язати ні з ким.",
+            "Для зареєстрованих користувачів: час вашого останнього візиту, оновлюється не частіше разу на годину.",
+            "Лише якщо ви дозволили аналітичні cookies: звідки прийшов ваш перший візит (домен сайту, з якого ви прийшли, UTM-мітки й сторінка, на яку ви потрапили). Зберігається у вашому акаунті один раз під час реєстрації.",
           ],
         },
         {
@@ -442,6 +452,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "Ці дані потрібні для авторизації, показу публічних сторінок і контенту, який ви публікуєте, роботи пошуку й навігації, обчислення рейтингів, бейджів і лідербордів, доставки сповіщень та відповідей на звернення.",
             "Частина технічних даних також використовується для безпеки, стабільності й продуктивності сервісу та для модерації контенту заради безпеки платформи й користувачів.",
+            "Статистику переглядів, час останнього візиту й джерело реєстрації ми використовуємо лише в агрегованому вигляді: щоб бачити, скільки людей реєструються, публікують перший проєкт, повертаються й отримують перегляди портфоліо ззовні платформи. Для профілювання окремих відвідувачів чи реклами вони не використовуються.",
           ],
         },
         {
@@ -452,7 +463,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Виконання договору — створення й робота акаунта, публікація профілю та контенту, який ви обираєте показувати, і надання функцій спільноти, описаних в Умовах користування.",
             "Ваша згода — необов'язкова аналітика та категорії cookies, які ви дозволяєте, а також необов'язкові AI-функції. Згоду можна відкликати будь-коли, це не впливає на обробку, що вже відбулася.",
-            "Наші законні інтереси — безпека й стабільність платформи, запобігання спаму, зловживанням і маніпуляціям рейтингом, модерація контенту заради безпеки користувачів.",
+            "Наші законні інтереси — безпека й стабільність платформи, запобігання спаму, зловживанням і маніпуляціям рейтингом, модерація контенту заради безпеки користувачів, а також агреговане вимірювання того, як користуються платформою (статистика переглядів і час останнього візиту). Джерело реєстрації записується лише з вашої згоди.",
             "Правові зобов'язання — коли ми зобов'язані зберігати, надавати або видаляти дані на вимогу закону.",
           ],
         },
@@ -498,7 +509,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           title: "Аналітика та cookies",
           paragraphs: [
             "Аналітика використання й продуктивності працює лише після того, як ви дозволите категорію «аналітика» в банері згоди на cookies; до цього вона вимкнена. Політика cookies називає всі інструменти вимірювання, які ми використовуємо.",
-            "Лічильники переглядів контенту зберігаються в агрегованому вигляді й не використовуються для створення профілю окремого відвідувача. Деталі про cookies та подібне сховище — у Політиці cookies.",
+            "Лічильники переглядів контенту зберігаються в агрегованому вигляді й не використовуються для створення профілю окремого відвідувача. Власна статистика переглядів SearchTalent не використовує cookies чи сховище браузера й не зберігає IP-адреси, як описано вище. Деталі про cookies та подібне сховище — у Політиці cookies.",
           ],
         },
         {
@@ -532,6 +543,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "Ми зберігаємо ваші дані, поки акаунт активний, і видаляємо або анонімізуємо їх, коли ви видаляєте акаунт у спосіб, описаний вище.",
             "Окремі записи можуть зберігатися нетривалий час, якщо це потрібно для безпеки, резервних копій або виконання правових зобов'язань.",
+            "Після видалення добового ключа статистика переглядів не містить даних, за якими можна впізнати відвідувача. Статистика переглядів ваших сторінок видаляється разом з акаунтом.",
           ],
         },
         {
@@ -551,7 +563,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ця Політика cookies пояснює, як SearchTalent використовує cookies і подібне браузерне сховище та який вибір ви маєте.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "27 липня 2026",
+      lastUpdatedValue: "26 вересня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -559,6 +571,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "SearchTalent використовує cookies і подібне браузерне сховище, щоб тримати вас у системі, запам'ятовувати мову й тему, зберігати ваш вибір щодо cookies та — лише з вашого дозволу — вимірювати використання й продуктивність.",
             "Необов'язкові категорії залишаються вимкненими, доки ви не зробите явний вибір у банері згоди або в налаштуваннях cookies.",
+            "Підрахунок переглядів профілів, проєктів і статей для власної статистики SearchTalent не використовує cookies і нічого не зберігає у вашому браузері.",
           ],
         },
         {
@@ -589,6 +602,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Google Analytics 4 — агрегована статистика використання. Встановлює власні cookies й обробляє дані на інфраструктурі Google.",
             "Ahrefs Web Analytics — вимірювання трафіку без cookies; ми все одно тримаємо його під згодою, щоб перемикач «аналітика» означав саме те, що написано.",
             "Plerdy — карти кліків і теплові карти, які показують, з якими частинами сторінки взаємодіють користувачі.",
+            "Джерело реєстрації SearchTalent — браузер зберігає, звідки прийшов ваш перший візит (домен сайту, UTM-мітки й сторінку входу), у локальному сховищі під ключем st_first_touch, доки ви не зареєструєтеся, а тоді один раз надсилає це у ваш акаунт. Відкликання згоди на аналітику видаляє запис.",
           ],
         },
         {

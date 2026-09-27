@@ -1,26 +1,19 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import ArticleCard from "@/components/article-card";
+import HomeExampleCard from "@/components/home-example-card";
 import HomeTopRated from "@/components/home-top-rated";
 import SeoFaqSection from "@/components/seo-faq-section";
 import { HomeBelowHeroSkeleton } from "@/components/skeletons/home-page-skeleton";
-import { HeroLiveCardSkeleton } from "@/components/skeletons/hero-skeletons";
+import { HeroExampleSkeleton } from "@/components/skeletons/hero-skeletons";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
-import OptimizedImage from "@/components/ui/optimized-image";
-import RotatingWord from "@/components/ui/rotating-word";
-import { formatArticleDate } from "@/lib/articles";
-import { getLatestArticles, getLatestProject } from "@/lib/db/marketing";
-import {
-  getLeaderboards,
-  type LeaderboardsResult,
-  type RankedCreator,
-} from "@/lib/db/leaderboards";
+import { getHeroExamplePortfolio, getLatestArticles } from "@/lib/db/marketing";
+import { getLeaderboards } from "@/lib/db/leaderboards";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
 import { beat } from "@/lib/motion";
-import { buildProjectPath } from "@/lib/projects";
 import { getCurrentUser } from "@/lib/supabase/current-user";
 import {
   buildMetadata,
@@ -56,111 +49,6 @@ export async function generateMetadata({
   });
 }
 
-/**
- * Background tones for the three hero cards, ordered top → bottom so the stack
- * fades from a darker card at the top to a lighter one at the bottom. `hover`
- * is only applied to the interactive live cards, never the static fallbacks.
- */
-type HeroCardTone = { base: string; hover: string };
-
-const HERO_CARD_TONES: readonly HeroCardTone[] = [
-  { base: "bg-black/45", hover: "hover:bg-black/55" },
-  { base: "bg-black/30", hover: "hover:bg-black/40" },
-  { base: "bg-black/20", hover: "hover:bg-black/30" },
-];
-
-type HeroLiveCardProps = {
-  href: string;
-  label: string;
-  primary: string;
-  secondary?: string;
-  meta?: string;
-  cta: string;
-  avatarUrl?: string | null;
-  avatarLabel?: string;
-  tone: HeroCardTone;
-};
-
-function HeroLiveCard({
-  href,
-  label,
-  primary,
-  secondary,
-  meta,
-  cta,
-  avatarUrl,
-  avatarLabel,
-  tone,
-}: HeroLiveCardProps) {
-  return (
-    <LocalizedLink
-      href={href}
-      className={`group block rounded-2xl border border-white/10 ${tone.base} p-3.5 backdrop-blur transition hover:border-white/25 ${tone.hover} sm:p-4.5`}
-    >
-      {/*
-        Two rows, not three: the rating/date badge shares the eyebrow row and the
-        CTA collapses into a single arrow. That trims ~38px per card, which is
-        what keeps the whole hero short enough for the next section heading to
-        stay in view. The CTA copy survives as the link's accessible label.
-      */}
-      <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-xs font-semibold uppercase tracking-eyebrow text-white/55">
-          {label}
-        </p>
-        {meta ? (
-          <span className="font-display shrink-0 rounded-full bg-white/12 px-3 py-0.5 text-xs font-semibold text-white">
-            {meta}
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-3 flex items-center gap-3">
-        {avatarLabel ? (
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/10 text-sm font-semibold text-white">
-            {avatarUrl ? (
-              <OptimizedImage
-                src={avatarUrl}
-                alt={avatarLabel}
-                fill
-                sizes="44px"
-                className="object-cover"
-              />
-            ) : (
-              <span>{avatarLabel.slice(0, 1).toUpperCase()}</span>
-            )}
-          </div>
-        ) : null}
-        <div className="min-w-0 flex-1">
-          <p className="font-display truncate text-sm font-semibold text-white sm:text-base">
-            {primary}
-          </p>
-          {secondary ? (
-            <p className="mt-0.5 truncate text-xs text-white/65">{secondary}</p>
-          ) : null}
-        </div>
-        <span
-          aria-hidden="true"
-          className="shrink-0 text-sm text-white/55 transition duration-200 group-hover:translate-x-0.5 group-hover:text-white"
-        >
-          →
-        </span>
-      </div>
-      <span className="sr-only">{cta}</span>
-    </LocalizedLink>
-  );
-}
-
-/**
- * The portfolio the hero holds up as an example: the best all-time creator who
- * passed the leaderboard thresholds, or — while nobody qualifies yet — the
- * newest portfolio with published work. Chosen automatically so the example
- * keeps up with the platform instead of pointing at a hand-picked profile.
- */
-function pickExamplePortfolio(
-  leaderboards: LeaderboardsResult,
-): RankedCreator | null {
-  return leaderboards.creators.all[0] ?? leaderboards.freshCreators?.[0] ?? null;
-}
-
 const HERO_SECONDARY_LINK_CLASS =
   "group inline-flex w-full items-center justify-center gap-1.5 rounded-full px-5 py-3 text-base font-medium text-white/75 transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:w-auto";
 
@@ -179,11 +67,12 @@ function HeroSecondaryLink({ href, label }: { href: string; label: string }) {
 }
 
 /**
- * "See an example" for guests. The label never changes, so the fallback
- * (browse talents) swaps for the real profile link without moving anything.
+ * "See an example" for guests. It points at the same portfolio as the preview
+ * card, and the label never changes, so the fallback (browse talents) swaps for
+ * the real profile link without moving anything.
  */
 async function HeroExampleLink({ dictionary }: { dictionary: Dictionary }) {
-  const example = pickExamplePortfolio(await getLeaderboards());
+  const example = await getHeroExamplePortfolio();
 
   return (
     <HeroSecondaryLink
@@ -193,24 +82,9 @@ async function HeroExampleLink({ dictionary }: { dictionary: Dictionary }) {
   );
 }
 
-function HeroFallbackCard({
-  label,
-  text,
-  tone,
-}: {
-  label: string;
-  text: string;
-  tone: HeroCardTone;
-}) {
+async function HeroExample({ dictionary }: { dictionary: Dictionary }) {
   return (
-    <article
-      className={`rounded-2xl border border-white/10 ${tone.base} p-3.5 backdrop-blur sm:p-4.5`}
-    >
-      <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
-        {label}
-      </p>
-      <p className="mt-2.5 text-sm leading-6 text-white/70">{text}</p>
-    </article>
+    <HomeExampleCard example={await getHeroExamplePortfolio()} dictionary={dictionary} />
   );
 }
 
@@ -241,7 +115,7 @@ export default async function LocalizedHomePage({
         The hero headline is static (locale dictionary only — no DB), so it
         renders in the initial HTML and paints as the LCP element immediately,
         instead of waiting behind a Suspense boundary for leaderboard/article
-        queries. Only the data-dependent pieces (the live cards and the
+        queries. Only the data-dependent pieces (the example portfolio and the
         sections below the hero) stream in behind Suspense.
       */}
       <section className="bg-brand-hero mx-4 overflow-hidden rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:mx-0 sm:rounded-hero sm:p-8 md:p-10">
@@ -253,65 +127,48 @@ export default async function LocalizedHomePage({
             headline is the LCP element and paints at full opacity on the first
             frame, and nothing here moves in a way CLS can see.
           */}
-          <div className="app-enter flex flex-col items-center text-center sm:items-start sm:text-left">
-            <p
-              style={beat(0)}
-              className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm"
-            >
-              {dictionary.home.eyebrow}
-            </p>
+          {/*
+            Centred as one block rather than pinning the buttons to the bottom:
+            the copy is short now, and a pinned CTA left a hole in the middle.
+          */}
+          <div className="app-enter flex flex-col items-center justify-center text-center sm:items-start sm:text-left">
             <h1
-              style={beat(1)}
-              className="font-display mt-4 max-w-3xl text-4xl font-medium leading-[1.05] tracking-tight sm:mt-5 md:text-5xl lg:text-6xl"
+              style={beat(0)}
+              className="font-display max-w-3xl text-4xl font-medium leading-[1.05] tracking-tight md:text-5xl lg:text-6xl"
             >
               {dictionary.home.titleLead}{" "}
-              <RotatingWord words={dictionary.home.titleWords} />
+              <span className="hero-accent">{dictionary.home.titleAccent}</span>
             </h1>
+            {/* Who it is for is said through the work itself (code, design,
+                video, 3D) at the start of this line rather than a label of
+                professions above the headline. */}
             <p
-              style={beat(2)}
-              className="mt-4 max-w-2xl text-sm leading-7 text-white/80 sm:mt-5 sm:text-base sm:leading-8"
+              style={beat(1)}
+              className="mt-4 max-w-2xl text-base leading-7 text-white/85 sm:mt-6 sm:text-lg sm:leading-8"
             >
               {dictionary.home.description}
             </p>
-            {/*
-              Feature roadmap: the highlights read as a left-to-right journey
-              (Portfolio → … → Rating) linked by simple brand arrows. Labels are
-              plain text — deliberately not chips/buttons — and the arrows are
-              decorative, so nothing here carries a hover state.
-            */}
-            <ol
-              style={beat(3)}
-              className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-sm font-medium text-white/80 sm:mt-7 sm:justify-start sm:gap-x-2.5 sm:text-base"
-            >
-              {dictionary.home.descriptionHighlights.map((item, index) => (
-                <li key={item} className="flex items-center gap-x-2 sm:gap-x-2.5">
-                  {index > 0 ? (
-                    <span aria-hidden="true" className="text-brand">
-                      →
-                    </span>
-                  ) : null}
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ol>
 
             <div
-              style={beat(4)}
-              className="mt-8 flex w-full flex-col items-center gap-3 sm:mt-10 sm:w-auto sm:flex-row sm:flex-wrap sm:items-stretch lg:mt-auto lg:pt-8"
+              style={beat(2)}
+              className="mt-8 flex w-full flex-col items-center gap-3 sm:mt-10 sm:w-auto sm:flex-row sm:flex-wrap sm:items-stretch"
             >
+              {/* Both states follow the subtitle's two verbs — show your work,
+                  style your page: a guest starts the portfolio, a signed-in
+                  author adds work or opens the theme editor. */}
               <ButtonLink
                 href={isSignedIn ? "/projects/new" : "/signup"}
                 size="lg"
                 className="w-full sm:w-auto"
               >
                 {isSignedIn
-                  ? dictionary.home.ctaPublishProject
+                  ? dictionary.home.ctaAddWork
                   : dictionary.home.ctaCreateProfile}
               </ButtonLink>
               {isSignedIn ? (
                 <HeroSecondaryLink
-                  href="/projects"
-                  label={dictionary.home.ctaViewProjects}
+                  href="/profile/edit?section=theme"
+                  label={dictionary.home.ctaStylePage}
                 />
               ) : (
                 <Suspense
@@ -326,28 +183,22 @@ export default async function LocalizedHomePage({
                 </Suspense>
               )}
             </div>
+            {isSignedIn ? null : (
+              <p style={beat(3)} className="mt-4 text-sm text-white/65">
+                {dictionary.home.heroNote}
+              </p>
+            )}
           </div>
 
           {/*
-            Deliberately still. These cards arrive behind Suspense, so an
-            entrance here plays twice — once as the skeleton paints, once as the
-            real card lands on top of it — and the hero already has the copy
-            column's sequence carrying its arrival.
+            Deliberately still. The card arrives behind Suspense, so an entrance
+            here would play twice — once as the skeleton paints, once as the
+            real card lands on top of it — and the copy column's sequence
+            already carries the hero's arrival.
           */}
-          <div className="space-y-3 sm:space-y-3.5">
-            <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/55">
-              {dictionary.home.cards.eyebrow}
-            </p>
-            <Suspense
-              fallback={
-                <>
-                  <HeroLiveCardSkeleton />
-                  <HeroLiveCardSkeleton />
-                  <HeroLiveCardSkeleton />
-                </>
-              }
-            >
-              <HeroLiveCards locale={locale} dictionary={dictionary} />
+          <div className="lg:self-center">
+            <Suspense fallback={<HeroExampleSkeleton />}>
+              <HeroExample dictionary={dictionary} />
             </Suspense>
           </div>
         </div>
@@ -360,96 +211,38 @@ export default async function LocalizedHomePage({
   );
 }
 
-async function HeroLiveCards({
-  locale,
-  dictionary,
+/**
+ * One audience's path in "How it works": numbered steps straight on the panel.
+ * The steps used to sit in boxes of their own inside the panel inside the
+ * section — three nested surfaces for three lines of text.
+ */
+function HowItWorksTrack({
+  title,
+  steps,
 }: {
-  locale: Locale;
-  dictionary: Dictionary;
+  title: string;
+  steps: ReadonlyArray<{ title: string; description: string }>;
 }) {
-  const [leaderboards, latestProject, latestArticles] = await Promise.all([
-    getLeaderboards(),
-    getLatestProject(),
-    getLatestArticles(4, locale),
-  ]);
-  // "Fresh on the platform", not "trending": with little traffic a trend
-  // label is a claim the numbers cannot back. The first card is an example of
-  // a strong portfolio (what a visitor could build), the other two are simply
-  // the newest work.
-  const example = pickExamplePortfolio(leaderboards);
-  const topArticle = latestArticles[0];
-
   return (
-    <>
-      {example ? (
-        <HeroLiveCard
-          href={`/u/${example.username}`}
-          label={dictionary.home.cards.examplePortfolio.label}
-          primary={example.name || example.username}
-          secondary={example.headline || `@${example.username}`}
-          meta={`${example.rating} ${dictionary.home.leaderboardScore}`}
-          cta={dictionary.home.cards.examplePortfolio.cta}
-          avatarUrl={example.avatar_url}
-          avatarLabel={example.name || example.username}
-          tone={HERO_CARD_TONES[0]}
-        />
-      ) : (
-        <HeroFallbackCard
-          label={dictionary.home.cards.examplePortfolio.label}
-          text={dictionary.home.cards.examplePortfolio.fallback}
-          tone={HERO_CARD_TONES[0]}
-        />
-      )}
-
-      {latestProject ? (
-        <HeroLiveCard
-          href={buildProjectPath(latestProject.id, latestProject.slug)}
-          label={dictionary.home.cards.latestProject.label}
-          primary={latestProject.title}
-          secondary={
-            latestProject.ownerName || latestProject.ownerUsername
-              ? `${dictionary.common.by} ${latestProject.ownerName || latestProject.ownerUsername}`
-              : undefined
-          }
-          meta={
-            latestProject.createdAt
-              ? formatArticleDate(latestProject.createdAt, locale)
-              : undefined
-          }
-          cta={dictionary.home.cards.latestProject.cta}
-          tone={HERO_CARD_TONES[1]}
-        />
-      ) : (
-        <HeroFallbackCard
-          label={dictionary.home.cards.latestProject.label}
-          text={dictionary.home.cards.latestProject.fallback}
-          tone={HERO_CARD_TONES[1]}
-        />
-      )}
-
-      {topArticle ? (
-        <HeroLiveCard
-          href={`/articles/${topArticle.slug}`}
-          label={dictionary.home.cards.freshArticle.label}
-          primary={topArticle.title}
-          secondary={
-            topArticle.author?.name || topArticle.author?.username || undefined
-          }
-          meta={formatArticleDate(
-            topArticle.publishedAt || topArticle.createdAt,
-            locale,
-          )}
-          cta={dictionary.home.cards.freshArticle.cta}
-          tone={HERO_CARD_TONES[2]}
-        />
-      ) : (
-        <HeroFallbackCard
-          label={dictionary.home.cards.freshArticle.label}
-          text={dictionary.home.cards.freshArticle.fallback}
-          tone={HERO_CARD_TONES[2]}
-        />
-      )}
-    </>
+    <article className="rounded-panel app-panel p-4 sm:p-5">
+      <h3 className="text-lg font-semibold text-[color:var(--foreground)]">{title}</h3>
+      <ol className="mt-4 space-y-4">
+        {steps.map((step, index) => (
+          <li key={step.title} className="flex gap-3">
+            <span
+              aria-hidden="true"
+              className="font-mono flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft px-2 text-xs font-semibold tabular-nums text-brand-on-soft"
+            >
+              {index + 1}
+            </span>
+            <div className="min-w-0">
+              <h4 className="font-semibold text-[color:var(--foreground)]">{step.title}</h4>
+              <p className="mt-1 text-sm leading-6 app-muted">{step.description}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </article>
   );
 }
 
@@ -478,12 +271,12 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
           id="home-why-heading"
           className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl"
         >
-          {marketing.home.whyTitle}
+          {marketing.home.featuresTitle}
         </h2>
-        <ul className="app-cascade mt-6 grid gap-4 md:grid-cols-3 sm:mt-7">
-          {marketing.home.whyBullets.map((item, index) => (
+        <ul className="app-cascade mt-6 grid gap-4 sm:mt-7 md:grid-cols-2 xl:grid-cols-4">
+          {marketing.home.features.map((item, index) => (
             <li
-              key={item}
+              key={item.title}
               style={beat(index)}
               className="relative overflow-hidden rounded-3xl app-panel p-5"
             >
@@ -494,7 +287,10 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
               <span className="font-mono inline-flex h-7 min-w-10 items-center justify-center rounded-full bg-brand-soft px-2 text-xs font-semibold tabular-nums text-brand-on-soft">
                 {String(index + 1).padStart(2, "0")}
               </span>
-              <p className="mt-4 text-sm leading-7 app-muted">{item}</p>
+              <h3 className="mt-4 text-lg font-semibold text-[color:var(--foreground)]">
+                {item.title}
+              </h3>
+              <p className="mt-1.5 text-sm leading-6 app-muted">{item.description}</p>
             </li>
           ))}
         </ul>
@@ -523,49 +319,14 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
         </h2>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <article className="rounded-panel app-panel p-4 sm:p-4">
-            <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
-              {marketing.home.talentTrackTitle}
-            </h3>
-            <div className="mt-4 space-y-3">
-              {marketing.home.talentSteps.map((step, index) => (
-                <div
-                  key={step.title}
-                  className="rounded-2xl bg-[color:var(--surface)] p-3.5"
-                >
-                  <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-                    {index + 1}
-                  </p>
-                  <h4 className="mt-1.5 font-semibold text-[color:var(--foreground)]">
-                    {step.title}
-                  </h4>
-                  <p className="mt-1.5 text-sm leading-6 app-muted">{step.description}</p>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-panel app-panel p-4 sm:p-4">
-            <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
-              {marketing.home.explorerTrackTitle}
-            </h3>
-            <div className="mt-4 space-y-3">
-              {marketing.home.explorerSteps.map((step, index) => (
-                <div
-                  key={step.title}
-                  className="rounded-2xl bg-[color:var(--surface)] p-3.5"
-                >
-                  <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-                    {index + 1}
-                  </p>
-                  <h4 className="mt-1.5 font-semibold text-[color:var(--foreground)]">
-                    {step.title}
-                  </h4>
-                  <p className="mt-1.5 text-sm leading-6 app-muted">{step.description}</p>
-                </div>
-              ))}
-            </div>
-          </article>
+          <HowItWorksTrack
+            title={marketing.home.talentTrackTitle}
+            steps={marketing.home.talentSteps}
+          />
+          <HowItWorksTrack
+            title={marketing.home.explorerTrackTitle}
+            steps={marketing.home.explorerSteps}
+          />
         </div>
       </section>
 

@@ -55,7 +55,10 @@ export function selectTopCreators<T extends EligibleCreator>(
 }
 
 /**
- * Ranked projects in order, capped per author and without blocklisted text.
+ * Ranked projects without blocklisted text, capped per author first so the top
+ * of the board shows different people. When there are too few authors to fill
+ * the board that way, the free places go to their next-best projects in rank
+ * order: a full list of two authors reads better than "top 10" with four rows.
  * Projects without an owner username are capped on their own id, so a missing
  * profile never lets many anonymous rows through as one "author".
  */
@@ -66,6 +69,7 @@ export function selectTopProjects<T extends DisplayProject>(
 ): T[] {
   const perOwner = new Map<string, number>();
   const selected: T[] = [];
+  const overflow: T[] = [];
 
   for (const project of ranked) {
     if (selected.length >= size) break;
@@ -73,9 +77,17 @@ export function selectTopProjects<T extends DisplayProject>(
 
     const ownerKey = project.ownerUsername ?? `project:${project.id}`;
     const taken = perOwner.get(ownerKey) ?? 0;
-    if (taken >= maxPerOwner) continue;
+    if (taken >= maxPerOwner) {
+      overflow.push(project);
+      continue;
+    }
 
     perOwner.set(ownerKey, taken + 1);
+    selected.push(project);
+  }
+
+  for (const project of overflow) {
+    if (selected.length >= size) break;
     selected.push(project);
   }
 

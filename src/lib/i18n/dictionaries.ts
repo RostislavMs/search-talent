@@ -60,10 +60,74 @@ export const dictionaries = {
       },
       nav: {
         overview: "Overview",
+        metrics: "Metrics",
         users: "Users",
         moderation: "Moderation",
         audit: "Audit log",
         popups: "Popups",
+      },
+      metrics: {
+        title: "Product metrics",
+        description:
+          "The path from sign-up to an activated author, week by week. Platform admins are left out of every number.",
+        unavailableNoKey:
+          "Metrics need the service-role key (SUPABASE_SERVICE_ROLE_KEY) on the server.",
+        unavailableNotMigrated:
+          "Metrics are not collected yet. Apply database/2026-09-26-product-metrics.sql.",
+        dataNote:
+          "Views are counted from the day the metrics migration was applied: each visitor once a day, without bots or the author's own visits.",
+        excludedAdmins: "Admin accounts left out: {count}.",
+        tiles: {
+          activated: "Activated authors",
+          activatedHint: "+{count} this week",
+          signups: "Sign-ups in 8 weeks",
+          signupsHint: "{count} confirmed their email",
+          firstProject: "Reached a first project",
+          firstProjectHint: "{count} of {total} accounts",
+          medianTime: "Median time to a first project",
+          medianTimeHint: "From sign-up to publishing",
+        },
+        charts: {
+          activated: "New activated authors per week",
+          activatedNote:
+            "Activated: at least one published project and at least one portfolio view from outside the site.",
+          signups: "Sign-ups per week",
+          signupsAll: "All",
+          signupsConfirmed: "Confirmed email",
+          views: "Portfolio views per week",
+          viewsOutside: "From outside",
+          viewsInternal: "From the site",
+          viewsNote:
+            "Profile and project pages. From outside: another site or no referrer at all (a typed link, a PDF, most messengers).",
+        },
+        cohorts: {
+          title: "Sign-up cohorts",
+          note: "Returned: last activity at least 7 or 30 days after sign-up. A dash means no one in the cohort is that old yet.",
+          week: "Week of",
+          size: "Sign-ups",
+          firstProject: "First project",
+          medianTime: "Median time",
+          returned7: "Returned after 7 days",
+          returned30: "Returned after 30 days",
+        },
+        referrers: {
+          title: "Where outside views come from",
+          note: "Profile and project pages, last 8 weeks.",
+          direct: "No referrer",
+          empty: "No views from outside yet.",
+        },
+        signupSources: {
+          title: "Where sign-ups come from",
+          note: "Recorded only for visitors who allowed analytics cookies.",
+          direct: "Direct visit",
+          unattributed: "Unknown (no consent)",
+          empty: "No sign-ups in the last 8 weeks.",
+        },
+        units: {
+          lessThanHour: "< 1 h",
+          hours: "{count} h",
+          days: "{count} d",
+        },
       },
       overview: {
         title: "Platform overview",
@@ -349,7 +413,7 @@ export const dictionaries = {
     },
     footer: {
       description:
-        "A free portfolio for IT and digital specialists: your work, a score with tips, and one link to share it.",
+        "A free portfolio for tech and creative professionals: your work, a score with tips, and one link to share it.",
       legal: "Legal",
       terms: "Terms of Service",
       privacy: "Privacy Policy",
@@ -531,40 +595,22 @@ export const dictionaries = {
       },
     },
     home: {
-      eyebrow: "A free portfolio for IT and digital specialists",
-      titleLead: "Show your skills through",
-      titleWords: ["code", "design", "video editing", "3D work"],
+      titleLead: "Build a portfolio",
+      titleAccent: "that stands out",
       description:
-        "Import code from GitHub or GitLab; add video, design and 3D work as links or images. Get a portfolio score with tips to raise it. Share one link or a PDF.",
-      descriptionHighlights: [
-        "Profile, 2 min",
-        "First project, 5 min",
-        "Score and tips",
-        "A link for your CV",
-      ],
-      ctaCreateProfile: "Create portfolio",
-      ctaPublishProject: "Publish project",
-      ctaViewProjects: "Browse projects",
+        "Code, design, video or 3D — style the page your way, show your best work and stand out from the rest.",
+      heroNote: "Free · your first project in 10 minutes",
+      ctaCreateProfile: "Build your portfolio",
+      ctaAddWork: "Add your work",
+      ctaStylePage: "Style your page",
       ctaSeeExample: "See an example",
       topProjectsCta: "Open top projects",
       topCreatorsCta: "Open top talents",
-      cards: {
-        eyebrow: "Fresh on the platform",
-        examplePortfolio: {
-          label: "Example portfolio",
-          cta: "View profile",
-          fallback: "An example of a strong portfolio will appear here.",
-        },
-        latestProject: {
-          label: "Latest project",
-          cta: "View project",
-          fallback: "No projects published yet.",
-        },
-        freshArticle: {
-          label: "Fresh article",
-          cta: "Read",
-          fallback: "No articles published yet.",
-        },
+      example: {
+        label: "Example portfolio",
+        cta: "Open portfolio",
+        fallback: "An example of a strong portfolio will appear here.",
+        customNote: "The author chose the colours, font and background.",
       },
       trendingTitle: "Trending portfolio projects",
       trendingDescription:
@@ -574,53 +620,23 @@ export const dictionaries = {
       creatorsDescription:
         "Open a profile, review skills and experience, and jump into related portfolio projects.",
       searchTalent: "Search talent",
-      topRatedEyebrow: "Top rated",
-      topRatedTitle:
-        "Top talent and projects based on quality, not just likes.",
+      topRatedTitle: "The best creators and work",
       topRatedDescription:
-        "Rankings factor in project depth, community votes, profile completeness, and recent activity — so the top 10 reflects genuine quality.",
-      topRatedGuideCta: "Read the rating guide",
-      topCreatorsTitle: "Top 10 talents",
-      topCreatorsDescription:
-        "Ranked by profile completeness, project quality, community feedback, and recent activity.",
+        "Fill in your profile and add strong work to climb the ranking — the higher you are, the more people see you.",
+      topRatedGuideCta: "How to raise your rating",
+      topCreatorsTitle: "Top talents",
       freshCreatorsTitle: "New portfolios",
-      freshCreatorsDescription:
-        "Recently published portfolios. The ranking appears once more creators have published their work.",
-      topProjectsTitle: "Top 10 projects",
-      topProjectsDescription:
-        "Ranked by community votes, completeness, media quality, and recent activity — not just a like counter.",
+      topProjectsTitle: "Top projects",
       allTime: "All time",
       thisMonth: "Last 30 days",
       leaderboardScore: "rating",
       leaderboardEmpty:
-        "There is not enough signal yet to build this leaderboard.",
-      profileCompletionLabel: "Profile",
+        "Nothing here yet. Publish a project and it could show up here.",
+      profileCompletionLabel: "Profile complete",
       projectsCountLabel: "Projects",
-      topProjectLabel: "Top project",
+      topProjectLabel: "Best project",
       projectMediaLabel: "Media",
       technologyCountLabel: "Technologies",
-      ratingSignals: {
-        projects: {
-          title: "Project depth",
-          description:
-            "We reward detailed projects with media, technologies, links, and outcome sections.",
-        },
-        community: {
-          title: "Community response",
-          description:
-            "Votes are confidence-weighted, so a few likes do not beat proven appreciation.",
-        },
-        profile: {
-          title: "Profile quality",
-          description:
-            "A filled-out profile with avatar, bio, skills, links, and languages ranks higher.",
-        },
-        momentum: {
-          title: "Recent momentum",
-          description:
-            "The last-30-days board highlights fresh uploads, new votes, and current traction.",
-        },
-      },
     },
     search: {
       eyebrow: "Talent discovery",
@@ -2618,10 +2634,74 @@ export const dictionaries = {
       },
       nav: {
         overview: "Огляд",
+        metrics: "Метрики",
         users: "Користувачі",
         moderation: "Модерація",
         audit: "Журнал дій",
         popups: "Попапи",
+      },
+      metrics: {
+        title: "Метрики продукту",
+        description:
+          "Шлях від реєстрації до активованого автора, тиждень за тижнем. Адміністратори платформи не враховуються в жодній цифрі.",
+        unavailableNoKey:
+          "Для метрик потрібен сервісний ключ (SUPABASE_SERVICE_ROLE_KEY) на сервері.",
+        unavailableNotMigrated:
+          "Метрики ще не збираються. Застосуйте database/2026-09-26-product-metrics.sql.",
+        dataNote:
+          "Перегляди рахуються від дня, коли застосували міграцію метрик: кожен відвідувач раз на добу, без ботів і без візитів самого автора.",
+        excludedAdmins: "Не враховано адмін-акаунтів: {count}.",
+        tiles: {
+          activated: "Активовані автори",
+          activatedHint: "+{count} цього тижня",
+          signups: "Реєстрації за 8 тижнів",
+          signupsHint: "{count} підтвердили пошту",
+          firstProject: "Дійшли до першого проєкту",
+          firstProjectHint: "{count} з {total} акаунтів",
+          medianTime: "Медіанний час до першого проєкту",
+          medianTimeHint: "Від реєстрації до публікації",
+        },
+        charts: {
+          activated: "Нові активовані автори за тиждень",
+          activatedNote:
+            "Активований: щонайменше один опублікований проєкт і щонайменше один перегляд портфоліо ззовні.",
+          signups: "Реєстрації за тиждень",
+          signupsAll: "Усі",
+          signupsConfirmed: "Підтвердили пошту",
+          views: "Перегляди портфоліо за тиждень",
+          viewsOutside: "Ззовні",
+          viewsInternal: "З сайту",
+          viewsNote:
+            "Сторінки профілів і проєктів. Ззовні — з іншого сайту або зовсім без реферера (набране посилання, PDF, більшість месенджерів).",
+        },
+        cohorts: {
+          title: "Когорти реєстрацій",
+          note: "Повернулися: остання активність щонайменше через 7 або 30 днів після реєстрації. Прочерк — у когорті ще ніхто не такий «старий».",
+          week: "Тиждень",
+          size: "Реєстрації",
+          firstProject: "Перший проєкт",
+          medianTime: "Медіанний час",
+          returned7: "Повернулися через 7 днів",
+          returned30: "Повернулися через 30 днів",
+        },
+        referrers: {
+          title: "Звідки приходять перегляди ззовні",
+          note: "Сторінки профілів і проєктів, останні 8 тижнів.",
+          direct: "Без реферера",
+          empty: "Переглядів ззовні ще немає.",
+        },
+        signupSources: {
+          title: "Звідки приходять реєстрації",
+          note: "Записується лише для відвідувачів, які дозволили аналітичні cookies.",
+          direct: "Прямий візит",
+          unattributed: "Невідомо (без згоди)",
+          empty: "За останні 8 тижнів реєстрацій немає.",
+        },
+        units: {
+          lessThanHour: "< 1 год",
+          hours: "{count} год",
+          days: "{count} дн",
+        },
       },
       overview: {
         title: "Огляд платформи",
@@ -2907,7 +2987,7 @@ export const dictionaries = {
     },
     footer: {
       description:
-        "Безкоштовне портфоліо для IT- та digital-фахівців: ваші роботи, оцінка з порадами й одне посилання, щоб ними поділитися.",
+        "Безкоштовне портфоліо для IT- і творчих професій: ваші роботи, оцінка з порадами й одне посилання, щоб ними поділитися.",
       legal: "Правова інформація",
       terms: "Умови користування",
       privacy: "Політика конфіденційності",
@@ -3089,40 +3169,22 @@ export const dictionaries = {
       },
     },
     home: {
-      eyebrow: "Безкоштовне портфоліо для IT- та digital-фахівців",
-      titleLead: "Покажіть свій рівень",
-      titleWords: ["кодом", "дизайном", "монтажем", "3D-моделями"],
+      titleLead: "Побудуйте",
+      titleAccent: "сильне портфоліо",
       description:
-        "Імпортуйте код із GitHub чи GitLab, а відео, дизайн і 3D додайте посиланням або зображеннями. Отримайте оцінку портфоліо й поради, як її підняти. Діліться одним посиланням або PDF.",
-      descriptionHighlights: [
-        "Профіль, 2 хв",
-        "Перший проєкт, 5 хв",
-        "Оцінка і поради",
-        "Посилання в резюме",
-      ],
-      ctaCreateProfile: "Створити портфоліо",
-      ctaPublishProject: "Опублікувати проєкт",
-      ctaViewProjects: "Переглянути проєкти",
+        "Код, дизайн, відео чи 3D — оформіть сторінку у своєму стилі, покажіть найкращі роботи й виділяйтеся серед інших.",
+      heroNote: "Безкоштовно · перший проєкт за 10 хвилин",
+      ctaCreateProfile: "Побудувати портфоліо",
+      ctaAddWork: "Додати роботу",
+      ctaStylePage: "Оформити сторінку",
       ctaSeeExample: "Подивитися приклад",
       topProjectsCta: "Відкрити топ проєктів",
       topCreatorsCta: "Відкрити топ талантів",
-      cards: {
-        eyebrow: "Свіже на платформі",
-        examplePortfolio: {
-          label: "Приклад портфоліо",
-          cta: "Дивитись профіль",
-          fallback: "Тут з'явиться приклад сильного портфоліо.",
-        },
-        latestProject: {
-          label: "Свіжий проєкт",
-          cta: "Дивитись проєкт",
-          fallback: "Поки немає опублікованих проєктів.",
-        },
-        freshArticle: {
-          label: "Свіжа стаття",
-          cta: "Читати",
-          fallback: "Поки немає опублікованих статей.",
-        },
+      example: {
+        label: "Приклад портфоліо",
+        cta: "Відкрити портфоліо",
+        fallback: "Тут з'явиться приклад сильного портфоліо.",
+        customNote: "Кольори, шрифт і фон автор обрав сам.",
       },
       trendingTitle: "Популярні портфоліо-проєкти",
       trendingDescription:
@@ -3132,53 +3194,23 @@ export const dictionaries = {
       creatorsDescription:
         "Відкрийте профіль, перегляньте навички та досвід і переходьте до портфоліо-проєктів.",
       searchTalent: "Пошук талантів",
-      topRatedEyebrow: "Найкращі",
-      topRatedTitle:
-        "Сильні профілі та проєкти, які справді вирізняються.",
+      topRatedTitle: "Найкращі автори й роботи",
       topRatedDescription:
-        "У цей список потрапляють не випадково популярні сторінки, а добре заповнені профілі й проєкти, які стабільно привертають увагу.",
-      topRatedGuideCta: "Гайд по рейтингу",
-      topCreatorsTitle: "Топ 10 фахівців",
-      topCreatorsDescription:
-        "Вище піднімаються профілі з хорошим наповненням, сильними роботами та живою активністю.",
+        "Заповнюйте профіль і додавайте сильні роботи — так ви піднімаєтесь у топ, і вас бачить більше людей.",
+      topRatedGuideCta: "Як підняти рейтинг",
+      topCreatorsTitle: "Топ фахівців",
       freshCreatorsTitle: "Нові портфоліо",
-      freshCreatorsDescription:
-        "Нещодавно опубліковані портфоліо. Рейтинг з'явиться, коли свої роботи опублікує більше авторів.",
-      topProjectsTitle: "Топ 10 проєктів",
-      topProjectsDescription:
-        "У топі опиняються проєкти, які добре оформлені, мають сильну подачу й викликають помітний інтерес аудиторії.",
+      topProjectsTitle: "Топ проєктів",
       allTime: "За весь час",
       thisMonth: "Останні 30 днів",
       leaderboardScore: "рейтинг",
       leaderboardEmpty:
-        "Поки недостатньо сигналів, щоб побудувати цей лідерборд.",
-      profileCompletionLabel: "Профіль",
+        "Тут поки порожньо. Опублікуйте проєкт, і він може з'явитися тут.",
+      profileCompletionLabel: "Профіль заповнено",
       projectsCountLabel: "Проєкти",
-      topProjectLabel: "Топ проєкт",
+      topProjectLabel: "Найкращий проєкт",
       projectMediaLabel: "Медіа",
       technologyCountLabel: "Технології",
-      ratingSignals: {
-        projects: {
-          title: "Глибина проєкту",
-          description:
-            "Вище піднімаються проєкти з медіа, технологіями, посиланнями та якісно заповненими секціями результату.",
-        },
-        community: {
-          title: "Реакція спільноти",
-          description:
-            "Голоси мають вагу довіри, тому кілька випадкових лайків не перемагають перевірену якість.",
-        },
-        profile: {
-          title: "Якість профілю",
-          description:
-            "Краще ранжуються профілі з аватаром, біо, навичками, мовами, посиланнями та заповненою інформацією.",
-        },
-        momentum: {
-          title: "Свіжий імпульс",
-          description:
-            "Топ за 30 днів підсвічує нові завантаження, нові голоси та актуальний інтерес аудиторії.",
-        },
-      },
     },
     search: {
       eyebrow: "Пошук талантів",
