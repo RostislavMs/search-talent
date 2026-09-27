@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
 import { notFound, redirect } from "next/navigation";
 import { ButtonLink } from "@/components/ui/Button";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { getPollCategories } from "@/lib/db/polls";
-import { createLocalePath, isLocale } from "@/lib/i18n/config";
+import { isLocale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -47,7 +48,7 @@ export default async function NewPollPage({
   const [viewer, categories] = await Promise.all([getCurrentViewerRole(), getPollCategories()]);
 
   if (!viewer.user) {
-    redirect(createLocalePath(safeLocale, "/login"));
+    redirect(buildLoginHref(safeLocale, "/polls/new"));
   }
 
   const supabase = await createClient();

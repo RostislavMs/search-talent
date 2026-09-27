@@ -18,6 +18,7 @@ import OptimizedImage from "@/components/ui/optimized-image";
 import { stripLocaleFromPathname } from "@/lib/i18n/config";
 import type { SectionVisibility } from "@/lib/section-visibility";
 import type { Theme } from "@/lib/theme";
+import { useLoginHref } from "@/lib/auth/use-login-href";
 
 type Viewer = {
   displayName: string | null;
@@ -48,6 +49,7 @@ export default function SiteHeader({
   initialCanPersistTheme,
 }: SiteHeaderProps) {
   const pathname = stripLocaleFromPathname(usePathname() || "/");
+  const loginHref = useLoginHref();
   const headerRef = useRef<HTMLElement>(null);
   const profileMenuRef = useRef<HTMLDetailsElement>(null);
   const mobileProfileMenuRef = useRef<HTMLDetailsElement>(null);
@@ -503,7 +505,7 @@ export default function SiteHeader({
           ) : (
             <>
               <LocalizedLink
-                href="/login"
+                href={loginHref}
                 className={buttonStyles({ variant: "ghost", size: "sm" })}
               >
                 {dictionary.nav.login}
@@ -748,7 +750,7 @@ export default function SiteHeader({
                         </LocalizedLink>
 
                         <LocalizedLink
-                          href="/login"
+                          href={loginHref}
                           onClick={() => setNavOpen(false)}
                           className={buttonStyles({
                             variant: "secondary",

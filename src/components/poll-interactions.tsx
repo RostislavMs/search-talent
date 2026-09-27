@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/content-stats";
 import { apiFetch } from "@/lib/api-client";
 import { isDiscussionOpen } from "@/lib/discussions";
-import { createLocalePath } from "@/lib/i18n/config";
 import type { PollComment } from "@/lib/polls";
+import { useLoginHref } from "@/lib/auth/use-login-href";
 
 function countComments(comments: PollComment[]): number {
   return comments.reduce((sum, comment) => sum + 1 + countComments(comment.replies), 0);
@@ -329,7 +329,7 @@ export default function PollInteractions({
   discussionHref?: string | null;
 }) {
   const router = useRouter();
-  const loginPath = createLocalePath(locale === "uk" ? "uk" : "en", "/login");
+  const loginPath = useLoginHref();
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [viewsCount, setViewsCount] = useState(initialViewsCount);
   const [liked, setLiked] = useState(initialLiked);

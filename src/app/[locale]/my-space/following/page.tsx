@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import FollowUnfollowButton from "@/components/follow-unfollow-button";
 import LocalizedLink from "@/components/ui/localized-link";
 import Pagination from "@/components/ui/pagination";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
@@ -114,7 +115,7 @@ export default async function FollowingPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(createLocalePath(locale, "/login"));
+    redirect(buildLoginHref(locale, "/my-space/following"));
   }
 
   const dictionary = getDictionary(locale);

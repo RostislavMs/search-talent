@@ -34,6 +34,7 @@ import {
   type ProjectKind,
   type ProjectStatus,
 } from "@/lib/projects";
+import { useLoginHref } from "@/lib/auth/use-login-href";
 
 export type DiscoveryMode = "projects" | "creators";
 
@@ -572,6 +573,7 @@ export default function DiscoveryPage({
   canPersonalize = false,
 }: DiscoveryPageProps) {
   const dictionary = useDictionary();
+  const loginHref = useLoginHref();
   const toast = useToast();
   const locale = useCurrentLocale();
   const copy = useMemo(() => getDiscoveryCopy(locale), [locale]);
@@ -1620,7 +1622,7 @@ export default function DiscoveryPage({
               <p className="mt-3 text-sm app-muted">
                 {commonUi.savedSearchesSignIn}{" "}
                 <LocalizedLink
-                  href="/login"
+                  href={loginHref}
                   className="font-medium text-[color:var(--foreground)] underline-offset-4 transition hover:underline"
                 >
                   {commonUi.signIn}

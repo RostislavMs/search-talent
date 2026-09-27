@@ -25,8 +25,8 @@ import {
 import { apiFetch } from "@/lib/api-client";
 import type { ReactionSummary } from "@/lib/constants/reactions";
 import { isDiscussionOpen } from "@/lib/discussions";
-import { createLocalePath } from "@/lib/i18n/config";
 import type { ArticleComment } from "@/lib/articles";
+import { useLoginHref } from "@/lib/auth/use-login-href";
 
 function countComments(comments: ArticleComment[]): number {
   return comments.reduce(
@@ -469,7 +469,7 @@ export default function ArticleInteractions({
   context?: "article" | "topic";
 }) {
   const router = useRouter();
-  const loginPath = createLocalePath(locale === "uk" ? "uk" : "en", "/login");
+  const loginPath = useLoginHref();
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [viewsCount, setViewsCount] = useState(initialViewsCount);
   const [liked, setLiked] = useState(initialLiked);

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { buildLoginHref, sanitizeNextPath } from "@/lib/auth/redirect";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
 
 export async function updateSession(request: NextRequest) {
@@ -50,18 +51,26 @@ export async function updateSession(request: NextRequest) {
     ? (maybeLocale as Locale)
     : null;
 
-  if (!user && locale && (section === "my-space" || section === "analytics")) {
-    const url = request.nextUrl.clone();
-    url.pathname = createLocalePath(locale, "/login");
+  if (
+    !user &&
+    locale &&
+    (section === "my-space" || section === "analytics" || section === "onboarding")
+  ) {
+    // Come back to the same page after signing in.
+    const url = new URL(
+      buildLoginHref(locale, `${request.nextUrl.pathname}${request.nextUrl.search}`),
+      request.url,
+    );
     return NextResponse.redirect(url);
   }
 
-  // Already authenticated — keep users out of the login/signup pages.
-  // (reset-password is intentionally excluded: the recovery flow signs the
-  // user in to let them set a new password.)
+  // Already authenticated — keep users out of the login/signup pages, sending
+  // them where the link meant to take them. (reset-password is intentionally
+  // excluded: the recovery flow signs the user in to let them set a new
+  // password.)
   if (user && locale && (section === "login" || section === "signup")) {
-    const url = request.nextUrl.clone();
-    url.pathname = createLocalePath(locale, "/my-space");
+    const next = sanitizeNextPath(request.nextUrl.searchParams.get("next"), locale);
+    const url = new URL(next ?? createLocalePath(locale, "/my-space"), request.url);
     return NextResponse.redirect(url);
   }
 

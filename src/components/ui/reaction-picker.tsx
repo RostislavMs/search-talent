@@ -9,6 +9,7 @@ import {
   type ReactionTargetType,
 } from "@/lib/constants/reactions";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { useLoginHref } from "@/lib/auth/use-login-href";
 
 type ReactionPickerProps = {
   targetType: ReactionTargetType;
@@ -68,7 +69,8 @@ export default function ReactionPicker({
   const router = useLocalizedRouter();
   // Guests are sent to sign in. A client-side push is enough: nothing about
   // the session changes until they actually log in there.
-  const goToLogin = () => router.push("/login");
+  const loginHref = useLoginHref();
+  const goToLogin = () => router.push(loginHref);
   const [reactions, setReactions] = useState<ReactionSummary[]>(
     [...initialReactions].sort(
       (a, b) =>

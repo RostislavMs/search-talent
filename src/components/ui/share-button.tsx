@@ -40,7 +40,7 @@ function computeCoords(
   return { top, left, width, maxHeight: vh - top - VIEWPORT_MARGIN };
 }
 
-type ShareService = {
+export type ShareService = {
   key: string;
   label: string;
   href: (encodedUrl: string, encodedText: string) => string;
@@ -50,7 +50,9 @@ type ShareService = {
 // Brand glyphs are inline so we keep zero icon-library dependencies (the rest of
 // the codebase uses inline SVG too). Rendered in currentColor to stay within the
 // minimalist, neutral palette — colour is reserved for hover affordance.
-const SERVICES: ShareService[] = [
+// Exported for the portfolio share panel (onboarding), which offers the same
+// services inline.
+export const SHARE_SERVICES: ShareService[] = [
   {
     key: "Telegram",
     label: "Telegram",
@@ -262,7 +264,7 @@ export default function ShareButton({
       ) : null}
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {SERVICES.map((service) => (
+        {SHARE_SERVICES.map((service) => (
           <a
             key={service.key}
             href={service.href(encodedUrl, encodedText)}

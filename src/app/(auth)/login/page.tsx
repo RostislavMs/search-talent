@@ -9,7 +9,9 @@ import {
   loginSchema,
   type AuthFieldErrors,
 } from "@/lib/auth/validation";
-import { useDictionary, useLocalizedHref } from "@/lib/i18n/client";
+import { buildContinueHref, buildSignupHref } from "@/lib/auth/redirect";
+import { useSearchParam } from "@/lib/auth/use-search-param";
+import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
 import { createClient } from "@/lib/supabase/client";
 import AuthDivider from "@/components/auth/auth-divider";
 import AuthLegalNote from "@/components/auth/auth-legal-note";
@@ -21,13 +23,25 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 export default function LoginPage() {
   const supabase = createClient();
   const dictionary = useDictionary();
-  const mySpaceHref = useLocalizedHref("/my-space");
+  const locale = useCurrentLocale();
+  // From the URL: where the person was heading before being asked to log in
+  // (only internal paths survive `sanitizeNextPath`), and a failed Google or
+  // GitHub sign-in reported back by the OAuth callback.
+  const next = useSearchParam("next");
+  const oauthFailedParam = useSearchParam("error") === "oauth";
+  const [oauthErrorDismissed, setOauthErrorDismissed] = useState(false);
+  const oauthFailed = oauthFailedParam && !oauthErrorDismissed;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
   const [loading, setLoading] = useState(false);
+
+  const clearError = () => {
+    setError(null);
+    setOauthErrorDismissed(true);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +84,7 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.assign(mySpaceHref);
+    window.location.assign(buildContinueHref(locale, next));
   };
 
   return (
@@ -94,7 +108,7 @@ export default function LoginPage() {
           {dictionary.auth.login.title}
         </h1>
 
-        <OAuthButtons className="mt-5" disabled={loading} onError={setError} />
+        <OAuthButtons className="mt-5" disabled={loading} next={next} onError={setError} />
 
         <AuthDivider className="my-4" />
 
@@ -114,7 +128,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
-                setError(null);
+                clearError();
                 setFieldErrors((current) => ({ ...current, email: undefined }));
               }}
               autoComplete="email"
@@ -155,7 +169,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
-                setError(null);
+                clearError();
                 setFieldErrors((current) => ({
                   ...current,
                   password: undefined,
@@ -175,7 +189,11 @@ export default function LoginPage() {
             )}
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {(error || oauthFailed) && (
+            <p className="text-sm text-red-500" role="alert">
+              {error || dictionary.auth.errors.oauthFailed}
+            </p>
+          )}
 
           <Button type="submit" disabled={loading} className="justify-center">
             {loading
@@ -188,7 +206,7 @@ export default function LoginPage() {
 
         <div className="mt-4 flex items-center justify-between gap-3 text-sm app-muted">
           <LocalizedLink
-            href="/signup"
+            href={buildSignupHref(locale, next)}
             className="hover:text-[color:var(--foreground)]"
           >
             {dictionary.auth.login.createAccount}

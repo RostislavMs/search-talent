@@ -14,6 +14,7 @@ import {
   type ReportReason,
   type ReportTargetType,
 } from "@/lib/moderation";
+import { useLoginHref } from "@/lib/auth/use-login-href";
 
 type ContentReportButtonProps = {
   copy: ModerationCopy;
@@ -62,6 +63,7 @@ export default function ContentReportButton({
   const [success, setSuccess] = useState("");
 
   const reportCopy = copy.report;
+  const loginHref = useLoginHref();
 
   const triggerLabel =
     targetType === "project" ? reportCopy.buttonProject : reportCopy.buttonProfile;
@@ -70,7 +72,7 @@ export default function ContentReportButton({
     if (iconOnly) {
       return (
         <LocalizedLink
-          href="/login"
+          href={loginHref}
           aria-label={triggerLabel}
           title={triggerLabel}
           className={buttonStyles({ variant: "ghost", size: "sm" })}
@@ -81,7 +83,7 @@ export default function ContentReportButton({
     }
     return (
       <LocalizedLink
-        href="/login"
+        href={loginHref}
         className={buttonStyles({ variant: "ghost", size: "sm" })}
       >
         {reportCopy.loginToReport}

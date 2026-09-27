@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api-client";
-import { createLocalePath } from "@/lib/i18n/config";
 import type { PollQuestion } from "@/lib/polls";
+import { useLoginHref } from "@/lib/auth/use-login-href";
 
 type Selection = { optionIds: string[]; rating: number | null };
 
@@ -39,7 +39,7 @@ export default function PollVoting({
 }) {
   const router = useRouter();
   const isUkrainian = locale === "uk";
-  const loginPath = createLocalePath(locale === "uk" ? "uk" : "en", "/login");
+  const loginPath = useLoginHref();
 
   const [questions, setQuestions] = useState<PollQuestion[]>(initialQuestions);
   const [hasVoted, setHasVoted] = useState(initialHasVoted);

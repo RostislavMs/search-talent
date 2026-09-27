@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import dynamic from "next/dynamic";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { getPlatformStats } from "@/lib/db/stats";
 
 const PlatformAnalytics = dynamic(
@@ -18,7 +19,7 @@ const PlatformAnalytics = dynamic(
     ),
   },
 );
-import { createLocalePath, isLocale } from "@/lib/i18n/config";
+import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -62,7 +63,7 @@ export default async function AnalyticsPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(createLocalePath(locale, "/login"));
+    redirect(buildLoginHref(locale, "/analytics"));
   }
 
   const dictionary = getDictionary(locale);

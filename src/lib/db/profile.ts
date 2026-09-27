@@ -1,4 +1,6 @@
-﻿import { createClient } from "@/lib/supabase/server";
+﻿import { awardSqlBadgesForUser } from "@/lib/db/badges";
+import { createClient } from "@/lib/supabase/server";
+import { generateTemporaryUsername } from "@/lib/username";
 import type {
   EmploymentType,
   ExperienceLevel,
@@ -19,17 +21,6 @@ import {
 } from "@/lib/profile-sections";
 import { normalizeProfileSettings, type ProfileSettings } from "@/lib/profile-presentation";
 
-function normalizeUsernameCandidate(value: string | null | undefined) {
-  return (
-    value
-      ?.toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9._-]+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "") || "user"
-  );
-}
-
 function getExperienceLevel(value: unknown) {
   return typeof value === "string" && experienceLevels.includes(value as ExperienceLevel)
     ? (value as ExperienceLevel)
@@ -49,64 +40,85 @@ function getPreferredContactMethod(value: unknown) {
     : null;
 }
 
-async function generateUniqueUsername(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  source: string | null | undefined,
+type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
+
+// Collisions on six random characters are practically impossible; a few
+// attempts cover the theoretical case without looping forever.
+const TEMPORARY_USERNAME_ATTEMPTS = 3;
+
+/**
+ * Creates the profile row for a new account with a temporary `user-xxxxxx`
+ * nick (the person picks their own on the first onboarding step). When two
+ * requests race to create the same row, the loser reads the winner's row.
+ */
+async function createProfileRow<TColumns extends string>(
+  supabase: ServerSupabase,
+  userId: string,
+  columns: TColumns,
 ) {
-  const baseUsername = normalizeUsernameCandidate(source);
-  const { data } = await supabase
+  for (let attempt = 0; attempt < TEMPORARY_USERNAME_ATTEMPTS; attempt += 1) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .insert({ user_id: userId, username: generateTemporaryUsername() })
+      .select(columns)
+      .single();
+
+    if (!error) {
+      return data;
+    }
+
+    if (!error.message?.includes("username")) {
+      break;
+    }
+  }
+
+  const { data: existing } = await supabase
     .from("profiles")
-    .select("username")
-    .ilike("username", `${baseUsername}%`);
+    .select(columns)
+    .eq("user_id", userId)
+    .maybeSingle();
 
-  const existingUsernames = new Set(
-    (data || [])
-      .map((profile) => profile.username?.trim().toLowerCase())
-      .filter((username): username is string => Boolean(username)),
-  );
+  return existing;
+}
 
-  if (!existingUsernames.has(baseUsername)) {
-    return baseUsername;
+/**
+ * Supabase Auth confirms the email; the public "email verified" mark on the
+ * profile follows it automatically instead of waiting for a button press. The
+ * guard trigger on `profiles` only lets the flag turn on when the auth email
+ * really is confirmed, so this cannot be forged.
+ */
+async function syncEmailVerified(supabase: ServerSupabase, userId: string) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ email_verified: true, email_verified_at: new Date().toISOString() })
+    .eq("user_id", userId);
+
+  if (!error) {
+    // The `verified_email` badge is awarded right away rather than on the next
+    // unrelated trigger. Failures are logged inside and must not break the page.
+    await awardSqlBadgesForUser(supabase, userId);
   }
-
-  let suffix = 2;
-
-  while (existingUsernames.has(`${baseUsername}-${suffix}`)) {
-    suffix += 1;
-  }
-
-  return `${baseUsername}-${suffix}`;
 }
 
 export async function ensureProfileForUser(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  user: { id: string; email?: string | null },
+  supabase: ServerSupabase,
+  user: { id: string; email?: string | null; email_confirmed_at?: string | null },
 ) {
   const { data: existing } = await supabase
     .from("profiles")
-    .select("name, username, avatar_url")
+    .select("name, username, avatar_url, email_verified")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (existing) {
-    return existing;
+  const profile =
+    existing ??
+    (await createProfileRow(supabase, user.id, "name, username, avatar_url, email_verified"));
+
+  if (profile && user.email_confirmed_at && !profile.email_verified) {
+    await syncEmailVerified(supabase, user.id);
   }
 
-  const defaultUsername = await generateUniqueUsername(
-    supabase,
-    user.email?.split("@")[0],
-  );
-
-  const { data: created } = await supabase
-    .from("profiles")
-    .insert({
-      user_id: user.id,
-      username: defaultUsername,
-    })
-    .select("name, username, avatar_url")
-    .single();
-
-  return created;
+  return profile;
 }
 
 export async function getMyProfile() {
@@ -127,21 +139,7 @@ export async function getMyProfile() {
     .maybeSingle();
 
   if (!profile) {
-    const defaultUsername = await generateUniqueUsername(
-      supabase,
-      user.email?.split("@")[0],
-    );
-
-    const { data } = await supabase
-      .from("profiles")
-      .insert({
-        user_id: user.id,
-        username: defaultUsername,
-      })
-      .select("*")
-      .single();
-
-    profile = data;
+    profile = await createProfileRow(supabase, user.id, "*");
   }
 
   if (!profile) {

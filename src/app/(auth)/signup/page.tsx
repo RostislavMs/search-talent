@@ -3,13 +3,14 @@
 import { useState } from "react";
 import {
   AUTH_LIMITS,
-  buildAuthRedirectUrl,
   getAuthErrorMessage,
   getAuthFieldErrors,
   getPublicAuthErrorMessage,
   signupSchema,
   type AuthFieldErrors,
 } from "@/lib/auth/validation";
+import { buildAuthCallbackUrl, buildLoginHref } from "@/lib/auth/redirect";
+import { useSearchParam } from "@/lib/auth/use-search-param";
 import { useDictionary, useLocalizedHref, useLocalizedRouter } from "@/lib/i18n/client";
 import { createClient } from "@/lib/supabase/client";
 import AuthDivider from "@/components/auth/auth-divider";
@@ -24,6 +25,9 @@ export default function SignupPage() {
   const router = useLocalizedRouter();
   const dictionary = useDictionary();
   const verifyHref = useLocalizedHref("/verify");
+  // Kept only for the "log in instead" link: a new account always goes through
+  // the onboarding first.
+  const next = useSearchParam("next");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -66,10 +70,11 @@ export default function SignupPage() {
       email: parsed.data.email,
       password: parsed.data.password,
       options: {
-        emailRedirectTo: buildAuthRedirectUrl(
-          router.locale,
-          "/verify",
-          process.env.NEXT_PUBLIC_APP_URL,
+        // The link in the email signs the person in and opens the onboarding
+        // (see /api/auth/callback), instead of asking them to log in again.
+        emailRedirectTo: buildAuthCallbackUrl(
+          process.env.NEXT_PUBLIC_APP_URL || window.location.origin,
+          { flow: "signup", locale: router.locale },
         ),
         // Persist the signup locale into user_metadata so Supabase Auth email
         // templates can localize via {{ .Data.locale }} (see supabase/email-templates).
@@ -224,7 +229,10 @@ export default function SignupPage() {
         </form>
 
         <div className="mt-4 flex items-center justify-between gap-3 text-sm app-muted">
-          <LocalizedLink href="/login" className="hover:text-[color:var(--foreground)]">
+          <LocalizedLink
+            href={buildLoginHref(router.locale, next)}
+            className="hover:text-[color:var(--foreground)]"
+          >
             {dictionary.auth.signup.alreadyHaveAccount}
           </LocalizedLink>
           <LocalizedLink href="/projects" className="hover:text-[color:var(--foreground)]">

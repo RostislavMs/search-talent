@@ -486,13 +486,11 @@ export default function PublicProfileShowcase({
                   {(profile.city || profile.countryName) && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{[profile.city, profile.countryName].filter(Boolean).join(", ")}</span>}
                   {profile.experience_level && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{getExperienceLabel(profile.experience_level, locale)}</span>}
                   {isOwner && (
-                    <span className="hidden sm:inline-flex">
-                      <ProfileCompletenessButton
-                        completeness={completeness}
-                        locale={locale}
-                        editHref={`/${locale}/profile/edit`}
-                      />
-                    </span>
+                    <ProfileCompletenessButton
+                      completeness={completeness}
+                      locale={locale}
+                      editHref={`/${locale}/profile/edit`}
+                    />
                   )}
                 </div>
                 {badges.length > 0 && (

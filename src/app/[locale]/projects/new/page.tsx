@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { notFound, redirect } from "next/navigation";
 import { ButtonLink } from "@/components/ui/Button";
-import { createLocalePath, isLocale } from "@/lib/i18n/config";
+import { buildLoginHref } from "@/lib/auth/redirect";
+import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { normalizeProjectKind } from "@/lib/projects";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 
@@ -46,19 +48,41 @@ export async function generateMetadata({
   });
 }
 
+function readParam(value: string | string[] | undefined) {
+  return typeof value === "string" ? value : null;
+}
+
 export default async function NewProjectPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{
+    kind?: string | string[];
+    step?: string | string[];
+    from?: string | string[];
+  }>;
 }) {
   const locale = await getLocaleValue(params);
+  const query = await searchParams;
+  // `?kind=code&step=2&from=onboarding`: the onboarding opens the wizard with
+  // the kind already chosen (and on the import step), and gets the person back
+  // after publishing.
+  const initialKind = normalizeProjectKind(readParam(query.kind));
+  const initialStep = readParam(query.step) === "2" && initialKind ? 2 : 1;
+  const fromOnboarding = readParam(query.from) === "onboarding";
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(createLocalePath(locale, "/login"));
+    const queryString = new URLSearchParams({
+      ...(initialKind ? { kind: initialKind } : {}),
+      ...(initialStep === 2 ? { step: "2" } : {}),
+      ...(fromOnboarding ? { from: "onboarding" } : {}),
+    }).toString();
+    redirect(buildLoginHref(locale, `/projects/new${queryString ? `?${queryString}` : ""}`));
   }
 
   const dictionary = getDictionary(locale);
@@ -66,6 +90,9 @@ export default async function NewProjectPage({
   return (
     <main className="mx-auto max-w-7xl px-0 py-10 sm:px-6">
       <CreateProjectForm
+        initialKind={initialKind}
+        initialStep={initialStep}
+        fromOnboarding={fromOnboarding}
         sidebarHeader={
           <div className="space-y-3">
             <h1 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">

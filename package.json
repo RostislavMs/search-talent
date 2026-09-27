@@ -40,6 +40,7 @@
     "isomorphic-dompurify": "2.26.0",
     "next": "16.3.5",
     "postcss": "^8.5.23",
+    "qrcode-generator": "2.0.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "zod": "^4.3.6"

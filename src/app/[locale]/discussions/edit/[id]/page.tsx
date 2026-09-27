@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import TopicComposer from "@/components/topic-composer";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { DISCUSSIONS_CATEGORY_SLUG } from "@/lib/articles";
 import { getArticleCategories } from "@/lib/db/articles";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
@@ -40,7 +41,7 @@ export default async function EditTopicPage({
   const viewer = await getCurrentViewerRole();
 
   if (!viewer.user) {
-    redirect(createLocalePath(safeLocale, "/login"));
+    redirect(buildLoginHref(safeLocale, `/discussions/edit/${id}`));
   }
 
   const supabase = await createClient();

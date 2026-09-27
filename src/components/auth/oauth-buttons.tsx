@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { buildAuthCallbackUrl, sanitizeNextPath } from "@/lib/auth/redirect";
 import { getPublicAuthErrorMessage } from "@/lib/auth/validation";
-import { useDictionary, useLocalizedHref } from "@/lib/i18n/client";
+import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
 import { createClient } from "@/lib/supabase/client";
 import { buttonStyles } from "@/components/ui/button-styles";
 
@@ -46,16 +47,19 @@ function GitHubIcon() {
  */
 export default function OAuthButtons({
   disabled = false,
+  next = null,
   onError,
   className,
 }: {
   disabled?: boolean;
+  /** Page to return to after signing in; without it the callback decides. */
+  next?: string | null;
   onError: (message: string | null) => void;
   className?: string;
 }) {
   const supabase = createClient();
   const dictionary = useDictionary();
-  const mySpaceHref = useLocalizedHref("/my-space");
+  const locale = useCurrentLocale();
   const [pending, setPending] = useState<OAuthProvider | null>(null);
 
   const startOAuth = async (provider: OAuthProvider) => {
@@ -67,12 +71,16 @@ export default function OAuthButtons({
     onError(null);
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-    const callbackUrl = new URL("/api/auth/callback", baseUrl);
-    callbackUrl.searchParams.set("next", mySpaceHref);
+    // Without `next` the callback sends a new account to the onboarding and
+    // everyone else to "My Space".
+    const callbackUrl = buildAuthCallbackUrl(baseUrl, {
+      next: sanitizeNextPath(next, locale),
+      locale,
+    });
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: callbackUrl.toString() },
+      options: { redirectTo: callbackUrl },
     });
 
     if (error) {
