@@ -175,20 +175,3 @@ export function getPublicAuthErrorMessage(
       return dictionary.auth.errors.generic;
   }
 }
-
-export function buildAuthRedirectUrl(
-  locale: string,
-  pathname: string,
-  explicitBaseUrl?: string,
-) {
-  const normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
-  const baseUrl =
-    explicitBaseUrl ||
-    (typeof window !== "undefined" ? window.location.origin : "");
-
-  if (!baseUrl) {
-    return `/${locale}${normalizedPath}`;
-  }
-
-  return new URL(`/${locale}${normalizedPath}`, baseUrl).toString();
-}

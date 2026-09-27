@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { notFound, redirect } from "next/navigation";
 import AvatarUpload from "@/components/avatar-upload";
-import EmailVerificationButton from "@/components/email-verification-button";
 import { ButtonLink } from "@/components/ui/Button";
+import VerifiedBadge from "@/components/verified-badge";
 
 const ProfileForm = dynamic(() => import("@/components/profile-form"), {
   loading: () => (
@@ -13,8 +13,9 @@ const ProfileForm = dynamic(() => import("@/components/profile-form"), {
     </div>
   ),
 });
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { getMyProfile } from "@/lib/db/profile";
-import { createLocalePath, isLocale } from "@/lib/i18n/config";
+import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -61,7 +62,7 @@ export default async function ProfileEditPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(createLocalePath(locale, "/login"));
+    redirect(buildLoginHref(locale, "/profile/edit"));
   }
 
   const dictionary = getDictionary(locale);
@@ -85,6 +86,10 @@ export default async function ProfileEditPage({
   const fallbackText = (profile.name || profile.username || user.email || "U")
     .slice(0, 1)
     .toUpperCase();
+  // The mark follows the auth email confirmation on its own (see
+  // ensureProfileForUser); the auth side is checked too so a page rendered in
+  // the same request as the sync does not show a stale "not confirmed".
+  const emailVerified = Boolean(profile.email_verified || user.email_confirmed_at);
 
   return (
     <main className="mx-auto max-w-[90rem] px-0 py-4 sm:px-6 sm:py-10">
@@ -120,9 +125,11 @@ export default async function ProfileEditPage({
             <p className="text-sm font-medium text-[color:var(--foreground)]">
               {dictionary.emailVerification.sectionTitle}
             </p>
-            <EmailVerificationButton
-              initialVerified={profile.email_verified ?? false}
-            />
+            {emailVerified ? (
+              <VerifiedBadge verified />
+            ) : (
+              <p className="text-sm app-muted">{dictionary.emailVerification.pending}</p>
+            )}
           </div>
         </div>
       </section>

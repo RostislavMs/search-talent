@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/Button";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
@@ -32,39 +33,68 @@ export async function generateMetadata({
   });
 }
 
+type VerifyStatus = "sent" | "confirmed" | "expired";
+
+function readStatus(value: string | string[] | undefined): VerifyStatus {
+  return value === "confirmed" || value === "expired" ? value : "sent";
+}
+
+/**
+ * - sent (default): right after sign-up, "open the link in the email".
+ * - confirmed: the link was opened in another browser, so the email is
+ *   confirmed but there is no session yet (see /api/auth/callback).
+ * - expired: the link was already used or is too old.
+ */
 export default async function VerifyPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ status?: string | string[] }>;
 }) {
   const locale = await getLocaleValue(params);
-  const dictionary = getDictionary(locale);
+  const status = readStatus((await searchParams).status);
+  const copy = getDictionary(locale).auth.verify;
+  const title =
+    status === "confirmed"
+      ? copy.confirmedTitle
+      : status === "expired"
+        ? copy.expiredTitle
+        : copy.title;
+  const description =
+    status === "confirmed"
+      ? copy.confirmedDescription
+      : status === "expired"
+        ? copy.expiredDescription
+        : copy.description;
 
   return (
-    <main className="mx-auto max-w-3xl px-0 py-0 sm:px-4 sm:py-16">
-      <section className="rounded-none sm:rounded-hero app-card px-4 py-6 sm:p-10">
-        <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
-          {dictionary.auth.verify.eyebrow}
-        </p>
-        <h1 className="font-display mt-3 text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:mt-4 sm:text-3xl">
-          {dictionary.auth.verify.title}
+    <main className="mx-auto flex w-full max-w-md flex-col justify-center px-0 py-0 sm:min-h-[calc(100svh-4.5rem)] sm:px-4 sm:py-6">
+      <section className="w-full rounded-none sm:rounded-hero app-card px-4 py-6 sm:px-7 sm:py-6">
+        <h1 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+          {title}
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 app-muted sm:mt-4 sm:text-base sm:leading-8">
-          {dictionary.auth.verify.description}
-        </p>
+        <p className="mt-3 text-sm leading-6 app-muted">{description}</p>
 
-        <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">
-          <ButtonLink href="/login">{dictionary.auth.verify.login}</ButtonLink>
-          <ButtonLink href="/my-space" variant="secondary">
-            {dictionary.auth.verify.openMySpace}
-          </ButtonLink>
-          <ButtonLink href="/" variant="ghost">
-            {dictionary.auth.verify.backHome}
-          </ButtonLink>
-        </div>
+        {status === "sent" ? (
+          <p className="mt-4 text-sm leading-6 app-muted">{copy.hint}</p>
+        ) : null}
 
-        <div className="mt-8 rounded-3xl app-panel p-5 text-sm leading-7 app-muted">
-          {dictionary.auth.verify.hint}
+        <div className="mt-6 flex flex-wrap gap-3">
+          {status === "sent" ? (
+            <ButtonLink href="/" variant="secondary">
+              {copy.backHome}
+            </ButtonLink>
+          ) : (
+            <>
+              <ButtonLink href={buildLoginHref(locale, "/onboarding")}>{copy.login}</ButtonLink>
+              {status === "expired" ? (
+                <ButtonLink href="/signup" variant="secondary">
+                  {copy.signup}
+                </ButtonLink>
+              ) : null}
+            </>
+          )}
         </div>
       </section>
     </main>

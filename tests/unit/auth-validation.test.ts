@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   AUTH_LIMITS,
-  buildAuthRedirectUrl,
   forgotPasswordSchema,
   getAuthErrorMessage,
   getAuthFieldErrors,
@@ -166,22 +165,6 @@ describe("getAuthFieldErrors", () => {
     expect(errors.email).toBeDefined();
     expect(errors.password).toBeDefined();
     expect(errors.confirmPassword).toBeDefined();
-  });
-});
-
-describe("buildAuthRedirectUrl", () => {
-  it("falls back to a relative path when no base URL is available", () => {
-    expect(buildAuthRedirectUrl("uk", "/auth/callback")).toBe("/uk/auth/callback");
-  });
-
-  it("normalizes pathnames missing a leading slash", () => {
-    expect(buildAuthRedirectUrl("en", "auth/callback")).toBe("/en/auth/callback");
-  });
-
-  it("uses an explicit base URL when provided", () => {
-    expect(
-      buildAuthRedirectUrl("uk", "/auth/callback", "https://example.com"),
-    ).toBe("https://example.com/uk/auth/callback");
   });
 });
 

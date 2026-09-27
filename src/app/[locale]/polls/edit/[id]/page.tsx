@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
 import { redirect, notFound } from "next/navigation";
 import type { QuestionDraft } from "@/components/poll-question-builder";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { getPollCategories } from "@/lib/db/polls";
 import { loadCoAuthorsForEditor } from "@/lib/db/co-authors";
-import { createLocalePath, isLocale } from "@/lib/i18n/config";
+import { isLocale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { normalizePollQuestionType } from "@/lib/polls";
 import { buildMetadata } from "@/lib/seo";
@@ -49,7 +50,7 @@ export default async function EditPollPage({
   const viewer = await getCurrentViewerRole();
 
   if (!viewer.user) {
-    redirect(createLocalePath(safeLocale, "/login"));
+    redirect(buildLoginHref(safeLocale, `/polls/edit/${id}`));
   }
 
   const supabase = await createClient();

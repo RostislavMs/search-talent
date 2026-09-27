@@ -220,9 +220,11 @@ search-talent/
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/auth/callback` | OAuth callback (Google, GitHub) |
+| GET | `/api/auth/callback` | Finishes OAuth (Google, GitHub) and the confirmation-email sign-in (`code` or `token_hash`), then redirects to `next`, the onboarding or My Space |
+| GET | `/api/auth/continue` | Where the password login lands: same redirect rule as the callback |
 | POST | `/api/auth/logout` | Sign out |
-| POST | `/api/email-verification` | Re-send / confirm verification |
+| PATCH/POST | `/api/onboarding` | Save the onboarding "who you are" step / record a milestone (`completed`, `link_shared`) |
+| GET | `/api/onboarding/username` | Live nick availability check |
 
 ### Profile & social
 
@@ -349,7 +351,9 @@ Supabase Auth with three methods:
 - Google OAuth
 - GitHub OAuth (used both for sign-in and for project import)
 
-Password policy: 8–72 chars, mixed case, digits. Protected routes redirect to `/login`. A Postgres profile row is auto-provisioned on the first authenticated page load with a username derived from the email local-part (`ensureProfileForUser`).
+Password policy: 8–72 chars, mixed case, digits. Protected routes redirect to `/login?next=…` and come back after signing in (only internal paths are accepted, see `src/lib/auth/redirect.ts`). A Postgres profile row is auto-provisioned on the first authenticated page load with a temporary `user-xxxxxx` nick (`ensureProfileForUser`); the person picks their own on the first onboarding step. The same helper turns on the "email verified" mark once Supabase Auth has confirmed the email.
+
+The first sign-in opens `/onboarding` (three skippable steps: who you are, first project, share the link). State lives in the owner-only `user_onboarding` table (`database/2026-09-27-onboarding.sql`); until that migration is applied nobody is redirected there automatically.
 
 ---
 
@@ -449,7 +453,7 @@ The app targets Vercel out of the box:
 
 1. Import the repo into Vercel.
 2. Set all required env vars (see table above) in the project settings.
-3. Configure the Supabase Auth redirect URLs to point at `${NEXT_PUBLIC_APP_URL}/api/auth/callback` and `${NEXT_PUBLIC_APP_URL}/verify`.
+3. Configure the Supabase Auth redirect URLs to allow `${NEXT_PUBLIC_APP_URL}/api/auth/callback` with any query string, set the Site URL to `${NEXT_PUBLIC_APP_URL}`, and paste the email templates from `supabase/email-templates`.
 4. Configure the GitHub OAuth callback at `${NEXT_PUBLIC_APP_URL}/api/integrations/github/callback`.
 5. First deploy → run the SQL files in order against the production Supabase project.
 

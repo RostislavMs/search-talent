@@ -161,6 +161,88 @@ export function getProfileCompletenessBreakdown(input: {
   return { items, percent };
 }
 
+type OptionalText = string | null | undefined;
+
+/** The owner's own profile as `getMyProfile()` returns it. */
+export type EditableProfileCompletenessSource = {
+  username: OptionalText;
+  name: OptionalText;
+  avatar_url: OptionalText;
+  headline: OptionalText;
+  bio: OptionalText;
+  country_id: number | null | undefined;
+  city: OptionalText;
+  website: OptionalText;
+  github: OptionalText;
+  twitter: OptionalText;
+  linkedin: OptionalText;
+  behance: OptionalText;
+  dribbble: OptionalText;
+  artstation: OptionalText;
+  vimeo: OptionalText;
+  youtube: OptionalText;
+  instagram: OptionalText;
+  contact_email: OptionalText;
+  telegram_username: OptionalText;
+  phone: OptionalText;
+  preferred_contact_method: OptionalText;
+  experience_level: OptionalText;
+  experience_years: number | null | undefined;
+  employment_types: readonly unknown[];
+  work_formats: readonly unknown[];
+  salary_expectations: OptionalText;
+  salary_currency: OptionalText;
+  additional_info: OptionalText;
+  skill_ids: readonly unknown[];
+  languages: readonly unknown[];
+  education: readonly unknown[];
+  certificates: readonly unknown[];
+  qas: readonly unknown[];
+  work_experience: readonly unknown[];
+};
+
+/** Completeness for the signed-in owner ("My Space", onboarding). */
+export function getEditableProfileCompleteness(
+  profile: EditableProfileCompletenessSource,
+): ProfileCompletenessBreakdown {
+  return getProfileCompletenessBreakdown({
+    username: profile.username ?? null,
+    name: profile.name ?? null,
+    avatarUrl: profile.avatar_url ?? null,
+    headline: profile.headline ?? null,
+    bio: profile.bio ?? null,
+    countryId: profile.country_id ?? null,
+    city: profile.city ?? null,
+    website: profile.website ?? null,
+    github: profile.github ?? null,
+    twitter: profile.twitter ?? null,
+    linkedin: profile.linkedin ?? null,
+    behance: profile.behance ?? null,
+    dribbble: profile.dribbble ?? null,
+    artstation: profile.artstation ?? null,
+    vimeo: profile.vimeo ?? null,
+    youtube: profile.youtube ?? null,
+    instagram: profile.instagram ?? null,
+    contactEmail: profile.contact_email ?? null,
+    telegramUsername: profile.telegram_username ?? null,
+    phone: profile.phone ?? null,
+    preferredContactMethod: profile.preferred_contact_method ?? null,
+    experienceLevel: profile.experience_level ?? null,
+    experienceYears: profile.experience_years ?? null,
+    employmentTypesCount: profile.employment_types.length,
+    workFormatsCount: profile.work_formats.length,
+    salaryExpectations: profile.salary_expectations ?? null,
+    salaryCurrency: profile.salary_currency ?? null,
+    additionalInfo: profile.additional_info ?? null,
+    skillsCount: profile.skill_ids.length,
+    languagesCount: profile.languages.length,
+    educationCount: profile.education.length,
+    certificateCount: profile.certificates.length,
+    qaCount: profile.qas.length,
+    workExperienceCount: profile.work_experience.length,
+  });
+}
+
 const LABELS_EN: Record<ProfileCompletenessItemKey, string> = {
   username: "Username",
   name: "Full name",

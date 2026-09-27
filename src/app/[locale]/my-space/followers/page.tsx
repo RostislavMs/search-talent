@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import LocalizedLink from "@/components/ui/localized-link";
 import Pagination from "@/components/ui/pagination";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
@@ -81,7 +82,7 @@ export default async function FollowersPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(createLocalePath(locale, "/login"));
+    redirect(buildLoginHref(locale, "/my-space/followers"));
   }
 
   const dictionary = getDictionary(locale);

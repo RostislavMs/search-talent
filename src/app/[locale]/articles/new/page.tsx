@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
 import { notFound, redirect } from "next/navigation";
 import { ButtonLink } from "@/components/ui/Button";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { getDashboardArticles } from "@/lib/db/articles";
 import { createLocalePath, isLocale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
@@ -60,7 +61,7 @@ export default async function NewArticlePage({
   ]);
 
   if (!viewer.user) {
-    redirect(createLocalePath(safeLocale, "/login"));
+    redirect(buildLoginHref(safeLocale, "/articles/new"));
   }
 
   if (!dashboard) {

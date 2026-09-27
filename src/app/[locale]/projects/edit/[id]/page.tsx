@@ -14,10 +14,11 @@ const CreateProjectForm = dynamic(
   },
 );
 import { ButtonLink } from "@/components/ui/Button";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { getMyProjectById } from "@/lib/db/projects";
 import { loadCoAuthorsForEditor } from "@/lib/db/co-authors";
 import { buildProjectPath } from "@/lib/projects";
-import { createLocalePath, isLocale } from "@/lib/i18n/config";
+import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -63,7 +64,7 @@ export default async function ProjectEditPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(createLocalePath(locale, "/login"));
+    redirect(buildLoginHref(locale, `/projects/edit/${id}`));
   }
 
   const dictionary = getDictionary(locale);

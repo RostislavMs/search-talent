@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
 import { redirect, notFound } from "next/navigation";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { getArticleCategories } from "@/lib/db/articles";
 import { loadCoAuthorsForEditor } from "@/lib/db/co-authors";
-import { createLocalePath, isLocale } from "@/lib/i18n/config";
+import { isLocale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -54,7 +55,7 @@ export default async function EditArticlePage({
   const viewer = await getCurrentViewerRole();
 
   if (!viewer.user) {
-    redirect(createLocalePath(safeLocale, "/login"));
+    redirect(buildLoginHref(safeLocale, `/articles/edit/${id}`));
   }
 
   const supabase = await createClient();

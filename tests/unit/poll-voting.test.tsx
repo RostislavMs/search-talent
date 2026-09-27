@@ -5,7 +5,10 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { PollQuestion } from "@/lib/polls";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/uk/polls/demo",
+}));
 vi.mock("@/lib/api-client", () => ({ apiFetch: vi.fn() }));
 
 import PollVoting from "@/components/poll-voting";

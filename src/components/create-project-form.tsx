@@ -289,6 +289,7 @@ type PendingCover =
 
 function getInitialFormState(
   project?: EditableProject | null,
+  initialKind?: ProjectKind | null,
 ): ProjectFormState {
   const role = project?.github_role;
   const isValidRole =
@@ -299,7 +300,7 @@ function getInitialFormState(
     title: project?.title || "",
     description: toPlainText(project?.description) || "",
     role: project?.role || "",
-    kind: project?.kind || "",
+    kind: project?.kind || initialKind || "",
     designMeta: normalizeDesignKindMetadata(
       project?.kind_metadata?.design ?? null,
     ),
@@ -404,11 +405,20 @@ function toRemoteMediaItem(item: ProjectMediaItem): RemoteMediaItem {
 export default function CreateProjectForm({
   project,
   sidebarHeader,
+  initialKind = null,
+  initialStep = 1,
+  fromOnboarding = false,
 }: {
   project?: EditableProject | null;
   // Page-provided title/nav block (differs for create vs edit). Rendered
   // inside the sidebar on desktop and at the top on mobile.
   sidebarHeader?: ReactNode;
+  /** New project only: kind picked beforehand (`?kind=` from the onboarding). */
+  initialKind?: ProjectKind | null;
+  /** New project only: open on this step (2 = the import panels). */
+  initialStep?: number;
+  /** Opened from the onboarding: go back to its share step after publishing. */
+  fromOnboarding?: boolean;
 }) {
   const router = useLocalizedRouter();
   const dictionary = useDictionary();
@@ -422,7 +432,7 @@ export default function CreateProjectForm({
   const [coAuthors, setCoAuthors] = useState<CoAuthorOption[]>(
     project?.coAuthors ?? [],
   );
-  const [step, setStep] = useState<number>(1);
+  const [step, setStep] = useState<number>(project ? 1 : initialStep);
   const [pendingSaveMode, setPendingSaveMode] = useState<SaveMode | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{
     currentIndex: number;
@@ -431,7 +441,7 @@ export default function CreateProjectForm({
     percent: number;
   } | null>(null);
   const [form, setForm] = useState<ProjectFormState>(() =>
-    getInitialFormState(project),
+    getInitialFormState(project, initialKind),
   );
   const [githubFullName, setGithubFullName] = useState<string | null>(
     project?.github_full_name || null,
@@ -455,8 +465,8 @@ export default function CreateProjectForm({
   const objectUrlsRef = useRef<Set<string>>(new Set());
 
   const initialFormSnapshot = useMemo(
-    () => JSON.stringify(getInitialFormState(project)),
-    [project],
+    () => JSON.stringify(getInitialFormState(project, initialKind)),
+    [project, initialKind],
   );
   const initialSkillsSnapshot = useMemo(
     () =>
@@ -1655,7 +1665,9 @@ export default function CreateProjectForm({
 
         const targetPath = buildProjectPath(projectId, projectSlug);
 
-        if (mode === "publish") {
+        if (mode === "publish" && fromOnboarding && !isEditMode) {
+          router.push("/onboarding?step=share");
+        } else if (mode === "publish") {
           router.push(targetPath);
         } else if (isEditMode) {
           router.push(targetPath);
@@ -1679,6 +1691,7 @@ export default function CreateProjectForm({
       dictionary.forms.projectSavedAsDraft,
       dictionary.forms.projectUpdated,
       form.title,
+      fromOnboarding,
       timeline.completedOn,
       timeline.startedOn,
       isEditMode,
@@ -1757,6 +1770,15 @@ export default function CreateProjectForm({
       },
     ].map((entry, idx) => ({ ...entry, index: idx + 1 }));
   }, [dictionary.forms]);
+
+  // Connecting GitHub / GitLab leaves the page. A new project comes back to the
+  // import step with the same kind (and the onboarding return), not a blank form.
+  const importReturnTo = project?.id
+    ? `/projects/edit/${project.id}`
+    : `/projects/new?${new URLSearchParams({
+        ...(form.kind ? { kind: form.kind, step: "2" } : {}),
+        ...(fromOnboarding ? { from: "onboarding" } : {}),
+      }).toString()}`.replace(/\?$/, "");
 
   const totalSteps = stepDescriptors.length;
   const currentDescriptor = stepDescriptors[step - 1];
@@ -1871,6 +1893,7 @@ export default function CreateProjectForm({
             updateDisplayOption={updateGithubDisplayOption}
             githubFullName={githubFullName}
             projectId={project?.id || null}
+            importReturnTo={importReturnTo}
             onGithubImport={isEditMode ? undefined : applyGithubImport}
             onUnlinked={handleGithubUnlink}
             onProviderImport={applyProviderImport}
@@ -2319,6 +2342,8 @@ type StepSpecificsProps = {
   ) => void;
   githubFullName: string | null;
   projectId: string | null;
+  /** Where the GitHub / GitLab connect flow brings the person back to. */
+  importReturnTo: string;
   onGithubImport?: (payload: GithubImportPayload) => void;
   onUnlinked: () => void;
   onProviderImport: (payload: ProviderImportPayload) => void;
@@ -2349,7 +2374,7 @@ function StepSpecifics(props: StepSpecificsProps) {
           }
           onImport={onProviderImport}
           onUnlink={() => onProviderUnlink(descriptor.id)}
-          returnTo={props.projectId ? `/projects/edit/${props.projectId}` : "/projects/new"}
+          returnTo={props.importReturnTo}
         />
       ))}
       {link ? (
@@ -2378,6 +2403,7 @@ function KindSpecificFields({
   updateDisplayOption,
   githubFullName,
   projectId,
+  importReturnTo,
   onGithubImport,
   onUnlinked,
 }: StepSpecificsProps) {
@@ -2402,7 +2428,9 @@ function KindSpecificFields({
   if (form.kind === "code") {
     return (
       <div className="space-y-6">
-        {onGithubImport ? <GithubRepoImporter onImport={onGithubImport} /> : null}
+        {onGithubImport ? (
+          <GithubRepoImporter onImport={onGithubImport} returnTo={importReturnTo} />
+        ) : null}
         <UrlField
           id="project-repository-url"
           label={dictionary.forms.repositoryUrl}

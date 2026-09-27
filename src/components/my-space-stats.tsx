@@ -91,6 +91,82 @@ export default function MySpaceStats({
 }) {
   const ui = getStatsUi(locale);
   const compact = (value: number) => formatCompactNumber(value, locale);
+  const profileBase = userStats.username ? `/u/${userStats.username}` : null;
+
+  // A tile shows up once there is something behind it: a newcomer sees the
+  // checklist above instead of a wall of zeros.
+  const contentTiles = [
+    {
+      key: "projects",
+      count: userStats.projectsCount,
+      label: dictionary.mySpace.myProjects,
+      href: profileBase ? `${profileBase}/projects` : "/projects",
+      accent: "bg-emerald-500",
+    },
+    {
+      key: "articles",
+      count: userStats.articlesCount,
+      label: dictionary.mySpace.myArticles,
+      href: profileBase ? `${profileBase}/articles` : "/articles",
+      accent: "bg-violet-500",
+    },
+    {
+      key: "polls",
+      count: userStats.pollsCount,
+      label: dictionary.mySpace.myPolls,
+      href: profileBase ? `${profileBase}/polls` : "/polls",
+      accent: "bg-indigo-500",
+    },
+    {
+      key: "discussions",
+      count: userStats.discussionsCount,
+      label: dictionary.mySpace.myDiscussions,
+      href: profileBase ? `${profileBase}/discussions` : "/discussions",
+      accent: "bg-sky-500",
+    },
+    {
+      key: "bookmarks",
+      count: userStats.bookmarksCount,
+      label: dictionary.mySpace.bookmarks,
+      href: "/my-space/saved",
+      accent: "bg-amber-500",
+    },
+  ].filter((tile) => tile.count > 0);
+
+  const audienceTiles: Array<{
+    key: string;
+    count: number;
+    label: string;
+    href?: string;
+    accent: string;
+  }> = [
+    {
+      key: "followers",
+      count: userStats.followersCount,
+      label: dictionary.mySpace.followers,
+      href: "/my-space/followers",
+      accent: "bg-sky-500",
+    },
+    {
+      key: "following",
+      count: userStats.followingCount,
+      label: dictionary.mySpace.following,
+      href: "/my-space/following",
+      accent: "bg-cyan-500",
+    },
+    {
+      key: "likes",
+      count: userStats.receivedLikes,
+      label: dictionary.mySpace.receivedLikes,
+      accent: "bg-rose-500",
+    },
+    {
+      key: "articleViews",
+      count: userStats.articleViews,
+      label: dictionary.mySpace.articleViews,
+      accent: "bg-orange-500",
+    },
+  ].filter((tile) => tile.count > 0);
 
   return (
     <div className="space-y-8">
@@ -116,85 +192,48 @@ export default function MySpaceStats({
         )}
       </nav>
 
-      {/* ─── Content ─── */}
-      <section>
-        <SectionHeading>{dictionary.mySpace.content}</SectionHeading>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <StatCardLink
-            value={compact(userStats.projectsCount)}
-            label={dictionary.mySpace.myProjects}
-            href={
-              userStats.username
-                ? `/u/${userStats.username}/projects`
-                : "/projects"
-            }
-            accent="bg-emerald-500"
-          />
-          <StatCardLink
-            value={compact(userStats.articlesCount)}
-            label={dictionary.mySpace.myArticles}
-            href={
-              userStats.username
-                ? `/u/${userStats.username}/articles`
-                : "/articles"
-            }
-            accent="bg-violet-500"
-          />
-          <StatCardLink
-            value={compact(userStats.pollsCount)}
-            label={dictionary.mySpace.myPolls}
-            href={
-              userStats.username ? `/u/${userStats.username}/polls` : "/polls"
-            }
-            accent="bg-indigo-500"
-          />
-          <StatCardLink
-            value={compact(userStats.discussionsCount)}
-            label={dictionary.mySpace.myDiscussions}
-            href={
-              userStats.username
-                ? `/u/${userStats.username}/discussions`
-                : "/discussions"
-            }
-            accent="bg-sky-500"
-          />
-          <StatCardLink
-            value={compact(userStats.bookmarksCount)}
-            label={dictionary.mySpace.bookmarks}
-            href="/my-space/saved"
-            accent="bg-amber-500"
-          />
-        </div>
-      </section>
+      {contentTiles.length > 0 ? (
+        <section>
+          <SectionHeading>{dictionary.mySpace.content}</SectionHeading>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            {contentTiles.map((tile) => (
+              <StatCardLink
+                key={tile.key}
+                label={tile.label}
+                href={tile.href}
+                accent={tile.accent}
+                value={compact(tile.count)}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
-      {/* ─── Audience ─── */}
-      <section>
-        <SectionHeading>{dictionary.mySpace.audience}</SectionHeading>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCardLink
-            value={compact(userStats.followersCount)}
-            label={dictionary.mySpace.followers}
-            href="/my-space/followers"
-            accent="bg-sky-500"
-          />
-          <StatCardLink
-            value={compact(userStats.followingCount)}
-            label={dictionary.mySpace.following}
-            href="/my-space/following"
-            accent="bg-cyan-500"
-          />
-          <StatTile
-            value={compact(userStats.receivedLikes)}
-            label={dictionary.mySpace.receivedLikes}
-            accent="bg-rose-500"
-          />
-          <StatTile
-            value={compact(userStats.articleViews)}
-            label={dictionary.mySpace.articleViews}
-            accent="bg-orange-500"
-          />
-        </div>
-      </section>
+      {audienceTiles.length > 0 ? (
+        <section>
+          <SectionHeading>{dictionary.mySpace.audience}</SectionHeading>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {audienceTiles.map((tile) =>
+              tile.href ? (
+                <StatCardLink
+                  key={tile.key}
+                  label={tile.label}
+                  href={tile.href}
+                  accent={tile.accent}
+                  value={compact(tile.count)}
+                />
+              ) : (
+                <StatTile
+                  key={tile.key}
+                  label={tile.label}
+                  accent={tile.accent}
+                  value={compact(tile.count)}
+                />
+              ),
+            )}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

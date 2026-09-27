@@ -5,7 +5,8 @@ import {
   listNotifications,
   markNotificationsAsRead,
 } from "@/lib/db/notifications";
-import { createLocalePath, isLocale } from "@/lib/i18n/config";
+import { buildLoginHref } from "@/lib/auth/redirect";
+import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -47,7 +48,7 @@ export default async function NotificationsPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(createLocalePath(locale, "/login"));
+    redirect(buildLoginHref(locale, "/notifications"));
   }
 
   const dictionary = getDictionary(locale);
