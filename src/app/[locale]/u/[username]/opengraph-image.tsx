@@ -60,7 +60,6 @@ export default async function Image({
   const nameSize = displayName.length > 22 ? 54 : 68;
 
   const tile = (src: string, index: number, width: number, height: number) => (
-    // eslint-disable-next-line @next/next/no-img-element -- rendered by next/og, not the browser
     <img
       key={index}
       src={src}
