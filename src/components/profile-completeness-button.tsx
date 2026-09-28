@@ -54,7 +54,14 @@ export default function ProfileCompletenessButton({
   const strings = getStrings(locale);
   const { items, percent } = completeness;
   const filled = items.filter((item) => item.filled);
-  const missing = items.filter((item) => !item.filled);
+  // Optional items (e.g. «Відкрито до…») are suggested last and don't count in
+  // "N of M", the same way they don't lower the percent.
+  const missing = [
+    ...items.filter((item) => !item.filled && !item.optional),
+    ...items.filter((item) => !item.filled && item.optional),
+  ];
+  const required = items.filter((item) => !item.optional);
+  const filledRequired = required.filter((item) => item.filled);
 
   useEffect(() => {
     if (!open) return;
@@ -129,7 +136,7 @@ export default function ProfileCompletenessButton({
                   {strings.modalTitle}
                 </h2>
                 <p className="mt-1 text-sm app-muted">
-                  {strings.modalSubtitle(filled.length, items.length)}
+                  {strings.modalSubtitle(filledRequired.length, required.length)}
                 </p>
                 <div
                   className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[color:var(--surface-muted)]"

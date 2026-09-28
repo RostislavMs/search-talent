@@ -2,6 +2,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries";
 import LocalizedLink from "@/components/ui/localized-link";
 import { buttonStyles } from "@/components/ui/button-styles";
 import OptimizedImage from "@/components/ui/optimized-image";
+import { formatOpenToList } from "@/lib/open-to";
 
 type CreatorCardData = {
   username: string | null;
@@ -13,6 +14,8 @@ type CreatorCardData = {
   countryName?: string | null;
   city?: string | null;
   technologies?: Array<{ id: number; name: string }>;
+  /** «Відкрито до…» status; empty or missing hides the line. */
+  openTo?: readonly string[] | null;
 };
 
 export default function CreatorCard({
@@ -23,6 +26,7 @@ export default function CreatorCard({
   dictionary: Dictionary;
 }) {
   const name = creator.name || creator.username || dictionary.common.creator;
+  const openToList = formatOpenToList(creator.openTo ?? [], dictionary.openTo.phrases);
 
   return (
     <LocalizedLink
@@ -67,6 +71,15 @@ export default function CreatorCard({
       {creator.headline && (
         <p className="mt-4 line-clamp-2 text-sm leading-6 app-muted">
           {creator.headline}
+        </p>
+      )}
+
+      {openToList && (
+        <p className="mt-3 flex items-center gap-2 text-sm font-medium text-[color:var(--foreground)]">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+          <span className="line-clamp-1">
+            {dictionary.openTo.badge.replace("{list}", openToList)}
+          </span>
         </p>
       )}
 

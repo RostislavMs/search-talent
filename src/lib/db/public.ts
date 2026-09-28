@@ -18,12 +18,19 @@ import {
 } from "@/lib/db/article-sections";
 import type { PollFeedItem } from "@/lib/polls";
 import {
-  type EmploymentType,
   type ExperienceLevel,
   type PreferredContactMethod,
   type ProfileVisibility,
   type WorkFormat,
 } from "@/lib/profile-sections";
+import { normalizeOpenTo, type OpenToOption } from "@/lib/open-to";
+import {
+  PROFILE_PRIVATE_DETAILS_COLUMNS,
+  summarizePrivateDetails,
+  type ProfileContactSummary,
+  type ProfilePrivateDetailsRow,
+  type PublicSalary,
+} from "@/lib/profile-private";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -127,16 +134,12 @@ type PublicProfileRow = {
   vimeo: string | null;
   youtube: string | null;
   instagram: string | null;
-  contact_email: string | null;
   telegram_username: string | null;
-  phone: string | null;
   preferred_contact_method: PreferredContactMethod | null;
   experience_level: ExperienceLevel | null;
   experience_years: number | null;
-  employment_types: EmploymentType[] | null;
+  open_to: OpenToOption[];
   work_formats: WorkFormat[] | null;
-  salary_expectations: string | null;
-  salary_currency: string | null;
   additional_info: string | null;
   profile_visibility: unknown;
   moderation_status: string | null;
@@ -231,6 +234,13 @@ export type PublicProfilePageData = {
   }>;
   badges: BadgeWithProgress[];
   completeness: ProfileCompletenessBreakdown;
+  /**
+   * Whether an email / phone exists. The values come only through the
+   * «Зв'язатися» dialog (signed in, counted); the owner gets their own here.
+   */
+  contact: ProfileContactSummary;
+  /** Salary expectations, when the owner chose to show them. */
+  salary: PublicSalary | null;
   voteSummary: Awaited<ReturnType<typeof getProfileVoteSummary>>;
   // Composite creator rating (0-100) — the same value shown on the talents
   // cards and homepage leaderboard. Null when the profile is not ranked yet.
@@ -428,7 +438,7 @@ export async function getPublicProfilePageData(
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, username, name, headline, bio, avatar_url, cover_url, country_id, city, category_id, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, contact_email, telegram_username, phone, preferred_contact_method, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info, profile_visibility, moderation_status, email_verified",
+      "id, user_id, username, name, headline, bio, avatar_url, cover_url, country_id, city, category_id, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, telegram_username, preferred_contact_method, experience_level, experience_years, open_to, work_formats, additional_info, profile_visibility, moderation_status, email_verified",
     )
     .eq("username", username)
     .maybeSingle();
@@ -437,7 +447,10 @@ export async function getPublicProfilePageData(
     return null;
   }
 
-  const typedProfile = profile as PublicProfileRow;
+  const typedProfile = {
+    ...(profile as PublicProfileRow),
+    open_to: normalizeOpenTo((profile as { open_to?: unknown }).open_to),
+  };
   const isOwner = user?.id === typedProfile.user_id;
 
   let isAdmin = false;
@@ -471,6 +484,7 @@ export async function getPublicProfilePageData(
     followResponse,
     badges,
     viewerSettingsResponse,
+    privateDetailsResponse,
   ] = await Promise.all([
     dataClient
       .from("profile_skills")
@@ -577,6 +591,15 @@ export async function getPublicProfilePageData(
           .eq("user_id", user.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    // Owner-only table: read with the service key so the page knows whether an
+    // email / phone exists and whether salary is on show. Only the owner's own
+    // values reach the page (summarizePrivateDetails). Without the key, the
+    // owner still reads their own row through RLS; visitors get nothing.
+    dataClient
+      .from("profile_private_details")
+      .select(PROFILE_PRIVATE_DETAILS_COLUMNS)
+      .eq("user_id", typedProfile.user_id)
+      .maybeSingle(),
   ]);
 
   const profileSettings = normalizeProfileSettings(typedProfile.profile_visibility);
@@ -597,6 +620,10 @@ export async function getPublicProfilePageData(
   const certificatesCount = (certificatesResponse.data || []).length;
   const qaCount = (qasResponse.data || []).length;
   const workExperienceCount = (workExperienceResponse.data || []).length;
+  const privateDetails = summarizePrivateDetails(
+    privateDetailsResponse.data as ProfilePrivateDetailsRow | null,
+    { isOwner },
+  );
 
   const completeness = getProfileCompletenessBreakdown({
     username: typedProfile.username,
@@ -616,16 +643,12 @@ export async function getPublicProfilePageData(
     vimeo: typedProfile.vimeo,
     youtube: typedProfile.youtube,
     instagram: typedProfile.instagram,
-    contactEmail: typedProfile.contact_email,
+    hasPrivateContact: privateDetails.contact.hasEmail || privateDetails.contact.hasPhone,
     telegramUsername: typedProfile.telegram_username,
-    phone: typedProfile.phone,
     preferredContactMethod: typedProfile.preferred_contact_method,
     experienceLevel: typedProfile.experience_level,
     experienceYears: typedProfile.experience_years,
-    employmentTypesCount: typedProfile.employment_types?.length || 0,
-    workFormatsCount: typedProfile.work_formats?.length || 0,
-    salaryExpectations: typedProfile.salary_expectations,
-    salaryCurrency: typedProfile.salary_currency,
+    openToCount: typedProfile.open_to.length,
     additionalInfo: typedProfile.additional_info,
     skillsCount,
     languagesCount,
@@ -755,6 +778,8 @@ export async function getPublicProfilePageData(
     }),
     badges,
     completeness,
+    contact: privateDetails.contact,
+    salary: privateDetails.salary,
     voteSummary,
     profileRating: creatorRatings[typedProfile.id] ?? null,
     isAuthenticated: Boolean(user),
@@ -1698,6 +1723,7 @@ export type RelatedCreatorItem = {
   countryName: string | null;
   city: string | null;
   technologies: Array<{ id: number; name: string }>;
+  openTo: OpenToOption[];
 };
 
 type RelatedCreatorRow = {
@@ -1711,6 +1737,7 @@ type RelatedCreatorRow = {
   category_id: number | null;
   created_at: string | null;
   moderation_status: string | null;
+  open_to: string[] | null;
 };
 
 /**
@@ -1786,7 +1813,7 @@ export async function getRelatedCreators(
   const { data: profileRows } = await supabase
     .from("profiles")
     .select(
-      "id, username, name, headline, avatar_url, city, country_id, category_id, created_at, moderation_status",
+      "id, username, name, headline, avatar_url, city, country_id, category_id, created_at, moderation_status, open_to",
     )
     .in("id", Array.from(candidateIds))
     .not("username", "is", null);
@@ -1896,5 +1923,6 @@ export async function getRelatedCreators(
         : null,
     city: row.city,
     technologies: technologiesByProfile.get(row.id) || [],
+    openTo: normalizeOpenTo(row.open_to),
   }));
 }

@@ -1,6 +1,6 @@
 # SearchTalent
 
-> Bilingual (English/Ukrainian) community and portfolio platform for IT specialists. Developers, designers, and other professionals publish public profiles, project portfolios, and technical articles; visitors discover, follow, and react to that work. SearchTalent is **not** a recruiting or hiring marketplace — it is built around creator portfolios, community rating, and interaction.
+> Bilingual (English/Ukrainian) community and portfolio platform for IT specialists. Developers, designers, and other professionals publish public profiles, project portfolios, and technical articles; visitors discover, follow, and react to that work. SearchTalent is **not** a job board: there are no vacancies or applications, and it is built around creator portfolios, community rating, and interaction. Specialists can mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors can contact them directly.
 
 SearchTalent gives every IT specialist a public profile with work experience, skills, education, certificates, and published projects, plus an editorial section for community articles and polls on engineering, design, and the craft. Discovery is driven by a transparent community rating rather than job listings.
 

@@ -7,14 +7,6 @@
   "native",
 ] as const;
 
-export const employmentTypes = [
-  "full_time",
-  "part_time",
-  "contract",
-  "freelance",
-  "internship",
-] as const;
-
 export const workFormats = ["remote", "hybrid", "office"] as const;
 
 export const salaryCurrencies = ["uah", "eur", "usd"] as const;
@@ -57,7 +49,6 @@ export const profileVisibilityKeys = [
 ] as const;
 
 export type LanguageLevel = (typeof languageLevels)[number];
-export type EmploymentType = (typeof employmentTypes)[number];
 export type WorkFormat = (typeof workFormats)[number];
 export type SalaryCurrency = (typeof salaryCurrencies)[number];
 export type PreferredContactMethod = (typeof preferredContactMethods)[number];

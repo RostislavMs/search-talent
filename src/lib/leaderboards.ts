@@ -12,6 +12,12 @@
 // normalise raw counts to a 0-1 range before multiplying by the weight.
 // ---------------------------------------------------------------------------
 
+import {
+  getCompletenessRatio,
+  getProfileCompletenessItems,
+  type ProfileCompletenessInput,
+} from "@/lib/profile-completeness";
+
 export type LeaderboardTimeframe = "all" | "month";
 
 // ---- weight configuration -------------------------------------------------
@@ -167,94 +173,13 @@ function weightedCompletion(values: Array<{ filled: boolean; weight: number }>) 
   return filled / total;
 }
 
-export function getProfileCompletenessScore(input: {
-  username: string | null;
-  name: string | null;
-  avatarUrl: string | null;
-  headline: string | null;
-  bio: string | null;
-  countryId: number | null;
-  city: string | null;
-  website: string | null;
-  github: string | null;
-  twitter: string | null;
-  linkedin: string | null;
-  behance?: string | null;
-  dribbble?: string | null;
-  artstation?: string | null;
-  vimeo?: string | null;
-  youtube?: string | null;
-  instagram?: string | null;
-  contactEmail: string | null;
-  telegramUsername: string | null;
-  phone: string | null;
-  preferredContactMethod: string | null;
-  experienceLevel: string | null;
-  experienceYears: number | null;
-  employmentTypesCount: number;
-  workFormatsCount: number;
-  salaryExpectations: string | null;
-  salaryCurrency: string | null;
-  additionalInfo: string | null;
-  skillsCount: number;
-  languagesCount: number;
-  educationCount: number;
-  certificateCount: number;
-  qaCount: number;
-  workExperienceCount: number;
-}) {
-  return weightedCompletion([
-    { filled: Boolean(input.username), weight: 1.5 },
-    { filled: Boolean(input.name), weight: 1 },
-    { filled: Boolean(input.avatarUrl), weight: 1.2 },
-    { filled: Boolean(input.headline), weight: 1 },
-    { filled: Boolean(input.bio), weight: 1.4 },
-    { filled: Boolean(input.countryId), weight: 0.8 },
-    { filled: Boolean(input.city), weight: 0.5 },
-    { filled: Boolean(input.website), weight: 0.8 },
-    { filled: Boolean(input.github), weight: 0.8 },
-    { filled: Boolean(input.twitter), weight: 0.5 },
-    { filled: Boolean(input.linkedin), weight: 0.8 },
-    {
-      // Discipline portfolio link — at least one of behance/dribbble/
-      // artstation/vimeo/youtube/instagram. Grouped because no single
-      // role uses all six; designers reach for Behance, video editors
-      // for Vimeo, photographers for Instagram.
-      filled:
-        Boolean(input.behance) ||
-        Boolean(input.dribbble) ||
-        Boolean(input.artstation) ||
-        Boolean(input.vimeo) ||
-        Boolean(input.youtube) ||
-        Boolean(input.instagram),
-      weight: 0.9,
-    },
-    {
-      filled:
-        Boolean(input.contactEmail) ||
-        Boolean(input.telegramUsername) ||
-        Boolean(input.phone),
-      weight: 0.9,
-    },
-    { filled: Boolean(input.preferredContactMethod), weight: 0.4 },
-    {
-      filled: Boolean(input.experienceLevel) || input.experienceYears !== null,
-      weight: 1,
-    },
-    { filled: input.employmentTypesCount > 0, weight: 0.8 },
-    { filled: input.workFormatsCount > 0, weight: 0.8 },
-    {
-      filled: Boolean(input.salaryExpectations) && Boolean(input.salaryCurrency),
-      weight: 0.7,
-    },
-    { filled: Boolean(input.additionalInfo), weight: 0.9 },
-    { filled: input.skillsCount > 0, weight: 1.4 },
-    { filled: input.languagesCount > 0, weight: 0.8 },
-    { filled: input.educationCount > 0, weight: 1 },
-    { filled: input.certificateCount > 0, weight: 1 },
-    { filled: input.qaCount > 0, weight: 1.1 },
-    { filled: input.workExperienceCount > 0, weight: 1.3 },
-  ]);
+/**
+ * Profile completeness for the rating, 0-1. The signals and their weights live
+ * in `getProfileCompletenessItems` so the rating, the percent people see and
+ * the `complete_profile` badge can never disagree.
+ */
+export function getProfileCompletenessScore(input: ProfileCompletenessInput) {
+  return getCompletenessRatio(getProfileCompletenessItems(input));
 }
 
 // Kinds where the problem/solution/results narrative is a natural part

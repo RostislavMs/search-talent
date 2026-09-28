@@ -1,6 +1,6 @@
 # SearchTalent
 
-A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is **not** a recruiting/hiring marketplace — it is built around creator portfolios, rating, and community signal.
+A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is **not** a job board — there are no vacancies or applications, and it is built around creator portfolios, rating, and community signal. Specialists can, however, mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors can reach them through a "Contact" button.
 
 ---
 
@@ -82,6 +82,8 @@ search-talent/
 ### Profiles
 
 - Rich profile sections: bio, work experience, education, certificates, skills, languages, Q&A, contacts.
+- "Open to…" status (freelance, job, internship, collaboration, mentoring) with a two-click toggle in My Space and a reminder after 60 days.
+- "Contact" dialog: public channels for everyone; email and phone live in the owner-only `profile_private_details` table and reach signed-in visitors only through `open_profile_contacts()`, which counts the opening for the owner and caps new profiles at 20/hour and 60/day per account. Salary expectations are hidden unless the owner shows them.
 - Per-section visibility controls and customisable presentation (palette, fonts, hero alignment, section order, sizes, cover/video background).
 - AI-generated public summary (Gemini), opt-in regeneration with rate limits.
 - PDF export of the current profile.
@@ -117,7 +119,7 @@ search-talent/
 
 ### Talents discovery
 
-- `/talents` filters by skills, experience, country, work format, salary range.
+- `/talents` filters by skills, experience, country, "Open to…" and work format; cards show the status.
 - Saved searches per user.
 - Top-rated leaderboards (creators, projects) on the home page.
 
@@ -232,6 +234,8 @@ search-talent/
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET/POST/PATCH | `/api/profile` | Read & update own profile |
+| PATCH | `/api/profile/open-to` | Set or confirm the "Open to…" status |
+| POST | `/api/profile-contacts` | Email & phone behind "Contact" (signed in, counted, rate limited) |
 | POST | `/api/profile-vote` | Up/down-vote a profile |
 | GET/POST/DELETE | `/api/follows` | Follow graph |
 | GET/POST/DELETE | `/api/bookmarks` | Bookmark profiles & projects |

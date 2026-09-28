@@ -91,17 +91,13 @@ type ProfileStatsRow = {
   vimeo: string | null;
   youtube: string | null;
   instagram: string | null;
-  contact_email: string | null;
   telegram_username: string | null;
-  phone: string | null;
   preferred_contact_method: string | null;
   experience_level: string | null;
   experience_years: number | null;
-  employment_types: string[] | null;
-  work_formats: string[] | null;
-  salary_expectations: string | null;
-  salary_currency: string | null;
   additional_info: string | null;
+  /** An email or phone exists in the owner-only table (values never here). */
+  has_private_contact: boolean | null;
   profile_likes: number;
   profile_dislikes: number;
   recent_profile_likes: number;
@@ -473,16 +469,13 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
         vimeo: profile.vimeo,
         youtube: profile.youtube,
         instagram: profile.instagram,
-        contactEmail: profile.contact_email,
+        hasPrivateContact: Boolean(profile.has_private_contact),
         telegramUsername: profile.telegram_username,
-        phone: profile.phone,
         preferredContactMethod: profile.preferred_contact_method,
         experienceLevel: profile.experience_level,
         experienceYears: profile.experience_years,
-        employmentTypesCount: profile.employment_types?.length || 0,
-        workFormatsCount: profile.work_formats?.length || 0,
-        salaryExpectations: profile.salary_expectations,
-        salaryCurrency: profile.salary_currency,
+        // Optional in the formula, so it never changes the rating.
+        openToCount: 0,
         additionalInfo: profile.additional_info,
         skillsCount: profile.skills_count,
         languagesCount: profile.languages_count,

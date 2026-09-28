@@ -4,6 +4,7 @@ import type {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
   ReactNode,
+  Ref,
 } from "react";
 import {
   buttonStyles,
@@ -15,6 +16,8 @@ import LocalizedLink from "@/components/ui/localized-link";
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** React 19 passes `ref` as a prop; it reaches the <button> via the spread. */
+  ref?: Ref<HTMLButtonElement>;
 };
 
 export function Button({

@@ -84,6 +84,7 @@ export default async function OnboardingPage({
         }}
         meta={meta}
         profileUrl={new URL(`/u/${username}`, getSiteUrl()).toString()}
+        openTo={{ value: profile.open_to, updatedAt: profile.open_to_updated_at }}
         codeImportAvailable={codeImportAvailable}
         hasPublishedProject={publishedProjectsCount > 0}
       />

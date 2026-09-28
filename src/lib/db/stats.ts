@@ -3,13 +3,17 @@ import {
   excludeSectionCategories,
   getDiscussionsCategoryIds,
 } from "@/lib/db/article-sections";
+import { normalizeOpenTo } from "@/lib/open-to";
+import type { ProfilePrivateDetailsRow } from "@/lib/profile-private";
 import { summarizeSalaryStats, type SalaryInput } from "@/lib/salary-stats";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 type EmbeddedCount = { count: number }[] | null;
 
 type StatsProfileRow = {
   id: string;
+  user_id: string;
   username: string | null;
   name: string | null;
   headline: string | null;
@@ -25,19 +29,15 @@ type StatsProfileRow = {
   vimeo: string | null;
   youtube: string | null;
   instagram: string | null;
-  contact_email: string | null;
   telegram_username: string | null;
-  phone: string | null;
   preferred_contact_method: string | null;
   avatar_url: string | null;
   country_id: number | null;
   category_id: number | null;
   experience_level: string | null;
   experience_years: number | null;
-  employment_types: string[] | null;
+  open_to: string[] | null;
   work_formats: string[] | null;
-  salary_expectations: string | null;
-  salary_currency: string | null;
   additional_info: string | null;
   profile_skills: EmbeddedCount;
   profile_languages: EmbeddedCount;
@@ -126,7 +126,7 @@ export type PlatformStats = {
     label: string;
     value: number;
   }>;
-  employmentTypeBreakdown: Array<{
+  openToBreakdown: Array<{
     key: string;
     label: string;
     value: number;
@@ -177,22 +177,43 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   // computed in SQL. Only profile rows are read into JS — with per-profile
   // section counts via PostgREST `(count)` embedding (no join-row fetches) —
   // because completeness scoring and salary parsing stay in the TS layer.
-  const [activityResponse, profilesResponse, countriesResponse, categoriesResponse] =
+  // Email, phone and salary sit in the owner-only table. The service key reads
+  // them here for aggregates only: whether a contact exists (for the
+  // completeness share) and the salaries their owners chose to show, in groups
+  // of at least ten people. A hidden salary is not counted anywhere.
+  const admin = createAdminClient();
+  const [
+    activityResponse,
+    profilesResponse,
+    countriesResponse,
+    categoriesResponse,
+    privateDetailsResponse,
+  ] =
     await Promise.all([
       supabase.rpc("get_dashboard_activity"),
       supabase
         .from("profiles")
         .select(
-          "id, username, name, headline, bio, city, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, contact_email, telegram_username, phone, preferred_contact_method, avatar_url, country_id, category_id, experience_level, experience_years, employment_types, work_formats, salary_expectations, salary_currency, additional_info, profile_skills(count), profile_languages(count), profile_education(count), profile_certificates(count), profile_qas(count), profile_work_experience(count)",
+          "id, user_id, username, name, headline, bio, city, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, telegram_username, preferred_contact_method, avatar_url, country_id, category_id, experience_level, experience_years, open_to, work_formats, additional_info, profile_skills(count), profile_languages(count), profile_education(count), profile_certificates(count), profile_qas(count), profile_work_experience(count)",
         ),
       supabase.from("countries").select("id, name"),
       supabase.from("profile_categories").select("id, name"),
+      admin
+        ? admin
+            .from("profile_private_details")
+            .select("user_id, contact_email, phone, salary_expectations, salary_currency, salary_public")
+        : Promise.resolve({ data: [] }),
     ]);
 
   const activity = (activityResponse.data || {}) as Partial<PlatformActivity>;
   const profiles = (profilesResponse.data || []) as unknown as StatsProfileRow[];
   const countries = (countriesResponse.data || []) as Array<{ id: number; name: string }>;
   const categories = (categoriesResponse.data || []) as Array<{ id: number; name: string }>;
+  const privateDetailsByUser = new Map(
+    ((privateDetailsResponse.data || []) as Array<ProfilePrivateDetailsRow & { user_id: string }>).map(
+      (row) => [row.user_id, row],
+    ),
+  );
 
   const countryMap = new Map(countries.map((country) => [country.id, country.name]));
   const categoryMap = new Map(categories.map((category) => [category.id, category.name]));
@@ -206,11 +227,12 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   ]);
   const experienceCounts = new Map<string, number>();
   const workFormatCounts = new Map<string, number>();
-  const employmentTypeCounts = new Map<string, number>();
+  const openToCounts = new Map<string, number>();
   const contactMethodCounts = new Map<string, number>();
   const salaryInputs: SalaryInput[] = [];
 
   const completionScores = profiles.map((profile) => {
+    const privateDetails = privateDetailsByUser.get(profile.user_id);
     const score = Math.round(
       getProfileCompletenessScore({
         username: profile.username,
@@ -230,16 +252,12 @@ export async function getPlatformStats(): Promise<PlatformStats> {
         vimeo: profile.vimeo,
         youtube: profile.youtube,
         instagram: profile.instagram,
-        contactEmail: profile.contact_email,
+        hasPrivateContact: Boolean(privateDetails?.contact_email || privateDetails?.phone),
         telegramUsername: profile.telegram_username,
-        phone: profile.phone,
         preferredContactMethod: profile.preferred_contact_method,
         experienceLevel: profile.experience_level,
         experienceYears: profile.experience_years,
-        employmentTypesCount: profile.employment_types?.length || 0,
-        workFormatsCount: profile.work_formats?.length || 0,
-        salaryExpectations: profile.salary_expectations,
-        salaryCurrency: profile.salary_currency,
+        openToCount: normalizeOpenTo(profile.open_to).length,
         additionalInfo: profile.additional_info,
         skillsCount: embeddedCount(profile.profile_skills),
         languagesCount: embeddedCount(profile.profile_languages),
@@ -267,8 +285,8 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     }
 
     salaryInputs.push({
-      salary: profile.salary_expectations,
-      currency: profile.salary_currency,
+      salary: privateDetails?.salary_public ? privateDetails.salary_expectations : null,
+      currency: privateDetails?.salary_public ? privateDetails.salary_currency : null,
       country: profile.country_id ? countryMap.get(profile.country_id) ?? null : null,
       category: profile.category_id
         ? categoryMap.get(profile.category_id) ?? null
@@ -280,9 +298,8 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       workFormatCounts.set(format, (workFormatCounts.get(format) || 0) + 1);
     }
 
-    for (const type of profile.employment_types || []) {
-      if (!type) continue;
-      employmentTypeCounts.set(type, (employmentTypeCounts.get(type) || 0) + 1);
+    for (const option of normalizeOpenTo(profile.open_to)) {
+      openToCounts.set(option, (openToCounts.get(option) || 0) + 1);
     }
 
     if (profile.preferred_contact_method) {
@@ -333,7 +350,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     workFormatBreakdown: [...workFormatCounts.entries()]
       .map(([key, value]) => ({ key, label: key, value }))
       .sort((left, right) => right.value - left.value),
-    employmentTypeBreakdown: [...employmentTypeCounts.entries()]
+    openToBreakdown: [...openToCounts.entries()]
       .map(([key, value]) => ({ key, label: key, value }))
       .sort((left, right) => right.value - left.value),
     contactMethodBreakdown: [...contactMethodCounts.entries()]

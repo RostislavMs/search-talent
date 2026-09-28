@@ -219,16 +219,12 @@ describe("<OnboardingFlow />", () => {
     vimeo: null,
     youtube: null,
     instagram: null,
-    contactEmail: null,
+    hasPrivateContact: false,
     telegramUsername: null,
-    phone: null,
     preferredContactMethod: null,
     experienceLevel: null,
     experienceYears: null,
-    employmentTypesCount: 0,
-    workFormatsCount: 0,
-    salaryExpectations: null,
-    salaryCurrency: null,
+    openToCount: 0,
     additionalInfo: null,
     skillsCount: 0,
     languagesCount: 0,
@@ -254,6 +250,7 @@ describe("<OnboardingFlow />", () => {
           }}
           meta={meta}
           profileUrl="https://searchtalent.dev/u/user-ab12cd"
+          openTo={{ value: [], updatedAt: null }}
           codeImportAvailable
           hasPublishedProject={false}
         />

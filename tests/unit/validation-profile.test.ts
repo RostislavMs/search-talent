@@ -156,25 +156,34 @@ describe("profilePayloadSchema - enum-like fields", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects unknown employment_types entries", () => {
+  it("rejects unknown open_to entries", () => {
     expect(
       profilePayloadSchema.safeParse({
         ...minimal,
-        employment_types: ["full_time", "alien_contract"] as unknown as string[],
+        open_to: ["freelance", "vacancy"] as unknown as string[],
       }).success,
     ).toBe(false);
   });
 
-  it("dedupes employment_types and work_formats", () => {
+  it("dedupes open_to (in canonical order) and work_formats", () => {
     const result = profilePayloadSchema.safeParse({
       ...minimal,
-      employment_types: ["full_time", "full_time"],
+      open_to: ["mentoring", "freelance", "freelance"],
       work_formats: ["remote", "remote"],
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.employment_types).toEqual(["full_time"]);
+      expect(result.data.open_to).toEqual(["freelance", "mentoring"]);
       expect(result.data.work_formats).toEqual(["remote"]);
+    }
+  });
+
+  it("keeps salary private unless shown, and open_to empty by default", () => {
+    const result = profilePayloadSchema.safeParse(minimal);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.salary_public).toBe(false);
+      expect(result.data.open_to).toEqual([]);
     }
   });
 });

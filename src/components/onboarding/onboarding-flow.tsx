@@ -9,6 +9,7 @@ import OnboardingShareStep from "@/components/onboarding/share-step";
 import ProfileCompletenessButton from "@/components/profile-completeness-button";
 import { apiFetch } from "@/lib/api-client";
 import type { MetaOption } from "@/lib/db/onboarding";
+import type { OpenToOption } from "@/lib/open-to";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import {
   getNextOnboardingStep,
@@ -27,6 +28,7 @@ export type OnboardingFlowProps = {
   profile: OnboardingProfileInitial;
   meta: { categories: MetaOption[]; skills: MetaOption[] };
   profileUrl: string;
+  openTo: { value: OpenToOption[]; updatedAt: string | null };
   codeImportAvailable: boolean;
   hasPublishedProject: boolean;
 };
@@ -44,6 +46,7 @@ export default function OnboardingFlow({
   profile,
   meta,
   profileUrl,
+  openTo,
   codeImportAvailable,
   hasPublishedProject,
 }: OnboardingFlowProps) {
@@ -189,6 +192,7 @@ export default function OnboardingFlow({
         {step === "share" ? (
           <OnboardingShareStep
             profileUrl={profileUrl}
+            openTo={openTo}
             username={profile.username}
             usernameIsTemporary={profile.usernameIsTemporary}
             hasPublishedProject={hasPublishedProject}

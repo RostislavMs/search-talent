@@ -73,4 +73,63 @@ describe("PUT /api/profile", () => {
     const update = mock.calls.find((c) => c.table === "profiles" && c.verb === "update");
     expect((update?.payload as { username: string }).username).toBe("ada_dev");
   });
+
+  it("keeps email, phone and salary out of the public profiles row", async () => {
+    const mock = setMock(authUser, (t, v) => {
+      if (t === "profiles" && v === "select") return { data: { id: "p1" } };
+      return { error: null };
+    });
+    const res = await PUT(
+      req({
+        contact_email: "ada@example.com",
+        phone: "+380501112233",
+        salary_expectations: "3000",
+        salary_currency: "usd",
+        salary_public: true,
+        open_to: ["mentoring", "freelance"],
+      }),
+    );
+    expect(res.status).toBe(200);
+
+    const update = mock.calls.find((c) => c.table === "profiles" && c.verb === "update");
+    const publicRow = update?.payload as Record<string, unknown>;
+    expect(publicRow.open_to).toEqual(["freelance", "mentoring"]);
+    for (const key of ["contact_email", "phone", "salary_expectations", "salary_currency", "employment_types"]) {
+      expect(publicRow).not.toHaveProperty(key);
+    }
+
+    const upsert = mock.calls.find((c) => c.table === "profile_private_details" && c.verb === "upsert");
+    expect(upsert?.payload).toEqual({
+      user_id: USER_ID,
+      contact_email: "ada@example.com",
+      phone: "+380501112233",
+      salary_expectations: "3000",
+      salary_currency: "usd",
+      salary_public: true,
+    });
+  });
+
+  it("cannot show a salary that is not there", async () => {
+    const mock = setMock(authUser, (t, v) => {
+      if (t === "profiles" && v === "select") return { data: { id: "p1" } };
+      return { error: null };
+    });
+    await PUT(req({ salary_currency: "usd", salary_public: true }));
+
+    const upsert = mock.calls.find((c) => c.table === "profile_private_details");
+    expect(upsert?.payload).toMatchObject({
+      salary_expectations: null,
+      salary_currency: null,
+      salary_public: false,
+    });
+  });
+
+  it("400 when the private details cannot be saved", async () => {
+    setMock(authUser, (t, v) => {
+      if (t === "profiles" && v === "select") return { data: { id: "p1" } };
+      if (t === "profile_private_details") return { error: { message: "denied" } };
+      return { error: null };
+    });
+    expect((await PUT(req({ contact_email: "ada@example.com" }))).status).toBe(400);
+  });
 });

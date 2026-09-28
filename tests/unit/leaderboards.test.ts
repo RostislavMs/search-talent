@@ -161,16 +161,12 @@ function emptyProfileInput() {
     github: null,
     twitter: null,
     linkedin: null,
-    contactEmail: null,
+    hasPrivateContact: false,
     telegramUsername: null,
-    phone: null,
     preferredContactMethod: null,
     experienceLevel: null,
     experienceYears: null,
-    employmentTypesCount: 0,
-    workFormatsCount: 0,
-    salaryExpectations: null,
-    salaryCurrency: null,
+    openToCount: 0,
     additionalInfo: null,
     skillsCount: 0,
     languagesCount: 0,
@@ -200,16 +196,12 @@ function fullProfileInput() {
     vimeo: "https://vimeo.com/ros",
     youtube: "https://youtube.com/@ros",
     instagram: "https://instagram.com/ros",
-    contactEmail: "ros@example.com",
+    hasPrivateContact: true,
     telegramUsername: "@ros",
-    phone: "+380...",
     preferredContactMethod: "email",
     experienceLevel: "senior",
     experienceYears: 8,
-    employmentTypesCount: 2,
-    workFormatsCount: 2,
-    salaryExpectations: "5000",
-    salaryCurrency: "USD",
+    openToCount: 2,
     additionalInfo: "Notes",
     skillsCount: 5,
     languagesCount: 2,
@@ -237,10 +229,18 @@ describe("getProfileCompletenessScore", () => {
   });
 
   it("treats any single contact channel as a fulfilled contact field", () => {
-    const onlyEmail = { ...emptyProfileInput(), contactEmail: "x@y.z" };
-    const onlyPhone = { ...emptyProfileInput(), phone: "+380" };
-    expect(getProfileCompletenessScore(onlyEmail)).toBe(
-      getProfileCompletenessScore(onlyPhone),
+    const onlyPrivate = { ...emptyProfileInput(), hasPrivateContact: true };
+    const onlyTelegram = { ...emptyProfileInput(), telegramUsername: "@ros" };
+    expect(getProfileCompletenessScore(onlyPrivate)).toBeGreaterThan(0);
+    expect(getProfileCompletenessScore(onlyPrivate)).toBe(
+      getProfileCompletenessScore(onlyTelegram),
+    );
+  });
+
+  it("does not change the rating for «Відкрито до…» (an optional item)", () => {
+    const partial = { ...emptyProfileInput(), username: "ros", name: "Ros" };
+    expect(getProfileCompletenessScore({ ...partial, openToCount: 3 })).toBe(
+      getProfileCompletenessScore(partial),
     );
   });
 });
