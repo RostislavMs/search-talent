@@ -8,6 +8,7 @@ import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/current-user";
 import { loadViewerAffinity } from "@/lib/db/affinity";
+import { normalizeOpenTo } from "@/lib/open-to";
 import {
   composeRelevance,
   facetRelevance,
@@ -66,7 +67,7 @@ type ProfileRow = {
   city: string | null;
   category_id: number | null;
   experience_level: string | null;
-  employment_types: string[] | null;
+  open_to: string[] | null;
   work_formats: string[] | null;
   moderation_status: string | null;
   score: number | null;
@@ -114,7 +115,8 @@ export type DiscoverySearchParams = {
   skillIds?: number[];
   languageIds?: number[];
   experienceLevel?: string | null;
-  employmentTypes?: string[];
+  /** «Відкрито до…»; any of them matches. */
+  openTo?: string[];
   workFormats?: string[];
   projectStatus?: string | null;
   projectKind?: ProjectKind | null;
@@ -214,7 +216,7 @@ export async function searchDiscovery(
   const skillIds = params.skillIds ?? [];
   const languageIds = params.languageIds ?? [];
   const experienceLevel = params.experienceLevel ?? null;
-  const employmentTypes = params.employmentTypes ?? [];
+  const openTo = normalizeOpenTo(params.openTo);
   const workFormats = params.workFormats ?? [];
   const projectStatus = params.projectStatus ?? null;
   const projectKind = params.projectKind ?? null;
@@ -273,7 +275,7 @@ export async function searchDiscovery(
         p_skill_ids: skillIds.length > 0 ? skillIds : null,
         p_language_ids: languageIds.length > 0 ? languageIds : null,
         p_experience_level: experienceLevel,
-        p_employment_types: employmentTypes.length > 0 ? employmentTypes : null,
+        p_open_to: openTo.length > 0 ? openTo : null,
         p_work_formats: workFormats.length > 0 ? workFormats : null,
         p_has_avatar: hasAvatar,
         // Rating min/max for profiles is applied in JS below against the
@@ -286,7 +288,7 @@ export async function searchDiscovery(
         p_limit: CANDIDATE_LIMIT,
       })
       .select(
-        "id, user_id, username, name, headline, avatar_url, country_id, city, category_id, experience_level, employment_types, work_formats, score, created_at",
+        "id, user_id, username, name, headline, avatar_url, country_id, city, category_id, experience_level, open_to, work_formats, score, created_at",
       ),
     // Composite all-time creator + project ratings keyed by id — the exact
     // values the homepage leaderboard shows. Sharing the leaderboard cache

@@ -35,6 +35,15 @@ describe("GET /api/search", () => {
     expect(query.scope).toBe("projects");
   });
 
+  it("reads «Відкрито до…» and maps the old employment types onto it", async () => {
+    holder.mock = createSupabaseMock({ resolve: () => ({}) });
+    await GET(
+      new Request("http://test/api/search?openTo=mentoring,vacancy&employmentTypes=full_time,internship"),
+    );
+    const [query] = vi.mocked(searchDiscovery).mock.calls[0];
+    expect(query.openTo).toEqual(["job", "internship", "mentoring"]);
+  });
+
   it("skips the affinity load for impersonal sorts", async () => {
     holder.mock = createSupabaseMock({ resolve: () => ({}) });
     await GET(new Request("http://test/api/search?sort=rating"));

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  getEditableProfileCompleteness,
   getProfileCompletenessBreakdown,
   getProfileCompletenessItemLabel,
+  type EditableProfileCompletenessSource,
   type ProfileCompletenessItemKey,
 } from "@/lib/profile-completeness";
 
@@ -28,16 +30,12 @@ function makeEmptyInput(): ProfileCompletenessInput {
     vimeo: null,
     youtube: null,
     instagram: null,
-    contactEmail: null,
+    hasPrivateContact: false,
     telegramUsername: null,
-    phone: null,
     preferredContactMethod: null,
     experienceLevel: null,
     experienceYears: null,
-    employmentTypesCount: 0,
-    workFormatsCount: 0,
-    salaryExpectations: null,
-    salaryCurrency: null,
+    openToCount: 0,
     additionalInfo: null,
     skillsCount: 0,
     languagesCount: 0,
@@ -67,16 +65,12 @@ function makeFullInput(): ProfileCompletenessInput {
     vimeo: null,
     youtube: null,
     instagram: null,
-    contactEmail: "john@example.com",
+    hasPrivateContact: true,
     telegramUsername: "johndoe",
-    phone: "+380123456789",
     preferredContactMethod: "email",
     experienceLevel: "years_5",
     experienceYears: 5,
-    employmentTypesCount: 2,
-    workFormatsCount: 1,
-    salaryExpectations: "3000",
-    salaryCurrency: "usd",
+    openToCount: 2,
     additionalInfo: "Open to relocation",
     skillsCount: 10,
     languagesCount: 2,
@@ -102,10 +96,40 @@ describe("getProfileCompletenessBreakdown", () => {
     expect(result.items.every((item) => item.filled)).toBe(true);
   });
 
-  it("returns correct number of items (25)", () => {
+  it("returns correct number of items (23)", () => {
     const result = getProfileCompletenessBreakdown(makeEmptyInput());
 
-    expect(result.items).toHaveLength(25);
+    expect(result.items).toHaveLength(23);
+  });
+
+  it("no longer asks for salary, employment types or work format", () => {
+    const keys = getProfileCompletenessBreakdown(makeEmptyInput()).items.map((i) => i.key);
+
+    expect(keys).not.toContain("salary");
+    expect(keys).not.toContain("employmentTypes");
+    expect(keys).not.toContain("workFormats");
+  });
+
+  it("reaches 100% without «Відкрито до…»: the item is optional", () => {
+    const full = makeFullInput();
+    full.openToCount = 0;
+
+    const result = getProfileCompletenessBreakdown(full);
+    const openTo = result.items.find((i) => i.key === "openTo");
+
+    expect(openTo?.optional).toBe(true);
+    expect(openTo?.filled).toBe(false);
+    expect(result.percent).toBe(100);
+  });
+
+  it("marks «Відкрито до…» as filled once an option is chosen", () => {
+    const input = makeEmptyInput();
+    input.openToCount = 1;
+
+    const result = getProfileCompletenessBreakdown(input);
+
+    expect(result.items.find((i) => i.key === "openTo")?.filled).toBe(true);
+    expect(result.percent).toBe(0);
   });
 
   it("marks portfolioLinks as filled when any portfolio link is present", () => {
@@ -126,13 +150,17 @@ describe("getProfileCompletenessBreakdown", () => {
   });
 
   it("marks contact as filled when any contact method is present", () => {
-    const input = makeEmptyInput();
-    input.telegramUsername = "johndoe";
+    const telegram = makeEmptyInput();
+    telegram.telegramUsername = "johndoe";
+    const privateContact = makeEmptyInput();
+    privateContact.hasPrivateContact = true;
 
-    const result = getProfileCompletenessBreakdown(input);
-    const contactItem = result.items.find((i) => i.key === "contact");
-
-    expect(contactItem?.filled).toBe(true);
+    for (const input of [telegram, privateContact]) {
+      const contactItem = getProfileCompletenessBreakdown(input).items.find(
+        (i) => i.key === "contact",
+      );
+      expect(contactItem?.filled).toBe(true);
+    }
   });
 
   it("marks experience as filled when experienceYears is set (even if experienceLevel is null)", () => {
@@ -153,21 +181,6 @@ describe("getProfileCompletenessBreakdown", () => {
     const expItem = result.items.find((i) => i.key === "experience");
 
     expect(expItem?.filled).toBe(true);
-  });
-
-  it("marks salary as filled only when both salaryExpectations and salaryCurrency are set", () => {
-    const onlyExpectations = makeEmptyInput();
-    onlyExpectations.salaryExpectations = "3000";
-
-    const r1 = getProfileCompletenessBreakdown(onlyExpectations);
-    expect(r1.items.find((i) => i.key === "salary")?.filled).toBe(false);
-
-    const both = makeEmptyInput();
-    both.salaryExpectations = "3000";
-    both.salaryCurrency = "usd";
-
-    const r2 = getProfileCompletenessBreakdown(both);
-    expect(r2.items.find((i) => i.key === "salary")?.filled).toBe(true);
   });
 
   it("computes partial percent correctly", () => {
@@ -215,14 +228,65 @@ describe("getProfileCompletenessItemLabel", () => {
     const keys: ProfileCompletenessItemKey[] = [
       "username", "name", "avatar", "headline", "bio", "country", "city",
       "website", "github", "twitter", "linkedin", "portfolioLinks", "contact",
-      "preferredContact", "experience", "employmentTypes", "workFormats",
-      "salary", "additionalInfo", "skills", "languages", "education",
-      "certificates", "qa", "workExperience",
+      "preferredContact", "experience", "openTo", "additionalInfo", "skills",
+      "languages", "education", "certificates", "qa", "workExperience",
     ];
 
     for (const key of keys) {
       expect(getProfileCompletenessItemLabel(key, "en")).toBeTruthy();
       expect(getProfileCompletenessItemLabel(key, "uk")).toBeTruthy();
     }
+  });
+});
+
+describe("getEditableProfileCompleteness", () => {
+  const owner: EditableProfileCompletenessSource = {
+    username: "olena",
+    name: null,
+    avatar_url: null,
+    headline: null,
+    bio: null,
+    country_id: null,
+    city: null,
+    website: null,
+    github: null,
+    twitter: null,
+    linkedin: null,
+    behance: null,
+    dribbble: null,
+    artstation: null,
+    vimeo: null,
+    youtube: null,
+    instagram: null,
+    contact_email: null,
+    telegram_username: null,
+    phone: null,
+    preferred_contact_method: null,
+    experience_level: null,
+    experience_years: null,
+    open_to: [],
+    additional_info: null,
+    skill_ids: [],
+    languages: [],
+    education: [],
+    certificates: [],
+    qas: [],
+    work_experience: [],
+  };
+
+  it("counts the owner's private email or phone as a contact", () => {
+    const contactFilled = (patch: Partial<EditableProfileCompletenessSource>) =>
+      getEditableProfileCompleteness({ ...owner, ...patch }).items.find(
+        (i) => i.key === "contact",
+      )?.filled;
+
+    expect(contactFilled({})).toBe(false);
+    expect(contactFilled({ contact_email: "olena@example.com" })).toBe(true);
+    expect(contactFilled({ phone: "+380501112233" })).toBe(true);
+  });
+
+  it("marks «Відкрито до…» from the owner's status", () => {
+    const result = getEditableProfileCompleteness({ ...owner, open_to: ["freelance"] });
+    expect(result.items.find((i) => i.key === "openTo")?.filled).toBe(true);
   });
 });

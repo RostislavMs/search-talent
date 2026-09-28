@@ -40,7 +40,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "These Terms describe the rules for using SearchTalent. They form a living document and may expand as the product grows.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "July 27, 2026",
+      lastUpdatedValue: "September 28, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -76,6 +76,17 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "SearchTalent includes community features such as comments, reactions, votes, follows, and a public rating and leaderboard.",
             "Use them in good faith. Harassment, hate speech, spam, and attempts to manipulate ratings, votes, or rankings — for example through fake accounts or coordinated voting — are not allowed.",
+          ],
+        },
+        {
+          title: "“Open to” and contacting people",
+          paragraphs: [
+            "SearchTalent is a portfolio platform, not a job board: there are no vacancies or applications. You can mark on your page what you are open to — freelance, a job, an internship, collaboration, or mentoring — and other people can contact you through the “Contact” button.",
+            "Any agreement that follows is made directly between the people involved. SearchTalent is not a party to it, does not check offers or the people who make them, and is not responsible for how an agreement is carried out.",
+          ],
+          bullets: [
+            "Use contact details from SearchTalent only to reach the person about their work. Do not send spam or collect addresses.",
+            "Email and phone are shown only to signed-in people, and the number of profiles one account can open contacts for is limited.",
           ],
         },
         {
@@ -122,7 +133,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "This Privacy Policy explains what data SearchTalent handles, why it is needed, who processes it, and the rights you have over your information.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "September 26, 2026",
+      lastUpdatedValue: "September 28, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -140,7 +151,8 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Account and authentication data: email address and login identifiers, including data from GitHub if you sign in or connect a repository through it.",
             "Profile and contact details: name, username, headline, bio, location, avatar and cover image, and any contact details or links you add (email, phone, Telegram, website, GitHub, LinkedIn, and other social or portfolio links).",
-            "Professional information: skills, languages, work experience, education, certificates (including any files you upload), experience level, employment and work-format preferences, and salary expectations if you choose to provide them.",
+            "Professional information: skills, languages, work experience, education, certificates (including any files you upload), experience level, what you are open to (freelance, a job, an internship, collaboration, mentoring) and when you last confirmed it, preferred work formats, and salary expectations if you choose to provide them.",
+            "Opening someone's contacts: when you are signed in and press “Contact” on another person's page, we record that your account opened that profile's contacts and when.",
             "Content and community activity: projects, articles, polls and your poll responses, comments, reactions, votes, follows, bookmarks, badges, notifications, and your position on the leaderboard.",
             "Feedback you send: the name, email, and message you submit through the feedback form.",
             "Technical and usage data: information needed for security, reliability, and performance, and aggregate view counts on content.",
@@ -155,6 +167,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Your data is used to authenticate access, display the public pages and content you choose to publish, power search and discovery, calculate ratings, badges, and leaderboards, deliver notifications, and respond to feedback or reports.",
             "Some technical data is also used to keep the service secure, reliable, and performant, and to moderate content for the safety of the platform and its users.",
             "View statistics, last-visit times, and sign-up sources are used only in aggregate: to see how many people sign up, publish a first project, come back, and get views of their portfolio from outside the platform. They are not used to profile individual visitors or for advertising.",
+            "Records of who opened whose contacts are used for two things only: to show the owner how many people opened their contacts, and to limit how many profiles one account can open, so addresses cannot be harvested. The owner sees the number, never who.",
           ],
         },
         {
@@ -165,7 +178,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Performance of a contract — creating and running your account, publishing the profile and content you choose to share, and providing the community features described in the Terms of Service.",
             "Your consent — optional analytics and the cookie categories you allow, and the optional AI features. You can withdraw consent at any time, which does not affect processing that already happened.",
-            "Our legitimate interests — keeping the platform secure and reliable, preventing spam, abuse, and rating manipulation, moderating content for the safety of users, and measuring in aggregate how the platform is used (view statistics and last-visit times). The sign-up source is recorded only with your consent.",
+            "Our legitimate interests — keeping the platform secure and reliable, preventing spam, abuse, rating manipulation, and the harvesting of contact details, moderating content for the safety of users, and measuring in aggregate how the platform is used (view statistics, last-visit times, and the number of people who opened your contacts). The sign-up source is recorded only with your consent.",
             "Legal obligations — where we are required to keep, provide, or remove data to comply with the law.",
           ],
         },
@@ -174,6 +187,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "Much of what you add is intended to be public — your profile, projects, articles, polls, and comments — and you control which profile sections are visible through your profile visibility settings.",
             "Other information, such as authentication data, your email, feedback submissions, and internal technical records, is used only to operate the service and is not made public.",
+            "The email and phone you add to your profile are never public: signed-in people see them only after pressing “Contact” on your page. Salary expectations are visible only to you unless you turn on “Show on my page”. What you are open to is public, as is the date you last confirmed it.",
           ],
         },
         {
@@ -246,6 +260,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "We keep your data while your account is active and remove or anonymize it when you delete your account as described above.",
             "Limited records may persist for a short time where needed for security, backups, or legal obligations.",
             "View statistics keep no data that identifies a visitor once the day's key is deleted. Statistics about views of your pages are deleted together with your account.",
+            "A record that one account opened another's contacts is deleted when either account is deleted.",
           ],
         },
         {
@@ -338,7 +353,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ці Умови описують правила користування SearchTalent. Документ є робочим і може розширюватися разом із розвитком продукту.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "27 липня 2026",
+      lastUpdatedValue: "28 вересня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -374,6 +389,17 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "SearchTalent має функції спільноти: коментарі, реакції, голоси, підписки, а також публічний рейтинг і лідерборд.",
             "Користуйтеся ними добросовісно. Цькування, мова ворожнечі, спам і спроби маніпулювати рейтингом, голосами чи позиціями — наприклад через фейкові акаунти або скоординоване голосування — заборонені.",
+          ],
+        },
+        {
+          title: "«Відкрито до…» і зв'язок між людьми",
+          paragraphs: [
+            "SearchTalent — платформа портфоліо, а не сайт вакансій: вакансій і відгуків на них тут немає. Ви можете позначити на своїй сторінці, до чого відкриті, — фриланс, робота, стажування, співпраця чи менторство, — а інші люди можуть написати вам через кнопку «Зв'язатися».",
+            "Усі подальші домовленості укладаються напряму між людьми. SearchTalent не є їх стороною, не перевіряє пропозиції та тих, хто їх робить, і не відповідає за виконання домовленостей.",
+          ],
+          bullets: [
+            "Використовуйте контакти з SearchTalent лише для того, щоб написати людині щодо її роботи. Не надсилайте спам і не збирайте адреси.",
+            "Пошту й телефон бачать лише ті, хто увійшов, а кількість профілів, контакти яких може відкрити один акаунт, обмежена.",
           ],
         },
         {
@@ -420,7 +446,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ця Політика конфіденційності пояснює, які дані обробляє SearchTalent, навіщо вони потрібні, хто їх обробляє та які права ви маєте щодо своєї інформації.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "26 вересня 2026",
+      lastUpdatedValue: "28 вересня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -438,7 +464,8 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Дані акаунта й авторизації: email та ідентифікатори входу, зокрема дані з GitHub, якщо ви входите чи під'єднуєте репозиторій через нього.",
             "Профіль і контакти: ім'я, username, заголовок, біографія, локація, аватар і обкладинка, а також контакти й посилання, які ви додаєте (email, телефон, Telegram, вебсайт, GitHub, LinkedIn та інші соц- чи портфоліо-посилання).",
-            "Професійна інформація: навички, мови, досвід роботи, освіта, сертифікати (зокрема завантажені файли), рівень досвіду, бажані типи зайнятості й формати роботи, а також зарплатні очікування, якщо ви їх вказуєте.",
+            "Професійна інформація: навички, мови, досвід роботи, освіта, сертифікати (зокрема завантажені файли), рівень досвіду, до чого ви відкриті (фриланс, робота, стажування, співпраця, менторство) і коли востаннє це підтвердили, бажані формати роботи, а також зарплатні очікування, якщо ви їх вказуєте.",
+            "Відкриття чужих контактів: коли ви в системі й натискаєте «Зв'язатися» на сторінці іншої людини, ми записуємо, що ваш акаунт відкрив контакти цього профілю, і коли.",
             "Контент і активність у спільноті: проєкти, статті, опитування та ваші відповіді на них, коментарі, реакції, голоси, підписки, закладки, бейджі, сповіщення й позиція в рейтингу.",
             "Звернення через форму зворотного зв'язку: ім'я, email і повідомлення, які ви надсилаєте.",
             "Технічні дані та дані використання: інформація, потрібна для безпеки, стабільності й продуктивності, та агреговані лічильники переглядів контенту.",
@@ -453,6 +480,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Ці дані потрібні для авторизації, показу публічних сторінок і контенту, який ви публікуєте, роботи пошуку й навігації, обчислення рейтингів, бейджів і лідербордів, доставки сповіщень та відповідей на звернення.",
             "Частина технічних даних також використовується для безпеки, стабільності й продуктивності сервісу та для модерації контенту заради безпеки платформи й користувачів.",
             "Статистику переглядів, час останнього візиту й джерело реєстрації ми використовуємо лише в агрегованому вигляді: щоб бачити, скільки людей реєструються, публікують перший проєкт, повертаються й отримують перегляди портфоліо ззовні платформи. Для профілювання окремих відвідувачів чи реклами вони не використовуються.",
+            "Записи про те, хто відкрив чиї контакти, потрібні лише для двох речей: показати власникові, скільки людей відкрили його контакти, і обмежити, скільки профілів може відкрити один акаунт, щоб адреси не можна було зібрати. Власник бачить лише число, а не те, хто це був.",
           ],
         },
         {
@@ -463,7 +491,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Виконання договору — створення й робота акаунта, публікація профілю та контенту, який ви обираєте показувати, і надання функцій спільноти, описаних в Умовах користування.",
             "Ваша згода — необов'язкова аналітика та категорії cookies, які ви дозволяєте, а також необов'язкові AI-функції. Згоду можна відкликати будь-коли, це не впливає на обробку, що вже відбулася.",
-            "Наші законні інтереси — безпека й стабільність платформи, запобігання спаму, зловживанням і маніпуляціям рейтингом, модерація контенту заради безпеки користувачів, а також агреговане вимірювання того, як користуються платформою (статистика переглядів і час останнього візиту). Джерело реєстрації записується лише з вашої згоди.",
+            "Наші законні інтереси — безпека й стабільність платформи, запобігання спаму, зловживанням, маніпуляціям рейтингом і збиранню контактів, модерація контенту заради безпеки користувачів, а також агреговане вимірювання того, як користуються платформою (статистика переглядів, час останнього візиту й кількість людей, які відкрили ваші контакти). Джерело реєстрації записується лише з вашої згоди.",
             "Правові зобов'язання — коли ми зобов'язані зберігати, надавати або видаляти дані на вимогу закону.",
           ],
         },
@@ -472,6 +500,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "Значна частина того, що ви додаєте, за задумом є публічною — профіль, проєкти, статті, опитування й коментарі, — і ви керуєте тим, які секції профілю видно, через налаштування видимості профілю.",
             "Інша інформація, як-от дані авторизації, ваш email, звернення через форму зворотного зв'язку та внутрішні технічні записи, використовується лише для роботи сервісу й не стає публічною.",
+            "Пошта й телефон, які ви додаєте в профіль, ніколи не публічні: люди в системі бачать їх лише після того, як натиснуть «Зв'язатися» на вашій сторінці. Зарплатні очікування бачите лише ви, доки не ввімкнете «Показувати на сторінці». Те, до чого ви відкриті, публічне, як і дата, коли ви востаннє це підтвердили.",
           ],
         },
         {
@@ -544,6 +573,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Ми зберігаємо ваші дані, поки акаунт активний, і видаляємо або анонімізуємо їх, коли ви видаляєте акаунт у спосіб, описаний вище.",
             "Окремі записи можуть зберігатися нетривалий час, якщо це потрібно для безпеки, резервних копій або виконання правових зобов'язань.",
             "Після видалення добового ключа статистика переглядів не містить даних, за якими можна впізнати відвідувача. Статистика переглядів ваших сторінок видаляється разом з акаунтом.",
+            "Запис про те, що один акаунт відкрив контакти іншого, видаляється, коли видаляють будь-який із цих акаунтів.",
           ],
         },
         {

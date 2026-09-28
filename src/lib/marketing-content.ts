@@ -63,8 +63,8 @@ const marketingContent = {
           description: "Projects with a description and a result show how someone works.",
         },
         {
-          title: "Follow the author",
-          description: "Keep up with their new work and leave comments.",
+          title: "Get in touch",
+          description: "If someone is open to freelance, a job or collaboration, press “Contact” on their page.",
         },
       ],
       faqTitle: "FAQ",
@@ -92,6 +92,11 @@ const marketingContent = {
           question: "How does the ranking work?",
           answer:
             "It looks at how fully your work and profile are described and how people respond to them. A few random likes won't lift weak work. The rating guide has the details.",
+        },
+        {
+          question: "Is this a job board?",
+          answer:
+            "No. There are no vacancies or applications. But specialists can show what they're open to (freelance, a job, an internship, collaboration or mentoring), and you can get in touch with them directly.",
         },
         {
           question: "Can I browse portfolios without an account?",
@@ -128,12 +133,12 @@ const marketingContent = {
         {
           question: "What can I evaluate on a SearchTalent profile?",
           answer:
-            "You can review a specialist's role, skills, technology stack, portfolio projects, work preferences, and public profile information as you explore whose work to follow, learn from, or connect with.",
+            "You can review a specialist's role, skills, technology stack, portfolio projects, what they are open to, and public profile information as you explore whose work to follow, learn from, or get in touch with.",
         },
         {
           question: "Does SearchTalent support browsing by role?",
           answer:
-            "Yes. Talent directories can be explored by role and filtered further by technologies, location, experience, and work format.",
+            "Yes. Talent directories can be explored by role and filtered further by what people are open to (freelance, a job, an internship, collaboration, mentoring), technologies, location, experience, and work format.",
         },
         {
           question: "Why are public portfolios useful?",
@@ -245,8 +250,8 @@ const marketingContent = {
           description: "Проєкти з описом і результатом показують, як людина працює.",
         },
         {
-          title: "Підпишіться на автора",
-          description: "Слідкуйте за новими роботами й залишайте коментарі.",
+          title: "Напишіть автору",
+          description: "Якщо людина відкрита до фрилансу, роботи чи співпраці, натисніть «Зв'язатися» на її сторінці.",
         },
       ],
       faqTitle: "Питання й відповіді",
@@ -274,6 +279,11 @@ const marketingContent = {
           question: "Як працює рейтинг?",
           answer:
             "Рейтинг дивиться, наскільки повно описані ваші роботи й профіль і як на них реагують люди. Кілька випадкових лайків не піднімуть слабку роботу. Докладніше — у гайді по рейтингу.",
+        },
+        {
+          question: "Це сайт вакансій?",
+          answer:
+            "Ні. Вакансій і відгуків на них тут немає. Але фахівці можуть показати, до чого відкриті (фриланс, робота, стажування, співпраця чи менторство), і їм можна написати напряму.",
         },
         {
           question: "Чи можна дивитися портфоліо без реєстрації?",
@@ -310,12 +320,12 @@ const marketingContent = {
         {
           question: "Що можна оцінити в профілі SearchTalent?",
           answer:
-            "У профілі можна переглянути роль фахівця, навички, стек технологій, проєкти, формат роботи та іншу публічну інформацію, коли досліджуєте, чиї роботи читати, у кого вчитися та з ким налагодити звʼязок.",
+            "У профілі можна переглянути роль фахівця, навички, стек технологій, проєкти, до чого людина відкрита, та іншу публічну інформацію, коли досліджуєте, чиї роботи читати, у кого вчитися та кому написати.",
         },
         {
           question: "Чи підтримує SearchTalent перегляд за ролями?",
           answer:
-            "Так. Каталоги талантів можна відкривати за ролями, а далі звужувати результати за технологіями, локацією, досвідом і форматом роботи.",
+            "Так. Каталоги талантів можна відкривати за ролями, а далі звужувати результати за тим, до чого людина відкрита (фриланс, робота, стажування, співпраця, менторство), технологіями, локацією, досвідом і форматом роботи.",
         },
         {
           question: "Чому публічні портфоліо корисні?",
@@ -404,7 +414,7 @@ export function getTalentRoleFaq(locale: Locale, role: string): MarketingFaqItem
       },
       {
         question: `Що містить профіль ${role}?`,
-        answer: `Профіль містить роль, навички, технології, мови, формат роботи, досвід та портфоліо проєктів. Це допомагає зрозуміти, чи підходить фахівець під вашу задачу.`,
+        answer: `Профіль містить роль, навички, технології, мови, досвід, портфоліо проєктів і те, до чого фахівець відкритий: фриланс, робота, стажування, співпраця чи менторство. Це допомагає зрозуміти, чи підходить він під вашу задачу.`,
       },
       {
         question: `Скільки ${role}-фахівців доступно на SearchTalent?`,
@@ -412,7 +422,7 @@ export function getTalentRoleFaq(locale: Locale, role: string): MarketingFaqItem
       },
       {
         question: `Як зв'язатися з ${role}?`,
-        answer: `Відкрийте профіль, перевірте публічні проєкти й контактні преференції. Фахівець сам вказує, як з ним зручно зв'язатися: email, Telegram, LinkedIn або інше.`,
+        answer: `Відкрийте профіль і натисніть «Зв'язатися». Там — способи зв'язку, які фахівець обрав сам; пошту й телефон видно після входу. У каталозі можна відфільтрувати тих, хто відкритий до фрилансу, роботи чи співпраці.`,
       },
       {
         question: `Чи платний пошук ${role} на SearchTalent?`,
@@ -428,7 +438,7 @@ export function getTalentRoleFaq(locale: Locale, role: string): MarketingFaqItem
     },
     {
       question: `What does a ${role} profile include?`,
-      answer: `A profile includes role, skills, stack, languages, work format, experience, and a project portfolio. That makes it easier to decide whether the specialist matches your brief.`,
+      answer: `A profile includes role, skills, stack, languages, experience, a project portfolio, and what the specialist is open to: freelance, a job, an internship, collaboration, or mentoring. That makes it easier to decide whether they match your brief.`,
     },
     {
       question: `How many ${role} specialists are available?`,
@@ -436,7 +446,7 @@ export function getTalentRoleFaq(locale: Locale, role: string): MarketingFaqItem
     },
     {
       question: `How do I contact a ${role}?`,
-      answer: `Open the profile, review public projects, and check the contact preferences. Each specialist chooses how they prefer to be reached — email, Telegram, LinkedIn, or another channel.`,
+      answer: `Open the profile and press “Contact”. You'll see the ways the specialist chose to be reached; email and phone are shown after you sign in. In the catalog you can filter for people open to freelance, a job, or collaboration.`,
     },
     {
       question: `Is ${role} search on SearchTalent free?`,
@@ -478,8 +488,8 @@ export function getTechnologyTalentsFaq(
         answer: `Відкрийте проєкти фахівця: перевірте обсяг роботи, складність задач, посилання на live-продукти й репозиторії, якщо вони є у портфоліо.`,
       },
       {
-        question: `Чи можна фільтрувати фахівців за локацією та форматом роботи?`,
-        answer: `Так. Відкривайте сторінку талантів і використовуйте фільтри discovery — країна, формат, досвід — щоб звузити результат до релевантного.`,
+        question: `Чи можна фільтрувати фахівців за тим, до чого вони відкриті?`,
+        answer: `Так. На сторінці талантів є фільтри: до чого людина відкрита (фриланс, робота, стажування, співпраця, менторство), формат роботи, країна й досвід.`,
       },
     ];
   }
@@ -498,8 +508,8 @@ export function getTechnologyTalentsFaq(
       answer: `Open the specialist's projects and inspect scope, complexity, and any links to live products or repositories included in the portfolio.`,
     },
     {
-      question: `Can I filter specialists by location or work format?`,
-      answer: `Yes. Go to the main talents page and use the discovery filters — country, work format, experience — to narrow the list further.`,
+      question: `Can I filter specialists by what they are open to?`,
+      answer: `Yes. The talents page has filters for what people are open to (freelance, a job, an internship, collaboration, mentoring), work format, country, and experience.`,
     },
   ];
 }

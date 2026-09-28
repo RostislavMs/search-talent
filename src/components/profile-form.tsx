@@ -10,14 +10,12 @@ import {
   createProfileLanguageEntry,
   createProfileQaEntry,
   createProfileWorkExperienceEntry,
-  employmentTypes,
   experienceLevels,
   languageLevels,
   preferredContactMethods,
   profileVisibilityKeys,
   salaryCurrencies,
   workFormats,
-  type EmploymentType,
   type ExperienceLevel,
   type LanguageLevel,
   type PreferredContactMethod,
@@ -63,6 +61,8 @@ import {
   type ViewerPreferences,
 } from "@/lib/profile-presentation";
 import { apiFetch } from "@/lib/api-client";
+import { normalizeOpenTo, type OpenToOption } from "@/lib/open-to";
+import OpenToPicker from "@/components/open-to-picker";
 import { profilePayloadSchema } from "@/lib/validation/profile";
 import type { ProfileCategory } from "@/lib/profile-categories";
 import { Button } from "@/components/ui/Button";
@@ -80,7 +80,6 @@ import dynamic from "next/dynamic";
 import TagSelect from "./ui/tag-select";
 import SearchSelect from "./ui/search-select";
 import {
-  getEmploymentTypeLabel,
   getExperienceLevelLabel,
   getExperiencePlaceholder,
   getLanguageLevelLabel,
@@ -140,10 +139,11 @@ type ProfileRecord = {
   preferred_contact_method: PreferredContactMethod | null;
   experience_level: ExperienceLevel | null;
   experience_years: number | null;
-  employment_types: EmploymentType[];
+  open_to: OpenToOption[];
   work_formats: WorkFormat[];
   salary_expectations: string | null;
   salary_currency: SalaryCurrency | null;
+  salary_public: boolean;
   additional_info: string | null;
   profile_visibility: ProfileSettings | null;
   skill_ids: number[];
@@ -238,6 +238,7 @@ type FormState = {
   experience_level: ExperienceLevel | "";
   salary_expectations: string;
   salary_currency: SalaryCurrency;
+  salary_public: boolean;
   additional_info: string;
 };
 
@@ -295,7 +296,7 @@ function getBackgroundMaxSize(mode: ProfileBackgroundMode) {
 function serializeProfileDraft({
   form,
   skills,
-  selectedEmploymentTypes,
+  selectedOpenTo,
   selectedWorkFormats,
   visibility,
   presentation,
@@ -308,7 +309,7 @@ function serializeProfileDraft({
 }: {
   form: FormState;
   skills: number[];
-  selectedEmploymentTypes: EmploymentType[];
+  selectedOpenTo: OpenToOption[];
   selectedWorkFormats: WorkFormat[];
   visibility: ProfileVisibility;
   presentation: ProfilePresentation;
@@ -345,12 +346,11 @@ function serializeProfileDraft({
       experience_level: form.experience_level || null,
       salary_expectations: form.salary_expectations.trim(),
       salary_currency: form.salary_currency,
+      salary_public: form.salary_public,
       additional_info: form.additional_info.trim(),
     },
     skills: [...skills].sort((a, b) => a - b),
-    selectedEmploymentTypes: employmentTypes.filter((item) =>
-      selectedEmploymentTypes.includes(item),
-    ),
+    selectedOpenTo: normalizeOpenTo(selectedOpenTo),
     selectedWorkFormats: workFormats.filter((item) =>
       selectedWorkFormats.includes(item),
     ),
@@ -911,12 +911,13 @@ export default function ProfileForm({
     experience_level: profile.experience_level || "",
     salary_expectations: profile.salary_expectations || "",
     salary_currency: profile.salary_currency || "uah",
+    salary_public: Boolean(profile.salary_public),
     additional_info: profile.additional_info || "",
   });
   const [skills, setSkills] = useState<number[]>(profile.skill_ids || []);
-  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState<
-    EmploymentType[]
-  >(Array.isArray(profile.employment_types) ? profile.employment_types : []);
+  const [selectedOpenTo, setSelectedOpenTo] = useState<OpenToOption[]>(
+    normalizeOpenTo(profile.open_to),
+  );
   const [selectedWorkFormats, setSelectedWorkFormats] = useState<WorkFormat[]>(
     Array.isArray(profile.work_formats) ? profile.work_formats : [],
   );
@@ -1008,7 +1009,7 @@ export default function ProfileForm({
       serializeProfileDraft({
         form,
         skills,
-        selectedEmploymentTypes,
+        selectedOpenTo,
         selectedWorkFormats,
         visibility,
         presentation,
@@ -1027,7 +1028,7 @@ export default function ProfileForm({
       presentation,
       viewerPreferences,
       qas,
-      selectedEmploymentTypes,
+      selectedOpenTo,
       selectedWorkFormats,
       skills,
       visibility,
@@ -1169,14 +1170,6 @@ export default function ProfileForm({
       prev.map((item) =>
         item.id === entryId ? { ...item, [field]: value } : item,
       ),
-    );
-  };
-
-  const toggleEmploymentType = (value: EmploymentType) => {
-    setSelectedEmploymentTypes((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
     );
   };
 
@@ -1565,9 +1558,7 @@ export default function ProfileForm({
       preferred_contact_method: form.preferred_contact_method || null,
       experience_years: null,
       experience_level: form.experience_level || null,
-      employment_types: selectedEmploymentTypes.filter((item) =>
-        employmentTypes.includes(item),
-      ),
+      open_to: normalizeOpenTo(selectedOpenTo),
       work_formats: selectedWorkFormats.filter((item) =>
         workFormats.includes(item),
       ),
@@ -1575,6 +1566,7 @@ export default function ProfileForm({
       salary_currency: form.salary_expectations.trim()
         ? form.salary_currency
         : null,
+      salary_public: form.salary_expectations.trim() ? form.salary_public : false,
       additional_info: form.additional_info.trim() || null,
       profile_visibility: {
         ...createDefaultProfileVisibility(),
@@ -1792,13 +1784,11 @@ export default function ProfileForm({
               : locale === "uk"
                 ? "Додайте очікування по оплаті"
                 : "Add salary expectations",
-            selectedEmploymentTypes.length > 0
-              ? selectedEmploymentTypes
-                  .map((item) => getEmploymentTypeLabel(item, dictionary))
+            selectedOpenTo.length > 0
+              ? selectedOpenTo
+                  .map((item) => dictionary.openTo.options[item])
                   .join(", ")
-              : locale === "uk"
-                ? "Варіанти зайнятості"
-                : "Employment types",
+              : dictionary.openTo.toggle,
           ],
         };
       case "workExperience":
@@ -2118,6 +2108,10 @@ export default function ProfileForm({
           {dictionary.forms.professionalDetails}
         </h2>
 
+        <div className="rounded-2xl border app-border bg-[color:var(--surface)] p-4 sm:p-5">
+          <OpenToPicker value={selectedOpenTo} onChange={setSelectedOpenTo} />
+        </div>
+
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem]">
           <FormSelect
             triggerClassName="w-full"
@@ -2153,27 +2147,19 @@ export default function ProfileForm({
           />
         </div>
 
-        <div>
-          <p className="mb-2 font-semibold text-[color:var(--foreground)]">
-            {dictionary.forms.employmentTypes}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {employmentTypes.map((option) => {
-              const active = selectedEmploymentTypes.includes(option);
-              return (
-                <Button
-                  key={option}
-                  variant={active ? "primary" : "secondary"}
-                  size="sm"
-                  aria-pressed={active}
-                  onClick={() => toggleEmploymentType(option)}
-                >
-                  {getEmploymentTypeLabel(option, dictionary)}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
+        <label className="flex items-start gap-3 text-sm text-[color:var(--foreground)]">
+          <input
+            type="checkbox"
+            className="app-checkbox mt-0.5"
+            checked={form.salary_public}
+            disabled={!form.salary_expectations.trim()}
+            onChange={(event) => update("salary_public", event.target.checked)}
+          />
+          <span>
+            <span className="font-medium">{dictionary.openTo.salaryPublic}</span>
+            <span className="block text-xs app-muted">{dictionary.openTo.salaryPublicHint}</span>
+          </span>
+        </label>
 
         <div>
           <p className="mb-2 font-semibold text-[color:var(--foreground)]">
@@ -3159,6 +3145,9 @@ export default function ProfileForm({
             }))}
           />
         </div>
+        <p className="text-xs leading-5 app-muted">
+          {dictionary.openTo.privateContactsHint}
+        </p>
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.website}

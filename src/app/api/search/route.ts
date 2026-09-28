@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadViewerAffinity } from "@/lib/db/affinity";
 import { searchDiscovery } from "@/lib/db/search";
+import { normalizeOpenTo, openToFromEmploymentTypes } from "@/lib/open-to";
 import { normalizeProjectKind } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 
@@ -65,7 +66,12 @@ export async function GET(request: Request) {
       skillIds: parseNumberArray(searchParams.get("skillIds")),
       languageIds: parseNumberArray(searchParams.get("languageIds")),
       experienceLevel: (searchParams.get("experienceLevel") || "").trim() || null,
-      employmentTypes: parseStringArray(searchParams.get("employmentTypes")),
+      // `employmentTypes` is the field «Відкрито до…» replaced; old links and
+      // saved searches still send it.
+      openTo: normalizeOpenTo([
+        ...parseStringArray(searchParams.get("openTo")),
+        ...openToFromEmploymentTypes(parseStringArray(searchParams.get("employmentTypes"))),
+      ]),
       workFormats: parseStringArray(searchParams.get("workFormats")),
       projectStatus: (searchParams.get("projectStatus") || "").trim() || null,
       projectKind: normalizeProjectKind(searchParams.get("kind")),

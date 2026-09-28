@@ -8,6 +8,9 @@ import ExpandableProfileBio from "@/components/expandable-profile-bio";
 import ProfileCompletenessButton from "@/components/profile-completeness-button";
 import FollowButton from "@/components/follow-button";
 import ProfileAiSummaryPublic from "@/components/profile-ai-summary-public";
+import ProfileContactButton, {
+  type ProfileContactInfo,
+} from "@/components/profile-contact-button";
 import ProfileVoteButtons from "@/components/profile-vote-buttons";
 
 const ProfilePdfExport = dynamic(
@@ -35,6 +38,7 @@ import {
   type ProfileSectionSize,
 } from "@/lib/profile-presentation";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { formatOpenToList } from "@/lib/open-to";
 import { getMetadataBase } from "@/lib/seo";
 
 function getExperienceLabel(value: string | null, locale: string) {
@@ -78,23 +82,6 @@ function getExperienceLabel(value: string | null, locale: string) {
         };
 
   return labels[value as keyof typeof labels] || value;
-}
-
-function getEmploymentLabel(value: string, dictionary: Dictionary) {
-  switch (value) {
-    case "full_time":
-      return dictionary.forms.employmentTypeFullTime;
-    case "part_time":
-      return dictionary.forms.employmentTypePartTime;
-    case "contract":
-      return dictionary.forms.employmentTypeContract;
-    case "freelance":
-      return dictionary.forms.employmentTypeFreelance;
-    case "internship":
-      return dictionary.forms.employmentTypeInternship;
-    default:
-      return value;
-  }
 }
 
 function getWorkFormatLabel(value: string, dictionary: Dictionary) {
@@ -249,6 +236,8 @@ export default function PublicProfileShowcase({
     articles,
     badges,
     completeness,
+    contact,
+    salary,
     voteSummary,
     profileRating,
     isAuthenticated,
@@ -262,16 +251,42 @@ export default function PublicProfileShowcase({
   const profileUrl = profile.username
     ? `${getMetadataBase().toString().replace(/\/$/, "")}/${locale}/u/${profile.username}`
     : null;
+  const hasPrivateContact = contact.hasEmail || contact.hasPhone;
+  const openToList = formatOpenToList(profile.open_to, dictionary.openTo.phrases);
+  const openToLine = openToList ? dictionary.openTo.badge.replace("{list}", openToList) : null;
+  const workFormatsLine =
+    (profile.work_formats?.length || 0) > 0
+      ? `${dictionary.openTo.workFormats}: ${(profile.work_formats || [])
+          .map((item) => getWorkFormatLabel(item, dictionary))
+          .join(", ")}`
+      : null;
+  const contactInfo: ProfileContactInfo = {
+    profileId: profile.id,
+    displayName,
+    telegram: profile.telegram_username,
+    linkedin: profile.linkedin,
+    website: profile.website,
+    preferred: profile.preferred_contact_method,
+    hasEmail: contact.hasEmail,
+    hasPhone: contact.hasPhone,
+    openToLine,
+    workFormatsLine,
+  };
+  // Hiding the contacts block (Visibility → Contacts) hides the button too.
+  const canContact =
+    !isOwner &&
+    profile.visibility.links &&
+    Boolean(hasPrivateContact || profile.telegram_username || profile.linkedin || profile.website);
   const sectionMap = new Map<ProfileSectionId, { title: string; content: ReactNode; visible: boolean }>([
     ["about", { title: dictionary.creatorProfile.about, visible: profile.visibility.about && Boolean(profile.bio || profile.headline), content: <div className="space-y-4">{profile.headline && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.positionLabel}</p><p className="mt-2 leading-7 app-muted">{profile.headline}</p></div>}{profile.bio && <div style={{ fontSize: `${typeScale.body}rem` }}><ExpandableProfileBio content={profile.bio} locale={locale} accentColor={presentation.accentColor} /></div>}</div> }],
-    ["professionalDetails", { title: dictionary.creatorProfile.professionalDetails, visible: profile.visibility.professionalDetails && Boolean(profile.experience_level || profile.salary_expectations || (profile.employment_types?.length || 0) > 0 || (profile.work_formats?.length || 0) > 0 || profile.additional_info), content: <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2">{profile.experience_level && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.totalExperienceYears}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{getExperienceLabel(profile.experience_level, locale)}</p></div>}{profile.salary_expectations && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.salaryExpectations}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{profile.salary_expectations}{profile.salary_currency ? ` ${profile.salary_currency.toUpperCase()}` : ""}</p></div>}</div>{(profile.employment_types?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.employmentTypes}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.employment_types || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getEmploymentLabel(item, dictionary)}</span>)}</div></div>}{(profile.work_formats?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.workFormats}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.work_formats || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getWorkFormatLabel(item, dictionary)}</span>)}</div></div>}{profile.additional_info && <p className="text-sm leading-8 app-muted" style={{ fontSize: `${typeScale.body}rem` }}>{profile.additional_info}</p>}</div> }],
+    ["professionalDetails", { title: dictionary.creatorProfile.professionalDetails, visible: profile.visibility.professionalDetails && Boolean(profile.experience_level || salary || profile.open_to.length > 0 || (profile.work_formats?.length || 0) > 0 || profile.additional_info), content: <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2">{profile.experience_level && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.totalExperienceYears}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{getExperienceLabel(profile.experience_level, locale)}</p></div>}{salary && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.salaryExpectations}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{salary.amount}{salary.currency ? ` ${salary.currency.toUpperCase()}` : ""}</p></div>}</div>{profile.open_to.length > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.openTo.toggle}</p><div className="mt-2 flex flex-wrap gap-2">{profile.open_to.map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{dictionary.openTo.options[item]}</span>)}</div></div>}{(profile.work_formats?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.workFormats}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.work_formats || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getWorkFormatLabel(item, dictionary)}</span>)}</div></div>}{profile.additional_info && <p className="text-sm leading-8 app-muted" style={{ fontSize: `${typeScale.body}rem` }}>{profile.additional_info}</p>}</div> }],
     ["workExperience", { title: dictionary.creatorProfile.workExperience, visible: profile.visibility.workExperience && workExperience.length > 0, content: <div className="space-y-4">{workExperience.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-[color:var(--foreground)]">{item.position || "—"}</h3><p className="mt-1 text-sm app-muted">{item.company_name || "—"}</p></div><span className="text-sm app-soft">{item.started_year || "—"} - {item.is_current ? dictionary.creatorProfile.present : item.ended_year || "—"}</span></div>{item.responsibilities && <p className="mt-3 text-sm leading-7 app-muted">{item.responsibilities}</p>}</article>)}</div> }],
     ["skills", { title: dictionary.creatorProfile.skills, visible: profile.visibility.skills && technologies.length > 0, content: <CollapsibleTags items={technologies} initialCount={12} showMoreLabel={dictionary.creatorProfile.skillsShowAll} showLessLabel={dictionary.creatorProfile.skillsShowLess} /> }],
     ["languages", { title: dictionary.creatorProfile.languages, visible: profile.visibility.languages && languages.length > 0, content: <div className="grid gap-3 md:grid-cols-2">{languages.map((item) => <div key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><p className="font-medium text-[color:var(--foreground)]">{item.name}</p><p className="mt-1 text-sm app-muted">{getLanguageLevelLabel(item.level, dictionary)}</p></div>)}</div> }],
     ["education", { title: dictionary.creatorProfile.education, visible: profile.visibility.education && education.length > 0, content: <div className="space-y-4">{education.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.institution || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.degree, item.field_of_study].filter(Boolean).join(" • ")}</p>{(item.started_on || item.completed_on) && <p className="mt-1 text-sm app-soft">{[item.started_on, item.completed_on].filter(Boolean).join(" - ")}</p>}{item.description && <p className="mt-3 text-sm leading-7 app-muted">{item.description}</p>}</article>)}</div> }],
     ["certificates", { title: dictionary.creatorProfile.certificates, visible: profile.visibility.certificates && certificates.length > 0, content: <div className="space-y-4">{certificates.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.title || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.issuer, item.issued_on].filter(Boolean).join(" • ")}</p><div className="mt-3 flex flex-wrap gap-2">{item.credential_url && <a href={item.credential_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{dictionary.creatorProfile.openCertificateLink}</a>}{item.file_url && <a href={item.file_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{item.file_name || dictionary.creatorProfile.openCertificateFile}</a>}</div></article>)}</div> }],
     ["qa", { title: dictionary.creatorProfile.qa, visible: profile.visibility.qa && qas.length > 0, content: <div className="space-y-4">{qas.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.question || "—"}</h3><p className="mt-3 text-sm leading-7 app-muted">{item.answer || "—"}</p></article>)}</div> }],
-    ["contacts", { title: dictionary.creatorProfile.contacts, visible: profile.visibility.links && Boolean(profile.contact_email || profile.telegram_username || profile.phone || profile.website || profile.github || profile.twitter || profile.linkedin || profile.behance || profile.dribbble || profile.artstation || profile.vimeo || profile.youtube || profile.instagram), content: <div className="space-y-6"><div className="space-y-3 text-sm">{profile.contact_email && <a href={`mailto:${profile.contact_email}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.contactEmail}: {profile.contact_email}</a>}{profile.telegram_username && <a href={`https://t.me/${profile.telegram_username.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.telegram}: @{profile.telegram_username.replace(/^@/, "")}</a>}{profile.phone && <a href={`tel:${profile.phone}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.phone}: {profile.phone}</a>}{profile.preferred_contact_method && <p className="app-muted">{dictionary.creatorProfile.preferredContactMethod}: {getPreferredContactMethodLabel(profile.preferred_contact_method, dictionary)}</p>}</div><div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.links}</p><div className="mt-3 flex flex-wrap gap-2">{profile.website && <a href={profile.website} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Website</a>}{profile.github && <a href={profile.github} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">GitHub</a>}{profile.twitter && <a href={profile.twitter} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">X / Twitter</a>}{profile.linkedin && <a href={profile.linkedin} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">LinkedIn</a>}{profile.behance && <a href={profile.behance} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Behance</a>}{profile.dribbble && <a href={profile.dribbble} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Dribbble</a>}{profile.artstation && <a href={profile.artstation} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">ArtStation</a>}{profile.vimeo && <a href={profile.vimeo} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Vimeo</a>}{profile.youtube && <a href={profile.youtube} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">YouTube</a>}{profile.instagram && <a href={profile.instagram} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Instagram</a>}</div></div></div> }],
+    ["contacts", { title: dictionary.creatorProfile.contacts, visible: profile.visibility.links && Boolean(hasPrivateContact || profile.telegram_username || profile.website || profile.github || profile.twitter || profile.linkedin || profile.behance || profile.dribbble || profile.artstation || profile.vimeo || profile.youtube || profile.instagram), content: <div className="space-y-6"><div className="space-y-3 text-sm">{contact.email && <a href={`mailto:${contact.email}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.contactEmail}: {contact.email}</a>}{profile.telegram_username && <a href={`https://t.me/${profile.telegram_username.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.telegram}: @{profile.telegram_username.replace(/^@/, "")}</a>}{contact.phone && <a href={`tel:${contact.phone}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.phone}: {contact.phone}</a>}{profile.preferred_contact_method && <p className="app-muted">{dictionary.creatorProfile.preferredContactMethod}: {getPreferredContactMethodLabel(profile.preferred_contact_method, dictionary)}</p>}{isOwner && hasPrivateContact && <p className="text-xs leading-5 app-soft">{dictionary.openTo.privateContactsHint}</p>}{!isOwner && hasPrivateContact && <ProfileContactButton contact={contactInfo} isAuthenticated={isAuthenticated} variant="secondary" label={dictionary.openTo.showPrivate} />}</div><div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.links}</p><div className="mt-3 flex flex-wrap gap-2">{profile.website && <a href={profile.website} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Website</a>}{profile.github && <a href={profile.github} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">GitHub</a>}{profile.twitter && <a href={profile.twitter} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">X / Twitter</a>}{profile.linkedin && <a href={profile.linkedin} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">LinkedIn</a>}{profile.behance && <a href={profile.behance} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Behance</a>}{profile.dribbble && <a href={profile.dribbble} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Dribbble</a>}{profile.artstation && <a href={profile.artstation} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">ArtStation</a>}{profile.vimeo && <a href={profile.vimeo} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Vimeo</a>}{profile.youtube && <a href={profile.youtube} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">YouTube</a>}{profile.instagram && <a href={profile.instagram} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Instagram</a>}</div></div></div> }],
     [
       "projects",
       {
@@ -493,6 +508,12 @@ export default function PublicProfileShowcase({
                     />
                   )}
                 </div>
+                {openToLine && (
+                  <p className={`mt-3 flex items-center gap-2 text-sm font-medium sm:mt-4 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+                    <span>{openToLine}</span>
+                  </p>
+                )}
                 {badges.length > 0 && (
                   <div className={`mt-3 sm:mt-4 ${presentation.heroAlignment === "center" ? "flex justify-center" : ""}`}>
                     <BadgeShelf badges={badges} locale={locale} maxVisible={10} maxVisibleMobile={5} />
@@ -509,6 +530,9 @@ export default function PublicProfileShowcase({
                     <ButtonLink href="/profile/edit" size="sm">
                       {dictionary.creatorProfile.editProfile}
                     </ButtonLink>
+                  )}
+                  {canContact && (
+                    <ProfileContactButton contact={contactInfo} isAuthenticated={isAuthenticated} />
                   )}
                   {!isOwner && (
                     <FollowButton followingUserId={profile.user_id} initialFollowing={isFollowing} isAuthenticated={isAuthenticated} />

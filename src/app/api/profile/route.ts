@@ -71,16 +71,12 @@ export async function PUT(request: Request) {
       vimeo: payload.vimeo,
       youtube: payload.youtube,
       instagram: payload.instagram,
-      contact_email: payload.contact_email,
       telegram_username: payload.telegram_username,
-      phone: payload.phone,
       preferred_contact_method: payload.preferred_contact_method,
       experience_years: payload.experience_years,
       experience_level: payload.experience_level,
-      employment_types: payload.employment_types,
+      open_to: payload.open_to,
       work_formats: payload.work_formats,
-      salary_expectations: payload.salary_expectations,
-      salary_currency: payload.salary_expectations ? payload.salary_currency : null,
       additional_info: payload.additional_info,
       cover_url: payload.cover_url,
       profile_visibility: payload.profile_visibility,
@@ -95,6 +91,27 @@ export async function PUT(request: Request) {
           : (profileError.message || "Could not save profile"),
       },
       { status: isDuplicateUsernameError(profileError.message) ? 409 : 400 },
+    );
+  }
+
+  // Email, phone and salary go to the owner-only table, never to the public
+  // profiles row (see database/2026-09-28-open-to.sql).
+  const { error: privateError } = await supabase.from("profile_private_details").upsert(
+    {
+      user_id: user.id,
+      contact_email: payload.contact_email,
+      phone: payload.phone,
+      salary_expectations: payload.salary_expectations,
+      salary_currency: payload.salary_expectations ? payload.salary_currency : null,
+      salary_public: payload.salary_expectations ? payload.salary_public : false,
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (privateError) {
+    return NextResponse.json(
+      { error: privateError.message || "Could not save contact details" },
+      { status: 400 },
     );
   }
 

@@ -53,7 +53,7 @@ export function getStatsUi(locale: Locale) {
       avgSalaryLabel: "~${avg} $",
       profilesCount: "{count} профілів",
       workFormatDistribution: "Бажаний формат роботи",
-      employmentTypeDistribution: "Варіант зайнятості",
+      openToDistribution: "Відкриті до",
       contactMethodDistribution: "Бажаний спосіб зв'язку",
       experienceLevels: {
         no_experience: "Без досвіду",
@@ -85,12 +85,12 @@ export function getStatsUi(locale: Locale) {
         hybrid: "Гібридно",
         office: "В офісі",
       },
-      employmentTypes: {
-        full_time: "Повна зайнятість",
-        part_time: "Часткова зайнятість",
-        contract: "Контракт",
-        freelance: "Фріланс",
+      openTo: {
+        freelance: "Фриланс",
+        job: "Робота",
         internship: "Стажування",
+        collaboration: "Співпраця",
+        mentoring: "Менторство",
       },
       contactMethods: {
         email: "Email",
@@ -134,7 +134,7 @@ export function getStatsUi(locale: Locale) {
     avgSalaryLabel: "~${avg} $",
     profilesCount: "{count} profiles",
     workFormatDistribution: "Preferred work format",
-    employmentTypeDistribution: "Employment type",
+    openToDistribution: "Open to",
     contactMethodDistribution: "Preferred contact method",
     experienceLevels: {
       no_experience: "No experience",
@@ -166,12 +166,12 @@ export function getStatsUi(locale: Locale) {
       hybrid: "Hybrid",
       office: "Office",
     },
-    employmentTypes: {
-      full_time: "Full-time",
-      part_time: "Part-time",
-      contract: "Contract",
+    openTo: {
       freelance: "Freelance",
+      job: "Job",
       internship: "Internship",
+      collaboration: "Collaboration",
+      mentoring: "Mentoring",
     },
     contactMethods: {
       email: "Email",

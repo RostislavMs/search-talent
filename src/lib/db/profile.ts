@@ -2,7 +2,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { generateTemporaryUsername } from "@/lib/username";
 import type {
-  EmploymentType,
   ExperienceLevel,
   LanguageLevel,
   PreferredContactMethod,
@@ -19,6 +18,11 @@ import {
   preferredContactMethods,
   salaryCurrencies,
 } from "@/lib/profile-sections";
+import { normalizeOpenTo } from "@/lib/open-to";
+import {
+  PROFILE_PRIVATE_DETAILS_COLUMNS,
+  type ProfilePrivateDetailsRow,
+} from "@/lib/profile-private";
 import { normalizeProfileSettings, type ProfileSettings } from "@/lib/profile-presentation";
 
 function getExperienceLevel(value: unknown) {
@@ -153,6 +157,7 @@ export async function getMyProfile() {
     certificatesResponse,
     qaResponse,
     workExperienceResponse,
+    privateDetailsResponse,
   ] = await Promise.all([
     supabase
       .from("profile_skills")
@@ -187,7 +192,15 @@ export async function getMyProfile() {
       )
       .eq("profile_id", profile.id)
       .order("started_year", { ascending: false }),
+    // Email, phone and salary: the owner-only table (RLS lets the owner read it).
+    supabase
+      .from("profile_private_details")
+      .select(PROFILE_PRIVATE_DETAILS_COLUMNS)
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
+
+  const privateDetails = (privateDetailsResponse.data ?? null) as ProfilePrivateDetailsRow | null;
 
   const education =
     educationResponse.error || !educationResponse.data
@@ -287,15 +300,15 @@ export async function getMyProfile() {
     experience_level: getExperienceLevel(profile.experience_level),
     experience_years:
       typeof profile.experience_years === "number" ? profile.experience_years : null,
-    employment_types: Array.isArray(profile.employment_types)
-      ? (profile.employment_types as EmploymentType[])
-      : [],
+    open_to: normalizeOpenTo(profile.open_to),
+    open_to_updated_at:
+      typeof profile.open_to_updated_at === "string" ? profile.open_to_updated_at : null,
     work_formats: Array.isArray(profile.work_formats)
       ? (profile.work_formats as WorkFormat[])
       : [],
-    salary_expectations:
-      typeof profile.salary_expectations === "string" ? profile.salary_expectations : null,
-    salary_currency: getSalaryCurrency(profile.salary_currency),
+    salary_expectations: privateDetails?.salary_expectations ?? null,
+    salary_currency: getSalaryCurrency(privateDetails?.salary_currency),
+    salary_public: Boolean(privateDetails?.salary_public),
     behance: typeof profile.behance === "string" ? profile.behance : null,
     dribbble: typeof profile.dribbble === "string" ? profile.dribbble : null,
     artstation:
@@ -304,11 +317,10 @@ export async function getMyProfile() {
     youtube: typeof profile.youtube === "string" ? profile.youtube : null,
     instagram:
       typeof profile.instagram === "string" ? profile.instagram : null,
-    contact_email:
-      typeof profile.contact_email === "string" ? profile.contact_email : null,
+    contact_email: privateDetails?.contact_email ?? null,
     telegram_username:
       typeof profile.telegram_username === "string" ? profile.telegram_username : null,
-    phone: typeof profile.phone === "string" ? profile.phone : null,
+    phone: privateDetails?.phone ?? null,
     preferred_contact_method: getPreferredContactMethod(
       profile.preferred_contact_method,
     ),

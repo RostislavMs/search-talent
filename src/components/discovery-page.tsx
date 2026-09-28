@@ -19,10 +19,14 @@ import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
 import type { Locale } from "@/lib/i18n/config";
 import type { ProfileCategory } from "@/lib/profile-categories";
 import {
-  employmentTypes,
+  normalizeOpenTo,
+  openToFromEmploymentTypes,
+  openToOptions,
+  type OpenToOption,
+} from "@/lib/open-to";
+import {
   experienceLevels,
   workFormats,
-  type EmploymentType,
   type ExperienceLevel,
   type WorkFormat,
 } from "@/lib/profile-sections";
@@ -69,6 +73,7 @@ type SearchUser = {
   city: string | null;
   categoryName: string | null;
   technologies: Array<{ id: number; name: string }>;
+  open_to: string[] | null;
 };
 
 type SearchResponse = {
@@ -259,26 +264,6 @@ function DiscoveryModeLink({
       {label}
     </LocalizedLink>
   );
-}
-
-function getEmploymentTypeLabel(
-  value: EmploymentType,
-  dictionary: ReturnType<typeof useDictionary>,
-) {
-  switch (value) {
-    case "full_time":
-      return dictionary.forms.employmentTypeFullTime;
-    case "part_time":
-      return dictionary.forms.employmentTypePartTime;
-    case "contract":
-      return dictionary.forms.employmentTypeContract;
-    case "freelance":
-      return dictionary.forms.employmentTypeFreelance;
-    case "internship":
-      return dictionary.forms.employmentTypeInternship;
-    default:
-      return value;
-  }
 }
 
 function getWorkFormatLabel(
@@ -607,9 +592,7 @@ export default function DiscoveryPage({
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel | "">(
     "",
   );
-  const [employmentTypeFilters, setEmploymentTypeFilters] = useState<
-    EmploymentType[]
-  >([]);
+  const [openToFilters, setOpenToFilters] = useState<OpenToOption[]>([]);
   const [workFormatFilters, setWorkFormatFilters] = useState<WorkFormat[]>([]);
   const [projectStatus, setProjectStatus] = useState<ProjectStatus | "">("");
   const [projectKindFilter, setProjectKindFilter] = useState<ProjectKind | "">(
@@ -731,8 +714,7 @@ export default function DiscoveryPage({
     if (skillIds.length > 0) params.skillIds = skillIds;
     if (languageIds.length > 0) params.languageIds = languageIds;
     if (experienceLevel) params.experienceLevel = experienceLevel;
-    if (employmentTypeFilters.length > 0)
-      params.employmentTypes = employmentTypeFilters;
+    if (openToFilters.length > 0) params.openTo = openToFilters;
     if (workFormatFilters.length > 0) params.workFormats = workFormatFilters;
     if (projectStatus) params.projectStatus = projectStatus;
     if (projectKindFilter) params.projectKind = projectKindFilter;
@@ -774,8 +756,12 @@ export default function DiscoveryPage({
     setSkillIds((params.skillIds as number[]) || []);
     setLanguageIds((params.languageIds as number[]) || []);
     setExperienceLevel((params.experienceLevel as ExperienceLevel | "") || "");
-    setEmploymentTypeFilters(
-      (params.employmentTypes as EmploymentType[]) || [],
+    // Searches saved before «Відкрито до…» carry employment types instead.
+    setOpenToFilters(
+      normalizeOpenTo([
+        ...normalizeOpenTo(params.openTo),
+        ...openToFromEmploymentTypes(params.employmentTypes),
+      ]),
     );
     setWorkFormatFilters((params.workFormats as WorkFormat[]) || []);
     setProjectStatus((params.projectStatus as ProjectStatus | "") || "");
@@ -795,7 +781,6 @@ export default function DiscoveryPage({
   }, [
     categoryId,
     countryId,
-    employmentTypeFilters,
     experienceLevel,
     hasAvatar,
     hasMedia,
@@ -803,6 +788,7 @@ export default function DiscoveryPage({
     maxScore,
     minScore,
     mode,
+    openToFilters,
     projectKindFilter,
     projectStatus,
     query,
@@ -859,8 +845,8 @@ export default function DiscoveryPage({
         params.set("experienceLevel", experienceLevel);
       }
 
-      if (employmentTypeFilters.length > 0 && mode === "creators") {
-        params.set("employmentTypes", employmentTypeFilters.join(","));
+      if (openToFilters.length > 0 && mode === "creators") {
+        params.set("openTo", openToFilters.join(","));
       }
 
       if (workFormatFilters.length > 0 && mode === "creators") {
@@ -923,7 +909,6 @@ export default function DiscoveryPage({
     categoryId,
     commonUi.searchFailed,
     countryId,
-    employmentTypeFilters,
     experienceLevel,
     hasAvatar,
     hasMedia,
@@ -934,6 +919,7 @@ export default function DiscoveryPage({
     maxScore,
     minScore,
     mode,
+    openToFilters,
     page,
     perPage,
     projectKindFilter,
@@ -955,7 +941,7 @@ export default function DiscoveryPage({
     hasAvatar ||
     hasMedia ||
     languageIds.length > 0 ||
-    employmentTypeFilters.length > 0 ||
+    openToFilters.length > 0 ||
     skillIds.length > 0 ||
     workFormatFilters.length > 0 ||
     minScore !== null ||
@@ -1065,11 +1051,11 @@ export default function DiscoveryPage({
         remove: () =>
           setSkillIds((prev) => prev.filter((id) => id !== skill.id)),
       })),
-    ...employmentTypeFilters.map((item) => ({
-      key: `emp-${item}`,
-      label: `${dictionary.forms.employmentTypes}: ${getEmploymentTypeLabel(item, dictionary)}`,
+    ...openToFilters.map((item) => ({
+      key: `open-to-${item}`,
+      label: `${dictionary.openTo.filterTitle}: ${dictionary.openTo.options[item]}`,
       remove: () =>
-        setEmploymentTypeFilters((prev) => prev.filter((et) => et !== item)),
+        setOpenToFilters((prev) => prev.filter((value) => value !== item)),
     })),
     ...workFormatFilters.map((item) => ({
       key: `wf-${item}`,
@@ -1098,7 +1084,7 @@ export default function DiscoveryPage({
     setLanguageIds([]);
     setSkillIds(initialSkillIds);
     setExperienceLevel("");
-    setEmploymentTypeFilters([]);
+    setOpenToFilters([]);
     setWorkFormatFilters([]);
     setProjectStatus("");
     setProjectKindFilter("");
@@ -1459,21 +1445,22 @@ export default function DiscoveryPage({
               {mode === "creators" && (
                 <div>
                   <p className="mb-2 text-sm font-medium text-[color:var(--foreground)]">
-                    {dictionary.forms.employmentTypes}
+                    {dictionary.openTo.filterTitle}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {employmentTypes.map((option) => {
-                      const selected = employmentTypeFilters.includes(option);
+                    {openToOptions.map((option) => {
+                      const selected = openToFilters.includes(option);
 
                       return (
                         <button
                           key={option}
                           type="button"
+                          aria-pressed={selected}
                           onClick={() =>
-                            setEmploymentTypeFilters((current) =>
+                            setOpenToFilters((current) =>
                               selected
                                 ? current.filter((item) => item !== option)
-                                : [...current, option],
+                                : normalizeOpenTo([...current, option]),
                             )
                           }
                           className={[
@@ -1483,18 +1470,13 @@ export default function DiscoveryPage({
                               : "app-border bg-[color:var(--surface)] text-[color:var(--muted-foreground)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
                           ].join(" ")}
                         >
-                          {getEmploymentTypeLabel(option, dictionary)}
+                          {dictionary.openTo.options[option]}
                         </button>
                       );
                     })}
                   </div>
-                </div>
-              )}
-
-              {mode === "creators" && (
-                <div>
-                  <p className="mb-2 text-sm font-medium text-[color:var(--foreground)]">
-                    {dictionary.forms.workFormats}
+                  <p className="mb-2 mt-4 text-xs font-medium app-muted">
+                    {dictionary.openTo.workFormats}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {workFormats.map((option) => {
@@ -1813,6 +1795,7 @@ export default function DiscoveryPage({
                       countryName: creator.countryName,
                       city: creator.city,
                       technologies: creator.technologies,
+                      openTo: creator.open_to,
                     }}
                   />
                 ))}

@@ -1,9 +1,11 @@
 "use client";
 
+import OpenToCard from "@/components/open-to-card";
 import ProfileSharePanel from "@/components/profile-share-panel";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { useDictionary } from "@/lib/i18n/client";
 import type { OnboardingStep } from "@/lib/onboarding";
+import type { OpenToOption } from "@/lib/open-to";
 
 function Note({
   text,
@@ -26,6 +28,7 @@ function Note({
 
 export default function OnboardingShareStep({
   profileUrl,
+  openTo,
   username,
   usernameIsTemporary,
   hasPublishedProject,
@@ -36,6 +39,7 @@ export default function OnboardingShareStep({
   onFinish,
 }: {
   profileUrl: string;
+  openTo: { value: OpenToOption[]; updatedAt: string | null };
   username: string;
   usernameIsTemporary: boolean;
   hasPublishedProject: boolean;
@@ -75,6 +79,12 @@ export default function OnboardingShareStep({
       ) : null}
 
       <ProfileSharePanel profileUrl={profileUrl} fileSlug={username} onShared={onShared} />
+
+      <OpenToCard
+        className="rounded-2xl border app-border p-4 sm:p-5"
+        initialOpenTo={openTo.value}
+        initialUpdatedAt={openTo.updatedAt}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t app-border pt-5">
         <Button variant="ghost" onClick={onBack}>

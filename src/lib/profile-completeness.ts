@@ -14,9 +14,7 @@ export type ProfileCompletenessItemKey =
   | "contact"
   | "preferredContact"
   | "experience"
-  | "employmentTypes"
-  | "workFormats"
-  | "salary"
+  | "openTo"
   | "additionalInfo"
   | "skills"
   | "languages"
@@ -29,6 +27,12 @@ export type ProfileCompletenessItem = {
   key: ProfileCompletenessItemKey;
   filled: boolean;
   weight: number;
+  /**
+   * Suggested, never required: an empty optional item does not lower the
+   * percent. «Відкрито до…» is one — someone who isn't looking for anything
+   * shouldn't lose points for saying so.
+   */
+  optional?: boolean;
 };
 
 export type ProfileCompletenessBreakdown = {
@@ -37,13 +41,7 @@ export type ProfileCompletenessBreakdown = {
   percent: number;
 };
 
-/**
- * Same scoring rules as `getProfileCompletenessScore` in
- * `src/lib/leaderboards.ts`, but returns the per-field breakdown so the
- * UI can highlight which fields are still empty. Keep the two functions
- * in sync if weights change.
- */
-export function getProfileCompletenessBreakdown(input: {
+export type ProfileCompletenessInput = {
   username: string | null;
   name: string | null;
   avatarUrl: string | null;
@@ -55,22 +53,19 @@ export function getProfileCompletenessBreakdown(input: {
   github: string | null;
   twitter: string | null;
   linkedin: string | null;
-  behance: string | null;
-  dribbble: string | null;
-  artstation: string | null;
-  vimeo: string | null;
-  youtube: string | null;
-  instagram: string | null;
-  contactEmail: string | null;
+  behance?: string | null;
+  dribbble?: string | null;
+  artstation?: string | null;
+  vimeo?: string | null;
+  youtube?: string | null;
+  instagram?: string | null;
+  /** Email or phone, kept in the owner-only table (the public row can't tell). */
+  hasPrivateContact: boolean;
   telegramUsername: string | null;
-  phone: string | null;
   preferredContactMethod: string | null;
   experienceLevel: string | null;
   experienceYears: number | null;
-  employmentTypesCount: number;
-  workFormatsCount: number;
-  salaryExpectations: string | null;
-  salaryCurrency: string | null;
+  openToCount: number;
   additionalInfo: string | null;
   skillsCount: number;
   languagesCount: number;
@@ -78,8 +73,21 @@ export function getProfileCompletenessBreakdown(input: {
   certificateCount: number;
   qaCount: number;
   workExperienceCount: number;
-}): ProfileCompletenessBreakdown {
-  const items: ProfileCompletenessItem[] = [
+};
+
+/**
+ * The one list of completeness signals. The rating (`getProfileCompletenessScore`
+ * in `src/lib/leaderboards.ts`), the percent on the profile, "My Space" and the
+ * `complete_profile` badge all read it.
+ *
+ * Salary, employment types and work format used to be required. They are
+ * hiring details: asking everyone for them pushed people to publish a salary
+ * just to reach the 90% badge.
+ */
+export function getProfileCompletenessItems(
+  input: ProfileCompletenessInput,
+): ProfileCompletenessItem[] {
+  return [
     { key: "username", filled: Boolean(input.username), weight: 1.5 },
     { key: "name", filled: Boolean(input.name), weight: 1 },
     { key: "avatar", filled: Boolean(input.avatarUrl), weight: 1.2 },
@@ -92,6 +100,10 @@ export function getProfileCompletenessBreakdown(input: {
     { key: "twitter", filled: Boolean(input.twitter), weight: 0.5 },
     { key: "linkedin", filled: Boolean(input.linkedin), weight: 0.8 },
     {
+      // Discipline portfolio link — at least one of behance/dribbble/
+      // artstation/vimeo/youtube/instagram. Grouped because no single
+      // role uses all six; designers reach for Behance, video editors
+      // for Vimeo, photographers for Instagram.
       key: "portfolioLinks",
       filled:
         Boolean(input.behance) ||
@@ -104,10 +116,7 @@ export function getProfileCompletenessBreakdown(input: {
     },
     {
       key: "contact",
-      filled:
-        Boolean(input.contactEmail) ||
-        Boolean(input.telegramUsername) ||
-        Boolean(input.phone),
+      filled: input.hasPrivateContact || Boolean(input.telegramUsername),
       weight: 0.9,
     },
     {
@@ -117,48 +126,40 @@ export function getProfileCompletenessBreakdown(input: {
     },
     {
       key: "experience",
-      filled:
-        Boolean(input.experienceLevel) || input.experienceYears !== null,
+      filled: Boolean(input.experienceLevel) || input.experienceYears !== null,
       weight: 1,
     },
-    {
-      key: "employmentTypes",
-      filled: input.employmentTypesCount > 0,
-      weight: 0.8,
-    },
-    { key: "workFormats", filled: input.workFormatsCount > 0, weight: 0.8 },
-    {
-      key: "salary",
-      filled:
-        Boolean(input.salaryExpectations) && Boolean(input.salaryCurrency),
-      weight: 0.7,
-    },
-    {
-      key: "additionalInfo",
-      filled: Boolean(input.additionalInfo),
-      weight: 0.9,
-    },
+    { key: "openTo", filled: input.openToCount > 0, weight: 0.8, optional: true },
+    { key: "additionalInfo", filled: Boolean(input.additionalInfo), weight: 0.9 },
     { key: "skills", filled: input.skillsCount > 0, weight: 1.4 },
     { key: "languages", filled: input.languagesCount > 0, weight: 0.8 },
     { key: "education", filled: input.educationCount > 0, weight: 1 },
     { key: "certificates", filled: input.certificateCount > 0, weight: 1 },
     { key: "qa", filled: input.qaCount > 0, weight: 1.1 },
-    {
-      key: "workExperience",
-      filled: input.workExperienceCount > 0,
-      weight: 1.3,
-    },
+    { key: "workExperience", filled: input.workExperienceCount > 0, weight: 1.3 },
   ];
+}
 
-  const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
-  const filledWeight = items.reduce(
-    (sum, item) => sum + (item.filled ? item.weight : 0),
-    0,
-  );
-  const percent =
-    totalWeight === 0 ? 0 : Math.round((filledWeight / totalWeight) * 100);
+/** 0–1 share of the required weight that is filled. */
+export function getCompletenessRatio(items: readonly ProfileCompletenessItem[]) {
+  const required = items.filter((item) => !item.optional);
+  const total = required.reduce((sum, item) => sum + item.weight, 0);
 
-  return { items, percent };
+  if (total === 0) {
+    return 0;
+  }
+
+  const filled = required.reduce((sum, item) => sum + (item.filled ? item.weight : 0), 0);
+  return filled / total;
+}
+
+/** Per-field breakdown, so the UI can point at what is still empty. */
+export function getProfileCompletenessBreakdown(
+  input: ProfileCompletenessInput,
+): ProfileCompletenessBreakdown {
+  const items = getProfileCompletenessItems(input);
+
+  return { items, percent: Math.round(getCompletenessRatio(items) * 100) };
 }
 
 type OptionalText = string | null | undefined;
@@ -188,10 +189,7 @@ export type EditableProfileCompletenessSource = {
   preferred_contact_method: OptionalText;
   experience_level: OptionalText;
   experience_years: number | null | undefined;
-  employment_types: readonly unknown[];
-  work_formats: readonly unknown[];
-  salary_expectations: OptionalText;
-  salary_currency: OptionalText;
+  open_to: readonly unknown[];
   additional_info: OptionalText;
   skill_ids: readonly unknown[];
   languages: readonly unknown[];
@@ -223,16 +221,12 @@ export function getEditableProfileCompleteness(
     vimeo: profile.vimeo ?? null,
     youtube: profile.youtube ?? null,
     instagram: profile.instagram ?? null,
-    contactEmail: profile.contact_email ?? null,
+    hasPrivateContact: Boolean(profile.contact_email) || Boolean(profile.phone),
     telegramUsername: profile.telegram_username ?? null,
-    phone: profile.phone ?? null,
     preferredContactMethod: profile.preferred_contact_method ?? null,
     experienceLevel: profile.experience_level ?? null,
     experienceYears: profile.experience_years ?? null,
-    employmentTypesCount: profile.employment_types.length,
-    workFormatsCount: profile.work_formats.length,
-    salaryExpectations: profile.salary_expectations ?? null,
-    salaryCurrency: profile.salary_currency ?? null,
+    openToCount: profile.open_to.length,
     additionalInfo: profile.additional_info ?? null,
     skillsCount: profile.skill_ids.length,
     languagesCount: profile.languages.length,
@@ -259,9 +253,7 @@ const LABELS_EN: Record<ProfileCompletenessItemKey, string> = {
   contact: "Contact (email / Telegram / phone)",
   preferredContact: "Preferred contact method",
   experience: "Experience",
-  employmentTypes: "Employment types",
-  workFormats: "Work formats",
-  salary: "Salary expectations",
+  openTo: "Open to offers (optional)",
   additionalInfo: "Additional info",
   skills: "Skills",
   languages: "Languages",
@@ -287,9 +279,7 @@ const LABELS_UK: Record<ProfileCompletenessItemKey, string> = {
   contact: "Контакти (email / Telegram / телефон)",
   preferredContact: "Спосіб звʼязку",
   experience: "Досвід",
-  employmentTypes: "Зайнятість",
-  workFormats: "Формат роботи",
-  salary: "Зарплатні очікування",
+  openTo: "Відкрито до пропозицій (необовʼязково)",
   additionalInfo: "Додаткова інформація",
   skills: "Навички",
   languages: "Мови",

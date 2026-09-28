@@ -1,13 +1,13 @@
 import { z } from "zod";
 import {
   createDefaultProfileVisibility,
-  employmentTypes,
   experienceLevels,
   languageLevels,
   preferredContactMethods,
   salaryCurrencies,
   workFormats,
 } from "@/lib/profile-sections";
+import { normalizeOpenTo, openToOptions } from "@/lib/open-to";
 import { normalizeProfileSettings } from "@/lib/profile-presentation";
 import { isValidPublicUrl } from "@/lib/url-validation";
 
@@ -88,6 +88,24 @@ const telegramSchema = z
   .refine((value) => value === null || /^@?[a-zA-Z0-9_]{5,32}$/.test(value), {
     message: "Invalid Telegram username",
   });
+
+/** «Відкрито до…»: known values, each once, in the canonical order. */
+const openToValuesSchema = z
+  .array(z.enum(openToOptions))
+  .max(openToOptions.length)
+  .transform((values) => normalizeOpenTo(values));
+
+const openToSchema = openToValuesSchema.default([]);
+
+/**
+ * PATCH /api/profile/open-to (My Space, onboarding): set the status, or say it
+ * is still true. The status is required here, so an empty body can't switch
+ * it off by accident.
+ */
+export const openToUpdateSchema = z.union([
+  z.object({ confirm: z.literal(true) }).strict(),
+  z.object({ open_to: openToValuesSchema }).strict(),
+]);
 
 const visibilitySchema = z
   .record(z.string(), z.unknown())
@@ -201,10 +219,7 @@ export const profilePayloadSchema = z.object({
   experience_level: z
     .union([z.enum(experienceLevels), z.literal(""), z.null(), z.undefined()])
     .transform((value) => (value && experienceLevels.includes(value) ? value : null)),
-  employment_types: z
-    .array(z.enum(employmentTypes))
-    .default([])
-    .transform((values) => [...new Set(values)]),
+  open_to: openToSchema,
   work_formats: z
     .array(z.enum(workFormats))
     .default([])
@@ -213,6 +228,8 @@ export const profilePayloadSchema = z.object({
   salary_currency: z
     .union([z.enum(salaryCurrencies), z.null(), z.undefined()])
     .transform((value) => (value && salaryCurrencies.includes(value) ? value : null)),
+  // Salary expectations are private unless the owner shows them on the page.
+  salary_public: z.boolean().default(false),
   additional_info: optionalText("Additional info", 5000),
   cover_url: optionalUrl("cover URL"),
   profile_visibility: visibilitySchema,

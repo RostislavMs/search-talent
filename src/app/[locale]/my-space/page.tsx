@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import MySpaceChecklist from "@/components/my-space-checklist";
 import MySpaceStats from "@/components/my-space-stats";
+import OpenToCard from "@/components/open-to-card";
 import ProfileCompletenessButton from "@/components/profile-completeness-button";
 import { buildLoginHref } from "@/lib/auth/redirect";
 import { getOnboardingSnapshot } from "@/lib/db/onboarding";
+import { getMyContactOpens } from "@/lib/db/open-to";
 import { getUserStats } from "@/lib/db/stats";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -56,10 +58,11 @@ export default async function MySpacePage({
   }
 
   const dictionary = getDictionary(locale);
-  const [viewer, userStats, onboarding] = await Promise.all([
+  const [viewer, userStats, onboarding, contactOpens] = await Promise.all([
     getCurrentViewerRole(),
     getUserStats(user.id),
     getOnboardingSnapshot(),
+    getMyContactOpens(supabase),
   ]);
   const usernameHint = onboarding?.checklist.needsUsername
     ? isTemporaryUsername(onboarding.profile.username)
@@ -97,10 +100,19 @@ export default async function MySpacePage({
         </div>
       ) : null}
 
+      {onboarding ? (
+        <OpenToCard
+          className="mb-8 rounded-hero app-card p-5 sm:p-6"
+          initialOpenTo={onboarding.profile.open_to}
+          initialUpdatedAt={onboarding.profile.open_to_updated_at}
+        />
+      ) : null}
+
       <MySpaceStats
         dictionary={dictionary}
         locale={locale}
         userStats={userStats}
+        contactOpens={contactOpens}
         isAdmin={viewer.isAdmin}
       />
     </main>

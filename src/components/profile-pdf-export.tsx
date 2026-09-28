@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useDictionary } from "@/lib/i18n/client";
 import type { PublicProfilePageData } from "@/lib/db/public";
+import { formatOpenToList } from "@/lib/open-to";
 
 type ProfilePdfExportProps = {
   data: PublicProfilePageData;
@@ -39,17 +40,6 @@ export default function ProfilePdfExport({
   const dictionary = useDictionary();
   const t = dictionary.pdfExport;
   const [generating, setGenerating] = useState(false);
-
-  const getEmploymentLabel = (value: string) => {
-    const map: Record<string, string> = {
-      full_time: dictionary.forms.employmentTypeFullTime,
-      part_time: dictionary.forms.employmentTypePartTime,
-      contract: dictionary.forms.employmentTypeContract,
-      freelance: dictionary.forms.employmentTypeFreelance,
-      internship: dictionary.forms.employmentTypeInternship,
-    };
-    return map[value] || value;
-  };
 
   const getWorkFormatLabel = (value: string) => {
     const map: Record<string, string> = {
@@ -91,7 +81,8 @@ export default function ProfilePdfExport({
     setGenerating(true);
 
     try {
-      const { profile, technologies, languages, education, certificates, workExperience } = data;
+      const { profile, technologies, languages, education, certificates, workExperience, contact, salary } = data;
+      const openToList = formatOpenToList(profile.open_to, dictionary.openTo.phrases);
       const vis = profile.visibility;
       const displayName = escapeHtml(profile.name || profile.username || "");
       const profileUrl = typeof window !== "undefined" ? `${window.location.origin}/u/${profile.username || ""}` : "";
@@ -114,6 +105,7 @@ export default function ProfilePdfExport({
                 ${[profile.city, profile.countryName].filter(Boolean).length > 0 ? `<span class="tag">${escapeHtml([profile.city, profile.countryName].filter(Boolean).join(", "))}</span>` : ""}
                 ${profile.experience_level && vis.professionalDetails ? `<span class="tag">${escapeHtml(getExperienceLabel(profile.experience_level))}</span>` : ""}
               </div>
+              ${openToList ? `<p class="open-to"><span class="open-to-dot"></span>${escapeHtml(dictionary.openTo.badge.replace("{list}", openToList))}</p>` : ""}
             </div>
           </div>
         </div>
@@ -122,8 +114,9 @@ export default function ProfilePdfExport({
       // Contacts
       if (vis.links) {
         const contactItems: Array<{ icon: string; label: string; value: string; href?: string }> = [];
-        if (profile.contact_email) contactItems.push({ icon: "&#9993;", label: "Email", value: escapeHtml(profile.contact_email), href: `mailto:${escapeHtml(profile.contact_email)}` });
-        if (profile.phone) contactItems.push({ icon: "&#9742;", label: dictionary.creatorProfile.phone, value: escapeHtml(profile.phone), href: `tel:${escapeHtml(profile.phone)}` });
+        // Email and phone only in the owner's own PDF; visitors reach them through «Зв'язатися».
+        if (contact.email) contactItems.push({ icon: "&#9993;", label: "Email", value: escapeHtml(contact.email), href: `mailto:${escapeHtml(contact.email)}` });
+        if (contact.phone) contactItems.push({ icon: "&#9742;", label: dictionary.creatorProfile.phone, value: escapeHtml(contact.phone), href: `tel:${escapeHtml(contact.phone)}` });
         if (profile.telegram_username) contactItems.push({ icon: "&#9993;", label: "Telegram", value: `@${escapeHtml(profile.telegram_username.replace(/^@/, ""))}`, href: `https://t.me/${escapeHtml(profile.telegram_username.replace(/^@/, ""))}` });
         if (profile.website) contactItems.push({ icon: "&#127760;", label: "Web", value: escapeHtml(profile.website), href: escapeHtml(profile.website) });
         if (profile.linkedin) contactItems.push({ icon: "&#128279;", label: "LinkedIn", value: escapeHtml(profile.linkedin), href: escapeHtml(profile.linkedin) });
@@ -163,14 +156,11 @@ export default function ProfilePdfExport({
         if (profile.experience_level) {
           profDetails.push(`<div class="detail-item"><span class="detail-label">${t.experience}</span><span class="detail-value">${escapeHtml(getExperienceLabel(profile.experience_level))}</span></div>`);
         }
-        if ((profile.employment_types?.length || 0) > 0) {
-          profDetails.push(`<div class="detail-item"><span class="detail-label">${t.employment}</span><span class="detail-value">${(profile.employment_types || []).map((et) => escapeHtml(getEmploymentLabel(et))).join(", ")}</span></div>`);
-        }
         if ((profile.work_formats?.length || 0) > 0) {
           profDetails.push(`<div class="detail-item"><span class="detail-label">${t.workFormat}</span><span class="detail-value">${(profile.work_formats || []).map((wf) => escapeHtml(getWorkFormatLabel(wf))).join(", ")}</span></div>`);
         }
-        if (profile.salary_expectations) {
-          profDetails.push(`<div class="detail-item"><span class="detail-label">${t.salary}</span><span class="detail-value">${escapeHtml(profile.salary_expectations)}${profile.salary_currency ? ` ${escapeHtml(profile.salary_currency.toUpperCase())}` : ""}</span></div>`);
+        if (salary) {
+          profDetails.push(`<div class="detail-item"><span class="detail-label">${t.salary}</span><span class="detail-value">${escapeHtml(salary.amount)}${salary.currency ? ` ${escapeHtml(salary.currency.toUpperCase())}` : ""}</span></div>`);
         }
 
         const additionalInfoHtml = profile.additional_info
@@ -326,6 +316,15 @@ export default function ProfilePdfExport({
     background: #f1f5f9; color: #475569;
     border-radius: 6px; padding: 2px 10px;
     font-size: 8.5pt; font-weight: 500;
+  }
+  .open-to {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 8px;
+    font-size: 9.5pt; font-weight: 600; color: #0f172a;
+  }
+  .open-to-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #10b981;
   }
 
   /* ---- Contacts grid ---- */

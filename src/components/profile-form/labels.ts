@@ -1,6 +1,5 @@
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type {
-  EmploymentType,
   ExperienceLevel,
   LanguageLevel,
   PreferredContactMethod,
@@ -33,26 +32,6 @@ export function getLanguageLevelLabel(
       return dictionary.forms.languageLevelNative;
     default:
       return level;
-  }
-}
-
-export function getEmploymentTypeLabel(
-  value: EmploymentType,
-  dictionary: Dictionary,
-) {
-  switch (value) {
-    case "full_time":
-      return dictionary.forms.employmentTypeFullTime;
-    case "part_time":
-      return dictionary.forms.employmentTypePartTime;
-    case "contract":
-      return dictionary.forms.employmentTypeContract;
-    case "freelance":
-      return dictionary.forms.employmentTypeFreelance;
-    case "internship":
-      return dictionary.forms.employmentTypeInternship;
-    default:
-      return value;
   }
 }
 

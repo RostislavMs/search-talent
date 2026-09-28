@@ -82,11 +82,14 @@ export default function MySpaceStats({
   dictionary,
   locale,
   userStats,
+  contactOpens = 0,
   isAdmin,
 }: {
   dictionary: Dictionary;
   locale: Locale;
   userStats: UserStats;
+  /** People (signed in, each once) who opened «Зв'язатися» on the profile. */
+  contactOpens?: number;
   isAdmin: boolean;
 }) {
   const ui = getStatsUi(locale);
@@ -166,6 +169,12 @@ export default function MySpaceStats({
       label: dictionary.mySpace.articleViews,
       accent: "bg-orange-500",
     },
+    {
+      key: "contactOpens",
+      count: contactOpens,
+      label: dictionary.openTo.contactOpens,
+      accent: "bg-emerald-500",
+    },
   ].filter((tile) => tile.count > 0);
 
   return (
@@ -212,7 +221,7 @@ export default function MySpaceStats({
       {audienceTiles.length > 0 ? (
         <section>
           <SectionHeading>{dictionary.mySpace.audience}</SectionHeading>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             {audienceTiles.map((tile) =>
               tile.href ? (
                 <StatCardLink

@@ -426,7 +426,7 @@ export default function PlatformAnalytics({
   const experienceLevelLabels = ui.experienceLevels as Record<string, string>;
   const salaryRangeLabels = ui.salaryRanges as Record<string, string>;
   const workFormatLabels = ui.workFormats as Record<string, string>;
-  const employmentTypeLabels = ui.employmentTypes as Record<string, string>;
+  const openToLabels = ui.openTo as Record<string, string>;
 
   function relabel(
     items: Array<{ key: string; label: string; value: number }>,
@@ -529,7 +529,7 @@ export default function PlatformAnalytics({
         />
       </div>
 
-      {/* ─── Work format & employment type ─── */}
+      {/* ─── Work format & open to ─── */}
       <div className="grid gap-6 lg:grid-cols-2">
         <ExpandableDistributionChart
           title={ui.workFormatDistribution}
@@ -538,9 +538,9 @@ export default function PlatformAnalytics({
           ui={ui}
         />
         <ExpandableDistributionChart
-          title={ui.employmentTypeDistribution}
+          title={ui.openToDistribution}
           locale={locale}
-          items={relabel(stats.employmentTypeBreakdown, employmentTypeLabels)}
+          items={relabel(stats.openToBreakdown, openToLabels)}
           ui={ui}
         />
       </div>
