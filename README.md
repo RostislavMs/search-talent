@@ -86,7 +86,9 @@ search-talent/
 - "Contact" dialog: public channels for everyone; email and phone live in the owner-only `profile_private_details` table and reach signed-in visitors only through `open_profile_contacts()`, which counts the opening for the owner and caps new profiles at 20/hour and 60/day per account. Salary expectations are hidden unless the owner shows them.
 - Per-section visibility controls and customisable presentation (palette, fonts, hero alignment, section order, sizes, cover/video background).
 - AI-generated public summary (Gemini), opt-in regeneration with rate limits.
-- PDF export of the current profile.
+- PDF export of the current profile, with a link and a QR code to the portfolio.
+- Sharing for the owner (onboarding, My Space, "Share" on their own profile): the link, a ready post for LinkedIn and Telegram, a QR code (PNG) and a README badge — `/api/badge/{username}.svg` with the portfolio score, cached by the CDN for an hour. The QR code, the badge link and the PDF carry `utm_source=qr|badge|resume&utm_medium=portfolio`, so `/admin/metrics` can count sign-ups through portfolios; the link people copy stays clean.
+- The profile's OG image shows the rating (once there is a project), "Open to…" and up to three project covers.
 - Verified-email badge, completeness meter, profile vote counters.
 - GitHub OAuth link → import repos as projects.
 
@@ -233,6 +235,7 @@ search-talent/
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| GET | `/api/badge/{username}.svg` | README badge with the portfolio score (public, cached) |
 | GET/POST/PATCH | `/api/profile` | Read & update own profile |
 | PATCH | `/api/profile/open-to` | Set or confirm the "Open to…" status |
 | POST | `/api/profile-contacts` | Email & phone behind "Contact" (signed in, counted, rate limited) |

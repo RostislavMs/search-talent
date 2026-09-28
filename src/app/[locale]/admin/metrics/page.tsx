@@ -9,8 +9,13 @@ import {
 import { getProductMetrics } from "@/lib/db/product-metrics";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
-import type { RankedCount, RetentionCell } from "@/lib/product-metrics";
+import {
+  PORTFOLIO_DIRECT_CHANNEL,
+  type RankedCount,
+  type RetentionCell,
+} from "@/lib/product-metrics";
 import { buildMetadata, toBcp47 } from "@/lib/seo";
+import { isShareTag } from "@/lib/share-links";
 
 type MetricsCopy = Dictionary["admin"]["metrics"];
 
@@ -67,6 +72,19 @@ function formatRetention(cell: RetentionCell | null): string {
     return "—";
   }
   return `${cell.returned} / ${cell.eligible} · ${percent(cell.returned, cell.eligible)}`;
+}
+
+/** The share loop's own tags read as words; any other source stays as recorded. */
+function labelSources(items: RankedCount[], copy: MetricsCopy): RankedCount[] {
+  return items.map((item) => {
+    const tag = item.label.replace(/^tag:/, "");
+
+    if (item.label === PORTFOLIO_DIRECT_CHANNEL) {
+      return { ...item, label: copy.portfolioSignups.direct };
+    }
+
+    return isShareTag(tag) ? { ...item, label: copy.shareTags[tag] } : item;
+  });
 }
 
 function StatTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -324,16 +342,26 @@ export default async function AdminMetricsPage({
         <p className="mt-3 text-xs leading-5 app-muted">{copy.cohorts.note}</p>
       </section>
 
-      <RankedList
-        title={copy.signupSources.title}
-        note={copy.signupSources.note}
-        items={metrics.signupSources}
-        extraRows={[
-          { label: copy.signupSources.direct, count: metrics.directSignups },
-          { label: copy.signupSources.unattributed, count: metrics.unattributedSignups },
-        ]}
-        empty={copy.signupSources.empty}
-      />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <RankedList
+          title={copy.signupSources.title}
+          note={copy.signupSources.note}
+          items={labelSources(metrics.signupSources, copy)}
+          extraRows={[
+            { label: copy.signupSources.direct, count: metrics.directSignups },
+            { label: copy.signupSources.unattributed, count: metrics.unattributedSignups },
+          ]}
+          empty={copy.signupSources.empty}
+        />
+
+        <RankedList
+          title={copy.portfolioSignups.title}
+          note={fill(copy.portfolioSignups.note, { count: metrics.portfolioSignups.total })}
+          items={labelSources(metrics.portfolioSignups.channels, copy)}
+          extraRows={[]}
+          empty={copy.portfolioSignups.empty}
+        />
+      </div>
     </div>
   );
 }

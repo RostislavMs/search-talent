@@ -47,3 +47,28 @@ export function qrMatrixToPath(matrix: QrMatrix, margin: number) {
 
   return parts.join("");
 }
+
+// The standard quiet zone is four modules; scanners need it to find the code.
+export const QR_QUIET_ZONE = 4;
+
+/**
+ * A standalone SVG string of the code, black on white, for HTML built by hand
+ * (the printable résumé). `label` becomes its accessible name and must be
+ * plain text.
+ */
+export function createQrSvgMarkup(text: string, { size, label }: { size: number; label: string }) {
+  const matrix = createQrMatrix(text);
+  const modules = matrix.length + QR_QUIET_ZONE * 2;
+  const safeLabel = label
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${modules} ${modules}" shape-rendering="crispEdges" role="img" aria-label="${safeLabel}">` +
+    `<rect width="${modules}" height="${modules}" fill="#ffffff"/>` +
+    `<path d="${qrMatrixToPath(matrix, QR_QUIET_ZONE)}" fill="#000000"/>` +
+    `</svg>`
+  );
+}

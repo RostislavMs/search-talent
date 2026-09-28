@@ -5,6 +5,7 @@ import {
   labelReferrerHost,
   lastWeekStarts,
   median,
+  portfolioSignupChannel,
   startOfUtcWeek,
   toIsoDate,
   type MetricsUserRow,
@@ -217,5 +218,95 @@ describe("buildProductMetrics", () => {
     });
     expect(empty.weeks).toHaveLength(8);
     expect(empty.referrers).toEqual([]);
+  });
+});
+
+describe("sign-ups through a portfolio", () => {
+  const recorded = { signup_source_recorded: true };
+
+  it("recognises the share loop's tagged links wherever they landed", () => {
+    expect(
+      portfolioSignupChannel(
+        user({ ...recorded, signup_utm_source: "badge", signup_utm_medium: "portfolio" }),
+      ),
+    ).toBe("tag:badge");
+    expect(
+      portfolioSignupChannel(
+        user({
+          ...recorded,
+          signup_utm_source: "qr",
+          signup_utm_medium: "portfolio",
+          signup_landing_path: "/uk",
+        }),
+      ),
+    ).toBe("tag:qr");
+  });
+
+  it("counts a portfolio page opened from outside, by where the link was", () => {
+    const landing = { ...recorded, signup_landing_path: "/uk/u/olena" };
+    expect(
+      portfolioSignupChannel(user({ ...landing, signup_referrer_host: "www.linkedin.com" })),
+    ).toBe("LinkedIn");
+    expect(portfolioSignupChannel(user(landing))).toBe("direct");
+    expect(
+      portfolioSignupChannel(
+        user({ ...landing, signup_utm_source: "dou", signup_referrer_host: "t.co" }),
+      ),
+    ).toBe("dou");
+    expect(
+      portfolioSignupChannel(
+        user({ ...recorded, signup_landing_path: "/projects/landing-redesign" }),
+      ),
+    ).toBe("direct");
+  });
+
+  it("leaves out other landings, unknown sources and the old function's rows", () => {
+    expect(portfolioSignupChannel(user({ ...recorded, signup_landing_path: "/uk" }))).toBeNull();
+    expect(
+      portfolioSignupChannel(
+        user({ ...recorded, signup_utm_source: "badge", signup_utm_medium: "newsletter" }),
+      ),
+    ).toBeNull();
+    // No consent: nothing is known about the visit.
+    expect(
+      portfolioSignupChannel(user({ signup_landing_path: "/u/olena", signup_utm_source: "qr" })),
+    ).toBeNull();
+    // Before 2026-09-28-share-loop.sql the two columns are not returned at all.
+    expect(
+      portfolioSignupChannel(user({ ...recorded, signup_referrer_host: "linkedin.com" })),
+    ).toBeNull();
+  });
+
+  it("totals them for the window and ranks the channels", () => {
+    const inWindow = "2026-09-22T10:00:00Z";
+    const metrics = buildProductMetrics({
+      users: [
+        user({ ...recorded, signed_up_at: inWindow, signup_landing_path: "/u/a" }),
+        user({ ...recorded, signed_up_at: inWindow, signup_landing_path: "/en/u/b" }),
+        user({
+          ...recorded,
+          signed_up_at: inWindow,
+          signup_utm_source: "qr",
+          signup_utm_medium: "portfolio",
+        }),
+        user({ ...recorded, signed_up_at: inWindow, signup_landing_path: "/talents" }),
+        // Outside the 8-week window.
+        user({ ...recorded, signed_up_at: "2026-06-01T10:00:00Z", signup_landing_path: "/u/c" }),
+        // Admins are never counted.
+        user({ ...recorded, signed_up_at: inWindow, signup_landing_path: "/u/d", is_admin: true }),
+      ],
+      views: [],
+      now: NOW,
+    });
+
+    expect(metrics.portfolioSignups).toEqual({
+      total: 3,
+      channels: [
+        { label: "direct", count: 2 },
+        { label: "tag:qr", count: 1 },
+      ],
+    });
+    // The tag also shows as a source in the general ranking.
+    expect(metrics.signupSources).toContainEqual({ label: "qr", count: 1 });
   });
 });

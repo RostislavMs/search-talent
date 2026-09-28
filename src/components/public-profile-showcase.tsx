@@ -11,6 +11,7 @@ import ProfileAiSummaryPublic from "@/components/profile-ai-summary-public";
 import ProfileContactButton, {
   type ProfileContactInfo,
 } from "@/components/profile-contact-button";
+import ProfileShareDialog from "@/components/profile-share-dialog";
 import ProfileVoteButtons from "@/components/profile-vote-buttons";
 
 const ProfilePdfExport = dynamic(
@@ -248,9 +249,11 @@ export default function PublicProfileShowcase({
   const presentation = profile.presentation;
   const typeScale = getProfileTextScale(presentation.textScale);
   const displayName = profile.name || profile.username || dictionary.common.creator;
-  const profileUrl = profile.username
-    ? `${getMetadataBase().toString().replace(/\/$/, "")}/${locale}/u/${profile.username}`
-    : null;
+  const siteBase = getMetadataBase().toString().replace(/\/$/, "");
+  const profileUrl = profile.username ? `${siteBase}/${locale}/u/${profile.username}` : null;
+  // What the owner hands out (share panel, PDF): no locale, so each visitor
+  // lands on the page in their own language.
+  const portfolioUrl = profile.username ? `${siteBase}/u/${profile.username}` : null;
   const hasPrivateContact = contact.hasEmail || contact.hasPhone;
   const openToList = formatOpenToList(profile.open_to, dictionary.openTo.phrases);
   const openToLine = openToList ? dictionary.openTo.badge.replace("{list}", openToList) : null;
@@ -540,8 +543,14 @@ export default function PublicProfileShowcase({
                   {!isOwner && (
                     <BookmarkButton targetType="profile" targetId={profile.id} initialBookmarked={isBookmarked} isAuthenticated={isAuthenticated} />
                   )}
-                  <ProfilePdfExport data={data} label="PDF" />
-                  {profileUrl ? (
+                  <ProfilePdfExport data={data} portfolioUrl={portfolioUrl} label="PDF" />
+                  {isOwner && portfolioUrl && profile.username ? (
+                    <ProfileShareDialog
+                      profileUrl={portfolioUrl}
+                      username={profile.username}
+                      openTo={profile.open_to}
+                    />
+                  ) : profileUrl ? (
                     <ShareButton url={profileUrl} title={displayName} align="end" />
                   ) : null}
                 </div>

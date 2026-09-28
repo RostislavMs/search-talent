@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { createQrMatrix, qrMatrixToPath } from "@/lib/qr";
+import { createQrMatrix, createQrSvgMarkup, QR_QUIET_ZONE, qrMatrixToPath } from "@/lib/qr";
+
+describe("createQrSvgMarkup", () => {
+  it("draws the code on white with the quiet zone and an escaped label", () => {
+    const text = "https://searchtalent.dev/u/olena?utm_source=resume&utm_medium=portfolio";
+    const modules = createQrMatrix(text).length + QR_QUIET_ZONE * 2;
+    const svg = createQrSvgMarkup(text, { size: 84, label: 'QR "portfolio" <x>' });
+
+    expect(svg).toContain('width="84" height="84"');
+    expect(svg).toContain(`viewBox="0 0 ${modules} ${modules}"`);
+    expect(svg).toContain('fill="#ffffff"');
+    expect(svg).toContain('aria-label="QR &quot;portfolio&quot; &lt;x&gt;"');
+    expect(svg).not.toContain("<x>");
+  });
+});
 
 /** The 7×7 finder pattern: dark ring, light ring, dark 3×3 centre. */
 function hasFinderAt(matrix: boolean[][], top: number, left: number) {
