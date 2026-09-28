@@ -99,4 +99,36 @@ describe("/admin/metrics", () => {
     expect(html).toContain("Sep 21");
     expect(html).not.toMatch(/NaN|undefined|Infinity/);
   });
+
+  it("shows sign-ups through portfolios with the share tags in words", async () => {
+    const base = {
+      signed_up_at: "2026-09-22T10:00:00Z",
+      email_confirmed: true,
+      last_active_at: null,
+      first_project_at: null,
+      first_external_view_at: null,
+      signup_source_recorded: true,
+      signup_referrer_host: null,
+      is_admin: false,
+    };
+    holder.result = {
+      status: "ok",
+      metrics: buildProductMetrics({
+        now: NOW,
+        views: [],
+        users: [
+          { ...base, account_id: "a", signup_utm_source: "badge", signup_utm_medium: "portfolio" },
+          { ...base, account_id: "b", signup_utm_source: null, signup_landing_path: "/uk/u/olena" },
+        ],
+      }),
+    };
+    const html = await render("uk");
+
+    expect(html).toContain("Реєстрації через портфоліо");
+    expect(html).toContain("Разом: 2.");
+    // Both in the portfolio block and among the sign-up sources.
+    expect(html.match(/Значок у README/g)).toHaveLength(2);
+    expect(html).toContain("Посилання без джерела");
+    expect(html).not.toContain("tag:badge");
+  });
 });

@@ -40,6 +40,7 @@ describe("product metrics copy parity (uk/en)", () => {
       [en.tiles.firstProjectHint, uk.tiles.firstProjectHint],
       [en.units.hours, uk.units.hours],
       [en.units.days, uk.units.days],
+      [en.portfolioSignups.note, uk.portfolioSignups.note],
     ];
     for (const [english, ukrainian] of pairs) {
       expect(placeholders(ukrainian), ukrainian).toEqual(placeholders(english));

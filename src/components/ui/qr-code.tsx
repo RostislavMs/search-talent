@@ -1,10 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { createQrMatrix, qrMatrixToPath } from "@/lib/qr";
+import { createQrMatrix, QR_QUIET_ZONE as QUIET_ZONE, qrMatrixToPath } from "@/lib/qr";
 
-// The standard quiet zone is four modules; scanners need it to find the code.
-const QUIET_ZONE = 4;
 // Rendered at this many pixels per module when downloaded as a PNG.
 const PNG_MODULE_SIZE = 12;
 

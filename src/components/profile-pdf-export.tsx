@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/Button";
 import { useDictionary } from "@/lib/i18n/client";
 import type { PublicProfilePageData } from "@/lib/db/public";
 import { formatOpenToList } from "@/lib/open-to";
+import { createQrSvgMarkup } from "@/lib/qr";
+import { displayUrl, withShareTag } from "@/lib/share-links";
 
 type ProfilePdfExportProps = {
   data: PublicProfilePageData;
+  /** Absolute portfolio URL without the locale; the link and QR code point here. */
+  portfolioUrl?: string | null;
   label?: string;
 };
 
@@ -35,6 +39,7 @@ function escapeHtml(text: string): string {
 
 export default function ProfilePdfExport({
   data,
+  portfolioUrl,
   label,
 }: ProfilePdfExportProps) {
   const dictionary = useDictionary();
@@ -85,7 +90,20 @@ export default function ProfilePdfExport({
       const openToList = formatOpenToList(profile.open_to, dictionary.openTo.phrases);
       const vis = profile.visibility;
       const displayName = escapeHtml(profile.name || profile.username || "");
-      const profileUrl = typeof window !== "undefined" ? `${window.location.origin}/u/${profile.username || ""}` : "";
+      const profileUrl =
+        portfolioUrl ||
+        (typeof window !== "undefined" ? `${window.location.origin}/u/${profile.username || ""}` : "");
+      // The printed résumé is read, not clicked: the tag tells the metrics which
+      // visits (and sign-ups) came from it, while the text shows the clean link.
+      const resumeUrl = profileUrl ? withShareTag(profileUrl, "resume") : "";
+      const shownUrl = escapeHtml(displayUrl(profileUrl));
+      const qrHtml = resumeUrl
+        ? `<a href="${escapeHtml(resumeUrl)}" class="qr-block">
+            ${createQrSvgMarkup(resumeUrl, { size: 84, label: t.qrAlt })}
+            <span class="qr-caption">${escapeHtml(t.portfolioOnline)}</span>
+            <span class="qr-url">${shownUrl}</span>
+          </a>`
+        : "";
       const sections: string[] = [];
 
       // Header with avatar
@@ -107,6 +125,7 @@ export default function ProfilePdfExport({
               </div>
               ${openToList ? `<p class="open-to"><span class="open-to-dot"></span>${escapeHtml(dictionary.openTo.badge.replace("{list}", openToList))}</p>` : ""}
             </div>
+            ${qrHtml}
           </div>
         </div>
       `);
@@ -299,7 +318,15 @@ export default function ProfilePdfExport({
     color: #64748b;
     font-size: 28px; font-weight: 700;
   }
-  .header-info { min-width: 0; }
+  .header-info { min-width: 0; flex: 1; }
+  .qr-block {
+    display: flex; flex-direction: column; align-items: center;
+    flex-shrink: 0; width: 120px; gap: 3px;
+    text-decoration: none; text-align: center;
+  }
+  .qr-block svg { display: block; }
+  .qr-caption { font-size: 7.5pt; color: #475569; font-weight: 600; line-height: 1.3; }
+  .qr-url { font-size: 7pt; color: #64748b; word-break: break-all; line-height: 1.3; }
   .header h1 {
     font-size: 22pt; font-weight: 800;
     letter-spacing: -0.6px;
@@ -411,8 +438,7 @@ export default function ProfilePdfExport({
 <body>
 <div class="page-header">
   <div class="brand">SearchTalent <span>— ${t.resume}</span></div>
-  <span class="profile-url">${escapeHtml(profileUrl)}</span>
-
+  ${resumeUrl ? `<a href="${escapeHtml(resumeUrl)}" class="profile-url">${shownUrl}</a>` : ""}
 </div>
 ${sections.join("\n")}
 </body>

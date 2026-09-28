@@ -4,6 +4,7 @@ import MySpaceChecklist from "@/components/my-space-checklist";
 import MySpaceStats from "@/components/my-space-stats";
 import OpenToCard from "@/components/open-to-card";
 import ProfileCompletenessButton from "@/components/profile-completeness-button";
+import ProfileSharePanel from "@/components/profile-share-panel";
 import { buildLoginHref } from "@/lib/auth/redirect";
 import { getOnboardingSnapshot } from "@/lib/db/onboarding";
 import { getMyContactOpens } from "@/lib/db/open-to";
@@ -11,7 +12,7 @@ import { getUserStats } from "@/lib/db/stats";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, getSiteUrl } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 import { isTemporaryUsername } from "@/lib/username";
 
@@ -69,6 +70,10 @@ export default async function MySpacePage({
       ? dictionary.mySpace.usernameTemporary
       : dictionary.mySpace.usernameFromEmail
     : null;
+  // Handing out an empty portfolio helps nobody; until the first project the
+  // checklist points to the onboarding step instead.
+  const shareUsername =
+    onboarding && onboarding.publishedProjectsCount > 0 ? onboarding.profile.username : null;
 
   return (
     <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6">
@@ -106,6 +111,30 @@ export default async function MySpacePage({
           initialOpenTo={onboarding.profile.open_to}
           initialUpdatedAt={onboarding.profile.open_to_updated_at}
         />
+      ) : null}
+
+      {onboarding && shareUsername ? (
+        <section className="mb-8 rounded-hero app-card p-5 sm:p-6" aria-labelledby="my-space-share">
+          <h2
+            id="my-space-share"
+            className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
+          >
+            {dictionary.profileShare.cardTitle}
+          </h2>
+          <p className="mt-1 text-sm app-muted">{dictionary.profileShare.cardDescription}</p>
+          <div className="mt-5">
+            <ProfileSharePanel
+              profileUrl={new URL(`/u/${shareUsername}`, getSiteUrl()).toString()}
+              username={shareUsername}
+              openTo={onboarding.profile.open_to}
+              alreadyShared={
+                onboarding.checklist.items.find((item) => item.key === "share")?.done ?? false
+              }
+              showBadge
+              columns
+            />
+          </div>
+        </section>
       ) : null}
 
       <MySpaceStats

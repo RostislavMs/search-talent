@@ -78,7 +78,12 @@ export default function OnboardingShareStep({
         />
       ) : null}
 
-      <ProfileSharePanel profileUrl={profileUrl} fileSlug={username} onShared={onShared} />
+      <ProfileSharePanel
+        profileUrl={profileUrl}
+        username={username}
+        openTo={openTo.value}
+        onShared={onShared}
+      />
 
       <OpenToCard
         className="rounded-2xl border app-border p-4 sm:p-5"

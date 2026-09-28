@@ -1,3 +1,4 @@
+import { isPortfolioPath, isShareTag, SHARE_TAG_MEDIUM } from "@/lib/share-links";
 import type { ViewSource, ViewTargetType } from "@/lib/view-tracking";
 
 // ---------------------------------------------------------------------------
@@ -14,6 +15,9 @@ import type { ViewSource, ViewTargetType } from "@/lib/view-tracking";
 //     Counted only for accounts that are at least N days old.
 //   * platform admins are left out of every number: the founder's own account
 //     would otherwise be most of the data.
+//   * signed up through a portfolio (plan part 6) — the first touch was a link
+//     the share loop tagged (README badge, QR code, PDF résumé), or it landed
+//     on someone's profile or project page from outside the site.
 // ---------------------------------------------------------------------------
 
 export const METRICS_WEEKS = 8;
@@ -34,6 +38,9 @@ export type MetricsUserRow = {
   signup_referrer_host: string | null;
   signup_utm_source: string | null;
   is_admin: boolean;
+  /** Returned since 2026-09-28-share-loop.sql; missing before it runs. */
+  signup_utm_medium?: string | null;
+  signup_landing_path?: string | null;
 };
 
 export type MetricsViewRollupRow = {
@@ -92,8 +99,46 @@ export type ProductMetrics = {
   directSignups: number;
   /** No consent, or signed up before the source was recorded. */
   unattributedSignups: number;
+  /** Sign-ups in the window that came through someone's portfolio. */
+  portfolioSignups: {
+    total: number;
+    /**
+     * `tag:badge`, `tag:qr`, `tag:resume` for the tagged links, `direct` for a
+     * portfolio link opened with no referrer, otherwise the source name.
+     */
+    channels: RankedCount[];
+  };
   excludedAdmins: number;
 };
+
+export const PORTFOLIO_DIRECT_CHANNEL = "direct";
+
+/**
+ * How a sign-up came through a portfolio, or null when it did not (or its
+ * source is unknown). Mirrors the sign-up source ranking: a UTM source wins
+ * over the referring host.
+ */
+export function portfolioSignupChannel(user: MetricsUserRow): string | null {
+  if (!user.signup_source_recorded) {
+    return null;
+  }
+
+  if (user.signup_utm_medium === SHARE_TAG_MEDIUM && isShareTag(user.signup_utm_source)) {
+    return `tag:${user.signup_utm_source}`;
+  }
+
+  if (!isPortfolioPath(user.signup_landing_path)) {
+    return null;
+  }
+
+  if (user.signup_utm_source) {
+    return user.signup_utm_source;
+  }
+
+  return user.signup_referrer_host
+    ? labelReferrerHost(user.signup_referrer_host)
+    : PORTFOLIO_DIRECT_CHANNEL;
+}
 
 export function startOfUtcWeek(date: Date): Date {
   const start = new Date(
@@ -272,6 +317,8 @@ export function buildProductMetrics({
   const signupSources = new Map<string, number>();
   let directSignups = 0;
   let unattributedSignups = 0;
+  const portfolioChannels = new Map<string, number>();
+  let portfolioSignupsTotal = 0;
 
   for (const user of people) {
     const signedUp = toTime(user.signed_up_at);
@@ -292,6 +339,12 @@ export function buildProductMetrics({
         increment(signupSources, labelReferrerHost(user.signup_referrer_host));
       } else {
         directSignups += 1;
+      }
+
+      const channel = portfolioSignupChannel(user);
+      if (channel) {
+        portfolioSignupsTotal += 1;
+        increment(portfolioChannels, channel);
       }
     }
 
@@ -368,6 +421,7 @@ export function buildProductMetrics({
     signupSources: rank(signupSources),
     directSignups,
     unattributedSignups,
+    portfolioSignups: { total: portfolioSignupsTotal, channels: rank(portfolioChannels) },
     excludedAdmins: users.length - people.length,
   };
 }
