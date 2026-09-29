@@ -186,6 +186,46 @@ describe("profilePayloadSchema - enum-like fields", () => {
       expect(result.data.open_to).toEqual([]);
     }
   });
+
+  it("has no hourly rate by default, and keeps it hidden", () => {
+    const result = profilePayloadSchema.safeParse(minimal);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.hourly_rate).toBeNull();
+      expect(result.data.hourly_rate_currency).toBeNull();
+      expect(result.data.hourly_rate_public).toBe(false);
+    }
+  });
+
+  it("accepts a whole hourly rate as a number or a numeric string", () => {
+    for (const hourly_rate of [20, "20", " 20 "]) {
+      const result = profilePayloadSchema.safeParse({ ...minimal, hourly_rate, hourly_rate_currency: "usd" });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.hourly_rate).toBe(20);
+        expect(result.data.hourly_rate_currency).toBe("usd");
+      }
+    }
+  });
+
+  it("treats an empty hourly rate as none", () => {
+    const result = profilePayloadSchema.safeParse({ ...minimal, hourly_rate: "  " });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.hourly_rate).toBeNull();
+    }
+  });
+
+  it("rejects an hourly rate that is not a whole number from 1 to 100 000", () => {
+    for (const hourly_rate of [0, -1, 12.5, 100_001, "abc", "1e3"]) {
+      expect(profilePayloadSchema.safeParse({ ...minimal, hourly_rate }).success, String(hourly_rate)).toBe(false);
+    }
+  });
+
+  it("rejects an unknown hourly rate currency", () => {
+    const result = profilePayloadSchema.safeParse({ ...minimal, hourly_rate: 20, hourly_rate_currency: "btc" });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("profilePayloadSchema - nested entries", () => {

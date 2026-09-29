@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { useDictionary } from "@/lib/i18n/client";
+import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
 import type { PublicProfilePageData } from "@/lib/db/public";
 import { formatOpenToList } from "@/lib/open-to";
+import { formatHourlyRate } from "@/lib/profile-private";
 import { createQrSvgMarkup } from "@/lib/qr";
 import { displayUrl, withShareTag } from "@/lib/share-links";
 
@@ -43,6 +44,7 @@ export default function ProfilePdfExport({
   label,
 }: ProfilePdfExportProps) {
   const dictionary = useDictionary();
+  const locale = useCurrentLocale();
   const t = dictionary.pdfExport;
   const [generating, setGenerating] = useState(false);
 
@@ -86,7 +88,7 @@ export default function ProfilePdfExport({
     setGenerating(true);
 
     try {
-      const { profile, technologies, languages, education, certificates, workExperience, contact, salary } = data;
+      const { profile, technologies, languages, education, certificates, workExperience, contact, salary, hourlyRate } = data;
       const openToList = formatOpenToList(profile.open_to, dictionary.openTo.phrases);
       const vis = profile.visibility;
       const displayName = escapeHtml(profile.name || profile.username || "");
@@ -180,6 +182,9 @@ export default function ProfilePdfExport({
         }
         if (salary) {
           profDetails.push(`<div class="detail-item"><span class="detail-label">${t.salary}</span><span class="detail-value">${escapeHtml(salary.amount)}${salary.currency ? ` ${escapeHtml(salary.currency.toUpperCase())}` : ""}</span></div>`);
+        }
+        if (hourlyRate) {
+          profDetails.push(`<div class="detail-item"><span class="detail-label">${escapeHtml(dictionary.openTo.hourlyRate)}</span><span class="detail-value">${escapeHtml(formatHourlyRate(hourlyRate, dictionary.openTo.hourlyRateValue, locale))}</span></div>`);
         }
 
         const additionalInfoHtml = profile.additional_info

@@ -82,7 +82,7 @@ search-talent/
 
 - Rich profile sections: bio, work experience, education, certificates, skills, languages, Q&A, contacts.
 - "Open to…" status (freelance, job, internship, collaboration, mentoring) with a two-click toggle in My Space and a reminder after 60 days.
-- "Contact" dialog: public channels for everyone; email and phone live in the owner-only `profile_private_details` table and reach signed-in visitors only through `open_profile_contacts()`, which counts the opening for the owner and caps new profiles at 20/hour and 60/day per account. Salary expectations are hidden unless the owner shows them.
+- "Contact" dialog: public channels for everyone; email and phone live in the owner-only `profile_private_details` table and reach signed-in visitors only through `open_profile_contacts()`, which counts the opening for the owner and caps new profiles at 20/hour and 60/day per account. Salary expectations and the hourly rate (for freelance, "from N per hour") are hidden unless the owner shows them, each with its own switch.
 - Per-section visibility controls and customisable presentation (palette, fonts, hero alignment, section order, sizes, cover/video background).
 - AI-generated public summary (Gemini), opt-in regeneration with rate limits.
 - PDF export of the current profile, with a link and a QR code to the portfolio.

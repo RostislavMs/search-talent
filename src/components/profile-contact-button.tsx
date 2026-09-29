@@ -27,6 +27,8 @@ export type ProfileContactInfo = {
   hasPhone: boolean;
   /** «Відкрито до: …» already worded for this locale, or null. */
   openToLine: string | null;
+  /** "from 20 USD per hour", when the owner shows the rate; or null. */
+  hourlyRateLine: string | null;
   /** Work formats already worded ("Remote, Hybrid"), or null. */
   workFormatsLine: string | null;
 };
@@ -231,6 +233,9 @@ export default function ProfileContactButton({
                 <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
                 <span>{contact.openToLine}</span>
               </p>
+            ) : null}
+            {contact.hourlyRateLine ? (
+              <p className="mt-1 text-sm app-muted">{contact.hourlyRateLine}</p>
             ) : null}
             {contact.workFormatsLine ? (
               <p className="mt-1 text-sm app-muted">{contact.workFormatsLine}</p>

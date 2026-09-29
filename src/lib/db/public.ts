@@ -29,6 +29,7 @@ import {
   summarizePrivateDetails,
   type ProfileContactSummary,
   type ProfilePrivateDetailsRow,
+  type PublicHourlyRate,
   type PublicSalary,
 } from "@/lib/profile-private";
 import { createClient } from "@/lib/supabase/server";
@@ -240,6 +241,8 @@ export type PublicProfilePageData = {
   contact: ProfileContactSummary;
   /** Salary expectations, when the owner chose to show them. */
   salary: PublicSalary | null;
+  /** Hourly rate, "from N per hour", when the owner chose to show it. */
+  hourlyRate: PublicHourlyRate | null;
   voteSummary: Awaited<ReturnType<typeof getProfileVoteSummary>>;
   // Composite creator rating (0-100) — the same value shown on the talents
   // cards and homepage leaderboard. Null when the profile is not ranked yet.
@@ -591,9 +594,10 @@ export async function getPublicProfilePageData(
           .maybeSingle()
       : Promise.resolve({ data: null }),
     // Owner-only table: read with the service key so the page knows whether an
-    // email / phone exists and whether salary is on show. Only the owner's own
-    // values reach the page (summarizePrivateDetails). Without the key, the
-    // owner still reads their own row through RLS; visitors get nothing.
+    // email / phone exists and whether salary or the hourly rate is on show.
+    // Only the owner's own values reach the page (summarizePrivateDetails).
+    // Without the key, the owner still reads their own row through RLS;
+    // visitors get nothing.
     dataClient
       .from("profile_private_details")
       .select(PROFILE_PRIVATE_DETAILS_COLUMNS)
@@ -779,6 +783,7 @@ export async function getPublicProfilePageData(
     completeness,
     contact: privateDetails.contact,
     salary: privateDetails.salary,
+    hourlyRate: privateDetails.hourlyRate,
     voteSummary,
     profileRating: creatorRatings[typedProfile.id] ?? null,
     isAuthenticated: Boolean(user),

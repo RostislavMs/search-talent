@@ -93,8 +93,9 @@ export async function PUT(request: Request) {
     );
   }
 
-  // Email, phone and salary go to the owner-only table, never to the public
-  // profiles row (see database/2026-09-28-open-to.sql).
+  // Email, phone, salary and the hourly rate go to the owner-only table, never
+  // to the public profiles row (see database/2026-09-28-open-to.sql).
+  const hasHourlyRate = payload.hourly_rate !== null;
   const { error: privateError } = await supabase.from("profile_private_details").upsert(
     {
       user_id: user.id,
@@ -103,6 +104,9 @@ export async function PUT(request: Request) {
       salary_expectations: payload.salary_expectations,
       salary_currency: payload.salary_expectations ? payload.salary_currency : null,
       salary_public: payload.salary_expectations ? payload.salary_public : false,
+      hourly_rate: payload.hourly_rate,
+      hourly_rate_currency: hasHourlyRate ? payload.hourly_rate_currency : null,
+      hourly_rate_public: hasHourlyRate ? payload.hourly_rate_public : false,
     },
     { onConflict: "user_id" },
   );

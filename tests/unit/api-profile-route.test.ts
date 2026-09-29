@@ -106,7 +106,59 @@ describe("PUT /api/profile", () => {
       salary_expectations: "3000",
       salary_currency: "usd",
       salary_public: true,
+      hourly_rate: null,
+      hourly_rate_currency: null,
+      hourly_rate_public: false,
     });
+  });
+
+  it("stores the hourly rate in the owner-only table", async () => {
+    const mock = setMock(authUser, (t, v) => {
+      if (t === "profiles" && v === "select") return { data: { id: "p1" } };
+      return { error: null };
+    });
+    const res = await PUT(
+      req({ hourly_rate: 25, hourly_rate_currency: "eur", hourly_rate_public: true }),
+    );
+    expect(res.status).toBe(200);
+
+    const update = mock.calls.find((c) => c.table === "profiles" && c.verb === "update");
+    for (const key of ["hourly_rate", "hourly_rate_currency", "hourly_rate_public"]) {
+      expect(update?.payload as Record<string, unknown>).not.toHaveProperty(key);
+    }
+
+    const upsert = mock.calls.find((c) => c.table === "profile_private_details");
+    expect(upsert?.payload).toMatchObject({
+      hourly_rate: 25,
+      hourly_rate_currency: "eur",
+      hourly_rate_public: true,
+    });
+  });
+
+  it("cannot show an hourly rate that is not there", async () => {
+    const mock = setMock(authUser, (t, v) => {
+      if (t === "profiles" && v === "select") return { data: { id: "p1" } };
+      return { error: null };
+    });
+    await PUT(req({ hourly_rate: "", hourly_rate_currency: "usd", hourly_rate_public: true }));
+
+    const upsert = mock.calls.find((c) => c.table === "profile_private_details");
+    expect(upsert?.payload).toMatchObject({
+      hourly_rate: null,
+      hourly_rate_currency: null,
+      hourly_rate_public: false,
+    });
+  });
+
+  it("400 on an hourly rate out of range, before anything is written", async () => {
+    const mock = setMock(authUser, (t, v) => {
+      if (t === "profiles" && v === "select") return { data: { id: "p1" } };
+      return { error: null };
+    });
+    for (const hourly_rate of [0, 12.5, 100_001, "abc"]) {
+      expect((await PUT(req({ hourly_rate }))).status).toBe(400);
+    }
+    expect(mock.calls.some((c) => c.table === "profile_private_details")).toBe(false);
   });
 
   it("cannot show a salary that is not there", async () => {

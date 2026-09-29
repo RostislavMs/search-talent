@@ -36,6 +36,7 @@ const contact: ProfileContactInfo = {
   hasEmail: true,
   hasPhone: true,
   openToLine: "Відкрито до: фрилансу",
+  hourlyRateLine: "від 20 USD за годину",
   workFormatsLine: "Формат роботи: Віддалено",
 };
 
@@ -80,6 +81,7 @@ describe("<ProfileContactButton />", () => {
       expect.stringContaining("/uk/login?next="),
     );
     expect(screen.getByText("Відкрито до: фрилансу")).toBeInTheDocument();
+    expect(screen.getByText("від 20 USD за годину")).toBeInTheDocument();
     expect(mockedFetch).not.toHaveBeenCalled();
     expect(screen.queryByText("olena@example.com")).toBeNull();
   });
