@@ -78,7 +78,6 @@ export async function PUT(request: Request) {
       open_to: payload.open_to,
       work_formats: payload.work_formats,
       additional_info: payload.additional_info,
-      cover_url: payload.cover_url,
       profile_visibility: payload.profile_visibility,
     })
     .eq("user_id", user.id);

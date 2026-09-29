@@ -654,65 +654,8 @@ export const dictionaries = {
       technologyCountLabel: "Technologies",
     },
     search: {
-      eyebrow: "Talent discovery",
-      title: "Search Portfolios, Profiles & Projects by Skills",
-      description:
-        "Find portfolios and profiles by keywords, skills, or technologies — then dive into work or open your own space.",
-      browseProjects: "Browse projects",
       mySpace: "My space",
-      placeholder: "Search projects or users...",
-      scopeAll: "Everything",
-      scopeProjects: "Projects",
-      scopeCreators: "Talents",
-      filters: "Filters",
-      resetFilters: "Reset",
-      sortBy: "Sort by",
-      sortRelevance: "Relevance",
-      sortRating: "Rating",
-      sortNewest: "Newest",
-      filterCountry: "Country",
-      anyCountry: "Any country",
-      filterSkills: "Skills",
-      anySkill: "Any skill",
-      filterProjectStatus: "Project status",
-      anyStatus: "Any status",
-      onlyWithMedia: "Only with media",
-      resultsSummary: "Search summary",
-      summaryDescription:
-        "Switch between profiles and projects, combine filters, and narrow the list before opening the full page.",
-      projectsSection:
-        "Public projects with stronger signal, richer descriptions, and clearer delivery details rise to the top.",
-      creatorsSection:
-        "Profile cards combine role, location, experience, and technologies so you can review candidates faster.",
-      projectsMatched: "Projects found",
-      creatorsMatched: "Talents found",
-      activeFilters: "Active filters",
-      queryLabel: "Query",
-      mediaCount: "Media",
-      loading: "Refreshing results...",
-      searchFailed: "Could not load search results right now.",
-      info: {
-        projects: {
-          title: "Search by project",
-          description:
-            "Find a title, open the details page, then review media and vote.",
-        },
-        creators: {
-          title: "Search by profile",
-          description:
-            "Open a public profile, check skills, and browse related work from there.",
-        },
-        workspace: {
-          title: "Need your own space?",
-          description:
-            "Head into your space to create projects and complete your profile.",
-        },
-      },
       results: "results",
-      noProjects:
-        "No matching projects yet. Try another keyword or browse the full catalog.",
-      noCreators:
-        "No matching profiles yet. Try another keyword and check again.",
     },
     articlesPage: {
       eyebrow: "Community knowledge hub",
@@ -741,18 +684,6 @@ export const dictionaries = {
         "Official updates, releases, and announcements from the SearchTalent team.",
       empty: "No news yet — check back soon.",
       createNews: "Create news",
-    },
-    projectsPage: {
-      eyebrow: "Portfolio & project catalog",
-      title: "Browse Creator Portfolios — Real IT Projects with Tech Stacks",
-      description:
-        "Browse the full catalog of creator portfolios, open individual project pages, and publish your own work to showcase your craft.",
-      manageProjects: "Manage my projects",
-      loginToPublish: "Log in to publish",
-      searchTalent: "Search talents",
-      emptyTitle: "No projects published yet",
-      emptyDescription:
-        "Once people start publishing work, this catalog will become the easiest way to browse the platform.",
     },
     projectPage: {
       backToProjects: "Back to projects",
@@ -1551,21 +1482,6 @@ export const dictionaries = {
         save: "Save photo",
         saving: "Saving...",
         invalidType: "Please choose an image file.",
-      },
-      cover: {
-        title: "Profile cover",
-        hint: "Add a banner image to give your public profile more personality.",
-        uploadAction: "Upload cover",
-        replaceAction: "Replace cover",
-        removeAction: "Remove cover",
-        previewAlt: "Profile cover preview",
-        empty: "No cover yet — upload a wide image (recommended 16:5).",
-        uploading: "Uploading cover...",
-        removing: "Removing cover...",
-        uploadedMessage: "Cover updated.",
-        removedMessage: "Cover removed.",
-        uploadFailedMessage: "Could not upload the cover right now.",
-        removeFailedMessage: "Could not remove the cover right now.",
       },
       changePassword: {
         sectionTitle: "Password",
@@ -3390,35 +3306,8 @@ export const dictionaries = {
       technologyCountLabel: "Технології",
     },
     search: {
-      eyebrow: "Пошук талантів",
-      title: "Пошук Портфоліо, Профілів та Проєктів за Навичками",
-      description:
-        "Знаходьте портфоліо та профілі авторів за ключовими словами, навичками чи технологіями — переглядайте роботи або переходьте у свій простір.",
-      browseProjects: "Переглянути проєкти",
       mySpace: "Мій простір",
-      placeholder: "Шукати проєкти або користувачів...",
-      info: {
-        projects: {
-          title: "Пошук за проєктом",
-          description:
-            "Знайдіть назву, відкрийте сторінку проєкту й перегляньте медіа та голоси.",
-        },
-        creators: {
-          title: "Пошук за профілем",
-          description:
-            "Відкрийте публічний профіль, перегляньте навички та пов'язані роботи.",
-        },
-        workspace: {
-          title: "Потрібен свій простір?",
-          description:
-            "Перейдіть у свій простір, щоб створювати проєкти й заповнювати профіль.",
-        },
-      },
       results: "результатів",
-      noProjects:
-        "Поки що немає відповідних проєктів. Спробуйте інший запит або відкрийте весь каталог.",
-      noCreators:
-        "Поки що немає відповідних профілів. Спробуйте інший запит і перевірте ще раз.",
     },
     articlesPage: {
       eyebrow: "База знань спільноти",
@@ -3447,18 +3336,6 @@ export const dictionaries = {
         "Офіційні оновлення, релізи та анонси від команди SearchTalent.",
       empty: "Поки що новин немає — зазирніть пізніше.",
       createNews: "Створити новину",
-    },
-    projectsPage: {
-      eyebrow: "Каталог портфоліо та проєктів",
-      title: "Портфоліо Авторів — Реальні IT-Проєкти з Технологічними Стеками",
-      description:
-        "Переглядайте каталог портфоліо, відкривайте сторінки проєктів і публікуйте власні роботи, щоб показати своє ремесло.",
-      manageProjects: "Керувати моїми проєктами",
-      loginToPublish: "Увійти для публікації",
-      searchTalent: "Шукати таланти",
-      emptyTitle: "Опублікованих проєктів поки немає",
-      emptyDescription:
-        "Коли автори почнуть публікувати роботи, цей каталог стане найпростішим способом перегляду всього сайту.",
     },
     projectPage: {
       backToProjects: "Назад до проєктів",
@@ -4257,21 +4134,6 @@ export const dictionaries = {
         save: "Зберегти фото",
         saving: "Збереження...",
         invalidType: "Будь ласка, оберіть файл зображення.",
-      },
-      cover: {
-        title: "Обкладинка профілю",
-        hint: "Додайте банер-зображення, щоб ваш публічний профіль виглядав унікальніше.",
-        uploadAction: "Завантажити обкладинку",
-        replaceAction: "Замінити обкладинку",
-        removeAction: "Прибрати обкладинку",
-        previewAlt: "Превʼю обкладинки профілю",
-        empty: "Обкладинки ще немає — завантажте широке зображення (рекомендовано 16:5).",
-        uploading: "Завантаження обкладинки...",
-        removing: "Прибирання обкладинки...",
-        uploadedMessage: "Обкладинку оновлено.",
-        removedMessage: "Обкладинку прибрано.",
-        uploadFailedMessage: "Зараз не вдалося завантажити обкладинку.",
-        removeFailedMessage: "Зараз не вдалося прибрати обкладинку.",
       },
       changePassword: {
         sectionTitle: "Пароль",

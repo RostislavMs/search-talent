@@ -231,7 +231,6 @@ export const profilePayloadSchema = z.object({
   // Salary expectations are private unless the owner shows them on the page.
   salary_public: z.boolean().default(false),
   additional_info: optionalText("Additional info", 5000),
-  cover_url: optionalUrl("cover URL"),
   profile_visibility: visibilitySchema,
   skill_ids: z
     .array(z.number().int().positive())

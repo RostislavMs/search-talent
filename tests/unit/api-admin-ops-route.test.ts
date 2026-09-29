@@ -10,7 +10,6 @@ vi.mock("@/lib/moderation-server", () => ({ getCurrentViewerRole: vi.fn() }));
 
 import { DELETE as commentDelete } from "@/app/api/admin/comments/[id]/route";
 import { POST as commentBulk } from "@/app/api/admin/comments/bulk/route";
-import { POST as refreshScores } from "@/app/api/admin/refresh-scores/route";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 
 const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
@@ -18,8 +17,8 @@ const ID = "22222222-2222-4222-8222-222222222222";
 const ID2 = "33333333-3333-4333-8333-333333333333";
 const adminUser: MockUser = { id: ADMIN_ID, email_confirmed_at: "2026-01-01T00:00:00Z" };
 
-function viewer(user: MockUser, isAdmin: boolean, resolve: (t: string, v: string) => QueryResult, rpc?: () => QueryResult): SupabaseMock {
-  const mock = createSupabaseMock({ user, resolve: (c) => resolve(c.table, c.verb), rpc });
+function viewer(user: MockUser, isAdmin: boolean, resolve: (t: string, v: string) => QueryResult): SupabaseMock {
+  const mock = createSupabaseMock({ user, resolve: (c) => resolve(c.table, c.verb) });
   vi.mocked(getCurrentViewerRole).mockResolvedValue({ user: user as never, isAdmin, supabase: mock.client as never } as never);
   return mock;
 }
@@ -76,26 +75,5 @@ describe("admin/comments/bulk POST", () => {
     expect((await res.json()).deleted).toBe(2);
     expect(mock.calls.some((c) => c.table === "article_comments" && c.verb === "delete")).toBe(true);
     expect(mock.calls.some((c) => c.table === "project_comments" && c.verb === "delete")).toBe(true);
-  });
-});
-
-describe("admin/refresh-scores POST", () => {
-  it("401/403 gate", async () => {
-    viewer(null, false, () => ({}));
-    expect((await refreshScores()).status).toBe(401);
-    viewer(adminUser, false, () => ({}));
-    expect((await refreshScores()).status).toBe(403);
-  });
-
-  it("runs recompute_all_scores", async () => {
-    const rpc = vi.fn(() => ({ error: null }));
-    viewer(adminUser, true, () => ({}), rpc);
-    expect((await refreshScores()).status).toBe(200);
-    expect(rpc).toHaveBeenCalled();
-  });
-
-  it("maps an RPC error to 400", async () => {
-    viewer(adminUser, true, () => ({}), () => ({ error: { message: "recompute failed" } }));
-    expect((await refreshScores()).status).toBe(400);
   });
 });

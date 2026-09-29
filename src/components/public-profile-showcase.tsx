@@ -401,9 +401,6 @@ export default function PublicProfileShowcase({
         color: presentation.textColor,
         fontFamily: getProfileFontStack(presentation.fontPreset),
       };
-  const coverFade = followSiteTheme
-    ? "linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--background) 70%, transparent) 100%)"
-    : `linear-gradient(180deg, transparent 0%, ${withAlpha(presentation.surfaceColor, 0.7)} 100%)`;
 
   return (
     <main className="mx-auto max-w-[88rem] px-0 py-4 sm:px-6 sm:py-8">
@@ -411,23 +408,6 @@ export default function PublicProfileShowcase({
         className="relative overflow-hidden rounded-none border-y sm:rounded-hero sm:border"
         style={containerStyle}
       >
-        {profile.cover_url && (
-          <div className="relative aspect-[16/5] w-full overflow-hidden">
-            <OptimizedImage
-              src={profile.cover_url}
-              alt={`${displayName} cover`}
-              fill
-              sizes="(max-width: 768px) 100vw, 1280px"
-              className="object-cover"
-              priority
-            />
-            <div
-              className="absolute inset-x-0 bottom-0 h-1/2"
-              style={{ background: coverFade }}
-              aria-hidden="true"
-            />
-          </div>
-        )}
         <div className="relative p-4 sm:p-6 lg:p-8">
           <section
             className={`relative overflow-hidden rounded-2xl p-4 sm:p-6 lg:flex lg:min-h-[22rem] lg:flex-col lg:justify-center lg:p-8 ${followSiteTheme ? "bg-brand-hero border app-border" : "app-card"}`}
