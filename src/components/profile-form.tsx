@@ -62,6 +62,7 @@ import {
 } from "@/lib/profile-presentation";
 import { apiFetch } from "@/lib/api-client";
 import { normalizeOpenTo, type OpenToOption } from "@/lib/open-to";
+import { formatHourlyRate, isValidHourlyRate } from "@/lib/profile-private";
 import OpenToPicker from "@/components/open-to-picker";
 import { profilePayloadSchema } from "@/lib/validation/profile";
 import type { ProfileCategory } from "@/lib/profile-categories";
@@ -144,6 +145,9 @@ type ProfileRecord = {
   salary_expectations: string | null;
   salary_currency: SalaryCurrency | null;
   salary_public: boolean;
+  hourly_rate: number | null;
+  hourly_rate_currency: SalaryCurrency | null;
+  hourly_rate_public: boolean;
   additional_info: string | null;
   profile_visibility: ProfileSettings | null;
   skill_ids: number[];
@@ -239,6 +243,10 @@ type FormState = {
   salary_expectations: string;
   salary_currency: SalaryCurrency;
   salary_public: boolean;
+  /** Digits only, as typed; empty means no rate. */
+  hourly_rate: string;
+  hourly_rate_currency: SalaryCurrency;
+  hourly_rate_public: boolean;
   additional_info: string;
 };
 
@@ -347,6 +355,9 @@ function serializeProfileDraft({
       salary_expectations: form.salary_expectations.trim(),
       salary_currency: form.salary_currency,
       salary_public: form.salary_public,
+      hourly_rate: form.hourly_rate.trim(),
+      hourly_rate_currency: form.hourly_rate_currency,
+      hourly_rate_public: form.hourly_rate_public,
       additional_info: form.additional_info.trim(),
     },
     skills: [...skills].sort((a, b) => a - b),
@@ -912,6 +923,9 @@ export default function ProfileForm({
     salary_expectations: profile.salary_expectations || "",
     salary_currency: profile.salary_currency || "uah",
     salary_public: Boolean(profile.salary_public),
+    hourly_rate: profile.hourly_rate ? String(profile.hourly_rate) : "",
+    hourly_rate_currency: profile.hourly_rate_currency || profile.salary_currency || "uah",
+    hourly_rate_public: Boolean(profile.hourly_rate_public),
     additional_info: profile.additional_info || "",
   });
   const [skills, setSkills] = useState<number[]>(profile.skill_ids || []);
@@ -1534,6 +1548,14 @@ export default function ProfileForm({
       return;
     }
 
+    const hourlyRate = parseOptionalInteger(form.hourly_rate);
+
+    if (form.hourly_rate.trim() && !isValidHourlyRate(hourlyRate)) {
+      toast.warning(dictionary.openTo.hourlyRateInvalid);
+      setSaving(false);
+      return;
+    }
+
     const profilePayload = {
       username: form.username.trim() || null,
       name: form.name.trim() || null,
@@ -1567,6 +1589,9 @@ export default function ProfileForm({
         ? form.salary_currency
         : null,
       salary_public: form.salary_expectations.trim() ? form.salary_public : false,
+      hourly_rate: hourlyRate,
+      hourly_rate_currency: hourlyRate ? form.hourly_rate_currency : null,
+      hourly_rate_public: hourlyRate ? form.hourly_rate_public : false,
       additional_info: form.additional_info.trim() || null,
       profile_visibility: {
         ...createDefaultProfileVisibility(),
@@ -1752,6 +1777,7 @@ export default function ProfileForm({
         return "lg:col-span-6";
     }
   };
+  const previewHourlyRate = parseOptionalInteger(form.hourly_rate);
   const builderCards = presentation.sectionOrder.map((sectionId) => {
     const title = getSectionOrderLabel(sectionId, dictionary, locale);
 
@@ -1784,6 +1810,15 @@ export default function ProfileForm({
               : locale === "uk"
                 ? "Додайте очікування по оплаті"
                 : "Add salary expectations",
+            ...(isValidHourlyRate(previewHourlyRate)
+              ? [
+                  formatHourlyRate(
+                    { amount: previewHourlyRate, currency: form.hourly_rate_currency },
+                    dictionary.openTo.hourlyRateValue,
+                    locale,
+                  ),
+                ]
+              : []),
             selectedOpenTo.length > 0
               ? selectedOpenTo
                   .map((item) => dictionary.openTo.options[item])
@@ -2112,7 +2147,7 @@ export default function ProfileForm({
           <OpenToPicker value={selectedOpenTo} onChange={setSelectedOpenTo} />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem]">
+        <div className="grid gap-4 md:grid-cols-2">
           <FormSelect
             triggerClassName="w-full"
             value={form.experience_level}
@@ -2125,41 +2160,96 @@ export default function ProfileForm({
               label: getExperienceLevelLabel(option, locale),
             }))}
           />
-
-          <input
-            className="app-input"
-            placeholder={dictionary.forms.salaryExpectations}
-            value={form.salary_expectations}
-            onChange={(e) => update("salary_expectations", e.target.value)}
-          />
-
-          <FormSelect
-            triggerClassName="w-full"
-            value={form.salary_currency}
-            placeholder={getSalaryCurrencyPlaceholder(locale)}
-            onChange={(value) =>
-              update("salary_currency", value as SalaryCurrency)
-            }
-            options={salaryCurrencies.map((option) => ({
-              value: option,
-              label: getSalaryCurrencyLabel(option, locale),
-            }))}
-          />
         </div>
 
-        <label className="flex items-start gap-3 text-sm text-[color:var(--foreground)]">
-          <input
-            type="checkbox"
-            className="app-checkbox mt-0.5"
-            checked={form.salary_public}
-            disabled={!form.salary_expectations.trim()}
-            onChange={(event) => update("salary_public", event.target.checked)}
-          />
-          <span>
-            <span className="font-medium">{dictionary.openTo.salaryPublic}</span>
-            <span className="block text-xs app-muted">{dictionary.openTo.salaryPublicHint}</span>
-          </span>
-        </label>
+        {/* Salary for a job, the hourly rate for freelance: each has its own
+            switch, both off until the owner shows them. */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-3">
+            <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
+              <input
+                className="app-input"
+                placeholder={dictionary.forms.salaryExpectations}
+                aria-label={dictionary.forms.salaryExpectations}
+                value={form.salary_expectations}
+                onChange={(e) => update("salary_expectations", e.target.value)}
+              />
+
+              <FormSelect
+                triggerClassName="w-full"
+                value={form.salary_currency}
+                placeholder={getSalaryCurrencyPlaceholder(locale)}
+                onChange={(value) =>
+                  update("salary_currency", value as SalaryCurrency)
+                }
+                options={salaryCurrencies.map((option) => ({
+                  value: option,
+                  label: getSalaryCurrencyLabel(option, locale),
+                }))}
+              />
+            </div>
+
+            <label className="flex items-start gap-3 text-sm text-[color:var(--foreground)]">
+              <input
+                type="checkbox"
+                className="app-checkbox mt-0.5"
+                checked={form.salary_public}
+                disabled={!form.salary_expectations.trim()}
+                onChange={(event) => update("salary_public", event.target.checked)}
+              />
+              <span>
+                <span className="font-medium">{dictionary.openTo.salaryPublic}</span>
+                <span className="block text-xs app-muted">{dictionary.openTo.salaryPublicHint}</span>
+              </span>
+            </label>
+          </div>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
+              <input
+                className="app-input"
+                inputMode="numeric"
+                placeholder={dictionary.openTo.hourlyRatePlaceholder}
+                aria-label={dictionary.openTo.hourlyRate}
+                aria-describedby="profile-hourly-rate-hint"
+                value={form.hourly_rate}
+                onChange={(e) =>
+                  update("hourly_rate", e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+              />
+
+              <FormSelect
+                triggerClassName="w-full"
+                value={form.hourly_rate_currency}
+                placeholder={getSalaryCurrencyPlaceholder(locale)}
+                onChange={(value) =>
+                  update("hourly_rate_currency", value as SalaryCurrency)
+                }
+                options={salaryCurrencies.map((option) => ({
+                  value: option,
+                  label: getSalaryCurrencyLabel(option, locale),
+                }))}
+              />
+            </div>
+            <p id="profile-hourly-rate-hint" className="text-xs app-muted">
+              {dictionary.openTo.hourlyRateHint}
+            </p>
+
+            <label className="flex items-start gap-3 text-sm text-[color:var(--foreground)]">
+              <input
+                type="checkbox"
+                className="app-checkbox mt-0.5"
+                checked={form.hourly_rate_public}
+                disabled={!form.hourly_rate.trim()}
+                onChange={(event) => update("hourly_rate_public", event.target.checked)}
+              />
+              <span>
+                <span className="font-medium">{dictionary.openTo.hourlyRatePublic}</span>
+                <span className="block text-xs app-muted">{dictionary.openTo.salaryPublicHint}</span>
+              </span>
+            </label>
+          </div>
+        </div>
 
         <div>
           <p className="mb-2 font-semibold text-[color:var(--foreground)]">

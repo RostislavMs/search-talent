@@ -21,6 +21,7 @@ import {
 } from "@/lib/profile-sections";
 import { normalizeOpenTo } from "@/lib/open-to";
 import {
+  isValidHourlyRate,
   PROFILE_PRIVATE_DETAILS_COLUMNS,
   type ProfilePrivateDetailsRow,
 } from "@/lib/profile-private";
@@ -195,7 +196,8 @@ export async function getMyProfile() {
       )
       .eq("profile_id", profile.id)
       .order("started_year", { ascending: false }),
-    // Email, phone and salary: the owner-only table (RLS lets the owner read it).
+    // Email, phone, salary and the hourly rate: the owner-only table (RLS lets
+    // the owner read it).
     supabase
       .from("profile_private_details")
       .select(PROFILE_PRIVATE_DETAILS_COLUMNS)
@@ -204,6 +206,7 @@ export async function getMyProfile() {
   ]);
 
   const privateDetails = (privateDetailsResponse.data ?? null) as ProfilePrivateDetailsRow | null;
+  const hourlyRate = privateDetails?.hourly_rate;
 
   const education =
     educationResponse.error || !educationResponse.data
@@ -312,6 +315,9 @@ export async function getMyProfile() {
     salary_expectations: privateDetails?.salary_expectations ?? null,
     salary_currency: getSalaryCurrency(privateDetails?.salary_currency),
     salary_public: Boolean(privateDetails?.salary_public),
+    hourly_rate: isValidHourlyRate(hourlyRate) ? hourlyRate : null,
+    hourly_rate_currency: getSalaryCurrency(privateDetails?.hourly_rate_currency),
+    hourly_rate_public: Boolean(privateDetails?.hourly_rate_public),
     behance: typeof profile.behance === "string" ? profile.behance : null,
     dribbble: typeof profile.dribbble === "string" ? profile.dribbble : null,
     artstation:

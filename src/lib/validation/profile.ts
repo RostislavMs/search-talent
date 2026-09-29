@@ -9,6 +9,7 @@ import {
 } from "@/lib/profile-sections";
 import { normalizeOpenTo, openToOptions } from "@/lib/open-to";
 import { normalizeProfileSettings } from "@/lib/profile-presentation";
+import { isValidHourlyRate } from "@/lib/profile-private";
 import { isValidPublicUrl } from "@/lib/url-validation";
 
 function normalizeOptionalString(value: unknown) {
@@ -87,6 +88,28 @@ const telegramSchema = z
   .transform(normalizeOptionalString)
   .refine((value) => value === null || /^@?[a-zA-Z0-9_]{5,32}$/.test(value), {
     message: "Invalid Telegram username",
+  });
+
+/**
+ * Hourly rate, "from N per hour": a whole number, or null when the field is
+ * empty. The form sends a number; a string of digits is accepted too.
+ */
+const hourlyRateSchema = z
+  .union([z.number(), z.string(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      return /^\d+$/.test(trimmed) ? Number(trimmed) : Number.NaN;
+    }
+
+    return typeof value === "number" ? value : null;
+  })
+  .refine((value) => value === null || isValidHourlyRate(value), {
+    message: "Invalid hourly rate",
   });
 
 /** «Відкрито до…»: known values, each once, in the canonical order. */
@@ -230,6 +253,12 @@ export const profilePayloadSchema = z.object({
     .transform((value) => (value && salaryCurrencies.includes(value) ? value : null)),
   // Salary expectations are private unless the owner shows them on the page.
   salary_public: z.boolean().default(false),
+  hourly_rate: hourlyRateSchema,
+  hourly_rate_currency: z
+    .union([z.enum(salaryCurrencies), z.null(), z.undefined()])
+    .transform((value) => (value && salaryCurrencies.includes(value) ? value : null)),
+  // The same rule as salary: hidden until the owner shows it.
+  hourly_rate_public: z.boolean().default(false),
   additional_info: optionalText("Additional info", 5000),
   profile_visibility: visibilitySchema,
   skill_ids: z

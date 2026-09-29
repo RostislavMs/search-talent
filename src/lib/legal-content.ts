@@ -133,7 +133,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "This Privacy Policy explains what data SearchTalent handles, why it is needed, who processes it, and the rights you have over your information.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "September 28, 2026",
+      lastUpdatedValue: "September 29, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -151,7 +151,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Account and authentication data: email address and login identifiers, including data from GitHub if you sign in or connect a repository through it.",
             "Profile and contact details: name, username, headline, bio, location, avatar and cover image, and any contact details or links you add (email, phone, Telegram, website, GitHub, LinkedIn, and other social or portfolio links).",
-            "Professional information: skills, languages, work experience, education, certificates (including any files you upload), experience level, what you are open to (freelance, a job, an internship, collaboration, mentoring) and when you last confirmed it, preferred work formats, and salary expectations if you choose to provide them.",
+            "Professional information: skills, languages, work experience, education, certificates (including any files you upload), experience level, what you are open to (freelance, a job, an internship, collaboration, mentoring) and when you last confirmed it, preferred work formats, and salary expectations and an hourly rate if you choose to provide them.",
             "Opening someone's contacts: when you are signed in and press “Contact” on another person's page, we record that your account opened that profile's contacts and when.",
             "Content and community activity: projects, articles, polls and your poll responses, comments, reactions, votes, follows, bookmarks, badges, notifications, and your position on the leaderboard.",
             "Feedback you send: the name, email, and message you submit through the feedback form.",
@@ -187,7 +187,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "Much of what you add is intended to be public — your profile, projects, articles, polls, and comments — and you control which profile sections are visible through your profile visibility settings.",
             "Other information, such as authentication data, your email, feedback submissions, and internal technical records, is used only to operate the service and is not made public.",
-            "The email and phone you add to your profile are never public: signed-in people see them only after pressing “Contact” on your page. Salary expectations are visible only to you unless you turn on “Show on my page”. What you are open to is public, as is the date you last confirmed it.",
+            "The email and phone you add to your profile are never public: signed-in people see them only after pressing “Contact” on your page. Salary expectations and the hourly rate are visible only to you until you turn on showing them on your page, each with its own switch. What you are open to is public, as is the date you last confirmed it.",
           ],
         },
         {
@@ -446,7 +446,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ця Політика конфіденційності пояснює, які дані обробляє SearchTalent, навіщо вони потрібні, хто їх обробляє та які права ви маєте щодо своєї інформації.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "28 вересня 2026",
+      lastUpdatedValue: "29 вересня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -464,7 +464,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Дані акаунта й авторизації: email та ідентифікатори входу, зокрема дані з GitHub, якщо ви входите чи під'єднуєте репозиторій через нього.",
             "Профіль і контакти: ім'я, username, заголовок, біографія, локація, аватар і обкладинка, а також контакти й посилання, які ви додаєте (email, телефон, Telegram, вебсайт, GitHub, LinkedIn та інші соц- чи портфоліо-посилання).",
-            "Професійна інформація: навички, мови, досвід роботи, освіта, сертифікати (зокрема завантажені файли), рівень досвіду, до чого ви відкриті (фриланс, робота, стажування, співпраця, менторство) і коли востаннє це підтвердили, бажані формати роботи, а також зарплатні очікування, якщо ви їх вказуєте.",
+            "Професійна інформація: навички, мови, досвід роботи, освіта, сертифікати (зокрема завантажені файли), рівень досвіду, до чого ви відкриті (фриланс, робота, стажування, співпраця, менторство) і коли востаннє це підтвердили, бажані формати роботи, а також зарплатні очікування й погодинна ставка, якщо ви їх вказуєте.",
             "Відкриття чужих контактів: коли ви в системі й натискаєте «Зв'язатися» на сторінці іншої людини, ми записуємо, що ваш акаунт відкрив контакти цього профілю, і коли.",
             "Контент і активність у спільноті: проєкти, статті, опитування та ваші відповіді на них, коментарі, реакції, голоси, підписки, закладки, бейджі, сповіщення й позиція в рейтингу.",
             "Звернення через форму зворотного зв'язку: ім'я, email і повідомлення, які ви надсилаєте.",
@@ -500,7 +500,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "Значна частина того, що ви додаєте, за задумом є публічною — профіль, проєкти, статті, опитування й коментарі, — і ви керуєте тим, які секції профілю видно, через налаштування видимості профілю.",
             "Інша інформація, як-от дані авторизації, ваш email, звернення через форму зворотного зв'язку та внутрішні технічні записи, використовується лише для роботи сервісу й не стає публічною.",
-            "Пошта й телефон, які ви додаєте в профіль, ніколи не публічні: люди в системі бачать їх лише після того, як натиснуть «Зв'язатися» на вашій сторінці. Зарплатні очікування бачите лише ви, доки не ввімкнете «Показувати на сторінці». Те, до чого ви відкриті, публічне, як і дата, коли ви востаннє це підтвердили.",
+            "Пошта й телефон, які ви додаєте в профіль, ніколи не публічні: люди в системі бачать їх лише після того, як натиснуть «Зв'язатися» на вашій сторінці. Зарплатні очікування й погодинну ставку бачите лише ви, доки не ввімкнете їхній показ на сторінці, окремо для кожного. Те, до чого ви відкриті, публічне, як і дата, коли ви востаннє це підтвердили.",
           ],
         },
         {
