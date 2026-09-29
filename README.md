@@ -41,7 +41,6 @@ search-talent/
 │   │   │   ├── projects/             Project catalogue + create/edit
 │   │   │   ├── articles/             Article feed + composer + edit
 │   │   │   ├── polls/                 Poll feed + composer + edit
-│   │   │   ├── search/               Global search results
 │   │   │   ├── u/[username]/         Public profile, /projects, /articles, /polls
 │   │   │   ├── profile/edit/         Profile editor (sections, presentation, GitHub link)
 │   │   │   ├── notifications/        Notifications inbox
@@ -57,7 +56,7 @@ search-talent/
 │   │   ├── project-media/            Public proxy for project media URLs
 │   │   ├── layout.tsx                Root layout, fonts, metadata defaults
 │   │   ├── sitemap.ts                Dynamic XML sitemap
-│   │   ├── robots.ts                 robots.txt generator
+│   │   ├── robots.txt/               robots.txt route handler
 │   │   └── globals.css               Tailwind v4 setup + design tokens
 │   ├── components/                   Feature components (server + client)
 │   │   └── ui/                       Primitives: Button, FormSelect, OptimizedImage, …
@@ -172,7 +171,6 @@ search-talent/
 | `/polls`, `/polls/[slug]` | Poll feed and detail |
 | `/u/[username]` | Public profile |
 | `/u/[username]/projects`, `/u/[username]/articles`, `/u/[username]/polls` | Per-user collections (own + co-authored) |
-| `/search` | Global search |
 | `/rating-guide` | How the rating system works |
 | `/about`, `/faq`, `/feedback` | Marketing & support |
 | `/terms`, `/privacy`, `/cookies`, `/legal` | Legal hub |
@@ -254,7 +252,6 @@ search-talent/
 | POST | `/api/projects/[id]/sync-github` | Refresh from GitHub repo |
 | POST | `/api/projects/[id]/unlink-github` | Detach GitHub link |
 | POST | `/api/vote` | Project up/down votes |
-| GET | `/api/top-projects` | Leaderboards |
 
 ### Articles
 
@@ -290,8 +287,7 @@ search-talent/
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/search` | Global search |
-| GET | `/api/top-creators` | Leaderboards |
+| GET | `/api/search` | Talent and project discovery |
 | GET | `/api/saved-searches` | Saved talent filters |
 | GET/POST | `/api/reactions` | Emoji reactions |
 | GET | `/api/mentions/suggest` | Mention autocomplete |
@@ -321,7 +317,6 @@ search-talent/
 | POST | `/api/admin/bulk` | Bulk moderation actions |
 | GET/POST | `/api/admin/users` / `[id]` | User management |
 | GET | `/api/admin/feedback` / `[id]` | Feedback inbox |
-| POST | `/api/admin/refresh-scores` | Recalculate ratings |
 
 ---
 

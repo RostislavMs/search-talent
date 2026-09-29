@@ -34,7 +34,6 @@ The following sections are private or non-content and should not be cited:
 - `/*/articles/new`, `/*/articles/edit/*` — content creation (moderation lives in `/admin/content/articles`)
 - `/*/polls/new`, `/*/polls/edit/*` — content creation forms
 - `/*?filter=*`, `/*?sort=*`, `/*?page=*`, `/*?query=*`, `/*?tag=*` — filter/pagination variants of indexable pages
-- `/search` — internal search results
 
 ## Structured data
 

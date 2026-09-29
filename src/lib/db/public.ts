@@ -120,7 +120,6 @@ type PublicProfileRow = {
   headline: string | null;
   bio: string | null;
   avatar_url: string | null;
-  cover_url: string | null;
   country_id: number | null;
   city: string | null;
   category_id: number | null;
@@ -438,7 +437,7 @@ export async function getPublicProfilePageData(
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, username, name, headline, bio, avatar_url, cover_url, country_id, city, category_id, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, telegram_username, preferred_contact_method, experience_level, experience_years, open_to, work_formats, additional_info, profile_visibility, moderation_status, email_verified",
+      "id, user_id, username, name, headline, bio, avatar_url, country_id, city, category_id, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, telegram_username, preferred_contact_method, experience_level, experience_years, open_to, work_formats, additional_info, profile_visibility, moderation_status, email_verified",
     )
     .eq("username", username)
     .maybeSingle();
