@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSupabaseMock, type QueryCall, type QueryResult } from "./helpers/supabase-mock";
 
+const adminRpc = vi.hoisted(() => ({ current: null as null | ReturnType<typeof vi.fn> }));
+
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => (adminRpc.current ? { rpc: adminRpc.current } : null),
+}));
 
 import { ensureProfileForUser } from "@/lib/db/profile";
 
@@ -14,6 +19,7 @@ function client(resolve: (call: QueryCall) => QueryResult, rpc = vi.fn(() => ({}
 
 afterEach(() => {
   vi.clearAllMocks();
+  adminRpc.current = null;
 });
 
 describe("ensureProfileForUser", () => {
@@ -85,6 +91,23 @@ describe("ensureProfileForUser", () => {
     const update = mock.calls.find((call) => call.verb === "update");
     expect(update?.payload).toMatchObject({ email_verified: true });
     expect(rpc).toHaveBeenCalledWith("award_badges_for_user", { p_user_id: USER_ID });
+  });
+
+  it("awards the email badge through the service client when there is one", async () => {
+    adminRpc.current = vi.fn(async () => ({ error: null }));
+    const { rpc, supabase } = client((call) =>
+      call.verb === "select"
+        ? { data: { name: "Olena", username: "olena.koval", avatar_url: null, email_verified: false } }
+        : {},
+    );
+
+    await ensureProfileForUser(supabase, {
+      id: USER_ID,
+      email_confirmed_at: "2026-09-27T10:00:00Z",
+    });
+
+    expect(adminRpc.current).toHaveBeenCalledWith("award_badges_for_user", { p_user_id: USER_ID });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("leaves the mark alone when it is already on or the email is unconfirmed", async () => {

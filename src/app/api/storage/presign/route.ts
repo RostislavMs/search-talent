@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = await dbRateLimit(supabase, `presign:${user.id}`, 60, 60_000);
+  const limited = await dbRateLimit(`presign:${user.id}`, 60, 60_000);
   if (limited) {
     return limited;
   }

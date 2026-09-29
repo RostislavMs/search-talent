@@ -1,4 +1,5 @@
 ﻿import { awardSqlBadgesForUser } from "@/lib/db/badges";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { generateTemporaryUsername } from "@/lib/username";
 import type {
@@ -100,7 +101,9 @@ async function syncEmailVerified(supabase: ServerSupabase, userId: string) {
   if (!error) {
     // The `verified_email` badge is awarded right away rather than on the next
     // unrelated trigger. Failures are logged inside and must not break the page.
-    await awardSqlBadgesForUser(supabase, userId);
+    // The award RPC takes any user id, so browsers cannot call it; the server
+    // does, with the service key.
+    await awardSqlBadgesForUser(createAdminClient() ?? supabase, userId);
   }
 }
 
