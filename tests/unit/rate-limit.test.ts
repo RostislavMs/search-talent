@@ -11,8 +11,15 @@ vi.mock("next/server", () => ({
   },
 }));
 
+const adminClient = vi.hoisted(() => ({ current: null as unknown }));
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => adminClient.current,
+}));
+
 beforeEach(async () => {
   vi.resetModules();
+  adminClient.current = null;
 });
 
 async function loadRateLimit() {
@@ -27,17 +34,19 @@ async function loadDbRateLimit() {
 
 type StubRpcResult = { data?: unknown; error?: unknown };
 
-function makeStubClient(result: StubRpcResult | Error) {
-  return {
+// The limiter talks to Postgres through the service-role client only; each
+// test installs the stub as that client.
+function useStubAdminClient(result: StubRpcResult | Error) {
+  const client = {
     rpc: vi.fn(async () => {
       if (result instanceof Error) {
         throw result;
       }
       return result;
     }),
-  } as unknown as Parameters<
-    Awaited<ReturnType<typeof loadDbRateLimit>>
-  >[0];
+  };
+  adminClient.current = client;
+  return client;
 }
 
 describe("rateLimit", () => {
@@ -91,22 +100,22 @@ describe("rateLimit", () => {
 describe("dbRateLimit", () => {
   it("returns null when the RPC reports the call is allowed (returns 0)", async () => {
     const dbRateLimit = await loadDbRateLimit();
-    const client = makeStubClient({ data: 0, error: null });
+    const client = useStubAdminClient({ data: 0, error: null });
 
-    const result = await dbRateLimit(client, "vote:user-1", 20, 60_000);
+    const result = await dbRateLimit("vote:user-1", 20, 60_000);
     expect(result).toBeNull();
+    expect(client.rpc).toHaveBeenCalledWith("check_rate_limit", {
+      p_key: "vote:user-1",
+      p_limit: 20,
+      p_window_ms: 60_000,
+    });
   });
 
   it("returns a 429 with Retry-After when the RPC reports a positive wait", async () => {
     const dbRateLimit = await loadDbRateLimit();
-    const client = makeStubClient({ data: 45, error: null });
+    useStubAdminClient({ data: 45, error: null });
 
-    const result = (await dbRateLimit(
-      client,
-      "vote:user-1",
-      20,
-      60_000,
-    )) as unknown as {
+    const result = (await dbRateLimit("vote:user-1", 20, 60_000)) as unknown as {
       status: number;
       headers: Record<string, string>;
     } | null;
@@ -118,22 +127,30 @@ describe("dbRateLimit", () => {
 
   it("falls back to the in-memory limiter when the RPC errors out", async () => {
     const dbRateLimit = await loadDbRateLimit();
-    const client = makeStubClient({
+    useStubAdminClient({
       data: null,
       error: { message: "function check_rate_limit does not exist" },
     });
 
     const key = `fallback:${Math.random()}`;
-    expect(await dbRateLimit(client, key, 1, 60_000)).toBeNull();
-    expect(await dbRateLimit(client, key, 1, 60_000)).not.toBeNull();
+    expect(await dbRateLimit(key, 1, 60_000)).toBeNull();
+    expect(await dbRateLimit(key, 1, 60_000)).not.toBeNull();
   });
 
   it("falls back when the RPC throws", async () => {
     const dbRateLimit = await loadDbRateLimit();
-    const client = makeStubClient(new Error("network"));
+    useStubAdminClient(new Error("network"));
 
     const key = `throw:${Math.random()}`;
-    expect(await dbRateLimit(client, key, 1, 60_000)).toBeNull();
-    expect(await dbRateLimit(client, key, 1, 60_000)).not.toBeNull();
+    expect(await dbRateLimit(key, 1, 60_000)).toBeNull();
+    expect(await dbRateLimit(key, 1, 60_000)).not.toBeNull();
+  });
+
+  it("uses the in-memory limiter when there is no service key", async () => {
+    const dbRateLimit = await loadDbRateLimit();
+
+    const key = `no-admin:${Math.random()}`;
+    expect(await dbRateLimit(key, 1, 60_000)).toBeNull();
+    expect(await dbRateLimit(key, 1, 60_000)).not.toBeNull();
   });
 });

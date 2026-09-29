@@ -136,7 +136,7 @@ export async function POST(
 
   // Throttle comment creation: without this, one account can loop-post
   // comments to flood the DB and spam notifications at a targeted user.
-  const limited = await dbRateLimit(supabase, `comment:${user.id}`, 10, 60_000);
+  const limited = await dbRateLimit(`comment:${user.id}`, 10, 60_000);
   if (limited) {
     return limited;
   }

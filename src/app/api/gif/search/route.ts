@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = await dbRateLimit(supabase, `gif-search:${user.id}`, 60, 60_000);
+  const limited = await dbRateLimit(`gif-search:${user.id}`, 60, 60_000);
   if (limited) {
     return limited;
   }

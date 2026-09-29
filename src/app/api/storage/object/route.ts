@@ -35,7 +35,6 @@ export async function DELETE(request: Request) {
   }
 
   const limited = await dbRateLimit(
-    supabase,
     `storage-delete:${user.id}`,
     60,
     60_000,

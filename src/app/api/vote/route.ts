@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const limited = await dbRateLimit(supabase, `vote:${user.id}`, 20, 60_000);
+  const limited = await dbRateLimit(`vote:${user.id}`, 20, 60_000);
 
   if (limited) {
     return limited;

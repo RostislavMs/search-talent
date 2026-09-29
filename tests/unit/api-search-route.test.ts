@@ -7,10 +7,12 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => holder.mock!.client) }));
 vi.mock("@/lib/db/search", () => ({ searchDiscovery: vi.fn(async () => ({ projects: [], users: [], totals: { projects: 0, users: 0 } })) }));
 vi.mock("@/lib/db/affinity", () => ({ loadViewerAffinity: vi.fn(async () => null) }));
+vi.mock("@/lib/rate-limit", () => ({ dbRateLimit: vi.fn(async () => null) }));
 
 import { GET } from "@/app/api/search/route";
 import { loadViewerAffinity } from "@/lib/db/affinity";
 import { searchDiscovery } from "@/lib/db/search";
+import { dbRateLimit } from "@/lib/rate-limit";
 
 afterEach(() => {
   holder.mock = null;
@@ -63,5 +65,25 @@ describe("GET /api/search", () => {
       holder.mock.client,
       "viewer-1",
     );
+  });
+
+  it("limits requests per address", async () => {
+    holder.mock = createSupabaseMock({ resolve: () => ({}) });
+    await GET(new Request("http://test/api/search?q=react", { headers: { "x-forwarded-for": "203.0.113.7, 10.0.0.1" } }));
+    expect(vi.mocked(dbRateLimit)).toHaveBeenCalledWith("search:203.0.113.7", 60, 60_000);
+  });
+
+  it("returns the 429 without querying when the address is over the limit", async () => {
+    holder.mock = createSupabaseMock({ resolve: () => ({}) });
+    vi.mocked(dbRateLimit).mockResolvedValueOnce(new Response(null, { status: 429 }) as never);
+    const res = await GET(new Request("http://test/api/search?q=react", { headers: { "x-real-ip": "203.0.113.8" } }));
+    expect(res.status).toBe(429);
+    expect(vi.mocked(searchDiscovery)).not.toHaveBeenCalled();
+  });
+
+  it("does not share one bucket between requests without an address", async () => {
+    holder.mock = createSupabaseMock({ resolve: () => ({}) });
+    await GET(new Request("http://test/api/search?q=react"));
+    expect(vi.mocked(dbRateLimit)).not.toHaveBeenCalled();
   });
 });

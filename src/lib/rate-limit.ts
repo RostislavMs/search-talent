@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { createAdminClient } from "@/lib/supabase/admin";
 
 type RateLimitEntry = {
   count: number;
@@ -76,18 +77,27 @@ export function rateLimit(
  * `database/2026-05-20-rate-limits.sql`. The RPC returns the seconds the
  * caller must wait if blocked, or `0` if the request fits in the window.
  *
- * If the RPC is missing or errors out (e.g. the migration has not been
- * applied yet) we fall back to the in-memory limiter so legit users are
- * never silently allowed past the gate.
+ * The RPC runs through the service-role client only. It takes the key as an
+ * argument, so a browser that could call it directly could spend someone
+ * else's quota (`comment:<their id>`) and lock them out; since
+ * `database/2026-09-29-lock-down-rpc-grants.sql` only the server can.
+ *
+ * Without the service key, or if the RPC errors out, we fall back to the
+ * in-memory limiter so legit users are never silently allowed past the gate.
  */
 export async function dbRateLimit(
-  supabase: SupabaseClient,
   key: string,
   limit: number,
   windowMs: number,
 ): Promise<NextResponse | null> {
+  const admin = createAdminClient();
+
+  if (!admin) {
+    return rateLimit(key, limit, windowMs);
+  }
+
   try {
-    const { data, error } = await supabase.rpc("check_rate_limit", {
+    const { data, error } = await admin.rpc("check_rate_limit", {
       p_key: key,
       p_limit: limit,
       p_window_ms: windowMs,

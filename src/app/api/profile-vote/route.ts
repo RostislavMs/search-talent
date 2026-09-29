@@ -32,7 +32,6 @@ export async function POST(request: Request) {
   }
 
   const limited = await dbRateLimit(
-    supabase,
     `profile-vote:${user.id}`,
     20,
     60_000,

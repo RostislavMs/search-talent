@@ -3,7 +3,9 @@ import { loadViewerAffinity } from "@/lib/db/affinity";
 import { searchDiscovery } from "@/lib/db/search";
 import { normalizeOpenTo, openToFromEmploymentTypes } from "@/lib/open-to";
 import { normalizeProjectKind } from "@/lib/projects";
+import { dbRateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
+import { getClientIp } from "@/lib/view-tracking";
 
 function parseNumber(value: string | null) {
   if (!value) {
@@ -40,7 +42,20 @@ function parseStringArray(value: string | null) {
   )];
 }
 
+// Open to guests, and every call runs several queries. The discovery page sends
+// one request per filter change, so 60 a minute per address is far above a
+// person clicking and well below a scraper.
+const SEARCH_LIMIT_PER_MINUTE = 60;
+
 export async function GET(request: Request) {
+  const ip = getClientIp(request.headers);
+  if (ip) {
+    const limited = await dbRateLimit(`search:${ip}`, SEARCH_LIMIT_PER_MINUTE, 60_000);
+    if (limited) {
+      return limited;
+    }
+  }
+
   const { searchParams } = new URL(request.url);
   const supabase = await createClient();
   const sort = searchParams.get("sort") || undefined;

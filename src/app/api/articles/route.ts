@@ -47,7 +47,6 @@ export async function POST(request: Request) {
   // Throttle content creation (shared across projects/articles/polls) to stop a
   // single account from flooding the public feeds and follower notifications.
   const limited = await dbRateLimit(
-    context.supabase,
     `create-content:${context.user.id}`,
     5,
     60_000,
