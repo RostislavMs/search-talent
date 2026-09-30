@@ -701,6 +701,52 @@ export function buildOrganizationSchema() {
   };
 }
 
+/**
+ * A company page (hiring 8.1). The entity is the company itself, so `url` is
+ * its own website when it has one and the SearchTalent page is
+ * `mainEntityOfPage`. Only emitted for pages that are indexable (verified).
+ */
+export function buildCompanySchema({
+  type,
+  name,
+  pageUrl,
+  website,
+  logoUrl,
+  description,
+  city,
+  countryName,
+}: {
+  type: "company" | "school";
+  name: string;
+  pageUrl: string;
+  website: string | null;
+  logoUrl: string | null;
+  description: string | null;
+  city: string | null;
+  countryName: string | null;
+}) {
+  const address =
+    city || countryName
+      ? {
+          "@type": "PostalAddress" as const,
+          ...(city ? { addressLocality: city } : {}),
+          ...(countryName ? { addressCountry: countryName } : {}),
+        }
+      : null;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": type === "school" ? "EducationalOrganization" : "Organization",
+    name,
+    url: website || pageUrl,
+    mainEntityOfPage: pageUrl,
+    ...(logoUrl ? { logo: logoUrl } : {}),
+    ...(description ? { description: truncateText(description, 500) } : {}),
+    ...(website ? { sameAs: [website] } : {}),
+    ...(address ? { address } : {}),
+  };
+}
+
 export function buildWebSiteSchema() {
   const siteUrl = getSiteUrl();
   return {

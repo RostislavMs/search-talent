@@ -99,6 +99,46 @@ describe("POST /api/storage/presign", () => {
     expect(res.status).toBe(403);
   });
 
+  describe("company logo", () => {
+    const COMPANY_ID = "33333333-3333-4333-8333-333333333333";
+    const logo = {
+      scope: "company-logo",
+      fileName: "logo.png",
+      contentType: "image/png",
+      fileSize: 1024,
+      companyId: COMPANY_ID,
+    };
+
+    it("400 without a company id", async () => {
+      setMock(authUser);
+      expect((await POST(req({ ...logo, companyId: undefined }))).status).toBe(400);
+    });
+
+    it("415 for SVG, which can carry script", async () => {
+      setMock(authUser);
+      expect((await POST(req({ ...logo, contentType: "image/svg+xml" }))).status).toBe(415);
+    });
+
+    it("413 above 5 MB", async () => {
+      setMock(authUser);
+      expect((await POST(req({ ...logo, fileSize: 6 * 1024 * 1024 }))).status).toBe(413);
+    });
+
+    it("403 for a recruiter or someone outside the team", async () => {
+      setMock(authUser, (table) => (table === "company_members" ? { data: { role: "recruiter" } } : {}));
+      expect((await POST(req(logo))).status).toBe(403);
+      setMock(authUser, () => ({ data: null }));
+      expect((await POST(req(logo))).status).toBe(403);
+    });
+
+    it("signs the company's stable key for an admin of the page", async () => {
+      setMock(authUser, (table) => (table === "company_members" ? { data: { role: "admin" } } : {}));
+      const res = await POST(req(logo));
+      expect(res.status).toBe(200);
+      expect((await res.json()).storagePath).toBe(`companies/${COMPANY_ID}/logo`);
+    });
+  });
+
   it("signs the upload for a valid avatar request", async () => {
     setMock(authUser);
     const res = await POST(req(avatar));

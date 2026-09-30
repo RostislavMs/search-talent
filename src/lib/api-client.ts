@@ -18,7 +18,12 @@
 
 export type ApiResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: string; status: number };
+  /**
+   * `code` is a stable machine-readable reason when the route sends one
+   * (e.g. "slug_taken"), so the caller can show its own localized message
+   * instead of the English `error`.
+   */
+  | { ok: false; error: string; status: number; code?: string };
 
 type ApiFetchOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -56,7 +61,7 @@ export async function apiFetch<T = unknown>(
   }
 
   const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string; details?: string })
+    | (T & { error?: string; details?: string; code?: string })
     | null;
 
   if (!response.ok) {
@@ -72,6 +77,7 @@ export async function apiFetch<T = unknown>(
       ok: false,
       error: details ? `${baseError} — ${details}` : baseError,
       status: response.status,
+      ...(payload && typeof payload.code === "string" ? { code: payload.code } : {}),
     };
   }
 

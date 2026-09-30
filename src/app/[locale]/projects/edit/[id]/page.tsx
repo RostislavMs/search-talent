@@ -17,6 +17,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { buildLoginHref } from "@/lib/auth/redirect";
 import { getMyProjectById } from "@/lib/db/projects";
 import { loadCoAuthorsForEditor } from "@/lib/db/co-authors";
+import { loadProjectBudget, loadProjectCompanyLinks } from "@/lib/db/project-companies";
 import { buildProjectPath } from "@/lib/projects";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -87,7 +88,20 @@ export default async function ProjectEditPage({
     );
   }
 
-  const coAuthors = await loadCoAuthorsForEditor(supabase, "project", project.id);
+  const [coAuthors, budget, companyLinks] = await Promise.all([
+    loadCoAuthorsForEditor(supabase, "project", project.id),
+    loadProjectBudget(supabase, project.id),
+    loadProjectCompanyLinks(supabase, project.id),
+  ]);
+  const companies = companyLinks.map((link) => ({
+    id: link.companyId,
+    slug: link.slug,
+    name: link.name,
+    logoUrl: link.logoUrl,
+    verified: link.verified,
+    status: link.status,
+    confirmed: link.confirmed,
+  }));
   const publicHref = buildProjectPath(project.id, project.slug || undefined);
 
   // Get the owner's username to link back to their projects
@@ -104,7 +118,7 @@ export default async function ProjectEditPage({
   return (
     <main className="mx-auto max-w-7xl px-0 py-10 sm:px-6">
       <CreateProjectForm
-        project={{ ...project, coAuthors }}
+        project={{ ...project, coAuthors, budget, companies }}
         sidebarHeader={
           <div className="space-y-3">
             <h1 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">

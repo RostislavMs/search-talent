@@ -9,6 +9,7 @@ import {
   NEWS_CATEGORY_SLUG,
   getOwnLocales,
 } from "@/lib/articles";
+import { buildCompanyPath } from "@/lib/companies";
 import { normalizeProjectKind } from "@/lib/projects";
 import { createLocalePath, locales, type Locale } from "@/lib/i18n/config";
 import {
@@ -38,6 +39,7 @@ export const SITEMAP_IDS = [
   "projects",
   "articles",
   "polls",
+  "companies",
   "project-tags",
   "project-types",
   "talent-skills",
@@ -99,6 +101,7 @@ const staticRoutes: Array<{
   { path: "/projects/tag", changeFrequency: "weekly", priority: 0.6, listing: true },
   { path: "/polls", changeFrequency: "weekly", priority: 0.8, listing: true },
   { path: "/about", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/for-companies", changeFrequency: "monthly", priority: 0.5 },
   { path: "/rating-guide", changeFrequency: "monthly", priority: 0.5 },
   { path: "/faq", changeFrequency: "monthly", priority: 0.5 },
   { path: "/contacts", changeFrequency: "yearly", priority: 0.4 },
@@ -365,6 +368,26 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     return (data || []).flatMap((poll) =>
       buildEntries(baseUrl, `/polls/${poll.slug}`, {
         lastModified: new Date(poll.updated_at),
+        changeFrequency: "weekly",
+        priority: 0.6,
+      }),
+    );
+  }
+
+  if (id === "companies") {
+    // Only verified pages are indexable (isCompanyIndexable), so only they are
+    // listed. Before the companies migration the query fails and lists nothing.
+    const { data } = await supabase
+      .from("companies")
+      .select("slug, updated_at")
+      .eq("moderation_status", "approved")
+      .not("verified_at", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(SITEMAP_PAGE_SIZE);
+
+    return (data || []).flatMap((company) =>
+      buildEntries(baseUrl, buildCompanyPath(company.slug), {
+        lastModified: new Date(company.updated_at),
         changeFrequency: "weekly",
         priority: 0.6,
       }),

@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   buildNotificationHref,
   describeNotification,
+  getNotificationCategory,
+  resolveActorName,
+  resolveNotificationEmoji,
 } from "@/lib/notifications-presentation";
 import type { NotificationItem } from "@/lib/constants/notifications";
+import { dictionaries } from "@/lib/i18n/dictionaries";
 
 const baseDict = {
   someone: "Someone",
@@ -137,5 +141,111 @@ describe("buildNotificationHref", () => {
   it("falls back to /notifications when target type is unknown", () => {
     const item = makeItem({ targetType: null, targetId: null, metadata: {} });
     expect(buildNotificationHref(item, "en")).toBe("/en/notifications");
+  });
+
+  it("sends a company invitation to the page where it is answered", () => {
+    const item = makeItem({
+      type: "company_invite",
+      targetType: "company",
+      metadata: { companySlug: "acme", companyName: "Acme", invitationId: "m1" },
+    });
+    expect(buildNotificationHref(item, "uk")).toBe("/uk/my-space/companies");
+  });
+
+  it("opens the company page for the other company events", () => {
+    for (const type of ["company_invite_accepted", "company_verified"] as const) {
+      const item = makeItem({ type, targetType: "company", metadata: { companySlug: "acme" } });
+      expect(buildNotificationHref(item, "en")).toBe("/en/companies/acme");
+    }
+    const noSlug = makeItem({ type: "company_verified", targetType: "company", metadata: {} });
+    expect(buildNotificationHref(noSlug, "en")).toBe("/en/my-space/companies");
+  });
+
+  it("sends a removed company page to the list of companies", () => {
+    const item = makeItem({
+      type: "moderation_decision",
+      targetType: "company",
+      metadata: { moderationStatus: "removed", contentKind: "company", companySlug: "acme" },
+    });
+    expect(buildNotificationHref(item, "en")).toBe("/en/my-space/companies");
+  });
+});
+
+describe("company notifications", () => {
+  const dict = dictionaries.en.notifications;
+
+  it("names the company in every event", () => {
+    const metadata = { companyName: "Acme" };
+    expect(describeNotification(makeItem({ type: "company_invite", metadata }), dict)).toBe(
+      "invited you to the “Acme” team",
+    );
+    expect(
+      describeNotification(makeItem({ type: "company_invite_accepted", metadata }), dict),
+    ).toBe("accepted your invitation to the “Acme” team");
+    expect(
+      describeNotification(makeItem({ type: "company_invite_declined", metadata }), dict),
+    ).toBe("declined your invitation to the “Acme” team");
+  });
+
+  it("makes the page the subject of the verified-mark message", () => {
+    const item = makeItem({
+      type: "company_verified",
+      actorUserId: null,
+      metadata: { companyName: "Acme" },
+    });
+    expect(resolveActorName(item, dict)).toBe("Acme");
+    expect(describeNotification(item, dict)).toBe("now has the “Verified company” mark");
+    expect(resolveNotificationEmoji(item)).toBe("✅");
+  });
+
+  it("puts the page's name into a moderation decision about it", () => {
+    const item = makeItem({
+      type: "moderation_decision",
+      targetType: "company",
+      metadata: { moderationStatus: "restricted", contentKind: "company", contentTitle: "Acme" },
+    });
+    expect(describeNotification(item, dict)).toBe("restricted the “Acme” company page");
+  });
+
+  it("describes leaving, removal and project decisions", () => {
+    const metadata = { companyName: "Acme", projectTitle: "Лендинг", projectId: "p1", projectSlug: "landing", companyId: "c1" };
+    expect(describeNotification(makeItem({ type: "company_member_left", metadata }), dict)).toBe(
+      "left the “Acme” team",
+    );
+    expect(describeNotification(makeItem({ type: "company_member_removed", metadata }), dict)).toBe(
+      "removed you from the “Acme” team",
+    );
+    expect(describeNotification(makeItem({ type: "company_project_request", metadata }), dict)).toBe(
+      "asks to show the project “Лендинг” on the “Acme” page",
+    );
+    expect(describeNotification(makeItem({ type: "company_project_confirmed", metadata }), dict)).toBe(
+      "confirmed your project “Лендинг” for “Acme”",
+    );
+    expect(
+      buildNotificationHref(makeItem({ type: "company_project_request", targetType: "company", metadata }), "uk"),
+    ).toBe("/uk/companies/edit/c1");
+    expect(
+      buildNotificationHref(makeItem({ type: "company_project_declined", targetType: "project", metadata }), "en"),
+    ).toBe("/en/projects/landing");
+  });
+
+  it("files every company event under the companies filter", () => {
+    for (const type of [
+      "company_invite",
+      "company_invite_accepted",
+      "company_invite_declined",
+      "company_verified",
+    ] as const) {
+      expect(getNotificationCategory(makeItem({ type }))).toBe("companies");
+    }
+  });
+
+  it("has the same company copy in both languages", () => {
+    const keys = ["companyInvite", "companyInviteAccepted", "companyInviteDeclined", "companyVerified"] as const;
+    for (const key of keys) {
+      expect(dictionaries.uk.notifications.actions[key]).toBeTruthy();
+      expect(dictionaries.en.notifications.actions[key]).toBeTruthy();
+    }
+    expect(dictionaries.uk.notifications.filters.companies).toBe("Компанії");
   });
 });

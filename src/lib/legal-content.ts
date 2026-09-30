@@ -40,13 +40,13 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "These Terms describe the rules for using SearchTalent. They form a living document and may expand as the product grows.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "September 28, 2026",
+      lastUpdatedValue: "September 30, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
           title: "Using the platform",
           paragraphs: [
-            "SearchTalent lets people create accounts, publish profiles and projects, write articles, run and answer polls, comment, react, vote, follow others, and explore public work across the community.",
+            "SearchTalent lets people create accounts, publish profiles and projects, write articles, run and answer polls, comment, react, vote, follow others, create pages for companies and their teams, and explore public work across the community.",
             "By using the service, you agree to use it lawfully, respectfully, and in a way that does not harm the platform or other users.",
           ],
           bullets: [
@@ -81,12 +81,27 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
         {
           title: "“Open to” and contacting people",
           paragraphs: [
-            "SearchTalent is a portfolio platform, not a job board: there are no vacancies or applications. You can mark on your page what you are open to — freelance, a job, an internship, collaboration, or mentoring — and other people can contact you through the “Contact” button.",
+            "You can mark on your page what you are open to — freelance, a job, an internship, collaboration, or mentoring — and other people can contact you through the “Contact” button.",
             "Any agreement that follows is made directly between the people involved. SearchTalent is not a party to it, does not check offers or the people who make them, and is not responsible for how an agreement is carried out.",
           ],
           bullets: [
             "Use contact details from SearchTalent only to reach the person about their work. Do not send spam or collect addresses.",
             "Email and phone are shown only to signed-in people, and the number of profiles one account can open contacts for is limited.",
+          ],
+        },
+        {
+          title: "Company pages and hiring",
+          paragraphs: [
+            "Anyone with a confirmed account can create a page for a company or an educational institution and invite colleagues to its team. You may create a page only for an organization you are entitled to represent. The team members are shown on the page.",
+            "SearchTalent helps companies and specialists find each other, but it is not a party to hiring: it does not employ anyone, does not check offers, and does not guarantee the outcome of any agreement.",
+            "The “Verified company” mark means that a team member confirmed an email address on the company's domain, or that SearchTalent checked the page. It is not a recommendation of the company. A new name or website takes the mark off until the page is verified again.",
+            "“Confirmed by the company” on a project means that someone from the company's team confirmed the work was done for it. The author remains responsible for everything else the project says, including who it was made for and the budget.",
+          ],
+          bullets: [
+            "Do not charge candidates for anything — not for applying, training, equipment, or “registration”.",
+            "Only real companies and real offers. Do not use a page to collect personal data or to lure people to other services.",
+            "No discrimination: do not select or turn down people by sex, age, ethnicity, religion, disability, or other protected characteristics, and do not write such requirements.",
+            "A violation means the page is hidden or removed, and the accounts involved may be blocked.",
           ],
         },
         {
@@ -133,7 +148,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "This Privacy Policy explains what data SearchTalent handles, why it is needed, who processes it, and the rights you have over your information.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "September 29, 2026",
+      lastUpdatedValue: "September 30, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -154,6 +169,8 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Professional information: skills, languages, work experience, education, certificates (including any files you upload), experience level, what you are open to (freelance, a job, an internship, collaboration, mentoring) and when you last confirmed it, preferred work formats, and salary expectations and an hourly rate if you choose to provide them.",
             "Opening someone's contacts: when you are signed in and press “Contact” on another person's page, we record that your account opened that profile's contacts and when.",
             "Content and community activity: projects, articles, polls and your poll responses, comments, reactions, votes, follows, bookmarks, badges, notifications, and your position on the leaderboard.",
+            "Project details, if you add them: who the project was made for (yourself, a client, an employer, your studies, or open source), the client's or company's name or a note that it is under an NDA, and the budget.",
+            "Company pages: the organization's name, logo, website, description, size and location; who created the page; who is on its team and in what role; invitations to join it; which projects were added to the page, by whom, and who from the company confirmed them.",
             "Feedback you send: the name, email, and message you submit through the feedback form.",
             "Technical and usage data: information needed for security, reliability, and performance, and aggregate view counts on content.",
             "Page view statistics for profiles, projects, and articles: which page was viewed, whether the visitor came from another SearchTalent page, from another site (its domain only), or directly, and whether they were signed in. We do not store IP addresses or full referring links. A repeat view on the same day is recognized by a code computed from the IP address and browser details together with a random key that we delete the next day; after that, the code cannot be linked to anyone.",
@@ -168,6 +185,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Some technical data is also used to keep the service secure, reliable, and performant, and to moderate content for the safety of the platform and its users.",
             "View statistics, last-visit times, and sign-up sources are used only in aggregate: to see how many people sign up, publish a first project, come back, and get views of their portfolio from outside the platform. They are not used to profile individual visitors or for advertising.",
             "Records of who opened whose contacts are used for two things only: to show the owner how many people opened their contacts, and to limit how many profiles one account can open, so addresses cannot be harvested. The owner sees the number, never who.",
+            "When you verify a company page, we check that the address you use — the one you sign in with, or a work address you enter — is on the company website's domain. For a work address we send a one-time code to it. That address is not shown to anyone and not stored: we keep only its domain and a hash of the code until the code is used or expires 15 minutes later. The page records that it was verified, when, and by whom.",
           ],
         },
         {
@@ -176,9 +194,9 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Where data protection law such as the GDPR applies to you, we process your data on the following bases.",
           ],
           bullets: [
-            "Performance of a contract — creating and running your account, publishing the profile and content you choose to share, and providing the community features described in the Terms of Service.",
+            "Performance of a contract — creating and running your account, publishing the profile, content and company pages you choose to share, and providing the community features described in the Terms of Service.",
             "Your consent — optional analytics and the cookie categories you allow, and the optional AI features. You can withdraw consent at any time, which does not affect processing that already happened.",
-            "Our legitimate interests — keeping the platform secure and reliable, preventing spam, abuse, rating manipulation, and the harvesting of contact details, moderating content for the safety of users, and measuring in aggregate how the platform is used (view statistics, last-visit times, and the number of people who opened your contacts). The sign-up source is recorded only with your consent.",
+            "Our legitimate interests — keeping the platform secure and reliable, preventing spam, abuse, rating manipulation, fake company pages, and the harvesting of contact details, moderating content for the safety of users, and measuring in aggregate how the platform is used (view statistics, last-visit times, and the number of people who opened your contacts). The sign-up source is recorded only with your consent.",
             "Legal obligations — where we are required to keep, provide, or remove data to comply with the law.",
           ],
         },
@@ -188,6 +206,8 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Much of what you add is intended to be public — your profile, projects, articles, polls, and comments — and you control which profile sections are visible through your profile visibility settings.",
             "Other information, such as authentication data, your email, feedback submissions, and internal technical records, is used only to operate the service and is not made public.",
             "The email and phone you add to your profile are never public: signed-in people see them only after pressing “Contact” on your page. Salary expectations and the hourly rate are visible only to you until you turn on showing them on your page, each with its own switch. What you are open to is public, as is the date you last confirmed it.",
+            "If you join a company's team, your profile appears on the company page. An invitation nobody has answered yet is seen only by the person invited and by the company's team.",
+            "Who a project was made for and the client's name are shown on the project page; with the NDA note, only “Client under NDA” is shown. The budget is visible only to you until you turn on showing it. A project you add to a page of a company you are not in is seen only by you and that company's team until the company accepts it.",
           ],
         },
         {
@@ -261,6 +281,8 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Limited records may persist for a short time where needed for security, backups, or legal obligations.",
             "View statistics keep no data that identifies a visitor once the day's key is deleted. Statistics about views of your pages are deleted together with your account.",
             "A record that one account opened another's contacts is deleted when either account is deleted.",
+            "Your place in a company's team is deleted when you leave the team or delete your account. A company page is deleted by its owner, or when the last person in its team deletes their account.",
+            "Projects you added stay on the company page after you leave the team; you or the company can take them off at any time. A project's budget and its links to company pages are deleted together with the project.",
           ],
         },
         {
@@ -353,13 +375,13 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ці Умови описують правила користування SearchTalent. Документ є робочим і може розширюватися разом із розвитком продукту.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "28 вересня 2026",
+      lastUpdatedValue: "30 вересня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
           title: "Користування платформою",
           paragraphs: [
-            "SearchTalent дає змогу створювати акаунти, публікувати профілі та проєкти, писати статті, створювати опитування й відповідати на них, коментувати, ставити реакції, голосувати, підписуватися на інших та переглядати відкриті роботи спільноти.",
+            "SearchTalent дає змогу створювати акаунти, публікувати профілі та проєкти, писати статті, створювати опитування й відповідати на них, коментувати, ставити реакції, голосувати, підписуватися на інших, створювати сторінки компаній та їхніх команд і переглядати відкриті роботи спільноти.",
             "Користуючись сервісом, ви погоджуєтеся використовувати його законно, добросовісно та без шкоди для платформи й інших користувачів.",
           ],
           bullets: [
@@ -394,12 +416,27 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
         {
           title: "«Відкрито до…» і зв'язок між людьми",
           paragraphs: [
-            "SearchTalent — платформа портфоліо, а не сайт вакансій: вакансій і відгуків на них тут немає. Ви можете позначити на своїй сторінці, до чого відкриті, — фриланс, робота, стажування, співпраця чи менторство, — а інші люди можуть написати вам через кнопку «Зв'язатися».",
+            "Ви можете позначити на своїй сторінці, до чого відкриті, — фриланс, робота, стажування, співпраця чи менторство, — а інші люди можуть написати вам через кнопку «Зв'язатися».",
             "Усі подальші домовленості укладаються напряму між людьми. SearchTalent не є їх стороною, не перевіряє пропозиції та тих, хто їх робить, і не відповідає за виконання домовленостей.",
           ],
           bullets: [
             "Використовуйте контакти з SearchTalent лише для того, щоб написати людині щодо її роботи. Не надсилайте спам і не збирайте адреси.",
             "Пошту й телефон бачать лише ті, хто увійшов, а кількість профілів, контакти яких може відкрити один акаунт, обмежена.",
+          ],
+        },
+        {
+          title: "Сторінки компаній і найм",
+          paragraphs: [
+            "Будь-хто з підтвердженим акаунтом може створити сторінку компанії чи навчального закладу й запросити колег до її команди. Створювати сторінку можна лише для організації, яку ви маєте право представляти. Учасників команди видно на сторінці.",
+            "SearchTalent допомагає компаніям і фахівцям знайти одне одного, але не є стороною найму: нікого не наймає, не перевіряє пропозиції й не гарантує результату домовленостей.",
+            "Позначка «Перевірена компанія» означає, що хтось із команди підтвердив пошту на домені компанії або сторінку перевірив SearchTalent. Це не рекомендація компанії. Нова назва чи новий сайт знімають позначку, доки сторінку не перевірять знову.",
+            "«Підтверджено компанією» на проєкті означає, що хтось із команди компанії підтвердив: роботу зроблено для неї. За решту того, що написано в проєкті, зокрема для кого він і який бюджет, відповідає автор.",
+          ],
+          bullets: [
+            "Не беріть із кандидатів гроші ні за що — ні за відгук, ні за навчання, обладнання чи «реєстрацію».",
+            "Лише справжні компанії та справжні пропозиції. Не використовуйте сторінку, щоб збирати персональні дані чи заманювати людей на інші сервіси.",
+            "Без дискримінації: не відбирайте й не відхиляйте людей за статтю, віком, походженням, релігією, інвалідністю чи іншими захищеними ознаками і не пишіть таких вимог.",
+            "За порушення сторінку приховують або видаляють, а причетні акаунти можуть заблокувати.",
           ],
         },
         {
@@ -446,7 +483,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ця Політика конфіденційності пояснює, які дані обробляє SearchTalent, навіщо вони потрібні, хто їх обробляє та які права ви маєте щодо своєї інформації.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "29 вересня 2026",
+      lastUpdatedValue: "30 вересня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -467,6 +504,8 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Професійна інформація: навички, мови, досвід роботи, освіта, сертифікати (зокрема завантажені файли), рівень досвіду, до чого ви відкриті (фриланс, робота, стажування, співпраця, менторство) і коли востаннє це підтвердили, бажані формати роботи, а також зарплатні очікування й погодинна ставка, якщо ви їх вказуєте.",
             "Відкриття чужих контактів: коли ви в системі й натискаєте «Зв'язатися» на сторінці іншої людини, ми записуємо, що ваш акаунт відкрив контакти цього профілю, і коли.",
             "Контент і активність у спільноті: проєкти, статті, опитування та ваші відповіді на них, коментарі, реакції, голоси, підписки, закладки, бейджі, сповіщення й позиція в рейтингу.",
+            "Деталі проєкту, якщо ви їх вказуєте: для кого його зроблено (для себе, для замовника, на роботі, під час навчання чи як open source), назва замовника чи компанії або позначка, що він під NDA, і бюджет.",
+            "Сторінки компаній: назва організації, логотип, сайт, опис, розмір і розташування; хто створив сторінку; хто в її команді й у якій ролі; запрошення до команди; які проєкти додали на сторінку, хто їх додав і хто з компанії їх підтвердив.",
             "Звернення через форму зворотного зв'язку: ім'я, email і повідомлення, які ви надсилаєте.",
             "Технічні дані та дані використання: інформація, потрібна для безпеки, стабільності й продуктивності, та агреговані лічильники переглядів контенту.",
             "Статистика переглядів профілів, проєктів і статей: яку сторінку переглянули, чи прийшов відвідувач з іншої сторінки SearchTalent, з іншого сайту (лише його домен) чи напряму, і чи був він у системі. IP-адреси й повні посилання, з яких прийшли, ми не зберігаємо. Повторний перегляд того ж дня розпізнається за кодом, обчисленим з IP-адреси й даних браузера разом із випадковим ключем, який ми видаляємо наступного дня; після цього код неможливо пов'язати ні з ким.",
@@ -481,6 +520,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Частина технічних даних також використовується для безпеки, стабільності й продуктивності сервісу та для модерації контенту заради безпеки платформи й користувачів.",
             "Статистику переглядів, час останнього візиту й джерело реєстрації ми використовуємо лише в агрегованому вигляді: щоб бачити, скільки людей реєструються, публікують перший проєкт, повертаються й отримують перегляди портфоліо ззовні платформи. Для профілювання окремих відвідувачів чи реклами вони не використовуються.",
             "Записи про те, хто відкрив чиї контакти, потрібні лише для двох речей: показати власникові, скільки людей відкрили його контакти, і обмежити, скільки профілів може відкрити один акаунт, щоб адреси не можна було зібрати. Власник бачить лише число, а не те, хто це був.",
+            "Коли ви перевіряєте сторінку компанії, ми звіряємо, що адреса, якою ви користуєтеся, — та, з якою ви входите, або робоча, яку ви вводите, — на домені сайту компанії. На робочу адресу ми надсилаємо одноразовий код. Цю адресу нікому не показуємо й не зберігаємо: лишаємо тільки її домен і хеш коду, доки код не використають або доки він не спливе через 15 хвилин. Сторінка запам'ятовує, що її перевірено, коли і ким.",
           ],
         },
         {
@@ -489,9 +529,9 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Якщо до вас застосовується законодавство про захист даних, зокрема GDPR, ми обробляємо ваші дані на таких підставах.",
           ],
           bullets: [
-            "Виконання договору — створення й робота акаунта, публікація профілю та контенту, який ви обираєте показувати, і надання функцій спільноти, описаних в Умовах користування.",
+            "Виконання договору — створення й робота акаунта, публікація профілю, контенту та сторінок компаній, які ви обираєте показувати, і надання функцій спільноти, описаних в Умовах користування.",
             "Ваша згода — необов'язкова аналітика та категорії cookies, які ви дозволяєте, а також необов'язкові AI-функції. Згоду можна відкликати будь-коли, це не впливає на обробку, що вже відбулася.",
-            "Наші законні інтереси — безпека й стабільність платформи, запобігання спаму, зловживанням, маніпуляціям рейтингом і збиранню контактів, модерація контенту заради безпеки користувачів, а також агреговане вимірювання того, як користуються платформою (статистика переглядів, час останнього візиту й кількість людей, які відкрили ваші контакти). Джерело реєстрації записується лише з вашої згоди.",
+            "Наші законні інтереси — безпека й стабільність платформи, запобігання спаму, зловживанням, маніпуляціям рейтингом, фейковим сторінкам компаній і збиранню контактів, модерація контенту заради безпеки користувачів, а також агреговане вимірювання того, як користуються платформою (статистика переглядів, час останнього візиту й кількість людей, які відкрили ваші контакти). Джерело реєстрації записується лише з вашої згоди.",
             "Правові зобов'язання — коли ми зобов'язані зберігати, надавати або видаляти дані на вимогу закону.",
           ],
         },
@@ -501,6 +541,8 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Значна частина того, що ви додаєте, за задумом є публічною — профіль, проєкти, статті, опитування й коментарі, — і ви керуєте тим, які секції профілю видно, через налаштування видимості профілю.",
             "Інша інформація, як-от дані авторизації, ваш email, звернення через форму зворотного зв'язку та внутрішні технічні записи, використовується лише для роботи сервісу й не стає публічною.",
             "Пошта й телефон, які ви додаєте в профіль, ніколи не публічні: люди в системі бачать їх лише після того, як натиснуть «Зв'язатися» на вашій сторінці. Зарплатні очікування й погодинну ставку бачите лише ви, доки не ввімкнете їхній показ на сторінці, окремо для кожного. Те, до чого ви відкриті, публічне, як і дата, коли ви востаннє це підтвердили.",
+            "Якщо ви приєднуєтеся до команди компанії, ваш профіль з'являється на сторінці компанії. Запрошення, на яке ще не відповіли, бачать лише запрошена людина й команда компанії.",
+            "Для кого зроблено проєкт і назву замовника видно на сторінці проєкту; з позначкою NDA там буде лише «Замовник під NDA». Бюджет бачите тільки ви, доки не ввімкнете його показ. Проєкт, який ви додали на сторінку компанії, де ви не в команді, бачите лише ви й команда цієї компанії, доки компанія його не прийме.",
           ],
         },
         {
@@ -574,6 +616,8 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Окремі записи можуть зберігатися нетривалий час, якщо це потрібно для безпеки, резервних копій або виконання правових зобов'язань.",
             "Після видалення добового ключа статистика переглядів не містить даних, за якими можна впізнати відвідувача. Статистика переглядів ваших сторінок видаляється разом з акаунтом.",
             "Запис про те, що один акаунт відкрив контакти іншого, видаляється, коли видаляють будь-який із цих акаунтів.",
+            "Ваше місце в команді компанії видаляється, коли ви виходите з команди або видаляєте акаунт. Сторінку компанії видаляє її власник; вона також видаляється, коли останній учасник команди видаляє свій акаунт.",
+            "Проєкти, які ви додали, лишаються на сторінці компанії й після того, як ви вийдете з команди; прибрати їх можете ви або компанія будь-коли. Бюджет проєкту та його зв'язки зі сторінками компаній видаляються разом із проєктом.",
           ],
         },
         {

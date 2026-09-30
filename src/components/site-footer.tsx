@@ -29,6 +29,7 @@ export default function SiteFooter({ dictionary }: SiteFooterProps) {
   const legalLabel = isEnglish ? "Legal" : "Правова інформація";
 
   const aboutLabel = isEnglish ? "About" : "Про нас";
+  const forCompaniesLabel = isEnglish ? "For companies" : "Для компаній";
   const ratingGuideLabel = isEnglish ? "Rating guide" : "Гайд по рейтингу";
   const faqLabel = isEnglish ? "FAQ" : "FAQ";
   const feedbackLabel = isEnglish ? "Feedback" : "Зворотний зв'язок";
@@ -120,6 +121,12 @@ export default function SiteFooter({ dictionary }: SiteFooterProps) {
                 className="hover:text-[color:var(--foreground)]"
               >
                 {aboutLabel}
+              </LocalizedLink>
+              <LocalizedLink
+                href="/for-companies"
+                className="hover:text-[color:var(--foreground)]"
+              >
+                {forCompaniesLabel}
               </LocalizedLink>
               <LocalizedLink
                 href="/rating-guide"

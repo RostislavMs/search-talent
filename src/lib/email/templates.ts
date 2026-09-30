@@ -153,3 +153,52 @@ export function buildModerationDecisionEmail(input: ModerationDecisionEmailInput
 
   return { subject: email.subject, html: renderEmailShell(input.locale, bodyHtml), text };
 }
+
+type CompanyVerificationEmailInput = {
+  companyName: string;
+  host: string;
+  code: string;
+  locale: Locale;
+};
+
+/**
+ * The one-time code that proves the sender can read mail on the company's
+ * domain. No link on purpose: the code is typed on the page that asked for it,
+ * so a forwarded email cannot verify a page by itself.
+ */
+export function buildCompanyVerificationEmail(input: CompanyVerificationEmailInput) {
+  const email = getDictionary(input.locale).emails.companyVerification;
+  const intro = email.intro
+    .replace("{company}", escapeHtml(input.companyName))
+    .replace("{host}", escapeHtml(input.host));
+  const plainIntro = email.intro
+    .replace("{company}", input.companyName)
+    .replace("{host}", input.host);
+
+  const bodyHtml = `
+    <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #334155;">${intro}</p>
+    <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">${escapeHtml(email.codeLabel)}</p>
+    <p style="margin: 0 0 16px 0; font-size: 32px; font-weight: 700; letter-spacing: 0.3em; color: #0f172a;">${escapeHtml(input.code)}</p>
+    <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.6; color: #334155;">${escapeHtml(email.validity)}</p>
+    <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #94a3b8;">${escapeHtml(email.ignore)}</p>
+    <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #94a3b8;">${escapeHtml(email.signature)}</p>`;
+
+  const text = [
+    plainIntro,
+    "",
+    `${email.codeLabel}: ${input.code}`,
+    email.validity,
+    "",
+    email.ignore,
+    "",
+    email.signature,
+  ].join("\n");
+
+  return {
+    subject: email.subject
+      .replace("{company}", input.companyName)
+      .replace("{code}", input.code),
+    html: renderEmailShell(input.locale, bodyHtml),
+    text,
+  };
+}

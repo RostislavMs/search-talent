@@ -25,9 +25,14 @@ vi.mock("@/lib/auto-moderation", () => ({
 vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 vi.mock("@/lib/db/co-authors", () => ({ syncCoAuthors: vi.fn() }));
+vi.mock("@/lib/db/project-companies", () => ({
+  saveProjectBudget: vi.fn(async () => true),
+  syncProjectCompanies: vi.fn(async () => undefined),
+}));
 
 import { PATCH, DELETE } from "@/app/api/projects/[id]/route";
 import { generateUniqueProjectSlug } from "@/lib/projects";
+import { saveProjectBudget, syncProjectCompanies } from "@/lib/db/project-companies";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_ID = "99999999-9999-4999-8999-999999999999";
@@ -111,6 +116,24 @@ describe("PATCH /api/projects/[id] — owner-only edit", () => {
     const res = await PATCH(patchReq({ title: "A Totally Different Name" }), params());
     expect(res.status).toBe(200);
     expect(vi.mocked(generateUniqueProjectSlug)).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the budget and company pages in line with the form", async () => {
+    const mock = setMock(authUser, (table, verb) => {
+      if (table === "projects" && verb === "select") return { data: existingProject };
+      if (table === "projects" && verb === "update") return { data: { slug: "my-project", status: "published" } };
+      return {};
+    });
+    await PATCH(patchReq({ ...payload, origin: "personal", clientName: "Acme" }), params());
+
+    const update = mock.calls.find((c) => c.table === "projects" && c.verb === "update");
+    // Personal work has no client: the name is dropped, not stored.
+    expect(update?.payload).toMatchObject({ origin: "personal", client_name: null, client_nda: false });
+    // No budget in the form means the stored one is removed.
+    expect(saveProjectBudget).toHaveBeenCalledWith(expect.anything(), PROJECT_ID, null);
+    expect(syncProjectCompanies).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: PROJECT_ID, desiredCompanyIds: [], published: true }),
+    );
   });
 });
 

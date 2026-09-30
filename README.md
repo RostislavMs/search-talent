@@ -1,6 +1,6 @@
 # SearchTalent
 
-A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is **not** a job board — there are no vacancies or applications, and it is built around creator portfolios, rating, and community signal. Specialists can, however, mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors can reach them through a "Contact" button.
+A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is built around creator portfolios, rating, and community signal. Specialists mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors reach them through a "Contact" button. Companies create pages with their team and its work (hiring, part 8 of the plan; vacancies and portfolio applications come next).
 
 ---
 
@@ -91,6 +91,14 @@ search-talent/
 - Verified-email badge, completeness meter, profile vote counters.
 - GitHub OAuth link → import repos as projects.
 
+### Companies (hiring, stage 8.1)
+
+- Any signed-in person with a confirmed email creates a page for a company or an educational institution (`companies`, `database/2026-09-30-companies.sql`) and stays a specialist too — there is no separate employer account. Up to 5 pages per creator; one person is in at most 3 teams at a time.
+- Team with roles owner / admin / recruiter (`company_members`): invitations like co-authoring (pending → accepted/declined), at most 25 people, always at least one owner. Every change goes through SECURITY DEFINER functions (`invite_company_member`, `respond_company_invite`, `set_company_member_role`, `remove_company_member`); there are no direct write policies on the team.
+- "Verified company": an owner or admin proves they can read mail on the website's domain — in one click if their account email is already there, otherwise with a 6-digit code sent (Resend) to any work address on that domain. Only the domain and an HMAC of the code are stored (`company_verification_codes`, service key only; 15 minutes, 5 attempts). Not for public mail services and not for schools, which a platform admin verifies in `/admin/companies`. A new name or website takes the mark off (`guard_company_columns`). Only verified pages are indexed and listed in the sitemap, with `Organization` JSON-LD.
+- The page shows only the projects attached to the company (`company_projects`, up to 3 companies per project): a member's project appears at once, anyone else's waits as a request until an owner/admin accepts it. The company can also confirm a project ("Confirmed by the company", `confirm_company_project`). The author or the company's owners/admins take it off; projects stay when the author leaves the team, and the managers are notified (the removed person is notified too). The project page links back to the company. Auto-moderation holds a flagged page for review.
+- Every project can say who it was made for (`projects.origin`: yourself, a client, an employer, studies, open source) and name the client or mark it under NDA — then the name is not stored at all. Client work can carry a budget (fixed or hourly) in owner-only `project_private_details`; it is shown only when the author turns it on (`project_public_budget()`).
+
 ### Projects
 
 - Title, description, technologies, links (repo + live), media gallery (images & video), pinning.
@@ -171,6 +179,8 @@ search-talent/
 | `/polls`, `/polls/[slug]` | Poll feed and detail |
 | `/u/[username]` | Public profile |
 | `/u/[username]/projects`, `/u/[username]/articles`, `/u/[username]/polls` | Per-user collections (own + co-authored) |
+| `/companies/[slug]` | Company page: the team and its work |
+| `/for-companies` | Landing for employers |
 | `/rating-guide` | How the rating system works |
 | `/about`, `/faq`, `/feedback` | Marketing & support |
 | `/terms`, `/privacy`, `/cookies`, `/legal` | Legal hub |
@@ -191,6 +201,8 @@ search-talent/
 | `/my-space/followers` | People who follow the current user |
 | `/my-space/following` | Feed of authors the user follows + manage list |
 | `/my-space/saved` | Bookmarked profiles and projects |
+| `/my-space/companies` | Your company pages and invitations to join |
+| `/companies/new`, `/companies/edit/[id]` | Create a company page / edit it, team, verification |
 | `/analytics` | Platform-wide analytics |
 | `/notifications` | Inbox |
 | `/profile/edit` | Profile editor (sections, presentation, GitHub link, account) |
@@ -209,6 +221,7 @@ search-talent/
 | `/admin/content/comments` | Comment moderation |
 | `/admin/moderation` | Reports queue |
 | `/admin/users` | User management |
+| `/admin/companies` | Verify company pages, moderation status |
 | `/admin/feedback` | Inbound feedback |
 | `/admin/audit` | Audit log |
 
@@ -240,6 +253,25 @@ search-talent/
 | POST | `/api/profile-vote` | Up/down-vote a profile |
 | GET/POST/DELETE | `/api/follows` | Follow graph |
 | GET/POST/DELETE | `/api/bookmarks` | Bookmark profiles & projects |
+
+### Companies
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/api/companies` | Create a company page (confirmed email, 5/hour) |
+| PATCH/DELETE | `/api/companies/[id]` | Edit (owner/admin) / delete (owner) |
+| PUT/DELETE | `/api/companies/[id]/logo` | Save the just-uploaded logo / remove it |
+| POST | `/api/companies/[id]/verify/code` | Send a one-time code to a work address on the website's domain |
+| POST | `/api/companies/[id]/verify` | Verify: by the account email (no body) or with `{ code }` |
+| GET | `/api/companies/search` | Find company pages by name (signed in; the project form) |
+| POST | `/api/companies/[id]/projects` | Attach your own published project (a member: shown at once; otherwise a request) |
+| POST | `/api/companies/[id]/projects/[projectId]` | Owner/admin: accept a request or confirm the work |
+| DELETE | `/api/companies/[id]/projects/[projectId]` | Take a project off the page, or decline a request |
+| POST | `/api/companies/[id]/members` | Invite someone to the team (20/hour) |
+| PATCH/DELETE | `/api/companies/[id]/members/[memberId]` | Change a role / remove, cancel an invitation, leave |
+| GET | `/api/company-invitations` | Invitations waiting for the current user |
+| PATCH | `/api/company-invitations/[id]` | Accept or decline |
+| PATCH | `/api/admin/companies/[id]` | Admin: verified mark, moderation status |
 
 ### Projects
 

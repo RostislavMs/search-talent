@@ -539,6 +539,7 @@ export function collectProjectModerationText(
     payload.githubLearnings,
     payload.githubShowcaseNotes,
     payload.githubProductionUsage,
+    payload.clientName,
   ];
 }
 

@@ -4,6 +4,7 @@ import {
   allowsCookieCategory,
   type CookieConsent,
 } from "@/lib/cookie-consent";
+import { hasCompanyMembership } from "@/lib/db/companies";
 import { getActivePopup, type ActivePopup } from "@/lib/db/popups";
 import { ensureProfileForUser } from "@/lib/db/profile";
 import { getSectionVisibility } from "@/lib/db/section-visibility";
@@ -19,6 +20,8 @@ export type AppViewer = {
   username: string | null;
   avatarUrl: string | null;
   isAdmin: boolean;
+  /** In a company team: the profile menu then links to /my-space/companies. */
+  hasCompanies: boolean;
 } | null;
 
 /**
@@ -89,13 +92,15 @@ export async function getAppShellData(locale: Locale): Promise<{
   let viewer: AppViewer = null;
 
   if (user) {
-    const [profile, { data: adminRecord }] = await Promise.all([
+    const [profile, { data: adminRecord }, hasCompanies] = await Promise.all([
       ensureProfileForUser(supabase, user),
       supabase
         .from("platform_admins")
         .select("user_id")
         .eq("user_id", user.id)
         .maybeSingle(),
+      // False on any error, including before the companies migration runs.
+      hasCompanyMembership(supabase, user.id),
       // Product metrics: last activity, for retention. The database only writes
       // when the stored value is over an hour old, and a failure (e.g. before the
       // migration) must not cost the page anything, so the result is ignored.
@@ -111,6 +116,7 @@ export async function getAppShellData(locale: Locale): Promise<{
       username: profile?.username || null,
       avatarUrl: normalizeViewerAvatarUrl(profile?.avatar_url),
       isAdmin: Boolean(adminRecord),
+      hasCompanies,
     };
   }
 

@@ -1,8 +1,10 @@
 /**
  * «Відкрито до…» (open to): what kind of offers a person wants to hear about.
  *
- * This is a status on a portfolio, not a job board: there are no vacancies or
- * applications. The status lives in `profiles.open_to` (public), and the moment
+ * A status on the person's own portfolio. Companies (hiring stage 8.1, see
+ * src/lib/companies.ts) reach people through it and the «Зв'язатися» button;
+ * vacancies will use the same dictionary for their kind. The status lives in
+ * `profiles.open_to` (public), and the moment
  * it was last set or confirmed in `profiles.open_to_updated_at`, which the
  * database stamps with its own clock (see database/2026-09-28-open-to.sql).
  */

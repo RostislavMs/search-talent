@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  buildCompanyLogoKey,
+  canEditCompany,
+  COMPANY_LOGO_MAX_BYTES,
+  COMPANY_LOGO_MIME_TYPES,
+} from "@/lib/companies";
+import { getCompanyRole } from "@/lib/db/companies";
 import { sanitizeStorageFileName } from "@/lib/project-media";
 import { dbRateLimit } from "@/lib/rate-limit";
 import {
@@ -20,6 +27,7 @@ const SCOPES = [
   "profile-background",
   "avatar",
   "feedback",
+  "company-logo",
 ] as const;
 
 type Scope = (typeof SCOPES)[number];
@@ -44,6 +52,7 @@ const MAX_BYTES: Record<Scope, number> = {
   "profile-background": 25 * 1024 * 1024,
   avatar: 10 * 1024 * 1024,
   feedback: 10 * 1024 * 1024,
+  "company-logo": COMPANY_LOGO_MAX_BYTES,
 };
 
 const ALLOWED_MIME_PREFIX: Record<Scope, string[]> = {
@@ -55,6 +64,8 @@ const ALLOWED_MIME_PREFIX: Record<Scope, string[]> = {
   "profile-background": ["image/", "video/"],
   avatar: ["image/"],
   feedback: ["image/"],
+  // No SVG: it can carry script, and a logo never needs it.
+  "company-logo": [...COMPANY_LOGO_MIME_TYPES],
 };
 
 const requestSchema = z.object({
@@ -67,6 +78,7 @@ const requestSchema = z.object({
     .min(1, "File size must be positive")
     .max(500 * 1024 * 1024, "File size is too large"),
   projectId: z.string().uuid().optional().nullable(),
+  companyId: z.string().uuid().optional().nullable(),
 });
 
 function isMimeAllowed(scope: Scope, mime: string) {
@@ -74,7 +86,13 @@ function isMimeAllowed(scope: Scope, mime: string) {
   return ALLOWED_MIME_PREFIX[scope].some((prefix) => lower.startsWith(prefix));
 }
 
-function buildKey(scope: Scope, ownerId: string, fileName: string, projectId?: string | null) {
+function buildKey(
+  scope: Scope,
+  ownerId: string,
+  fileName: string,
+  projectId?: string | null,
+  companyId?: string | null,
+) {
   const safeName = sanitizeStorageFileName(fileName) || "file";
   const stamp = `${Date.now()}-${crypto.randomUUID()}`;
 
@@ -100,6 +118,9 @@ function buildKey(scope: Scope, ownerId: string, fileName: string, projectId?: s
       return `avatars/${ownerId}/avatar`;
     case "feedback":
       return `feedback/${ownerId}/${stamp}-${safeName}`;
+    // Stable per company, like the avatar: a new logo replaces the old one.
+    case "company-logo":
+      return buildCompanyLogoKey(companyId ?? "");
   }
 }
 
@@ -130,7 +151,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const { scope, fileName, contentType, fileSize, projectId } = parsed.data;
+  const { scope, fileName, contentType, fileSize, projectId, companyId } = parsed.data;
 
   if (fileSize > MAX_BYTES[scope]) {
     return NextResponse.json({ error: "File is too large" }, { status: 413 });
@@ -192,7 +213,23 @@ export async function POST(request: Request) {
     }
   }
 
-  const key = buildKey(scope, user.id, fileName, projectId ?? undefined);
+  if (scope === "company-logo") {
+    if (!companyId) {
+      return NextResponse.json(
+        { error: "companyId is required" },
+        { status: 400 },
+      );
+    }
+
+    // Only the people who may edit the page may replace its logo.
+    const role = await getCompanyRole(supabase, companyId, user.id);
+
+    if (!canEditCompany(role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
+  const key = buildKey(scope, user.id, fileName, projectId ?? undefined, companyId ?? undefined);
 
   let uploadUrl: string;
   try {

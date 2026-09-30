@@ -26,6 +26,7 @@ type Viewer = {
   username: string | null;
   avatarUrl: string | null;
   isAdmin: boolean;
+  hasCompanies?: boolean;
 } | null;
 
 type SiteHeaderProps = {
@@ -214,6 +215,11 @@ export default function SiteHeader({
           : []),
         { href: "/profile/edit", label: dictionary.mySpace.editProfile },
         { href: "/my-space", label: dictionary.nav.mySpace },
+        // Only for people already in a company team; everyone else finds
+        // company pages through My space and /for-companies.
+        ...(viewer.hasCompanies
+          ? [{ href: "/my-space/companies", label: dictionary.nav.myCompanies }]
+          : []),
         ...(sections.analytics
           ? [{ href: "/analytics", label: dictionary.nav.analytics }]
           : []),
