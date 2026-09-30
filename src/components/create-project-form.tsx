@@ -90,6 +90,11 @@ import {
   getStatusLabel,
 } from "@/components/project-form/labels";
 import { Field, UrlField } from "@/components/project-form/shared";
+import ProjectContextFields, {
+  type ProjectContextValue,
+} from "@/components/project-form/project-context-fields";
+import type { CompanyOption } from "@/components/company-picker";
+import { normalizeProjectOrigin, type EditorProjectBudget } from "@/lib/project-context";
 import {
   AudioDetailsFields,
   CodeDetailsFields,
@@ -182,6 +187,13 @@ export type EditableProject = {
   github_auto_sync?: boolean | null;
   allow_downloads?: boolean | null;
   coAuthors?: CoAuthorOption[] | null;
+  origin?: string | null;
+  client_name?: string | null;
+  client_nda?: boolean | null;
+  /** From the owner-only project_private_details. */
+  budget?: EditorProjectBudget | null;
+  /** Company pages the project is on or asked to be on. */
+  companies?: CompanyOption[] | null;
 };
 
 type ProjectFormState = {
@@ -226,7 +238,7 @@ type ProjectFormState = {
   githubDisplayOptions: GithubDisplayOptions;
   githubAutoSync: boolean;
   allowDownloads: boolean;
-};
+} & ProjectContextValue;
 
 type SaveMode = "draft" | "publish";
 
@@ -375,6 +387,13 @@ function getInitialFormState(
       typeof project?.allow_downloads === "boolean"
         ? project.allow_downloads
         : true,
+    origin: normalizeProjectOrigin(project?.origin) ?? "",
+    clientName: project?.client_name || "",
+    clientNda: project?.client_nda === true,
+    budgetAmount: project?.budget ? String(project.budget.amount) : "",
+    budgetCurrency: project?.budget?.currency ?? "usd",
+    budgetType: project?.budget?.type ?? "fixed",
+    budgetPublic: project?.budget?.isPublic === true,
   };
 }
 
@@ -432,6 +451,9 @@ export default function CreateProjectForm({
   const [coAuthors, setCoAuthors] = useState<CoAuthorOption[]>(
     project?.coAuthors ?? [],
   );
+  const [companies, setCompanies] = useState<CompanyOption[]>(
+    project?.companies ?? [],
+  );
   const [step, setStep] = useState<number>(project ? 1 : initialStep);
   const [pendingSaveMode, setPendingSaveMode] = useState<SaveMode | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{
@@ -475,6 +497,10 @@ export default function CreateProjectForm({
       ),
     [project],
   );
+  const initialCompaniesSnapshot = useMemo(
+    () => JSON.stringify((project?.companies ?? []).map((company) => company.id)),
+    [project],
+  );
   const initialRemoteMediaSnapshot = useMemo(
     () =>
       JSON.stringify((project?.media || []).map((item) => item.id)),
@@ -493,6 +519,7 @@ export default function CreateProjectForm({
     pendingSaveMode === null &&
     (JSON.stringify(form) !== initialFormSnapshot ||
       JSON.stringify([...skillIds].sort()) !== initialSkillsSnapshot ||
+      JSON.stringify(companies.map((company) => company.id)) !== initialCompaniesSnapshot ||
       currentRemoteMediaSnapshot !== initialRemoteMediaSnapshot ||
       hasLocalOrEmbedMedia ||
       pendingCover !== null);
@@ -1265,10 +1292,22 @@ export default function CreateProjectForm({
         githubDisplayOptions: form.githubDisplayOptions,
         githubAutoSync: form.githubAutoSync,
         allowDownloads: form.allowDownloads,
+        origin: form.origin || null,
+        clientName: form.clientName,
+        clientNda: form.clientNda,
+        budget: form.budgetAmount
+          ? {
+              amount: Number(form.budgetAmount),
+              currency: form.budgetCurrency,
+              type: form.budgetType,
+              isPublic: form.budgetPublic,
+            }
+          : null,
+        companyIds: companies.map((company) => company.id),
         status,
       };
     },
-    [form, timeline, skillIds, coAuthors, githubFullName],
+    [form, timeline, skillIds, coAuthors, companies, githubFullName],
   );
 
   const applyGithubImport = useCallback(
@@ -1904,6 +1943,16 @@ export default function CreateProjectForm({
 
         {currentStepKey === "details" && (
           <StepDetails dictionary={dictionary} form={form} update={update} />
+        )}
+
+        {currentStepKey === "details" && (
+          <ProjectContextFields
+            dictionary={dictionary}
+            value={form}
+            onChange={(field, next) => setForm((prev) => ({ ...prev, [field]: next }))}
+            companies={companies}
+            onCompaniesChange={setCompanies}
+          />
         )}
 
         {currentStepKey === "story" && (

@@ -32,6 +32,10 @@ vi.mock("@/lib/auto-moderation", () => ({
 vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 vi.mock("@/lib/db/co-authors", () => ({ inviteCoAuthors: vi.fn() }));
+vi.mock("@/lib/db/project-companies", () => ({
+  saveProjectBudget: vi.fn(async () => true),
+  syncProjectCompanies: vi.fn(async () => undefined),
+}));
 
 import { POST } from "@/app/api/projects/route";
 import { NextResponse } from "next/server";
@@ -39,6 +43,7 @@ import { dbRateLimit } from "@/lib/rate-limit";
 import { screenContentForModeration } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { inviteCoAuthors } from "@/lib/db/co-authors";
+import { saveProjectBudget, syncProjectCompanies } from "@/lib/db/project-companies";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const CO_AUTHOR = "33333333-3333-4333-8333-333333333333";
@@ -101,6 +106,30 @@ describe("POST /api/projects", () => {
     const insert = mock.calls.find((c) => c.table === "projects" && c.verb === "insert");
     expect(insert?.payload).toMatchObject({ owner_id: USER_ID, slug: "unique-slug" });
     expect(vi.mocked(inviteCoAuthors)).not.toHaveBeenCalled();
+  });
+
+  it("saves for whom and for how much, the budget and the company pages", async () => {
+    const mock = setMock(authUser, okResolver);
+    const companyId = "44444444-4444-4444-8444-444444444444";
+    const budget = { amount: 8000, currency: "uah", type: "fixed", isPublic: false };
+    const res = await POST(
+      req({ ...base, origin: "client", clientName: "Acme", clientNda: false, budget, companyIds: [companyId] }),
+    );
+    expect(res.status).toBe(200);
+    const insert = mock.calls.find((c) => c.table === "projects" && c.verb === "insert");
+    expect(insert?.payload).toMatchObject({ origin: "client", client_name: "Acme", client_nda: false });
+    expect(insert?.payload).not.toHaveProperty("budget");
+    expect(saveProjectBudget).toHaveBeenCalledWith(expect.anything(), PROJECT_ID, budget);
+    expect(syncProjectCompanies).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: PROJECT_ID, userId: USER_ID, desiredCompanyIds: [companyId], published: true }),
+    );
+  });
+
+  it("does not touch the budget or company pages when there are none", async () => {
+    setMock(authUser, okResolver);
+    await POST(req());
+    expect(saveProjectBudget).not.toHaveBeenCalled();
+    expect(syncProjectCompanies).not.toHaveBeenCalled();
   });
 
   it("auto-removes flagged content", async () => {

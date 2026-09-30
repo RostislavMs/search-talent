@@ -55,6 +55,16 @@ import {
   GITHUB_PROJECT_ROLES,
 } from "@/lib/constants/github";
 import { providerIntegrationIds } from "@/lib/constants/provider-integrations";
+import { COMPANY_LIMITS } from "@/lib/companies";
+import { salaryCurrencies } from "@/lib/profile-sections";
+import {
+  normalizeProjectOrigin,
+  originHasBudget,
+  originHasClient,
+  PROJECT_BUDGET_TYPES,
+  PROJECT_CONTEXT_LIMITS,
+  PROJECT_ORIGINS,
+} from "@/lib/project-context";
 import { isValidPublicUrl } from "@/lib/url-validation";
 import { MAX_CO_AUTHORS } from "@/lib/co-authors";
 
@@ -771,6 +781,40 @@ export const projectPayloadSchema = z
     allowDownloads: z
       .union([z.boolean(), z.null(), z.undefined()])
       .transform((value) => (typeof value === "boolean" ? value : true)),
+    // For whom and for how much (database/2026-09-30-companies.sql, 7a).
+    origin: z
+      .union([z.enum(PROJECT_ORIGINS), z.literal(""), z.null(), z.undefined()])
+      .transform((value) => normalizeProjectOrigin(value)),
+    clientName: optionalText("Client", PROJECT_CONTEXT_LIMITS.clientNameMax),
+    clientNda: z
+      .union([z.boolean(), z.null(), z.undefined()])
+      .transform((value) => value === true),
+    // Kept in the owner-only project_private_details, shown only when isPublic.
+    budget: z
+      .union([
+        z.object({
+          amount: z
+            .number()
+            .int("Invalid budget")
+            .min(PROJECT_CONTEXT_LIMITS.budgetMin, "Invalid budget")
+            .max(PROJECT_CONTEXT_LIMITS.budgetMax, "Budget is too large"),
+          currency: z.enum(salaryCurrencies),
+          type: z.enum(PROJECT_BUDGET_TYPES),
+          isPublic: z.boolean().default(false),
+        }),
+        z.null(),
+        z.undefined(),
+      ])
+      .transform((value) => value ?? null),
+    // Company pages to show the project on, whatever its origin; the author's
+    // membership decides whether it is shown at once or waits for the company
+    // (company_projects). The editor sends every current link, so a save never
+    // drops one it did not mean to.
+    companyIds: z
+      .array(z.string().uuid())
+      .max(COMPANY_LIMITS.companiesPerProject, "Too many companies")
+      .default([])
+      .transform((values) => [...new Set(values)]),
     status: z
       .union([z.enum(projectVisibilityStatuses), z.null(), z.undefined()])
       .transform((value): ProjectVisibilityStatus =>
@@ -782,10 +826,18 @@ export const projectPayloadSchema = z
   .transform((value) => {
     const explicitSlug = normalizeOptionalString(value.slug);
     const slug = slugify(explicitSlug || value.title) || "project";
+    // A client and an NDA belong to client or job work only, a budget to client
+    // work only; anything else sent along is dropped here. Under an NDA the
+    // name is not stored at all: project columns are publicly readable. Company pages do
+    // not depend on the origin: a team member may show any of their projects.
+    const hasClient = originHasClient(value.origin);
 
     return {
       ...value,
       slug,
+      clientName: hasClient && !value.clientNda ? value.clientName : null,
+      clientNda: hasClient ? value.clientNda : false,
+      budget: originHasBudget(value.origin) ? value.budget : null,
     };
   })
   .superRefine((value, context) => {

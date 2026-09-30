@@ -15,6 +15,7 @@ The first suites pin the security guards flagged in prior audits:
 | `rls/votes-rls.test.ts` | No self-vote; no spoofed `user_id` | migration `33_rating_security_rls.sql` applied |
 | `rls/score-guard.test.ts` | `score` not user-writable | migration `32_rating_score_triggers.sql` applied |
 | `rls/moderation-status-rls.test.ts` | User can't restore own `moderation_status` | a guard is added **(open hole today → expected red)** |
+| `rls/companies-rls.test.ts` | Company check mark/moderation not member-writable; team written only via functions; pending invites private | migration `database/2026-09-30-companies.sql` applied |
 
 Tests tagged **[KNOWN HOLE]** assert the *secure* behavior, so they fail against
 the current unpatched schema — that failure **is** the regression signal. They

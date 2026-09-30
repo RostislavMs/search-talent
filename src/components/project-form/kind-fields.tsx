@@ -170,21 +170,6 @@ export function DesignDetailsFields({
           />
         </Field>
 
-        <Field
-          label={dictionary.forms.designClientLabel}
-          htmlFor="design-client"
-        >
-          <input
-            id="design-client"
-            type="text"
-            placeholder={dictionary.forms.designClientPlaceholder}
-            className="app-input"
-            value={value.client ?? ""}
-            onChange={(event) =>
-              update("client", event.target.value || null)
-            }
-          />
-        </Field>
       </div>
 
       <Field label={dictionary.forms.designToolsLabel}>
@@ -426,21 +411,6 @@ export function VideoDetailsFields({
           />
         </Field>
 
-        <Field
-          label={dictionary.forms.videoClientLabel}
-          htmlFor="video-client"
-        >
-          <input
-            id="video-client"
-            type="text"
-            placeholder={dictionary.forms.videoClientPlaceholder}
-            className="app-input"
-            value={value.client ?? ""}
-            onChange={(event) =>
-              update("client", event.target.value || null)
-            }
-          />
-        </Field>
       </div>
 
       <Field label={dictionary.forms.videoToolsLabel}>
@@ -651,21 +621,6 @@ export function PhotoDetailsFields({
           />
         </Field>
 
-        <Field
-          label={dictionary.forms.photoClientLabel}
-          htmlFor="photo-client"
-        >
-          <input
-            id="photo-client"
-            type="text"
-            placeholder={dictionary.forms.photoClientPlaceholder}
-            className="app-input"
-            value={value.client ?? ""}
-            onChange={(event) =>
-              update("client", event.target.value || null)
-            }
-          />
-        </Field>
       </div>
     </section>
   );
@@ -724,21 +679,6 @@ export function ThreeDDetailsFields({
           />
         </Field>
 
-        <Field
-          label={dictionary.forms.threeDClientLabel}
-          htmlFor="threed-client"
-        >
-          <input
-            id="threed-client"
-            type="text"
-            placeholder={dictionary.forms.threeDClientPlaceholder}
-            className="app-input"
-            value={value.client ?? ""}
-            onChange={(event) =>
-              update("client", event.target.value || null)
-            }
-          />
-        </Field>
       </div>
 
       <Field label={dictionary.forms.threeDSoftwareLabel}>
@@ -867,21 +807,6 @@ export function AudioDetailsFields({
           />
         </Field>
 
-        <Field
-          label={dictionary.forms.audioClientLabel}
-          htmlFor="audio-client"
-        >
-          <input
-            id="audio-client"
-            type="text"
-            placeholder={dictionary.forms.audioClientPlaceholder}
-            className="app-input"
-            value={value.client ?? ""}
-            onChange={(event) =>
-              update("client", event.target.value || null)
-            }
-          />
-        </Field>
       </div>
 
       <Field label={dictionary.forms.audioGenresLabel}>
@@ -1008,18 +933,6 @@ export function QaDetailsFields({
           />
         </Field>
 
-        <Field label={dictionary.forms.qaClientLabel} htmlFor="qa-client">
-          <input
-            id="qa-client"
-            type="text"
-            placeholder={dictionary.forms.qaClientPlaceholder}
-            className="app-input"
-            value={value.client ?? ""}
-            onChange={(event) =>
-              update("client", event.target.value || null)
-            }
-          />
-        </Field>
       </div>
 
       <Field label={dictionary.forms.qaTestTypesLabel}>
@@ -1215,21 +1128,6 @@ export function MotionDetailsFields({
           />
         </Field>
 
-        <Field
-          label={dictionary.forms.motionClientLabel}
-          htmlFor="motion-client"
-        >
-          <input
-            id="motion-client"
-            type="text"
-            placeholder={dictionary.forms.motionClientPlaceholder}
-            className="app-input"
-            value={value.client ?? ""}
-            onChange={(event) =>
-              update("client", event.target.value || null)
-            }
-          />
-        </Field>
       </div>
 
       <Field label={dictionary.forms.motionTechniquesLabel}>
@@ -1330,21 +1228,6 @@ export function WritingDetailsFields({
           />
         </Field>
 
-        <Field
-          label={dictionary.forms.writingClientLabel}
-          htmlFor="writing-client"
-        >
-          <input
-            id="writing-client"
-            type="text"
-            placeholder={dictionary.forms.writingClientPlaceholder}
-            className="app-input"
-            value={value.client ?? ""}
-            onChange={(event) =>
-              update("client", event.target.value || null)
-            }
-          />
-        </Field>
       </div>
 
       <Field label={dictionary.forms.writingFormatsLabel}>

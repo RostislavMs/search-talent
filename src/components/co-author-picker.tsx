@@ -23,6 +23,12 @@ type CoAuthorPickerProps = {
   /** Render the "up to {max}" line under the input. Turn it off where the
    * surrounding form already explains the field (e.g. an ⓘ tooltip). */
   showHint?: boolean;
+  /** Wording for other uses of the same people search (company invites). */
+  labels?: Partial<
+    Record<"searchPlaceholder" | "limitReached" | "remove" | "searching", string>
+  >;
+  /** Accessible name of the search input when no visible label points at it. */
+  inputLabel?: string;
 };
 
 function optionLabel(option: CoAuthorOption): string {
@@ -41,8 +47,13 @@ export default function CoAuthorPicker({
   max = MAX_CO_AUTHORS,
   excludeUserIds = [],
   showHint = true,
+  labels,
+  inputLabel,
 }: CoAuthorPickerProps) {
-  const dict = getDictionary(isLocale(locale) ? locale : "en").coAuthors;
+  const dict = {
+    ...getDictionary(isLocale(locale) ? locale : "en").coAuthors,
+    ...labels,
+  };
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CoAuthorOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -156,6 +167,7 @@ export default function CoAuthorPicker({
       <input
         type="text"
         value={query}
+        aria-label={inputLabel}
         disabled={atMax}
         onChange={(event) => setQuery(event.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}

@@ -94,9 +94,9 @@ const marketingContent = {
             "It looks at how fully your work and profile are described and how people respond to them. A few random likes won't lift weak work. The rating guide has the details.",
         },
         {
-          question: "Is this a job board?",
+          question: "Can I find work or hire people here?",
           answer:
-            "No. There are no vacancies or applications. But specialists can show what they're open to (freelance, a job, an internship, collaboration or mentoring), and you can get in touch with them directly.",
+            "Yes. Specialists show what they're open to (freelance, a job, an internship, collaboration or mentoring), and you can get in touch with them directly. Companies can create a free page with their team and its work.",
         },
         {
           question: "Can I browse portfolios without an account?",
@@ -281,9 +281,9 @@ const marketingContent = {
             "Рейтинг дивиться, наскільки повно описані ваші роботи й профіль і як на них реагують люди. Кілька випадкових лайків не піднімуть слабку роботу. Докладніше — у гайді по рейтингу.",
         },
         {
-          question: "Це сайт вакансій?",
+          question: "Тут можна знайти роботу чи найняти людей?",
           answer:
-            "Ні. Вакансій і відгуків на них тут немає. Але фахівці можуть показати, до чого відкриті (фриланс, робота, стажування, співпраця чи менторство), і їм можна написати напряму.",
+            "Так. Фахівці показують, до чого відкриті (фриланс, робота, стажування, співпраця чи менторство), і їм можна написати напряму. Компанії можуть створити безкоштовну сторінку з командою та її роботами.",
         },
         {
           question: "Чи можна дивитися портфоліо без реєстрації?",

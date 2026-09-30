@@ -19,6 +19,7 @@ import {
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { syncCoAuthors } from "@/lib/db/co-authors";
+import { saveProjectBudget, syncProjectCompanies } from "@/lib/db/project-companies";
 
 export async function PATCH(
   request: Request,
@@ -137,6 +138,9 @@ export async function PATCH(
       github_display_options: payload.githubDisplayOptions ?? undefined,
       github_auto_sync: payload.githubAutoSync,
       allow_downloads: payload.allowDownloads,
+      origin: payload.origin,
+      client_name: payload.clientName,
+      client_nda: payload.clientNda,
       ...sourceColumns,
     })
     .eq("id", project.id)
@@ -197,6 +201,19 @@ export async function PATCH(
     creatorUserId: user.id,
     desiredUserIds: payload.coAuthorUserIds,
   });
+
+  // The budget follows the form (removed when the form sends none); company
+  // pages too, except while an auto-removed edit has nothing to show.
+  await saveProjectBudget(supabase, project.id, payload.budget);
+  if (!willRemove) {
+    await syncProjectCompanies({
+      supabase,
+      projectId: project.id,
+      userId: user.id,
+      desiredCompanyIds: payload.companyIds,
+      published: updatedProject.status === "published",
+    });
+  }
 
   // First publish (draft -> published) notifies the owner's followers. The
   // followers_notified_at guard keeps re-publishes and later edits silent.

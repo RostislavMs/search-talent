@@ -18,6 +18,7 @@ export type NotificationCategory =
   | "follows"
   | "content"
   | "coAuthors"
+  | "companies"
   | "moderation"
   | "badges";
 
@@ -32,6 +33,15 @@ const CATEGORY_BY_TYPE: Record<NotificationType, NotificationCategory> = {
   co_author_accepted: "coAuthors",
   co_author_declined: "coAuthors",
   co_author_published: "coAuthors",
+  company_invite: "companies",
+  company_invite_accepted: "companies",
+  company_invite_declined: "companies",
+  company_verified: "companies",
+  company_member_left: "companies",
+  company_member_removed: "companies",
+  company_project_request: "companies",
+  company_project_confirmed: "companies",
+  company_project_declined: "companies",
   moderation_decision: "moderation",
   new_badge: "badges",
 };
@@ -54,6 +64,10 @@ export function resolveActorName(
 ): string {
   if (item.type === "new_badge") return dict.you;
   if (item.type === "moderation_decision") return dict.moderationActor;
+  // The page itself is the subject: "Acme now has the verified mark".
+  if (item.type === "company_verified") {
+    return item.metadata.companyName || dict.someone;
+  }
   return (
     item.metadata.actorName || item.metadata.actorUsername || dict.someone
   );
@@ -69,6 +83,7 @@ export function resolveNotificationEmoji(
 ): string | null {
   if (item.type === "new_badge") return item.metadata.badgeEmoji ?? "🏅";
   if (item.type === "moderation_decision") return "🛡️";
+  if (item.type === "company_verified") return "✅";
   return null;
 }
 
@@ -107,7 +122,10 @@ export function describeNotification(
       const status = item.metadata.moderationStatus;
       const kind = item.metadata.contentKind;
       if (status && kind) {
-        return dict.actions.moderation[status][kind];
+        return dict.actions.moderation[status][kind].replace(
+          "{title}",
+          item.metadata.contentTitle ?? "",
+        );
       }
       return "";
     }
@@ -141,6 +159,39 @@ export function describeNotification(
         "{title}",
         item.metadata.coAuthorContentTitle ?? "",
       );
+    case "company_invite":
+      return dict.actions.companyInvite.replace(
+        "{company}",
+        item.metadata.companyName ?? "",
+      );
+    case "company_invite_accepted":
+      return dict.actions.companyInviteAccepted.replace(
+        "{company}",
+        item.metadata.companyName ?? "",
+      );
+    case "company_invite_declined":
+      return dict.actions.companyInviteDeclined.replace(
+        "{company}",
+        item.metadata.companyName ?? "",
+      );
+    case "company_verified":
+      return dict.actions.companyVerified;
+    case "company_member_left":
+    case "company_member_removed":
+    case "company_project_request":
+    case "company_project_confirmed":
+    case "company_project_declined": {
+      const template = {
+        company_member_left: dict.actions.companyMemberLeft,
+        company_member_removed: dict.actions.companyMemberRemoved,
+        company_project_request: dict.actions.companyProjectRequest,
+        company_project_confirmed: dict.actions.companyProjectConfirmed,
+        company_project_declined: dict.actions.companyProjectDeclined,
+      }[item.type];
+      return template
+        .replace("{company}", item.metadata.companyName ?? "")
+        .replace("{project}", item.metadata.projectTitle ?? "");
+    }
     default:
       return "";
   }
@@ -165,7 +216,34 @@ export function buildNotificationHref(
     item.type === "moderation_decision" &&
     item.metadata.moderationStatus === "removed"
   ) {
-    return `${base}/my-space`;
+    return item.metadata.contentKind === "company"
+      ? `${base}/my-space/companies`
+      : `${base}/my-space`;
+  }
+
+  // An invitation is answered where all of the person's companies are; the
+  // other company events open the page itself.
+  if (item.type === "company_invite") {
+    return `${base}/my-space/companies`;
+  }
+
+  // A request is decided in the company's editor.
+  if (item.type === "company_project_request" && item.metadata.companyId) {
+    return `${base}/companies/edit/${item.metadata.companyId}`;
+  }
+
+  // A decision about a project opens the project.
+  if (
+    (item.type === "company_project_confirmed" || item.type === "company_project_declined") &&
+    item.metadata.projectId
+  ) {
+    return `${base}/projects/${item.metadata.projectSlug || item.metadata.projectId}`;
+  }
+
+  if (item.targetType === "company") {
+    return item.metadata.companySlug
+      ? `${base}/companies/${item.metadata.companySlug}`
+      : `${base}/my-space/companies`;
   }
 
   // Co-author notifications carry the content type + slug in metadata.

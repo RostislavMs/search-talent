@@ -11,6 +11,15 @@ export const NOTIFICATION_TYPES = [
   "co_author_accepted",
   "co_author_declined",
   "co_author_published",
+  "company_invite",
+  "company_invite_accepted",
+  "company_invite_declined",
+  "company_verified",
+  "company_member_left",
+  "company_member_removed",
+  "company_project_request",
+  "company_project_confirmed",
+  "company_project_declined",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -24,6 +33,7 @@ export const NOTIFICATION_TARGET_TYPES = [
   "poll",
   "profile",
   "badge",
+  "company",
 ] as const;
 
 export type NotificationTargetType =
@@ -51,10 +61,10 @@ export type NotificationMetadata = {
   /** Moderation notifications: the decision applied to the recipient's content. */
   moderationStatus?: "removed" | "restricted";
   /** Moderation notifications: which kind of content was actioned. */
-  contentKind?: "article" | "project" | "profile" | "poll";
+  contentKind?: "article" | "project" | "profile" | "poll" | "company";
   /** Moderation notifications: human-readable title of the actioned content. */
   contentTitle?: string;
-  /** Co-author notifications: the invitation (junction row) id to accept/decline. */
+  /** Co-author and company invitations: the invitation row id to accept/decline. */
   invitationId?: string;
   /** Co-author notifications: which content type the invitation targets. */
   coAuthorContentType?: "project" | "article" | "poll";
@@ -62,6 +72,15 @@ export type NotificationMetadata = {
   coAuthorContentSlug?: string;
   /** Co-author notifications: title of the shared work. */
   coAuthorContentTitle?: string;
+  /** Company notifications: the page the event is about. */
+  companyId?: string;
+  companySlug?: string;
+  companyName?: string;
+  /** Company invitations: the role offered. */
+  companyRole?: "owner" | "admin" | "recruiter";
+  /** Company project requests and decisions: the project concerned. */
+  projectTitle?: string;
+  projectSlug?: string;
 };
 
 export type NotificationItem = {

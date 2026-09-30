@@ -12,6 +12,7 @@ import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 import NotificationsList from "@/components/notifications-list";
 import CoAuthorInvitations from "@/components/co-author-invitations";
+import CompanyInvitations from "@/components/company-invitations";
 
 async function getLocaleValue(params: Promise<{ locale: string }>) {
   const { locale } = await params;
@@ -77,6 +78,7 @@ export default async function NotificationsPage({
       </header>
 
       <CoAuthorInvitations locale={locale} />
+      <CompanyInvitations />
 
       <NotificationsList
         locale={locale}

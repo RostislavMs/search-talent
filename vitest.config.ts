@@ -28,6 +28,7 @@ export default defineConfig({
         "src/lib/auth/validation.ts",
         "src/lib/auto-moderation.ts",
         "src/lib/co-authors.ts",
+        "src/lib/companies.ts",
         "src/lib/cookie-consent.ts",
         "src/lib/feed.ts",
         "src/lib/leaderboards.ts",
@@ -80,6 +81,13 @@ export default defineConfig({
           functions: 90,
           branches: 80,
           statements: 80,
+        },
+        // Decides who may verify a company by email domain.
+        "src/lib/companies.ts": {
+          lines: 85,
+          functions: 85,
+          branches: 80,
+          statements: 85,
         },
       },
     },

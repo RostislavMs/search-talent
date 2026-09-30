@@ -5,7 +5,9 @@ import MySpaceStats from "@/components/my-space-stats";
 import OpenToCard from "@/components/open-to-card";
 import ProfileCompletenessButton from "@/components/profile-completeness-button";
 import ProfileSharePanel from "@/components/profile-share-panel";
+import { ButtonLink } from "@/components/ui/Button";
 import { buildLoginHref } from "@/lib/auth/redirect";
+import { hasCompanyMembership } from "@/lib/db/companies";
 import { getOnboardingSnapshot } from "@/lib/db/onboarding";
 import { getMyContactOpens } from "@/lib/db/open-to";
 import { getUserStats } from "@/lib/db/stats";
@@ -59,12 +61,14 @@ export default async function MySpacePage({
   }
 
   const dictionary = getDictionary(locale);
-  const [viewer, userStats, onboarding, contactOpens] = await Promise.all([
+  const [viewer, userStats, onboarding, contactOpens, hasCompanies] = await Promise.all([
     getCurrentViewerRole(),
     getUserStats(user.id),
     getOnboardingSnapshot(),
     getMyContactOpens(supabase),
+    hasCompanyMembership(supabase, user.id),
   ]);
+  const companiesCopy = dictionary.companies.mySpaceCard;
   const usernameHint = onboarding?.checklist.needsUsername
     ? isTemporaryUsername(onboarding.profile.username)
       ? dictionary.mySpace.usernameTemporary
@@ -144,6 +148,31 @@ export default async function MySpacePage({
         contactOpens={contactOpens}
         isAdmin={viewer.isAdmin}
       />
+
+      {/* One quiet line, not a banner: most people here are specialists. */}
+      <section
+        className="mt-8 flex flex-col gap-3 rounded-hero app-card p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+        aria-labelledby="my-space-companies"
+      >
+        <div>
+          <h2
+            id="my-space-companies"
+            className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
+          >
+            {hasCompanies ? companiesCopy.mine : companiesCopy.title}
+          </h2>
+          {hasCompanies ? null : (
+            <p className="mt-1 text-sm app-muted">{companiesCopy.text}</p>
+          )}
+        </div>
+        <ButtonLink
+          href={hasCompanies ? "/my-space/companies" : "/companies/new"}
+          variant="secondary"
+          className="self-start sm:self-auto"
+        >
+          {hasCompanies ? dictionary.common.open : companiesCopy.cta}
+        </ButtonLink>
+      </section>
     </main>
   );
 }

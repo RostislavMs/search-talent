@@ -21,6 +21,7 @@ import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { inviteCoAuthors } from "@/lib/db/co-authors";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
+import { saveProjectBudget, syncProjectCompanies } from "@/lib/db/project-companies";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -142,6 +143,9 @@ export async function POST(request: Request) {
       github_display_options: payload.githubDisplayOptions ?? undefined,
       github_auto_sync: payload.githubAutoSync,
       allow_downloads: payload.allowDownloads,
+      origin: payload.origin,
+      client_name: payload.clientName,
+      client_nda: payload.clientNda,
       status: holdForCoAuthors ? "draft" : payload.status,
       publish_on_confirm: holdForCoAuthors,
       ...githubColumns,
@@ -190,6 +194,22 @@ export async function POST(request: Request) {
       contentSlug: project.slug,
       creatorUserId: user.id,
       coAuthorUserIds: coAuthorIds,
+    });
+  }
+
+  // The budget sits in the owner-only table; company pages are linked or asked
+  // for. Neither may undo the project that is already saved.
+  if (payload.budget) {
+    await saveProjectBudget(supabase, project.id, payload.budget);
+  }
+
+  if (payload.companyIds.length > 0 && !screen.flagged) {
+    await syncProjectCompanies({
+      supabase,
+      projectId: project.id,
+      userId: user.id,
+      desiredCompanyIds: payload.companyIds,
+      published: project.status === "published",
     });
   }
 

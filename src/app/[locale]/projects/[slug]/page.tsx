@@ -17,8 +17,17 @@ import VoteButtons from "@/components/vote-buttons";
 import ViewBeacon from "@/components/view-beacon";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import AuthorList from "@/components/author-list";
+import CompanyLogo from "@/components/company-logo";
 import { ButtonLink } from "@/components/ui/Button";
+import LocalizedLink from "@/components/ui/localized-link";
 import ShareButton from "@/components/ui/share-button";
+import { buildCompanyPath } from "@/lib/companies";
+import { getPublicProjectBudget, loadProjectCompanyLinks } from "@/lib/db/project-companies";
+import {
+  describeProjectClient,
+  formatProjectBudget,
+  normalizeProjectOrigin,
+} from "@/lib/project-context";
 import {
   buildDiscussionPath,
   DISCUSSION_PREVIEW_LIMIT,
@@ -198,6 +207,22 @@ export default async function PublicProjectPage({
   if (!data) {
     notFound();
   }
+
+  // Companies the project is on (the author also sees open requests), and the
+  // budget only when the author put it on show.
+  const [companyLinks, budget] = await Promise.all([
+    loadProjectCompanyLinks(viewer.supabase, data.project.id),
+    getPublicProjectBudget(viewer.supabase, data.project.id),
+  ]);
+  const projectOrigin = normalizeProjectOrigin(data.project.origin);
+  const clientLabel = describeProjectClient(
+    {
+      origin: projectOrigin,
+      clientName: data.project.client_name,
+      clientNda: data.project.client_nda === true,
+    },
+    dictionary.projectContext.ndaValue,
+  );
 
   const {
     owner,
@@ -556,6 +581,35 @@ export default async function PublicProjectPage({
               {project.role && (
                 <DetailCard label={dictionary.projectPage.role} value={project.role} />
               )}
+              {projectOrigin && (
+                <DetailCard
+                  label={dictionary.projectContext.madeFor}
+                  value={dictionary.projectContext.origins[projectOrigin]}
+                />
+              )}
+              {clientLabel && (
+                <DetailCard
+                  label={
+                    projectOrigin === "job"
+                      ? dictionary.projectContext.companyLabel
+                      : dictionary.projectContext.clientLabel
+                  }
+                  value={clientLabel}
+                />
+              )}
+              {budget && (
+                <DetailCard
+                  label={dictionary.projectContext.budget}
+                  value={formatProjectBudget(
+                    budget,
+                    {
+                      fixed: dictionary.projectContext.budgetFixed,
+                      hourly: dictionary.projectContext.budgetHourly,
+                    },
+                    locale,
+                  )}
+                />
+              )}
               {typeof project.team_size === "number" && (
                 <DetailCard
                   label={dictionary.projectPage.teamSize}
@@ -826,6 +880,45 @@ export default async function PublicProjectPage({
                     maxVisible={coAuthors.length}
                     size="md"
                   />
+                </div>
+              )}
+
+              {companyLinks.length > 0 && (
+                <div className="mt-5 border-t app-border pt-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-eyebrow app-soft">
+                    {projectOrigin === "client"
+                      ? dictionary.projectContext.madeForCompany
+                      : dictionary.companies.madeAt}
+                  </p>
+                  <ul className="space-y-2">
+                    {companyLinks.map((company) => (
+                      <li key={company.companyId}>
+                        <LocalizedLink
+                          href={buildCompanyPath(company.slug)}
+                          className="flex items-center gap-3 text-sm font-semibold text-[color:var(--foreground)] transition-colors hover:text-[color:var(--brand)]"
+                        >
+                          <CompanyLogo
+                            name={company.name}
+                            logoUrl={company.logoUrl}
+                            alt={dictionary.companies.logoAlt.replace("{name}", company.name)}
+                            size="sm"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate">{company.name}</span>
+                            {company.status === "pending" ? (
+                              <span className="block text-xs font-normal app-soft">
+                                {dictionary.projectContext.pendingConfirmation}
+                              </span>
+                            ) : company.confirmed && company.verified ? (
+                              <span className="block text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                ✓ {dictionary.projectContext.confirmedBy}
+                              </span>
+                            ) : null}
+                          </span>
+                        </LocalizedLink>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </section>

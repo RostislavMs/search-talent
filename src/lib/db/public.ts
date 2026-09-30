@@ -111,6 +111,9 @@ type PublicProjectRow = {
     | null;
   github_auto_sync: boolean | null;
   allow_downloads: boolean | null;
+  origin: string | null;
+  client_name: string | null;
+  client_nda: boolean | null;
 };
 
 type PublicProfileRow = {
@@ -266,7 +269,7 @@ export async function getPublicProjectPageData(
   let projectQuery = supabase
     .from("projects")
     .select(
-      "id, owner_id, title, slug, description, role, kind, kind_metadata, source_integration, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status, status, github_full_name, github_synced_at, github_stats, tech_stack, github_readme, github_role, github_contribution, github_motivation, github_tech_decisions, github_learnings, github_showcase_notes, github_production_usage, github_display_options, github_auto_sync, allow_downloads",
+      "id, owner_id, title, slug, description, role, kind, kind_metadata, source_integration, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status, status, github_full_name, github_synced_at, github_stats, tech_stack, github_readme, github_role, github_contribution, github_motivation, github_tech_decisions, github_learnings, github_showcase_notes, github_production_usage, github_display_options, github_auto_sync, allow_downloads, origin, client_name, client_nda",
     )
     .limit(1);
 
