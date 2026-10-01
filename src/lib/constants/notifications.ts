@@ -20,6 +20,8 @@ export const NOTIFICATION_TYPES = [
   "company_project_request",
   "company_project_confirmed",
   "company_project_declined",
+  "vacancy_approved",
+  "vacancy_expired",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -34,6 +36,7 @@ export const NOTIFICATION_TARGET_TYPES = [
   "profile",
   "badge",
   "company",
+  "vacancy",
 ] as const;
 
 export type NotificationTargetType =
@@ -61,7 +64,7 @@ export type NotificationMetadata = {
   /** Moderation notifications: the decision applied to the recipient's content. */
   moderationStatus?: "removed" | "restricted";
   /** Moderation notifications: which kind of content was actioned. */
-  contentKind?: "article" | "project" | "profile" | "poll" | "company";
+  contentKind?: "article" | "project" | "profile" | "poll" | "company" | "vacancy";
   /** Moderation notifications: human-readable title of the actioned content. */
   contentTitle?: string;
   /** Co-author and company invitations: the invitation row id to accept/decline. */
@@ -81,6 +84,10 @@ export type NotificationMetadata = {
   /** Company project requests and decisions: the project concerned. */
   projectTitle?: string;
   projectSlug?: string;
+  /** Vacancy notifications: the vacancy concerned. */
+  vacancyId?: string;
+  vacancySlug?: string;
+  vacancyTitle?: string;
 };
 
 export type NotificationItem = {

@@ -36,8 +36,12 @@ export function getModerationCopy(locale: Locale) {
       report: {
         buttonProject: "Поскаржитися на проєкт",
         buttonProfile: "Поскаржитися на профіль",
+        buttonCompany: "Поскаржитися на сторінку",
+        buttonVacancy: "Поскаржитися на вакансію",
         titleProject: "Скарга на проєкт",
         titleProfile: "Скарга на профіль",
+        titleCompany: "Скарга на сторінку компанії",
+        titleVacancy: "Скарга на вакансію",
         description:
           "Опишіть проблему коротко й по суті. Це допоможе швидше пріоритезувати перевірку.",
         reasonLabel: "Причина скарги",
@@ -98,6 +102,8 @@ export function getModerationCopy(locale: Locale) {
         profile: "Профіль",
         project: "Проєкт",
         article: "Стаття",
+        company: "Компанія",
+        vacancy: "Вакансія",
       } satisfies Record<ReportTargetType, string>,
     };
   }
@@ -129,8 +135,12 @@ export function getModerationCopy(locale: Locale) {
     report: {
       buttonProject: "Report project",
       buttonProfile: "Report profile",
+      buttonCompany: "Report page",
+      buttonVacancy: "Report vacancy",
       titleProject: "Report project",
       titleProfile: "Report profile",
+      titleCompany: "Report company page",
+      titleVacancy: "Report vacancy",
       description:
         "Describe the issue clearly and briefly. That makes prioritization and review much easier.",
       reasonLabel: "Report reason",
@@ -191,6 +201,8 @@ export function getModerationCopy(locale: Locale) {
       profile: "Profile",
       project: "Project",
       article: "Article",
+      company: "Company",
+      vacancy: "Vacancy",
     } satisfies Record<ReportTargetType, string>,
   };
 }

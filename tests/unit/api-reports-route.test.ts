@@ -11,8 +11,10 @@ const { holder } = vi.hoisted(() => ({ holder: { mock: null as SupabaseMock | nu
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => holder.mock!.client) }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => null) }));
+vi.mock("@/lib/db/moderation-holds", () => ({ holdReportedContent: vi.fn(async () => true) }));
 
 import { POST } from "@/app/api/reports/route";
+import { holdReportedContent } from "@/lib/db/moderation-holds";
 import { rateLimit } from "@/lib/rate-limit";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -105,14 +107,30 @@ describe("POST /api/reports — creation", () => {
     expect(res.status).toBe(200);
     expect(mock.calls.some((c) => c.table === "content_reports" && c.verb === "insert")).toBe(true);
     // spam_or_scam is "high", not "urgent" → target is NOT moved to review.
+    expect(holdReportedContent).not.toHaveBeenCalled();
     expect(mock.calls.some((c) => c.table === "projects" && c.verb === "update")).toBe(false);
   });
 
-  it("moves the target to under_review on an urgent reason", async () => {
+  it("moves the target to under_review on an urgent reason, with the service key", async () => {
     const mock = setMock(authUser, cleanTargetResolver);
     const res = await POST(req(urgentReport));
     expect(res.status).toBe(200);
-    const update = mock.calls.find((c) => c.table === "projects" && c.verb === "update");
-    expect((update?.payload as { moderation_status: string }).moderation_status).toBe("under_review");
+    expect(holdReportedContent).toHaveBeenCalledWith(
+      "project",
+      PROJECT_ID,
+      expect.stringContaining("urgent community report"),
+    );
+    // Not through the reporter's own session, which RLS would ignore.
+    expect(mock.calls.some((c) => c.table === "projects" && c.verb === "update")).toBe(false);
+  });
+
+  it("does not hold again what is already under review", async () => {
+    setMock(authUser, (table, verb) =>
+      table === "projects" && verb === "select"
+        ? { data: { id: PROJECT_ID, owner_id: OWNER_ID, moderation_status: "under_review" } }
+        : cleanTargetResolver(table, verb),
+    );
+    expect((await POST(req(urgentReport))).status).toBe(200);
+    expect(holdReportedContent).not.toHaveBeenCalled();
   });
 });

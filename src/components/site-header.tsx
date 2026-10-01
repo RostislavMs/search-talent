@@ -191,6 +191,8 @@ export default function SiteHeader({
     { href: "/", label: dictionary.nav.home },
     { href: "/talents", label: talentsLabel },
     { href: "/projects", label: dictionary.nav.projects },
+    // Vacancies join once there are enough of them (SECTION_VISIBILITY_THRESHOLDS.jobs).
+    ...(sections.jobs ? [{ href: "/jobs", label: dictionary.nav.jobs }] : []),
     ...(hasCommunityMenu ? [] : communityLinks),
   ];
   const communityActive =
@@ -218,7 +220,10 @@ export default function SiteHeader({
         // Only for people already in a company team; everyone else finds
         // company pages through My space and /for-companies.
         ...(viewer.hasCompanies
-          ? [{ href: "/my-space/companies", label: dictionary.nav.myCompanies }]
+          ? [
+              { href: "/my-space/companies", label: dictionary.nav.myCompanies },
+              { href: "/my-space/vacancies", label: dictionary.nav.myVacancies },
+            ]
           : []),
         ...(sections.analytics
           ? [{ href: "/analytics", label: dictionary.nav.analytics }]

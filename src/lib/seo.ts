@@ -747,6 +747,104 @@ export function buildCompanySchema({
   };
 }
 
+/**
+ * A vacancy (hiring 8.2) as Google for Jobs reads it. Only emitted while the
+ * vacancy is open and posted by a verified company (isVacancyIndexable):
+ * Google penalises job markup that outlives the job.
+ *
+ * Pay goes in as baseSalary only by the hour or the month — schema.org has no
+ * unit for a fixed project budget. A remote vacancy is TELECOMMUTE, limited
+ * to its country when one is given; an office or hybrid one has a place.
+ */
+export function buildJobPostingSchema({
+  title,
+  descriptionHtml,
+  pageUrl,
+  datePosted,
+  validThrough,
+  employmentTypes,
+  company,
+  city,
+  countryName,
+  remoteOnly,
+  pay,
+  inLanguage,
+  skills,
+}: {
+  title: string;
+  descriptionHtml: string;
+  pageUrl: string;
+  datePosted: string;
+  validThrough: string;
+  employmentTypes: string[];
+  company: { name: string; pageUrl: string; website: string | null; logoUrl: string | null };
+  city: string | null;
+  countryName: string | null;
+  remoteOnly: boolean;
+  pay: { min: number; max: number; currency: string; period: "hour" | "month" | "project" } | null;
+  inLanguage: string;
+  skills: string[];
+}) {
+  const address =
+    city || countryName
+      ? {
+          "@type": "PostalAddress" as const,
+          ...(city ? { addressLocality: city } : {}),
+          ...(countryName ? { addressCountry: countryName } : {}),
+        }
+      : null;
+
+  const location = remoteOnly
+    ? {
+        jobLocationType: "TELECOMMUTE",
+        ...(countryName
+          ? { applicantLocationRequirements: { "@type": "Country", name: countryName } }
+          : {}),
+      }
+    : address
+      ? { jobLocation: { "@type": "Place", address } }
+      : {};
+
+  const salary =
+    pay && pay.period !== "project"
+      ? {
+          baseSalary: {
+            "@type": "MonetaryAmount",
+            currency: pay.currency.toUpperCase(),
+            value: {
+              "@type": "QuantitativeValue",
+              ...(pay.min === pay.max
+                ? { value: pay.min }
+                : { minValue: pay.min, maxValue: pay.max }),
+              unitText: pay.period === "hour" ? "HOUR" : "MONTH",
+            },
+          },
+        }
+      : {};
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title,
+    description: descriptionHtml,
+    url: pageUrl,
+    datePosted,
+    validThrough,
+    employmentType: employmentTypes.length === 1 ? employmentTypes[0] : employmentTypes,
+    hiringOrganization: {
+      "@type": "Organization",
+      name: company.name,
+      sameAs: company.website || company.pageUrl,
+      ...(company.logoUrl ? { logo: company.logoUrl } : {}),
+    },
+    ...location,
+    ...salary,
+    ...(skills.length > 0 ? { skills: skills.join(", ") } : {}),
+    inLanguage,
+    directApply: false,
+  };
+}
+
 export function buildWebSiteSchema() {
   const siteUrl = getSiteUrl();
   return {

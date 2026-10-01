@@ -1534,22 +1534,19 @@ export default function RichTextComposer({
         </div>
       )}
 
-      <div
-        className={cls(
-          "rounded-panel border app-border bg-[color:var(--surface)] shadow-[0_22px_90px_rgba(2,6,23,0.18)]",
-          // `overflow-hidden` clips children to the rounded corners, but it also
-          // breaks `position: sticky` for the toolbar — so we drop it when the
-          // toolbar needs to pin and round the toolbar's top corners instead.
-          stickyToolbar ? "" : "overflow-hidden",
-        )}
-      >
+      {/* No `overflow-hidden` here: it would clip the toolbar's menus (blocks,
+          link, emoji) to the editor's height — a short editor cut them in half —
+          and it breaks `position: sticky` for a pinned toolbar. The toolbar
+          rounds its own top corners instead; the editor area has no background
+          that could show past the bottom ones. */}
+      <div className="rounded-panel border app-border bg-[color:var(--surface)] shadow-[0_22px_90px_rgba(2,6,23,0.18)]">
         {/* -------- Toolbar -------- */}
         <div
           className={cls(
-            "relative border-b app-border px-3 py-2",
+            "relative rounded-t-panel border-b app-border px-3 py-2",
             stickyToolbar
-              ? "sticky top-20 z-30 rounded-t-panel bg-[color:var(--surface-muted)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--surface-muted)]/80"
-              : "bg-[color:var(--surface-muted)]/55",
+              ? "sticky top-20 z-30 bg-[color:var(--surface-muted)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--surface-muted)]/80"
+              : "z-20 bg-[color:var(--surface-muted)]/55",
           )}
         >
           <div className="flex flex-wrap items-center gap-1">

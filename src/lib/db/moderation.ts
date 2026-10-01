@@ -1,4 +1,6 @@
+import { buildCompanyPath } from "@/lib/companies";
 import { buildProjectPath } from "@/lib/projects";
+import { buildVacancyPath } from "@/lib/vacancies";
 import { createClient } from "@/lib/supabase/server";
 import {
   normalizeModerationStatus,
@@ -16,6 +18,8 @@ type QueueReportRow = {
   target_profile_id: string | null;
   target_project_id: string | null;
   target_article_id: string | null;
+  target_company_id: string | null;
+  target_vacancy_id: string | null;
   target_owner_user_id: string | null;
   reporter_user_id: string;
   reason: ReportReason;
@@ -47,6 +51,14 @@ type ArticleTargetRow = {
   author_user_id: string;
   title: string;
   slug: string;
+  moderation_status: string | null;
+};
+
+type NamedTargetRow = {
+  id: string;
+  slug: string;
+  name?: string;
+  title?: string;
   moderation_status: string | null;
 };
 
@@ -84,7 +96,7 @@ export async function getModerationQueue() {
   const { data: reports } = await supabase
     .from("content_reports")
     .select(
-      "id, target_type, target_profile_id, target_project_id, target_article_id, target_owner_user_id, reporter_user_id, reason, details, priority, status, created_at, resolution_note",
+      "id, target_type, target_profile_id, target_project_id, target_article_id, target_company_id, target_vacancy_id, target_owner_user_id, reporter_user_id, reason, details, priority, status, created_at, resolution_note",
     )
     .in("status", ["open", "triaged"])
     .order("status", { ascending: true })
@@ -102,13 +114,26 @@ export async function getModerationQueue() {
   const articleIds = queueRows
     .map((item) => item.target_article_id)
     .filter((item): item is string => Boolean(item));
+  const companyIds = queueRows
+    .map((item) => item.target_company_id)
+    .filter((item): item is string => Boolean(item));
+  const vacancyIds = queueRows
+    .map((item) => item.target_vacancy_id)
+    .filter((item): item is string => Boolean(item));
   const identityIds = [...new Set(
     queueRows
       .flatMap((item) => [item.reporter_user_id, item.target_owner_user_id])
       .filter(Boolean),
   )] as string[];
 
-  const [profileTargetsResponse, projectTargetsResponse, articleTargetsResponse, identityProfilesResponse] =
+  const [
+    profileTargetsResponse,
+    projectTargetsResponse,
+    articleTargetsResponse,
+    identityProfilesResponse,
+    companyTargetsResponse,
+    vacancyTargetsResponse,
+  ] =
     await Promise.all([
       profileIds.length > 0
         ? supabase
@@ -134,6 +159,18 @@ export async function getModerationQueue() {
             .select("user_id, username, name")
             .in("user_id", identityIds)
         : Promise.resolve({ data: [] }),
+      companyIds.length > 0
+        ? supabase
+            .from("companies")
+            .select("id, slug, name, moderation_status")
+            .in("id", companyIds)
+        : Promise.resolve({ data: [] }),
+      vacancyIds.length > 0
+        ? supabase
+            .from("vacancies")
+            .select("id, slug, title, moderation_status")
+            .in("id", vacancyIds)
+        : Promise.resolve({ data: [] }),
     ]);
 
   const profileTargets = new Map(
@@ -150,6 +187,12 @@ export async function getModerationQueue() {
       item.user_id,
       item,
     ]),
+  );
+  const companyTargets = new Map(
+    ((companyTargetsResponse.data || []) as NamedTargetRow[]).map((item) => [item.id, item]),
+  );
+  const vacancyTargets = new Map(
+    ((vacancyTargetsResponse.data || []) as NamedTargetRow[]).map((item) => [item.id, item]),
   );
 
   const priorityRank: Record<ModerationPriority, number> = {
@@ -191,6 +234,35 @@ export async function getModerationQueue() {
           target?.name ||
           (target?.username ? `@${target.username}` : report.target_profile_id || "Profile"),
         targetHref: target?.username ? `/u/${target.username}` : null,
+        targetStatus: normalizeModerationStatus(target?.moderation_status),
+        reportReason: report.reason,
+        reportStatus: report.status,
+        priority: report.priority,
+        details: report.details,
+        createdAt: report.created_at,
+        reporterLabel,
+        ownerLabel,
+        resolutionNote: report.resolution_note,
+      };
+    }
+
+    if (report.target_type === "company" || report.target_type === "vacancy") {
+      const isCompany = report.target_type === "company";
+      const rawId = isCompany ? report.target_company_id : report.target_vacancy_id;
+      const target = rawId
+        ? (isCompany ? companyTargets : vacancyTargets).get(rawId)
+        : null;
+
+      return {
+        id: report.id,
+        targetType: report.target_type,
+        targetId: target?.id || rawId || "",
+        targetLabel: target?.name || target?.title || rawId || (isCompany ? "Company" : "Vacancy"),
+        targetHref: target?.slug
+          ? isCompany
+            ? buildCompanyPath(target.slug)
+            : buildVacancyPath(target.slug)
+          : null,
         targetStatus: normalizeModerationStatus(target?.moderation_status),
         reportReason: report.reason,
         reportStatus: report.status,
@@ -263,6 +335,9 @@ export async function getModerationQueue() {
       profiles: orderedQueue.filter((item) => item.targetType === "profile").length,
       projects: orderedQueue.filter((item) => item.targetType === "project").length,
       articles: orderedQueue.filter((item) => item.targetType === "article").length,
+      hiring: orderedQueue.filter(
+        (item) => item.targetType === "company" || item.targetType === "vacancy",
+      ).length,
     },
   };
 }

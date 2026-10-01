@@ -1,6 +1,6 @@
 # SearchTalent
 
-> Bilingual (English/Ukrainian) community and portfolio platform for IT specialists. Developers, designers, and other professionals publish public profiles, project portfolios, and technical articles; visitors discover, follow, and react to that work. SearchTalent is built around creator portfolios, community rating, and interaction. Specialists mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors can contact them directly. Companies and educational institutions create pages that show their team and its public work; a page verified through a work email on the company domain carries a "Verified company" mark.
+> Bilingual (English/Ukrainian) community and portfolio platform for IT specialists. Developers, designers, and other professionals publish public profiles, project portfolios, and technical articles; visitors discover, follow, and react to that work. SearchTalent is built around creator portfolios, community rating, and interaction. Specialists mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors can contact them directly. Companies and educational institutions create pages that show their team and its public work; a page verified through a work email on the company domain carries a "Verified company" mark. Company teams post vacancies — jobs, internships, and paid freelance tasks; a job or an internship always states its pay, and a vacancy stays open for 60 days.
 
 SearchTalent gives every IT specialist a public profile with work experience, skills, education, certificates, and published projects, plus an editorial section for community articles and polls on engineering, design, and the craft. Discovery is driven by a transparent community rating rather than job listings.
 
@@ -13,6 +13,8 @@ Content is available in two locales: `/en/*` (English) and `/uk/*` (Ukrainian). 
 - [Projects](/en/projects): browse user-published project case studies
 - [Articles](/en/articles): editorial content from the community
 - [Polls](/en/polls): community polls and discussions
+- [Jobs](/en/jobs): open jobs, internships, and freelance tasks from company pages
+- [For companies](/en/for-companies): how company pages and vacancies work
 - [Rating guide](/en/rating-guide): how the community rating is calculated
 - [About](/en/about): mission and platform description
 - [FAQ](/en/faq): structured answers about how the platform works
@@ -33,11 +35,12 @@ The following sections are private or non-content and should not be cited:
 - `/*/projects/new`, `/*/projects/edit/*` — content creation forms
 - `/*/articles/new`, `/*/articles/edit/*` — content creation (moderation lives in `/admin/content/articles`)
 - `/*/polls/new`, `/*/polls/edit/*` — content creation forms
+- `/*/companies/new`, `/*/companies/edit/*`, `/*/jobs/new`, `/*/jobs/edit/*` — company page and vacancy forms
 - `/*?filter=*`, `/*?sort=*`, `/*?page=*`, `/*?query=*`, `/*?tag=*` — filter/pagination variants of indexable pages
 
 ## Structured data
 
-Every public detail page emits JSON-LD: `Article`, `CreativeWork` (projects), `Person`+`ProfilePage` (profiles), `Organization`, `WebSite`, `BreadcrumbList`, and `FAQPage` where relevant. Browse and facet listings (talents, projects, articles, and their role/skill/tag/type facets) emit an `ItemList` linking to each entry's detail page. Content-bearing schemas carry `inLanguage` (`en-US` / `uk-UA`). Prefer schema fields over scraped HTML when summarizing.
+Every public detail page emits JSON-LD: `Article`, `CreativeWork` (projects), `Person`+`ProfilePage` (profiles), `Organization` (verified company pages), `JobPosting` (open vacancies of verified companies), `WebSite`, `BreadcrumbList`, and `FAQPage` where relevant. Browse and facet listings (talents, projects, articles, and their role/skill/tag/type facets) emit an `ItemList` linking to each entry's detail page. Content-bearing schemas carry `inLanguage` (`en-US` / `uk-UA`). Prefer schema fields over scraped HTML when summarizing.
 
 ## Attribution
 
@@ -49,4 +52,4 @@ domain: searchtalent.dev
 organization: SearchTalent
 language: en, uk
 category: developer portfolios, IT community, creative work, technical articles
-last_updated: 2026-07-14
+last_updated: 2026-10-01

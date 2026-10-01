@@ -10,7 +10,9 @@ import {
   getOwnLocales,
 } from "@/lib/articles";
 import { buildCompanyPath } from "@/lib/companies";
+import { getSectionVisibility } from "@/lib/db/section-visibility";
 import { normalizeProjectKind } from "@/lib/projects";
+import { JOBS_PATH, buildVacancyPath } from "@/lib/vacancies";
 import { createLocalePath, locales, type Locale } from "@/lib/i18n/config";
 import {
   buildHreflangAlternates,
@@ -40,6 +42,7 @@ export const SITEMAP_IDS = [
   "articles",
   "polls",
   "companies",
+  "jobs",
   "project-tags",
   "project-types",
   "talent-skills",
@@ -392,6 +395,41 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
         priority: 0.6,
       }),
     );
+  }
+
+  if (id === "jobs") {
+    // The list joins only once the section is in the menu (it is noindex
+    // before); a vacancy only while it is indexable — open, approved, from a
+    // verified company — and only in the language it is written in.
+    const [sections, { data }] = await Promise.all([
+      getSectionVisibility(),
+      supabase
+        .from("vacancies")
+        .select("slug, locale, updated_at, company:company_id!inner ( verified_at, moderation_status )")
+        .eq("status", "published")
+        .eq("moderation_status", "approved")
+        .gt("expires_at", new Date().toISOString())
+        .eq("company.moderation_status", "approved")
+        .not("company.verified_at", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(SITEMAP_PAGE_SIZE),
+    ]);
+
+    const list = sections.jobs
+      ? buildEntries(baseUrl, JOBS_PATH, { changeFrequency: "daily", priority: 0.8 })
+      : [];
+
+    const vacancies = ((data || []) as Array<{ slug: string; locale: string; updated_at: string }>).flatMap(
+      (vacancy) =>
+        buildEntries(baseUrl, buildVacancyPath(vacancy.slug), {
+          lastModified: new Date(vacancy.updated_at),
+          changeFrequency: "weekly",
+          priority: 0.6,
+          availableLocales: [vacancy.locale === "en" ? "en" : "uk"],
+        }),
+    );
+
+    return [...list, ...vacancies];
   }
 
   return [];

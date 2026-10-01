@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/refresh-leaderboard",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/expire-vacancies",
+      "schedule": "30 3 * * *"
     }
   ]
 }

@@ -226,7 +226,7 @@ export async function getAdminAuditLog(
   let query = supabase
     .from("moderation_actions")
     .select(
-      "id, created_at, action_type, previous_status, next_status, report_status, target_type, target_profile_id, target_project_id, target_article_id, actor_user_id, note",
+      "id, created_at, action_type, previous_status, next_status, report_status, target_type, target_profile_id, target_project_id, target_article_id, target_company_id, target_vacancy_id, actor_user_id, note",
     )
     .order("created_at", { ascending: false })
     .limit(limit + 1);
@@ -260,6 +260,8 @@ export async function getAdminAuditLog(
     target_profile_id: string | null;
     target_project_id: string | null;
     target_article_id: string | null;
+    target_company_id?: string | null;
+    target_vacancy_id?: string | null;
     actor_user_id: string;
     note: string | null;
   };
@@ -292,8 +294,29 @@ export async function getAdminAuditLog(
         .filter((id): id is string => Boolean(id)),
     ),
   );
+  const companyIds = Array.from(
+    new Set(
+      pageRows
+        .map((row) => row.target_company_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const vacancyIds = Array.from(
+    new Set(
+      pageRows
+        .map((row) => row.target_vacancy_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
 
-  const [actorsResponse, profilesResponse, projectsResponse, articlesResponse] =
+  const [
+    actorsResponse,
+    profilesResponse,
+    projectsResponse,
+    articlesResponse,
+    companiesResponse,
+    vacanciesResponse,
+  ] =
     await Promise.all([
       actorIds.length
         ? supabase
@@ -318,6 +341,18 @@ export async function getAdminAuditLog(
             .from("articles")
             .select("id, title, slug")
             .in("id", articleIds)
+        : Promise.resolve({ data: [] as { id: string; title: string; slug: string }[] }),
+      companyIds.length
+        ? supabase
+            .from("companies")
+            .select("id, name, slug")
+            .in("id", companyIds)
+        : Promise.resolve({ data: [] as { id: string; name: string; slug: string }[] }),
+      vacancyIds.length
+        ? supabase
+            .from("vacancies")
+            .select("id, title, slug")
+            .in("id", vacancyIds)
         : Promise.resolve({ data: [] as { id: string; title: string; slug: string }[] }),
     ]);
 
@@ -355,6 +390,19 @@ export async function getAdminAuditLog(
     ]),
   );
 
+  const companyMap = new Map(
+    ((companiesResponse.data || []) as { id: string; name: string; slug: string }[]).map((row) => [
+      row.id,
+      { label: row.name, href: `/companies/${row.slug}` },
+    ]),
+  );
+  const vacancyMap = new Map(
+    ((vacanciesResponse.data || []) as { id: string; title: string; slug: string }[]).map((row) => [
+      row.id,
+      { label: row.title, href: `/jobs/${row.slug}` },
+    ]),
+  );
+
   const items: AuditLogEntry[] = pageRows.map((row) => {
     let targetId: string | null = null;
     let targetLabel = "—";
@@ -375,6 +423,16 @@ export async function getAdminAuditLog(
       const article = articleMap.get(row.target_article_id);
       targetLabel = article?.label || row.target_article_id;
       targetHref = article?.href || null;
+    } else if (row.target_type === "company" && row.target_company_id) {
+      targetId = row.target_company_id;
+      const company = companyMap.get(row.target_company_id);
+      targetLabel = company?.label || row.target_company_id;
+      targetHref = company?.href || null;
+    } else if (row.target_type === "vacancy" && row.target_vacancy_id) {
+      targetId = row.target_vacancy_id;
+      const vacancy = vacancyMap.get(row.target_vacancy_id);
+      targetLabel = vacancy?.label || row.target_vacancy_id;
+      targetHref = vacancy?.href || null;
     }
 
     return {

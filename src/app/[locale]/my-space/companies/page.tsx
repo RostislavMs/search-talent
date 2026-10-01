@@ -86,7 +86,12 @@ export default async function MyCompaniesPage({
           <p className="mt-1 text-sm app-muted">{copy.mine.description}</p>
         </div>
         {companies.length > 0 ? (
-          <ButtonLink href="/companies/new">{copy.mine.create}</ButtonLink>
+          <div className="flex flex-wrap gap-2">
+            <ButtonLink href="/my-space/vacancies" variant="secondary">
+              {copy.mine.vacancies}
+            </ButtonLink>
+            <ButtonLink href="/companies/new">{copy.mine.create}</ButtonLink>
+          </div>
         ) : null}
       </div>
 
