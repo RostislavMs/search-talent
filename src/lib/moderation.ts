@@ -5,7 +5,32 @@ export const moderationStatuses = [
   "removed",
 ] as const;
 
-export const reportTargetTypes = ["profile", "project", "article"] as const;
+export const reportTargetTypes = ["profile", "project", "article", "company", "vacancy"] as const;
+
+/**
+ * Where each target lives: its table and its column in content_reports and
+ * moderation_actions. Every route that reads or writes a target goes through
+ * this map, so a new type cannot quietly land on the projects table.
+ */
+export const REPORT_TARGETS = {
+  profile: { table: "profiles", column: "target_profile_id" },
+  project: { table: "projects", column: "target_project_id" },
+  article: { table: "articles", column: "target_article_id" },
+  company: { table: "companies", column: "target_company_id" },
+  vacancy: { table: "vacancies", column: "target_vacancy_id" },
+} as const satisfies Record<string, { table: string; column: string }>;
+
+/**
+ * The target column of a report or a moderation action. Only that one is
+ * written: the others default to null, and naming a column the database does
+ * not have yet would fail every insert.
+ */
+export function reportTargetColumns(type: ReportTargetType, id: string): Record<string, string> {
+  return { [REPORT_TARGETS[type].column]: id };
+}
+
+/** The admin content tables work with these only (bulk status and delete). */
+export const bulkModerationTargetTypes = ["profile", "project", "article"] as const;
 
 export const reportReasons = [
   "copyright_infringement",
@@ -38,6 +63,18 @@ export function normalizeModerationStatus(
 export function isPublicModerationStatus(value: string | null | undefined) {
   const normalized = normalizeModerationStatus(value);
   return normalized === null || normalized === "approved";
+}
+
+/**
+ * Whether a new report takes the target off public view at once, before a
+ * moderator looks. For vacancies a scam report counts too: a fake job hurts
+ * the people who answer it, so it waits for a decision hidden.
+ */
+export function reportHoldsTarget(targetType: ReportTargetType, reason: ReportReason): boolean {
+  if (targetType === "vacancy" && reason === "spam_or_scam") {
+    return true;
+  }
+  return getReportPriority(reason) === "urgent";
 }
 
 export function getReportPriority(reason: ReportReason): ModerationPriority {

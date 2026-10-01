@@ -362,7 +362,9 @@ export function buildProductMetrics({
   let directViews = 0;
 
   for (const row of views) {
-    if (row.owner_is_admin || row.target_type === "article") {
+    // Portfolio views only: articles, vacancies and company pages are not
+    // someone's portfolio.
+    if (row.owner_is_admin || (row.target_type !== "profile" && row.target_type !== "project")) {
       continue;
     }
     const index = weekIndex(Date.parse(`${row.week_start}T00:00:00Z`));

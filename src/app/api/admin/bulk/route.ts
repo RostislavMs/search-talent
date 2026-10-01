@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
+  REPORT_TARGETS,
+  bulkModerationTargetTypes,
   getModerationActionType,
   moderationStatuses,
   normalizeModerationStatus,
-  reportTargetTypes,
+  reportTargetColumns,
 } from "@/lib/moderation";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 
+// Company pages and vacancies are moderated one by one (their teams and
+// authors are told about each decision), so they are not offered here.
 const bulkSchema = z.object({
-  targetType: z.enum(reportTargetTypes),
+  targetType: z.enum(bulkModerationTargetTypes),
   ids: z.array(z.string().uuid()).min(1).max(100),
   action: z.enum(["status_update", "delete"]),
   moderationStatus: z.enum(moderationStatuses).optional(),
@@ -42,12 +46,7 @@ export async function POST(request: Request) {
 
   const { targetType, ids, action, moderationStatus, note } = parsed.data;
   const { supabase, user } = context;
-  const table =
-    targetType === "profile"
-      ? "profiles"
-      : targetType === "article"
-        ? "articles"
-        : "projects";
+  const table = REPORT_TARGETS[targetType].table;
 
   if (action === "delete") {
     if (targetType === "profile") {
@@ -111,9 +110,7 @@ export async function POST(request: Request) {
       actor_user_id: user.id,
       report_id: null,
       target_type: targetType,
-      target_profile_id: targetType === "profile" ? row.id : null,
-      target_project_id: targetType === "project" ? row.id : null,
-      target_article_id: targetType === "article" ? row.id : null,
+      ...reportTargetColumns(targetType, row.id),
       previous_status: previous,
       next_status: moderationStatus,
       report_status: null,

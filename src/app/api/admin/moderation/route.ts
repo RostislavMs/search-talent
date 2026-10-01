@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NotificationMetadata } from "@/lib/constants/notifications";
+import { notifyCompanyModeration } from "@/lib/db/companies";
 import { createNotifications } from "@/lib/db/notifications";
+import { notifyVacancyApproved, notifyVacancyModeration } from "@/lib/db/vacancies";
 import { sendEmail } from "@/lib/email/resend";
 import { buildModerationDecisionEmail } from "@/lib/email/templates";
 import { defaultLocale, isLocale, type Locale } from "@/lib/i18n/config";
 import {
+  REPORT_TARGETS,
   getModerationActionType,
   normalizeModerationStatus,
+  reportTargetColumns,
+  type ReportTargetType,
 } from "@/lib/moderation";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { getSiteUrl } from "@/lib/seo";
@@ -34,24 +39,12 @@ export async function POST(request: Request) {
   const payload = parsed.data;
   const { supabase, user } = context;
 
-  const targetResponse =
-    payload.targetType === "profile"
-      ? await supabase
-          .from("profiles")
-          .select("id, moderation_status")
-          .eq("id", payload.targetId)
-          .maybeSingle()
-      : payload.targetType === "article"
-        ? await supabase
-            .from("articles")
-            .select("id, moderation_status")
-            .eq("id", payload.targetId)
-            .maybeSingle()
-        : await supabase
-            .from("projects")
-            .select("id, moderation_status")
-            .eq("id", payload.targetId)
-            .maybeSingle();
+  const targetTable = REPORT_TARGETS[payload.targetType].table;
+  const targetResponse = await supabase
+    .from(targetTable)
+    .select("id, moderation_status")
+    .eq("id", payload.targetId)
+    .maybeSingle();
 
   const target = targetResponse.data as
     | { id: string; moderation_status: string | null }
@@ -69,12 +62,10 @@ export async function POST(request: Request) {
     moderated_by: user.id,
   };
 
-  const targetUpdateResponse =
-    payload.targetType === "profile"
-      ? await supabase.from("profiles").update(targetUpdate).eq("id", payload.targetId)
-      : payload.targetType === "article"
-        ? await supabase.from("articles").update(targetUpdate).eq("id", payload.targetId)
-        : await supabase.from("projects").update(targetUpdate).eq("id", payload.targetId);
+  const targetUpdateResponse = await supabase
+    .from(targetTable)
+    .update(targetUpdate)
+    .eq("id", payload.targetId);
 
   if (targetUpdateResponse.error) {
     return NextResponse.json(
@@ -106,9 +97,7 @@ export async function POST(request: Request) {
     actor_user_id: user.id,
     report_id: payload.reportId || null,
     target_type: payload.targetType,
-    target_profile_id: payload.targetType === "profile" ? payload.targetId : null,
-    target_project_id: payload.targetType === "project" ? payload.targetId : null,
-    target_article_id: payload.targetType === "article" ? payload.targetId : null,
+    ...reportTargetColumns(payload.targetType, payload.targetId),
     previous_status: previousStatus,
     next_status: payload.moderationStatus,
     report_status: payload.reportStatus || null,
@@ -123,25 +112,65 @@ export async function POST(request: Request) {
     );
   }
 
-  // Notify the content owner when their content is removed or restricted.
-  // Best-effort: a failure here must never fail the moderation action.
-  if (
-    payload.moderationStatus === "removed" ||
-    payload.moderationStatus === "restricted"
-  ) {
-    try {
-      await notifyContentOwner({
-        targetType: payload.targetType,
-        targetId: payload.targetId,
-        status: payload.moderationStatus,
-        note: payload.resolutionNote || null,
-      });
-    } catch (error) {
-      console.error("[moderation] owner notification failed", error);
-    }
+  // Tell the owner. Best-effort: a failure here must never fail the action.
+  try {
+    await notifyDecision({
+      targetType: payload.targetType,
+      targetId: payload.targetId,
+      previousStatus,
+      status: payload.moderationStatus,
+      note: payload.resolutionNote || null,
+    });
+  } catch (error) {
+    console.error("[moderation] owner notification failed", error);
   }
 
   return NextResponse.json({ success: true });
+}
+
+/**
+ * Removed or restricted content: its owner hears of it. A company page goes
+ * to its owners and admins, a vacancy to its author (or the managers once the
+ * author has left). A vacancy let out of review is news too: the team waited
+ * for it.
+ */
+async function notifyDecision({
+  targetType,
+  targetId,
+  previousStatus,
+  status,
+  note,
+}: {
+  targetType: ReportTargetType;
+  targetId: string;
+  previousStatus: string | null;
+  status: string;
+  note: string | null;
+}) {
+  const hidden = status === "removed" || status === "restricted" ? status : null;
+  const changed = status !== previousStatus;
+
+  if (targetType === "vacancy") {
+    if (hidden && changed) {
+      await notifyVacancyModeration({ vacancyId: targetId, status: hidden });
+    } else if (status === "approved" && previousStatus === "under_review") {
+      await notifyVacancyApproved(targetId);
+    }
+    return;
+  }
+
+  if (!hidden) {
+    return;
+  }
+
+  if (targetType === "company") {
+    if (changed) {
+      await notifyCompanyModeration({ companyId: targetId, status: hidden });
+    }
+    return;
+  }
+
+  await notifyContentOwner({ targetType, targetId, status: hidden, note });
 }
 
 /**
@@ -155,7 +184,7 @@ async function notifyContentOwner({
   status,
   note,
 }: {
-  targetType: "profile" | "project" | "article";
+  targetType: Exclude<ReportTargetType, "company" | "vacancy">;
   targetId: string;
   status: "removed" | "restricted";
   note: string | null;

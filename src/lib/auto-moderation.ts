@@ -33,6 +33,9 @@ export const autoModerationCategories = [
   "hate",
   "sexual",
   "spam",
+  // Vacancies only (screenContentForModeration's `scam` option): a fee taken
+  // from candidates, or the conversation moved off the platform.
+  "scam",
 ] as const;
 
 export type AutoModerationCategory = (typeof autoModerationCategories)[number];
@@ -84,7 +87,7 @@ export const AUTO_MODERATION_BLOCKED_MESSAGE =
   "Коментар не пройшов автоматичну перевірку: приберіть нецензурну лексику, образи чи спам.";
 
 type BlocklistEntry = {
-  category: Exclude<AutoModerationCategory, "spam">;
+  category: Exclude<AutoModerationCategory, "spam" | "scam">;
   /** Lowercase base form. */
   term: string;
   /**
@@ -359,7 +362,67 @@ const CATEGORY_NOTE_LABEL: Record<AutoModerationCategory, string> = {
   hate: "мова ворожнечі або образливі вислови",
   sexual: "відвертий сексуальний контент",
   spam: "ознаки спаму",
+  scam: "ознаки шахрайства (плата з кандидата або листування поза сайтом)",
 };
+
+/**
+ * The usual shapes of a fake vacancy: the candidate is told to pay first (a
+ * "deposit", training, registration), or to move to a messenger. Only the
+ * demand is matched — "оплачуване навчання" (paid training, a perk) or a 50%
+ * prepayment to a freelancer are fine. Matched on the lowercased text as
+ * written: the confusable folding used for the blocklist would turn these
+ * Cyrillic words into a Latin mix. Only vacancies are screened for this, and
+ * a match holds the vacancy for a moderator rather than removing it.
+ *
+ * Honest vacancies often say the opposite ("we never ask you to pay a fee",
+ * "навчання безкоштовне, не потрібно оплатити навчання"), so a match right
+ * after a negation does not count. "Пишіть у Telegram" is an instruction;
+ * "пишемо у Telegram Mini Apps" is the job, so only the imperative counts.
+ */
+const SCAM_PAY_VERBS =
+  "(?:оплатіть|оплатите|сплатіть|сплатите|заплатіть|заплатите|внесіть|внесите|(?:потрібно|необхідно|треба|нужно|необходимо|слід)\\s+(?:оплатити|сплатити|заплатити|внести|оплатить|заплатить))";
+const SCAM_PAY_OBJECTS =
+  "(?:за\\s+)?(?:навчання|обучение|стажування|стажировку|реєстрацію|регистрацию|анкету|матеріали|материалы|обладнання|оборудование|внесок|взнос|депозит|страховку|страховий\\s+внесок|страховой\\s+взнос)";
+
+const SCAM_PATTERNS: RegExp[] = [
+  new RegExp(`(?<!\\p{L})${SCAM_PAY_VERBS}\\s+${SCAM_PAY_OBJECTS}(?!\\p{L})`, "gu"),
+  /(?<!\p{L})(?:страхов\p{L}*\s+(?:внесок|взнос)|гарантійн\p{L}*\s+внесок|залогов\p{L}*\s+взнос)(?!\p{L})/gu,
+  /(?<!\p{L})(?:пиш(?:іть|и|ите)|напиш(?:іть|и|ите))\s+(?:нам\s+|мені\s+|мне\s+)?(?:в|у|на)\s+(?:телеграм\p{L}*|telegram|тг|tg|вайбер\p{L}*|viber|ватсап\p{L}*|whatsapp)(?!\p{L})/gu,
+  /(?<!\p{L})(?:registration|training|application|onboarding)\s+fee(?!\p{L})/gu,
+  /(?<!\p{L})(?:pay|send)\s+(?:a\s+|the\s+|an\s+)?(?:fee|deposit|upfront)(?!\p{L})/gu,
+  /(?<!\p{L})upfront\s+(?:payment|fee)(?!\p{L})/gu,
+  /(?<!\p{L})(?:write|message|text|dm|contact)\s+(?:to\s+)?(?:me|us)\s+(?:on|in|via|at)\s+(?:telegram|whatsapp|viber)(?!\p{L})/gu,
+];
+
+/** "no", "never", "не", "ніколи", "без" within the few words before a match. */
+const SCAM_NEGATION = /(?<!\p{L})(?:no|not|never|без|не|ні|ніколи|никогда|нет)(?!\p{L})(?:\s+\p{L}+){0,4}\s*$/u;
+
+// Latin letters that look like Cyrillic ones, folded only inside words that
+// are otherwise Cyrillic: "оплатiть" with a Latin "i" is still "оплатіть".
+const LATIN_LOOKALIKES: Record<string, string> = {
+  a: "а", c: "с", e: "е", i: "і", o: "о", p: "р", x: "х", y: "у", k: "к", m: "м", t: "т", h: "н", b: "в",
+};
+
+function foldMixedScriptWords(text: string): string {
+  return text.replace(/[\p{L}]+/gu, (word) =>
+    /\p{Script=Cyrillic}/u.test(word)
+      ? word.replace(/[aceiopxykmthb]/g, (char) => LATIN_LOOKALIKES[char] ?? char)
+      : word,
+  );
+}
+
+export function hasScamSignals(text: string): boolean {
+  const lower = foldMixedScriptWords(text.normalize("NFKC").toLowerCase());
+
+  return SCAM_PATTERNS.some((pattern) => {
+    for (const match of lower.matchAll(pattern)) {
+      if (!SCAM_NEGATION.test(lower.slice(Math.max(0, match.index - 40), match.index))) {
+        return true;
+      }
+    }
+    return false;
+  });
+}
 
 /** Matches a whole bare URL (scheme- or www-prefixed) so we can dedupe by URL. */
 const URL_PATTERN = /\b(?:https?:\/\/|www\.)[^\s<>"')\]]+/gi;
@@ -407,6 +470,7 @@ export function buildModerationNote(
  */
 export function screenContentForModeration(
   parts: Array<string | null | undefined>,
+  options: { scam?: boolean } = {},
 ): AutoModerationResult {
   const text = parts
     .map((part) => (part ? extractPlainTextFromRichText(String(part)) : ""))
@@ -434,6 +498,9 @@ export function screenContentForModeration(
   if (isShouting(text)) {
     matches.push({ category: "spam", detail: "shouting" });
   }
+  if (options.scam && hasScamSignals(text)) {
+    matches.push({ category: "scam" });
+  }
 
   const categories = autoModerationCategories.filter((category) =>
     matches.some((match) => match.category === category),
@@ -456,6 +523,7 @@ const MODERATION_REASON_COPY = {
       hate: "образливі вислови або мова ворожнечі",
       sexual: "відвертий сексуальний контент",
       spam: "ознаки спаму",
+      scam: "схоже на вимогу заплатити кандидату чи перейти в месенджер",
     } satisfies Record<AutoModerationCategory, string>,
     links: (count: number) =>
       `забагато посилань: ${count} (максимум ${AUTO_MODERATION_LINK_LIMIT - 1} — приберіть зайві)`,
@@ -469,6 +537,7 @@ const MODERATION_REASON_COPY = {
       hate: "slurs or hate speech",
       sexual: "explicit sexual content",
       spam: "spam signals",
+      scam: "it reads like asking candidates to pay or to move to a messenger",
     } satisfies Record<AutoModerationCategory, string>,
     links: (count: number) =>
       `too many links: ${count} (max ${AUTO_MODERATION_LINK_LIMIT - 1} — remove some)`,
@@ -570,6 +639,15 @@ export function collectArticleModerationText(
   }
 
   return parts;
+}
+
+/** Screened with `{ scam: true }`: see SCAM_PATTERNS. */
+export function collectVacancyModerationText(payload: {
+  title: string;
+  description: string;
+  city: string | null;
+}): Array<string | null | undefined> {
+  return [payload.title, payload.description, payload.city];
 }
 
 export function collectPollModerationText(

@@ -24,6 +24,36 @@ export const SECTION_VISIBILITY_CACHE_TAG = "section-visibility";
 /** Distinct poll authors only need to be counted up to the threshold. */
 const POLL_AUTHOR_SAMPLE = 1000;
 
+/** Open vacancies are read as rows (their companies are counted distinct). */
+const VACANCY_SAMPLE = 1000;
+
+/**
+ * Open vacancies a visitor can see and how many companies posted them. On an
+ * error (for one, before the vacancies migration) both are 0: the section
+ * stays out of the menu, and the other sections are not affected.
+ */
+async function countOpenVacancies(
+  supabase: SupabaseClient,
+): Promise<{ openVacancies: number; vacancyCompanies: number }> {
+  const { data, error } = await supabase
+    .from("vacancies")
+    .select("company_id")
+    .eq("status", "published")
+    .eq("moderation_status", "approved")
+    .gt("expires_at", new Date().toISOString())
+    .limit(VACANCY_SAMPLE);
+
+  if (error || !data) {
+    return { openVacancies: 0, vacancyCompanies: 0 };
+  }
+
+  const rows = data as Array<{ company_id: string }>;
+  return {
+    openVacancies: rows.length,
+    vacancyCompanies: new Set(rows.map((row) => row.company_id)).size,
+  };
+}
+
 type CountResult = { count: number | null; error: { message: string } | null };
 
 function countOrThrow({ count, error }: CountResult): number {
@@ -74,6 +104,7 @@ async function loadSectionCounts(
     pollThreads,
     recentNews,
     publicProfiles,
+    vacancies,
   ] = await Promise.all([
     supabase
       .from("polls")
@@ -123,6 +154,7 @@ async function loadSectionCounts(
       .from("profiles")
       .select("id", countHead)
       .not("username", "is", null),
+    countOpenVacancies(supabase),
   ]);
 
   if (polls.error) {
@@ -145,6 +177,7 @@ async function loadSectionCounts(
       countOrThrow(pollThreads),
     recentNews: countOrThrow(recentNews),
     publicProfiles: countOrThrow(publicProfiles),
+    ...vacancies,
   };
 }
 
@@ -169,7 +202,7 @@ async function readSectionVisibility(): Promise<SectionVisibility> {
  */
 export const getSectionVisibility = unstable_cache(
   readSectionVisibility,
-  ["section-visibility-v1"],
+  ["section-visibility-v2"],
   {
     revalidate: SECTION_VISIBILITY_REVALIDATE_SECONDS,
     tags: [SECTION_VISIBILITY_CACHE_TAG],

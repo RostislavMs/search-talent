@@ -65,8 +65,13 @@ export default function ContentReportButton({
   const reportCopy = copy.report;
   const loginHref = useLoginHref();
 
-  const triggerLabel =
-    targetType === "project" ? reportCopy.buttonProject : reportCopy.buttonProfile;
+  const { triggerLabel, dialogTitle } = {
+    project: { triggerLabel: reportCopy.buttonProject, dialogTitle: reportCopy.titleProject },
+    company: { triggerLabel: reportCopy.buttonCompany, dialogTitle: reportCopy.titleCompany },
+    vacancy: { triggerLabel: reportCopy.buttonVacancy, dialogTitle: reportCopy.titleVacancy },
+    profile: { triggerLabel: reportCopy.buttonProfile, dialogTitle: reportCopy.titleProfile },
+    article: { triggerLabel: reportCopy.buttonProfile, dialogTitle: reportCopy.titleProfile },
+  }[targetType];
 
   if (!isAuthenticated) {
     if (iconOnly) {
@@ -139,9 +144,7 @@ export default function ContentReportButton({
             <div className="flex items-start justify-between gap-4">
               <div className="max-w-xl">
                 <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
-                  {targetType === "project"
-                    ? reportCopy.titleProject
-                    : reportCopy.titleProfile}
+                  {dialogTitle}
                 </h2>
                 <p className="mt-3 text-sm leading-7 app-muted">
                   {reportCopy.description}

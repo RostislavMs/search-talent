@@ -39,6 +39,8 @@ export const SECTION_VISIBILITY_THRESHOLDS = {
   news: { minRecent: 5, windowDays: 90 },
   /** Public profiles before platform-wide analytics says anything real. */
   analytics: { minProfiles: 100 },
+  /** Open vacancies, and how many different companies posted them (hiring 8.2). */
+  jobs: { minOpen: 5, minCompanies: 3 },
 } as const;
 
 /** How long the section counts are cached before they are recounted. */

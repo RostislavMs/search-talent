@@ -96,7 +96,7 @@ const marketingContent = {
         {
           question: "Can I find work or hire people here?",
           answer:
-            "Yes. Specialists show what they're open to (freelance, a job, an internship, collaboration or mentoring), and you can get in touch with them directly. Companies can create a free page with their team and its work.",
+            "Yes. Specialists show what they're open to (freelance, a job, an internship, collaboration or mentoring), and you can get in touch with them directly. Companies can create a free page with their team and its work, and post jobs, internships and paid freelance tasks.",
         },
         {
           question: "Can I browse portfolios without an account?",
@@ -283,7 +283,7 @@ const marketingContent = {
         {
           question: "Тут можна знайти роботу чи найняти людей?",
           answer:
-            "Так. Фахівці показують, до чого відкриті (фриланс, робота, стажування, співпраця чи менторство), і їм можна написати напряму. Компанії можуть створити безкоштовну сторінку з командою та її роботами.",
+            "Так. Фахівці показують, до чого відкриті (фриланс, робота, стажування, співпраця чи менторство), і їм можна написати напряму. Компанії можуть створити безкоштовну сторінку з командою та її роботами й розміщувати роботу, стажування та оплачувані фриланс-задачі.",
         },
         {
           question: "Чи можна дивитися портфоліо без реєстрації?",

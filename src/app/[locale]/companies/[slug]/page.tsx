@@ -3,8 +3,11 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import CompanyLogo from "@/components/company-logo";
 import CompanyVerifiedBadge from "@/components/company-verified-badge";
+import ContentReportButton from "@/components/content-report-button";
 import JsonLd from "@/components/json-ld";
 import ProjectCard from "@/components/project-card";
+import VacancyCard from "@/components/vacancy-card";
+import ViewBeacon from "@/components/view-beacon";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -21,8 +24,10 @@ import {
   listCompanyProjects,
   listCompanyTeam,
 } from "@/lib/db/companies";
+import { listCompanyOpenVacancies } from "@/lib/db/vacancies";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
+import { getModerationCopy } from "@/lib/moderation-copy";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import {
   buildBreadcrumbSchema,
@@ -133,9 +138,10 @@ export default async function CompanyPage({ params }: { params: RouteParams }) {
   const role = await getCompanyRole(viewer.supabase, company.id, viewer.user?.id);
   const isMember = Boolean(role);
 
-  const [allTeam, linked] = await Promise.all([
+  const [allTeam, linked, vacancies] = await Promise.all([
     listCompanyTeam(viewer.supabase, company.id),
     listCompanyProjects(viewer.supabase, company.id, 24),
+    listCompanyOpenVacancies(viewer.supabase, company.id),
   ]);
   const team = allTeam.filter((member) => member.username);
   // Requests from outside authors wait in the editor; the page shows accepted work.
@@ -195,6 +201,9 @@ export default async function CompanyPage({ params }: { params: RouteParams }) {
           />
         </>
       ) : null}
+      {company.moderationStatus === "approved" ? (
+        <ViewBeacon targetType="company" targetId={company.id} />
+      ) : null}
 
       {notice ? (
         <div
@@ -236,9 +245,16 @@ export default async function CompanyPage({ params }: { params: RouteParams }) {
           </div>
 
           {isMember || viewer.isAdmin ? (
-            <ButtonLink href={`/companies/edit/${company.id}`} variant="secondary" className="self-start">
-              {copy.page.manage}
-            </ButtonLink>
+            <div className="flex flex-wrap gap-2 self-start">
+              {company.moderationStatus === "approved" ? (
+                <ButtonLink href={`/jobs/new?company=${company.id}`} variant="secondary">
+                  {dictionary.vacancies.companySection.post}
+                </ButtonLink>
+              ) : null}
+              <ButtonLink href={`/companies/edit/${company.id}`} variant="secondary">
+                {copy.page.manage}
+              </ButtonLink>
+            </div>
           ) : null}
         </div>
 
@@ -268,6 +284,28 @@ export default async function CompanyPage({ params }: { params: RouteParams }) {
           </dl>
         ) : null}
       </section>
+
+      {vacancies.length > 0 ? (
+        <section className="mt-6 sm:mt-8" aria-labelledby="company-vacancies">
+          <h2
+            id="company-vacancies"
+            className="font-display px-5 text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:px-0"
+          >
+            {dictionary.vacancies.companySection.title}
+          </h2>
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {vacancies.map((vacancy) => (
+              <VacancyCard
+                key={vacancy.id}
+                vacancy={vacancy}
+                dictionary={dictionary}
+                locale={locale}
+                showCompany={false}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {company.description ? (
         <section
@@ -331,6 +369,17 @@ export default async function CompanyPage({ params }: { params: RouteParams }) {
             </div>
           )}
         </section>
+      ) : null}
+
+      {!isMember ? (
+        <div className="mt-6 flex justify-end px-5 sm:mt-8 sm:px-0">
+          <ContentReportButton
+            copy={getModerationCopy(locale)}
+            targetType="company"
+            targetId={company.id}
+            isAuthenticated={Boolean(viewer.user)}
+          />
+        </div>
       ) : null}
     </main>
   );

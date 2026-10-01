@@ -165,13 +165,19 @@ export default async function MySpacePage({
             <p className="mt-1 text-sm app-muted">{companiesCopy.text}</p>
           )}
         </div>
-        <ButtonLink
-          href={hasCompanies ? "/my-space/companies" : "/companies/new"}
-          variant="secondary"
-          className="self-start sm:self-auto"
-        >
-          {hasCompanies ? dictionary.common.open : companiesCopy.cta}
-        </ButtonLink>
+        <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+          {hasCompanies ? (
+            <ButtonLink href="/my-space/vacancies" variant="secondary">
+              {companiesCopy.vacancies}
+            </ButtonLink>
+          ) : null}
+          <ButtonLink
+            href={hasCompanies ? "/my-space/companies" : "/companies/new"}
+            variant="secondary"
+          >
+            {hasCompanies ? dictionary.common.open : companiesCopy.cta}
+          </ButtonLink>
+        </div>
       </section>
     </main>
   );

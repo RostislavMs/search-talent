@@ -10,7 +10,8 @@ import { z } from "zod";
 // from. See database/2026-09-26-product-metrics.sql for the storage side.
 // ---------------------------------------------------------------------------
 
-export const VIEW_TARGET_TYPES = ["profile", "project", "article"] as const;
+// Vacancy and company pages since hiring 8.2 (database/2026-09-30-vacancies.sql).
+export const VIEW_TARGET_TYPES = ["profile", "project", "article", "vacancy", "company"] as const;
 export type ViewTargetType = (typeof VIEW_TARGET_TYPES)[number];
 
 export const VIEW_SOURCES = ["internal", "external", "direct"] as const;

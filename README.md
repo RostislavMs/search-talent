@@ -1,6 +1,6 @@
 # SearchTalent
 
-A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is built around creator portfolios, rating, and community signal. Specialists mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors reach them through a "Contact" button. Companies create pages with their team and its work (hiring, part 8 of the plan; vacancies and portfolio applications come next).
+A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is built around creator portfolios, rating, and community signal. Specialists mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors reach them through a "Contact" button. Companies create pages with their team and its work, and post vacancies — jobs, internships and paid freelance tasks (hiring, part 8 of the plan; portfolio applications come next).
 
 ---
 
@@ -99,6 +99,13 @@ search-talent/
 - The page shows only the projects attached to the company (`company_projects`, up to 3 companies per project): a member's project appears at once, anyone else's waits as a request until an owner/admin accepts it. The company can also confirm a project ("Confirmed by the company", `confirm_company_project`). The author or the company's owners/admins take it off; projects stay when the author leaves the team, and the managers are notified (the removed person is notified too). The project page links back to the company. Auto-moderation holds a flagged page for review.
 - Every project can say who it was made for (`projects.origin`: yourself, a client, an employer, studies, open source) and name the client or mark it under NDA — then the name is not stored at all. Client work can carry a budget (fixed or hourly) in owner-only `project_private_details`; it is shown only when the author turns it on (`project_public_budget()`).
 
+### Vacancies (hiring, stage 8.2)
+
+- Only company pages post vacancies (`vacancies`, `vacancy_skills`, `database/2026-09-30-vacancies.sql`): any accepted member of the team writes, publishes, closes and extends them; the author or an owner/admin deletes. Kinds follow "Open to" (job, internship, freelance, collaboration); a job or an internship must state its pay (an amount or a range, UAH/EUR/USD, per month or hour; freelance per hour or for the project).
+- Life cycle in the database (`guard_vacancy_columns`): draft → published → closed or expired; the dates are stamped by the database — open for 60 days from going out, "extend" means 60 days from now, the first publication date stays. At most 5 new vacancies per company a day. The daily cron `/api/cron/expire-vacancies` marks ended ones and notifies the author; pages treat a vacancy past `expires_at` as ended even before that.
+- Moderation: a verified company's vacancy goes live at once (auto-moderation still screens it, with extra rules against "pay for training" and "write to us on Telegram" scams); an unverified company's vacancy waits in `/admin/content/vacancies` when it first goes out and again whenever its text changes. A report of a scam hides a vacancy until a moderator decides. Reports and moderation actions now target companies and vacancies too.
+- `/jobs` is rendered on the server with filters in the address (type, format, level, field, country, skill, "with pay", title search). It stays out of the menu and search engines until there are 5 open vacancies from 3 companies (`SECTION_VISIBILITY_THRESHOLDS.jobs`). A vacancy page is indexed, listed in the sitemap and carries `JobPosting` JSON-LD only while it is open and its company is verified, and only in the language it is written in.
+
 ### Projects
 
 - Title, description, technologies, links (repo + live), media gallery (images & video), pinning.
@@ -181,6 +188,7 @@ search-talent/
 | `/u/[username]/projects`, `/u/[username]/articles`, `/u/[username]/polls` | Per-user collections (own + co-authored) |
 | `/companies/[slug]` | Company page: the team and its work |
 | `/for-companies` | Landing for employers |
+| `/jobs`, `/jobs/[slug]` | Open vacancies with filters, vacancy page |
 | `/rating-guide` | How the rating system works |
 | `/about`, `/faq`, `/feedback` | Marketing & support |
 | `/terms`, `/privacy`, `/cookies`, `/legal` | Legal hub |
@@ -203,6 +211,8 @@ search-talent/
 | `/my-space/saved` | Bookmarked profiles and projects |
 | `/my-space/companies` | Your company pages and invitations to join |
 | `/companies/new`, `/companies/edit/[id]` | Create a company page / edit it, team, verification |
+| `/my-space/vacancies` | Vacancies of your companies: drafts, open, closed, views |
+| `/jobs/new`, `/jobs/edit/[id]` | Vacancy form (company team) |
 | `/analytics` | Platform-wide analytics |
 | `/notifications` | Inbox |
 | `/profile/edit` | Profile editor (sections, presentation, GitHub link, account) |
@@ -219,6 +229,7 @@ search-talent/
 | `/admin/content/projects` | Project moderation table |
 | `/admin/content/polls` | Poll moderation table |
 | `/admin/content/comments` | Comment moderation |
+| `/admin/content/vacancies` | Vacancies waiting for review, open and hidden ones |
 | `/admin/moderation` | Reports queue |
 | `/admin/users` | User management |
 | `/admin/companies` | Verify company pages, moderation status |
@@ -272,6 +283,15 @@ search-talent/
 | GET | `/api/company-invitations` | Invitations waiting for the current user |
 | PATCH | `/api/company-invitations/[id]` | Accept or decline |
 | PATCH | `/api/admin/companies/[id]` | Admin: verified mark, moderation status |
+
+### Vacancies
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/api/vacancies` | Write a vacancy for your company, as a draft or published (10/hour, 5 per company a day) |
+| PATCH/DELETE | `/api/vacancies/[id]` | Edit (team) / delete (author, owner or admin) |
+| POST | `/api/vacancies/[id]/status` | `publish` a draft, `close`, or `extend` for 60 days (also reopens) |
+| GET | `/api/cron/expire-vacancies` | Daily cron: mark ended vacancies, notify authors (`CRON_SECRET`) |
 
 ### Projects
 

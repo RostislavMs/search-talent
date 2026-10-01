@@ -40,7 +40,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "These Terms describe the rules for using SearchTalent. They form a living document and may expand as the product grows.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "September 30, 2026",
+      lastUpdatedValue: "October 1, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -96,6 +96,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "SearchTalent helps companies and specialists find each other, but it is not a party to hiring: it does not employ anyone, does not check offers, and does not guarantee the outcome of any agreement.",
             "The “Verified company” mark means that a team member confirmed an email address on the company's domain, or that SearchTalent checked the page. It is not a recommendation of the company. A new name or website takes the mark off until the page is verified again.",
             "“Confirmed by the company” on a project means that someone from the company's team confirmed the work was done for it. The author remains responsible for everything else the project says, including who it was made for and the budget.",
+            "A company's team can post vacancies: jobs, internships, and freelance tasks. A job or an internship states its pay. A vacancy of a page that is not verified is checked by a moderator before it is shown, and again whenever its text changes. A vacancy stays open for 60 days unless the team extends it. A vacancy reported as a scam is hidden until a moderator looks at it.",
           ],
           bullets: [
             "Do not charge candidates for anything — not for applying, training, equipment, or “registration”.",
@@ -115,6 +116,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           title: "Moderation and access",
           paragraphs: [
             "Content may be reviewed by automated and manual moderation. We may place content under review, remove it, or restrict access to the platform if material is illegal, abusive, misleading, or clearly unsafe for the product and its users.",
+            "A report of sexual, dangerous, or hateful content hides that profile, project, article, or company page until a moderator looks at it; if the report turns out to be wrong, the content comes back.",
             "We may also update or discontinue features as the project evolves.",
           ],
         },
@@ -148,7 +150,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "This Privacy Policy explains what data SearchTalent handles, why it is needed, who processes it, and the rights you have over your information.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "September 30, 2026",
+      lastUpdatedValue: "October 1, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -171,9 +173,10 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Content and community activity: projects, articles, polls and your poll responses, comments, reactions, votes, follows, bookmarks, badges, notifications, and your position on the leaderboard.",
             "Project details, if you add them: who the project was made for (yourself, a client, an employer, your studies, or open source), the client's or company's name or a note that it is under an NDA, and the budget.",
             "Company pages: the organization's name, logo, website, description, size and location; who created the page; who is on its team and in what role; invitations to join it; which projects were added to the page, by whom, and who from the company confirmed them.",
+            "Vacancies: what a company's team publishes about a vacancy (title, description, type, format, place, level, skills, pay, language), who on the team posted it, and when it was published, closed, or ended.",
             "Feedback you send: the name, email, and message you submit through the feedback form.",
             "Technical and usage data: information needed for security, reliability, and performance, and aggregate view counts on content.",
-            "Page view statistics for profiles, projects, and articles: which page was viewed, whether the visitor came from another SearchTalent page, from another site (its domain only), or directly, and whether they were signed in. We do not store IP addresses or full referring links. A repeat view on the same day is recognized by a code computed from the IP address and browser details together with a random key that we delete the next day; after that, the code cannot be linked to anyone.",
+            "Page view statistics for profiles, projects, articles, vacancies, and company pages: which page was viewed, whether the visitor came from another SearchTalent page, from another site (its domain only), or directly, and whether they were signed in. We do not store IP addresses or full referring links. A repeat view on the same day is recognized by a code computed from the IP address and browser details together with a random key that we delete the next day; after that, the code cannot be linked to anyone.",
             "For registered users: the time of your last visit, updated at most once an hour.",
             "Only if you allowed analytics cookies: where your first visit came from (the referring site's domain, UTM tags, and the page you landed on), saved to your account once when you sign up.",
           ],
@@ -206,7 +209,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Much of what you add is intended to be public — your profile, projects, articles, polls, and comments — and you control which profile sections are visible through your profile visibility settings.",
             "Other information, such as authentication data, your email, feedback submissions, and internal technical records, is used only to operate the service and is not made public.",
             "The email and phone you add to your profile are never public: signed-in people see them only after pressing “Contact” on your page. Salary expectations and the hourly rate are visible only to you until you turn on showing them on your page, each with its own switch. What you are open to is public, as is the date you last confirmed it.",
-            "If you join a company's team, your profile appears on the company page. An invitation nobody has answered yet is seen only by the person invited and by the company's team.",
+            "If you join a company's team, your profile appears on the company page. An invitation nobody has answered yet is seen only by the person invited and by the company's team. A published vacancy is public, also after it closes; a draft, and a vacancy waiting for a moderator, are seen only by the company's team. How many people viewed a vacancy is seen by the team only.",
             "Who a project was made for and the client's name are shown on the project page; with the NDA note, only “Client under NDA” is shown. The budget is visible only to you until you turn on showing it. A project you add to a page of a company you are not in is seen only by you and that company's team until the company accepts it.",
           ],
         },
@@ -375,7 +378,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ці Умови описують правила користування SearchTalent. Документ є робочим і може розширюватися разом із розвитком продукту.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "30 вересня 2026",
+      lastUpdatedValue: "1 жовтня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -431,6 +434,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "SearchTalent допомагає компаніям і фахівцям знайти одне одного, але не є стороною найму: нікого не наймає, не перевіряє пропозиції й не гарантує результату домовленостей.",
             "Позначка «Перевірена компанія» означає, що хтось із команди підтвердив пошту на домені компанії або сторінку перевірив SearchTalent. Це не рекомендація компанії. Нова назва чи новий сайт знімають позначку, доки сторінку не перевірять знову.",
             "«Підтверджено компанією» на проєкті означає, що хтось із команди компанії підтвердив: роботу зроблено для неї. За решту того, що написано в проєкті, зокрема для кого він і який бюджет, відповідає автор.",
+            "Команда компанії може розміщувати вакансії: роботу, стажування й фриланс-задачі. У роботи й стажування вказано оплату. Вакансію неперевіреної сторінки перед показом перевіряє модератор, а також щоразу, коли змінюється її текст. Вакансія відкрита 60 днів, якщо команда її не продовжить. Вакансію, на яку поскаржилися як на шахрайство, приховують до рішення модератора.",
           ],
           bullets: [
             "Не беріть із кандидатів гроші ні за що — ні за відгук, ні за навчання, обладнання чи «реєстрацію».",
@@ -450,6 +454,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           title: "Модерація та доступ",
           paragraphs: [
             "Контент може перевірятися автоматичною та ручною модерацією. Ми можемо відправити контент на перевірку, прибрати його або обмежити доступ до платформи, якщо матеріал є незаконним, образливим, оманливим або небезпечним для продукту та його користувачів.",
+            "Скарга на сексуальний, небезпечний чи ворожий контент ховає цей профіль, проєкт, статтю чи сторінку компанії, доки модератор його не перегляне; якщо скарга не підтвердиться, контент повернеться.",
             "Ми також можемо змінювати або прибирати окремі функції в міру розвитку продукту.",
           ],
         },
@@ -483,7 +488,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ця Політика конфіденційності пояснює, які дані обробляє SearchTalent, навіщо вони потрібні, хто їх обробляє та які права ви маєте щодо своєї інформації.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "30 вересня 2026",
+      lastUpdatedValue: "1 жовтня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -506,9 +511,10 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Контент і активність у спільноті: проєкти, статті, опитування та ваші відповіді на них, коментарі, реакції, голоси, підписки, закладки, бейджі, сповіщення й позиція в рейтингу.",
             "Деталі проєкту, якщо ви їх вказуєте: для кого його зроблено (для себе, для замовника, на роботі, під час навчання чи як open source), назва замовника чи компанії або позначка, що він під NDA, і бюджет.",
             "Сторінки компаній: назва організації, логотип, сайт, опис, розмір і розташування; хто створив сторінку; хто в її команді й у якій ролі; запрошення до команди; які проєкти додали на сторінку, хто їх додав і хто з компанії їх підтвердив.",
+            "Вакансії: що команда компанії публікує про вакансію (назва, опис, тип, формат, місце, рівень, навички, оплата, мова), хто з команди її розмістив і коли її опублікували, закрили чи коли минув її термін.",
             "Звернення через форму зворотного зв'язку: ім'я, email і повідомлення, які ви надсилаєте.",
             "Технічні дані та дані використання: інформація, потрібна для безпеки, стабільності й продуктивності, та агреговані лічильники переглядів контенту.",
-            "Статистика переглядів профілів, проєктів і статей: яку сторінку переглянули, чи прийшов відвідувач з іншої сторінки SearchTalent, з іншого сайту (лише його домен) чи напряму, і чи був він у системі. IP-адреси й повні посилання, з яких прийшли, ми не зберігаємо. Повторний перегляд того ж дня розпізнається за кодом, обчисленим з IP-адреси й даних браузера разом із випадковим ключем, який ми видаляємо наступного дня; після цього код неможливо пов'язати ні з ким.",
+            "Статистика переглядів профілів, проєктів, статей, вакансій і сторінок компаній: яку сторінку переглянули, чи прийшов відвідувач з іншої сторінки SearchTalent, з іншого сайту (лише його домен) чи напряму, і чи був він у системі. IP-адреси й повні посилання, з яких прийшли, ми не зберігаємо. Повторний перегляд того ж дня розпізнається за кодом, обчисленим з IP-адреси й даних браузера разом із випадковим ключем, який ми видаляємо наступного дня; після цього код неможливо пов'язати ні з ким.",
             "Для зареєстрованих користувачів: час вашого останнього візиту, оновлюється не частіше разу на годину.",
             "Лише якщо ви дозволили аналітичні cookies: звідки прийшов ваш перший візит (домен сайту, з якого ви прийшли, UTM-мітки й сторінка, на яку ви потрапили). Зберігається у вашому акаунті один раз під час реєстрації.",
           ],
@@ -541,7 +547,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Значна частина того, що ви додаєте, за задумом є публічною — профіль, проєкти, статті, опитування й коментарі, — і ви керуєте тим, які секції профілю видно, через налаштування видимості профілю.",
             "Інша інформація, як-от дані авторизації, ваш email, звернення через форму зворотного зв'язку та внутрішні технічні записи, використовується лише для роботи сервісу й не стає публічною.",
             "Пошта й телефон, які ви додаєте в профіль, ніколи не публічні: люди в системі бачать їх лише після того, як натиснуть «Зв'язатися» на вашій сторінці. Зарплатні очікування й погодинну ставку бачите лише ви, доки не ввімкнете їхній показ на сторінці, окремо для кожного. Те, до чого ви відкриті, публічне, як і дата, коли ви востаннє це підтвердили.",
-            "Якщо ви приєднуєтеся до команди компанії, ваш профіль з'являється на сторінці компанії. Запрошення, на яке ще не відповіли, бачать лише запрошена людина й команда компанії.",
+            "Якщо ви приєднуєтеся до команди компанії, ваш профіль з'являється на сторінці компанії. Запрошення, на яке ще не відповіли, бачать лише запрошена людина й команда компанії. Опублікована вакансія публічна, зокрема й після закриття; чернетку й вакансію, що чекає на модератора, бачить лише команда компанії. Скільки людей переглянули вакансію, бачить лише команда.",
             "Для кого зроблено проєкт і назву замовника видно на сторінці проєкту; з позначкою NDA там буде лише «Замовник під NDA». Бюджет бачите тільки ви, доки не ввімкнете його показ. Проєкт, який ви додали на сторінку компанії, де ви не в команді, бачите лише ви й команда цієї компанії, доки компанія його не прийме.",
           ],
         },

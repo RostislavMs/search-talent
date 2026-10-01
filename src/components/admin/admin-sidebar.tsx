@@ -32,6 +32,7 @@ type Props = {
     polls: string;
     discussions: string;
     comments: string;
+    vacancies: string;
   };
   groupLabels: {
     main: string;
@@ -78,6 +79,7 @@ export default function AdminSidebar({
           icon: "◈",
         },
         { href: "/admin/content/comments", label: contentLabels.comments, icon: "✱" },
+        { href: "/admin/content/vacancies", label: contentLabels.vacancies, icon: "◇" },
       ],
     },
     {

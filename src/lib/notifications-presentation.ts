@@ -42,6 +42,8 @@ const CATEGORY_BY_TYPE: Record<NotificationType, NotificationCategory> = {
   company_project_request: "companies",
   company_project_confirmed: "companies",
   company_project_declined: "companies",
+  vacancy_approved: "companies",
+  vacancy_expired: "companies",
   moderation_decision: "moderation",
   new_badge: "badges",
 };
@@ -63,10 +65,16 @@ export function resolveActorName(
   dict: NotificationDict,
 ): string {
   if (item.type === "new_badge") return dict.you;
-  if (item.type === "moderation_decision") return dict.moderationActor;
+  if (item.type === "moderation_decision" || item.type === "vacancy_approved") {
+    return dict.moderationActor;
+  }
   // The page itself is the subject: "Acme now has the verified mark".
   if (item.type === "company_verified") {
     return item.metadata.companyName || dict.someone;
+  }
+  // So is the vacancy: "Junior designer closed after 60 days".
+  if (item.type === "vacancy_expired") {
+    return item.metadata.vacancyTitle || dict.someone;
   }
   return (
     item.metadata.actorName || item.metadata.actorUsername || dict.someone
@@ -83,7 +91,8 @@ export function resolveNotificationEmoji(
 ): string | null {
   if (item.type === "new_badge") return item.metadata.badgeEmoji ?? "🏅";
   if (item.type === "moderation_decision") return "🛡️";
-  if (item.type === "company_verified") return "✅";
+  if (item.type === "company_verified" || item.type === "vacancy_approved") return "✅";
+  if (item.type === "vacancy_expired") return "⏳";
   return null;
 }
 
@@ -192,6 +201,13 @@ export function describeNotification(
         .replace("{company}", item.metadata.companyName ?? "")
         .replace("{project}", item.metadata.projectTitle ?? "");
     }
+    case "vacancy_approved":
+    case "vacancy_expired":
+      return (
+        item.type === "vacancy_approved"
+          ? dict.actions.vacancyApproved
+          : dict.actions.vacancyExpired
+      ).replace("{title}", item.metadata.vacancyTitle ?? "");
     default:
       return "";
   }
@@ -218,7 +234,20 @@ export function buildNotificationHref(
   ) {
     return item.metadata.contentKind === "company"
       ? `${base}/my-space/companies`
-      : `${base}/my-space`;
+      : item.metadata.contentKind === "vacancy"
+        ? `${base}/my-space/vacancies`
+        : `${base}/my-space`;
+  }
+
+  // An expired vacancy is extended from the team's list.
+  if (item.type === "vacancy_expired") {
+    return `${base}/my-space/vacancies`;
+  }
+
+  if (item.targetType === "vacancy") {
+    return item.metadata.vacancySlug
+      ? `${base}/jobs/${item.metadata.vacancySlug}`
+      : `${base}/my-space/vacancies`;
   }
 
   // An invitation is answered where all of the person's companies are; the
