@@ -27,6 +27,7 @@ type Viewer = {
   avatarUrl: string | null;
   isAdmin: boolean;
   hasCompanies?: boolean;
+  hasApplications?: boolean;
 } | null;
 
 type SiteHeaderProps = {
@@ -224,6 +225,10 @@ export default function SiteHeader({
               { href: "/my-space/companies", label: dictionary.nav.myCompanies },
               { href: "/my-space/vacancies", label: dictionary.nav.myVacancies },
             ]
+          : []),
+        // Only for people who have applied somewhere.
+        ...(viewer.hasApplications
+          ? [{ href: "/my-space/applications", label: dictionary.nav.myApplications }]
           : []),
         ...(sections.analytics
           ? [{ href: "/analytics", label: dictionary.nav.analytics }]

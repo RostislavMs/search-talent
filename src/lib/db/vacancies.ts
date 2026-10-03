@@ -502,7 +502,7 @@ export async function holdVacancyForReview(vacancyId: string, note: string | nul
 // Written with the service key and never thrown: a lost notification must not
 // undo the change that caused it.
 
-type VacancyForNotification = {
+export type VacancyForNotification = {
   id: string;
   slug: string;
   title: string;
@@ -510,7 +510,7 @@ type VacancyForNotification = {
   author_user_id: string | null;
 };
 
-async function loadVacancyForNotification(
+export async function loadVacancyForNotification(
   admin: SupabaseClient,
   vacancyId: string,
 ): Promise<VacancyForNotification | null> {
@@ -527,7 +527,7 @@ async function loadVacancyForNotification(
  * Who hears about a vacancy: its author while they are still in the team,
  * otherwise the company's owners and admins.
  */
-async function vacancyRecipients(
+export async function vacancyRecipients(
   admin: SupabaseClient,
   vacancy: VacancyForNotification,
 ): Promise<string[]> {
@@ -548,7 +548,7 @@ async function vacancyRecipients(
     .map((member) => member.user_id);
 }
 
-async function vacancyMetadata(
+export async function vacancyMetadata(
   admin: SupabaseClient,
   vacancy: VacancyForNotification,
   extra: NotificationMetadata = {},

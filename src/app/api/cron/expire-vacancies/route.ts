@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { purgeOldApplications } from "@/lib/db/applications";
 import { expireVacancies } from "@/lib/db/vacancies";
 
 // Marks vacancies whose 60 days ran out as expired and tells their authors
@@ -6,6 +7,9 @@ import { expireVacancies } from "@/lib/db/vacancies";
 // allows nothing more frequent). Pages do not wait for it: anything past its
 // expires_at is already treated as expired when read (resolveVacancyState),
 // so the cron only settles the status and sends the notifications.
+//
+// The same run deletes applications 12 months after their vacancy closed or
+// ran out (the Privacy Policy promises it; one cron instead of a third).
 //
 // Auth: Vercel Cron sends `Authorization: Bearer $CRON_SECRET`. When the
 // secret is set it is required; without it (local dev) the route is open.
@@ -24,7 +28,8 @@ async function handle(request: Request) {
 
   try {
     const expired = await expireVacancies();
-    return NextResponse.json({ ok: true, expired });
+    const purgedApplications = await purgeOldApplications();
+    return NextResponse.json({ ok: true, expired, purgedApplications });
   } catch (error) {
     console.error("expire-vacancies cron failed:", error);
     return NextResponse.json(

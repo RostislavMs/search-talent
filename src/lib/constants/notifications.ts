@@ -22,6 +22,8 @@ export const NOTIFICATION_TYPES = [
   "company_project_declined",
   "vacancy_approved",
   "vacancy_expired",
+  "application_received",
+  "application_status",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -37,6 +39,7 @@ export const NOTIFICATION_TARGET_TYPES = [
   "badge",
   "company",
   "vacancy",
+  "vacancy_application",
 ] as const;
 
 export type NotificationTargetType =
@@ -88,6 +91,10 @@ export type NotificationMetadata = {
   vacancyId?: string;
   vacancySlug?: string;
   vacancyTitle?: string;
+  /** Application notifications: the application concerned. */
+  applicationId?: string;
+  /** Application status notifications: what the team did. */
+  applicationStatus?: "viewed" | "shortlisted" | "rejected" | "hired";
 };
 
 export type NotificationItem = {

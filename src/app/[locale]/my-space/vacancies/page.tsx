@@ -3,8 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import VacancyStatusActions from "@/components/vacancy-status-actions";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
+import { buildTeamApplicationsPath } from "@/lib/applications";
 import { buildLoginHref } from "@/lib/auth/redirect";
 import { canEditCompany } from "@/lib/companies";
+import { countVacancyApplications } from "@/lib/db/applications";
 import { listMyCompanies } from "@/lib/db/companies";
 import { listTeamVacancies, type TeamVacancy } from "@/lib/db/vacancies";
 import { isLocale, type Locale } from "@/lib/i18n/config";
@@ -71,6 +73,28 @@ function StatusLine({
   return <span className="text-xs app-soft">{copy.states[vacancy.state]}</span>;
 }
 
+/** "Applications", or "3 applications · 1 new" once there are some. */
+function ApplicationsLinkLabel({
+  count,
+  copy,
+  locale,
+}: {
+  count: { total: number; fresh: number } | undefined;
+  copy: Dictionary["applications"]["team"];
+  locale: Locale;
+}) {
+  if (!count || count.total === 0) {
+    return <>{copy.eyebrow}</>;
+  }
+
+  const total = formatCount(count.total, copy.count, locale);
+  return (
+    <>
+      {count.fresh > 0 ? `${total} · ${formatCount(count.fresh, copy.freshCount, locale)}` : total}
+    </>
+  );
+}
+
 export default async function MyVacanciesPage({
   params,
 }: {
@@ -92,6 +116,11 @@ export default async function MyVacanciesPage({
     supabase,
     companies.map((company) => company.id),
   );
+  const applicationCounts = await countVacancyApplications(
+    supabase,
+    vacancies.filter((vacancy) => vacancy.state !== "draft").map((vacancy) => vacancy.id),
+  );
+  const applicationsCopy = getDictionary(locale).applications.team;
   const roleByCompany = new Map(companies.map((company) => [company.id, company.role]));
   const canPost = companies.some((company) => company.moderationStatus === "approved");
 
@@ -157,6 +186,20 @@ export default async function MyVacanciesPage({
                       : ""}
                   </p>
                   <StatusLine vacancy={vacancy} copy={copy} locale={locale} />
+                  {vacancy.state !== "draft" ? (
+                    <p className="text-sm">
+                      <LocalizedLink
+                        href={buildTeamApplicationsPath(vacancy.id)}
+                        className="font-medium text-[color:var(--brand)] transition-colors hover:text-[color:var(--brand-strong)]"
+                      >
+                        <ApplicationsLinkLabel
+                          count={applicationCounts.get(vacancy.id)}
+                          copy={applicationsCopy}
+                          locale={locale}
+                        />
+                      </LocalizedLink>
+                    </p>
+                  ) : null}
                 </div>
                 <div className="shrink-0">
                   <VacancyStatusActions

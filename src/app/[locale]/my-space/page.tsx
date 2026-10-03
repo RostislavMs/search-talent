@@ -6,7 +6,9 @@ import OpenToCard from "@/components/open-to-card";
 import ProfileCompletenessButton from "@/components/profile-completeness-button";
 import ProfileSharePanel from "@/components/profile-share-panel";
 import { ButtonLink } from "@/components/ui/Button";
+import { MY_APPLICATIONS_PATH } from "@/lib/applications";
 import { buildLoginHref } from "@/lib/auth/redirect";
+import { countMyApplications } from "@/lib/db/applications";
 import { hasCompanyMembership } from "@/lib/db/companies";
 import { getOnboardingSnapshot } from "@/lib/db/onboarding";
 import { getMyContactOpens } from "@/lib/db/open-to";
@@ -17,6 +19,7 @@ import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { buildMetadata, getSiteUrl } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 import { isTemporaryUsername } from "@/lib/username";
+import { formatCount } from "@/lib/vacancies";
 
 async function getLocaleValue(params: Promise<{ locale: string }>) {
   const { locale } = await params;
@@ -61,13 +64,16 @@ export default async function MySpacePage({
   }
 
   const dictionary = getDictionary(locale);
-  const [viewer, userStats, onboarding, contactOpens, hasCompanies] = await Promise.all([
-    getCurrentViewerRole(),
-    getUserStats(user.id),
-    getOnboardingSnapshot(),
-    getMyContactOpens(supabase),
-    hasCompanyMembership(supabase, user.id),
-  ]);
+  const [viewer, userStats, onboarding, contactOpens, hasCompanies, applicationsCount] =
+    await Promise.all([
+      getCurrentViewerRole(),
+      getUserStats(user.id),
+      getOnboardingSnapshot(),
+      getMyContactOpens(supabase),
+      hasCompanyMembership(supabase, user.id),
+      countMyApplications(supabase, user.id),
+    ]);
+  const applicationsCopy = dictionary.applications.mySpaceCard;
   const companiesCopy = dictionary.companies.mySpaceCard;
   const usernameHint = onboarding?.checklist.needsUsername
     ? isTemporaryUsername(onboarding.profile.username)
@@ -148,6 +154,31 @@ export default async function MySpacePage({
         contactOpens={contactOpens}
         isAdmin={viewer.isAdmin}
       />
+
+      {applicationsCount > 0 ? (
+        <section
+          className="mt-8 flex flex-col gap-3 rounded-hero app-card p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+          aria-labelledby="my-space-applications"
+        >
+          <div>
+            <h2
+              id="my-space-applications"
+              className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
+            >
+              {applicationsCopy.title}
+            </h2>
+            <p className="mt-1 text-sm app-muted">
+              {applicationsCopy.text.replace(
+                "{vacancies}",
+                formatCount(applicationsCount, applicationsCopy.vacancies, locale),
+              )}
+            </p>
+          </div>
+          <ButtonLink href={MY_APPLICATIONS_PATH} variant="secondary" className="self-start sm:self-auto">
+            {applicationsCopy.cta}
+          </ButtonLink>
+        </section>
+      ) : null}
 
       {/* One quiet line, not a banner: most people here are specialists. */}
       <section

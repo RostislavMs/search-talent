@@ -6,16 +6,25 @@ import CompanyVerifiedBadge from "@/components/company-verified-badge";
 import ContentReportButton from "@/components/content-report-button";
 import JsonLd from "@/components/json-ld";
 import RichTextRenderer from "@/components/rich-text-renderer";
+import VacancyApplyPanel from "@/components/vacancy-apply-panel";
 import VacancyCard from "@/components/vacancy-card";
 import VacancyStatusActions from "@/components/vacancy-status-actions";
 import ViewBeacon from "@/components/view-beacon";
 import { ButtonLink } from "@/components/ui/Button";
+import { buttonStyles } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
+import { buildTeamApplicationsPath, resolveApplyState } from "@/lib/applications";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import {
   buildCompanyPath,
   canEditCompany,
   formatCompanyWebsiteLabel,
 } from "@/lib/companies";
+import {
+  countVacancyApplications,
+  getApplyContext,
+  getMyApplicationForVacancy,
+} from "@/lib/db/applications";
 import { getCompanyById, getCompanyRole } from "@/lib/db/companies";
 import { getVacancyBySlug, listCompanyOpenVacancies } from "@/lib/db/vacancies";
 import { isLocale, type Locale } from "@/lib/i18n/config";
@@ -141,6 +150,31 @@ export default async function VacancyPage({ params }: { params: RouteParams }) {
   const otherVacancies = more.filter((item) => item.id !== vacancy.id).slice(0, 3);
 
   const state = vacancy.state;
+
+  // Applying: what the visitor can do here. The database has the last word
+  // (apply_to_vacancy); this only picks the sentence and the button.
+  const vacancyOpen =
+    state === "open" &&
+    vacancy.moderationStatus === "approved" &&
+    vacancy.company.moderationStatus === "approved";
+  const user = viewer.user;
+  const [myApplication, applyContext, applicationCounts] = await Promise.all([
+    user && !isTeam ? getMyApplicationForVacancy(viewer.supabase, user.id, vacancy.id) : null,
+    user && !isTeam && vacancyOpen ? getApplyContext(viewer.supabase, user) : null,
+    isTeam ? countVacancyApplications(viewer.supabase, [vacancy.id]) : null,
+  ]);
+  const applyState = resolveApplyState({
+    signedIn: Boolean(user),
+    isTeam,
+    vacancyOpen,
+    hasApplication: Boolean(myApplication),
+    emailConfirmed: Boolean(user?.email_confirmed_at),
+    hasProfile: applyContext?.hasProfile ?? false,
+    projectsCount: applyContext?.projects.length ?? 0,
+  });
+  // Drafts have nothing to apply to, and visitors of a closed vacancy who
+  // never applied need no panel at all.
+  const showApplyPanel = state !== "draft" && (applyState !== "closed" || isTeam);
   const notice =
     isTeam || viewer.isAdmin
       ? state === "draft"
@@ -278,6 +312,14 @@ export default async function VacancyPage({ params }: { params: RouteParams }) {
                 .join(" · ")}
             </p>
 
+            {/* On narrow screens the panel sits under the description; this
+                takes the visitor straight to it. */}
+            {applyState === "ready" ? (
+              <a href="#vacancy-apply" className={buttonStyles({ className: "mt-5 xl:hidden" })}>
+                {dictionary.applications.apply.button}
+              </a>
+            ) : null}
+
             {isTeam || viewer.isAdmin ? (
               <div className="mt-5">
                 <VacancyStatusActions
@@ -341,6 +383,26 @@ export default async function VacancyPage({ params }: { params: RouteParams }) {
         </div>
 
         <aside className="space-y-6">
+          {showApplyPanel ? (
+            <div id="vacancy-apply" className="scroll-mt-24">
+              <VacancyApplyPanel
+                state={applyState}
+                locale={locale}
+                vacancy={{ id: vacancy.id, title: vacancy.title, companyName: vacancy.company.name }}
+                projects={applyContext?.projects ?? []}
+                contacts={applyContext?.contacts ?? { email: null, phone: null }}
+                application={
+                  myApplication
+                    ? { status: myApplication.status, createdAt: myApplication.createdAt }
+                    : null
+                }
+                loginHref={buildLoginHref(locale, buildVacancyPath(vacancy.slug))}
+                teamHref={buildTeamApplicationsPath(vacancy.id)}
+                applicationsCount={applicationCounts?.get(vacancy.id) ?? null}
+              />
+            </div>
+          ) : null}
+
           <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-6" aria-labelledby="vacancy-company">
             <h2 id="vacancy-company" className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
               {copy.page.aboutCompany}
