@@ -12,11 +12,13 @@ The first suites pin the security guards flagged in prior audits:
 | Suite | Guard | Passes when |
 |-------|-------|-------------|
 | `rls/articles-rls.test.ts` | Only author/admin may UPDATE an article | `articles_update_compat` drops the `status='published'` disjunct **(open hole today → expected red)** |
-| `rls/votes-rls.test.ts` | No self-vote; no spoofed `user_id` | migration `33_rating_security_rls.sql` applied |
-| `rls/score-guard.test.ts` | `score` not user-writable | migration `32_rating_score_triggers.sql` applied |
+| `rls/votes-rls.test.ts` | No self-vote; no spoofed `user_id` | the vote RLS policies are applied |
+| `rls/score-guard.test.ts` | `score` not user-writable | the score trigger is applied |
 | `rls/moderation-status-rls.test.ts` | User can't restore own `moderation_status` | a guard is added **(open hole today → expected red)** |
-| `rls/companies-rls.test.ts` | Company check mark/moderation not member-writable; team written only via functions; pending invites private | migration `database/2026-09-30-companies.sql` applied |
-| `rls/vacancies-rls.test.ts` | Only the team posts; dates stamped by the database; unverified company's vacancy waits for review; drafts private; moderation not team-writable | migration `database/2026-09-30-vacancies.sql` applied |
+| `rls/companies-rls.test.ts` | Company check mark/moderation not member-writable; team written only via functions; pending invites private | the companies schema is applied |
+| `rls/vacancies-rls.test.ts` | Only the team posts; dates stamped by the database; unverified company's vacancy waits for review; drafts private; moderation not team-writable | the vacancies schema is applied |
+| `rls/applications-rls.test.ts` | Applications written only via functions; the candidate and the company's team see only their own; contacts only to the team | the applications schema is applied |
+| `rls/job-alerts-rls.test.ts` | Job alerts are the owner's, filters fixed once saved; deliveries server-written; contacts opened as a company only by a verified team; hiring metrics for the service key only | the job alerts schema is applied |
 
 Tests tagged **[KNOWN HOLE]** assert the *secure* behavior, so they fail against
 the current unpatched schema — that failure **is** the regression signal. They
@@ -27,7 +29,7 @@ turn green once the corresponding fix lands.
 ### Option A — local stack (recommended, needs Docker)
 
 ```bash
-pnpm exec supabase start          # boots Postgres + auth + applies supabase/*.sql
+pnpm exec supabase start          # boots Postgres + auth + applies the schema
 # copy the API URL + keys it prints:
 export SUPABASE_TEST_URL="http://127.0.0.1:54321"
 export SUPABASE_TEST_SERVICE_ROLE_KEY="<service_role key from `supabase status`>"

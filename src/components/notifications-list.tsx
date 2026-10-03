@@ -44,6 +44,7 @@ const CATEGORY_ORDER: NotificationCategory[] = [
   "content",
   "coAuthors",
   "companies",
+  "jobs",
   "applications",
   "moderation",
   "badges",

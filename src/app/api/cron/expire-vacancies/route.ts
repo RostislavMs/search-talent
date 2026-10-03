@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { purgeOldApplications } from "@/lib/db/applications";
+import { runJobAlerts } from "@/lib/db/job-alerts";
 import { expireVacancies } from "@/lib/db/vacancies";
 
 // Marks vacancies whose 60 days ran out as expired and tells their authors
@@ -9,7 +10,9 @@ import { expireVacancies } from "@/lib/db/vacancies";
 // so the cron only settles the status and sends the notifications.
 //
 // The same run deletes applications 12 months after their vacancy closed or
-// ran out (the Privacy Policy promises it; one cron instead of a third).
+// ran out (the Privacy Policy promises it), and then sends the morning job
+// alerts (runJobAlerts): one cron for all of hiring instead of a third. It
+// runs at 03:30 UTC, early morning in Ukraine.
 //
 // Auth: Vercel Cron sends `Authorization: Bearer $CRON_SECRET`. When the
 // secret is set it is required; without it (local dev) the route is open.
@@ -29,7 +32,12 @@ async function handle(request: Request) {
   try {
     const expired = await expireVacancies();
     const purgedApplications = await purgeOldApplications();
-    return NextResponse.json({ ok: true, expired, purgedApplications });
+    // Alerts are extra: if they fail, the expiry above has still been done.
+    const jobAlerts = await runJobAlerts().catch((error: unknown) => {
+      console.error("job alerts failed:", error);
+      return { error: error instanceof Error ? error.message : "failed" };
+    });
+    return NextResponse.json({ ok: true, expired, purgedApplications, jobAlerts });
   } catch (error) {
     console.error("expire-vacancies cron failed:", error);
     return NextResponse.json(

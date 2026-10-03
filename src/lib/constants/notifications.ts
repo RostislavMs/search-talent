@@ -24,6 +24,8 @@ export const NOTIFICATION_TYPES = [
   "vacancy_expired",
   "application_received",
   "application_status",
+  "vacancy_match",
+  "company_contact_opened",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -95,6 +97,10 @@ export type NotificationMetadata = {
   applicationId?: string;
   /** Application status notifications: what the team did. */
   applicationStatus?: "viewed" | "shortlisted" | "rejected" | "hired";
+  /** Job alerts: how many new vacancies the morning run found. */
+  matchCount?: number;
+  /** Job alerts: the followed search, when only one found something. */
+  searchName?: string;
 };
 
 export type NotificationItem = {

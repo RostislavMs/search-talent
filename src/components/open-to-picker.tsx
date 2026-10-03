@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import Switch from "@/components/ui/switch";
 import { useDictionary } from "@/lib/i18n/client";
 import { normalizeOpenTo, openToOptions, type OpenToOption } from "@/lib/open-to";
 
@@ -58,29 +59,13 @@ export default function OpenToPicker({
             {t.toggleHint}
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={isOn}
-          aria-labelledby={titleId}
-          aria-describedby={hintId}
+        <Switch
+          checked={isOn}
+          onChange={toggleSwitch}
+          labelledBy={titleId}
+          describedBy={hintId}
           disabled={disabled}
-          onClick={toggleSwitch}
-          className={[
-            "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)] disabled:cursor-not-allowed disabled:opacity-60",
-            isOn
-              ? "border-transparent bg-[color:var(--brand)]"
-              : "app-border bg-[color:var(--surface-muted)] hover:bg-[color:var(--surface)]",
-          ].join(" ")}
-        >
-          <span
-            aria-hidden="true"
-            className={[
-              "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
-              isOn ? "translate-x-6" : "translate-x-1",
-            ].join(" ")}
-          />
-        </button>
+        />
       </div>
 
       {isOn ? (

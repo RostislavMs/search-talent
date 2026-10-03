@@ -11,6 +11,7 @@ import {
   type MyApplication,
   type TeamApplication,
 } from "@/lib/applications";
+import { loadEmailRecipient } from "@/lib/db/email-recipients";
 import { createNotifications } from "@/lib/db/notifications";
 import {
   loadVacancyForNotification,
@@ -23,7 +24,7 @@ import {
   buildApplicationReceivedEmail,
   buildApplicationStatusEmail,
 } from "@/lib/email/templates";
-import { defaultLocale, isLocale, type Locale } from "@/lib/i18n/config";
+import type { Locale } from "@/lib/i18n/config";
 import { normalizeOpenTo } from "@/lib/open-to";
 import { getSiteUrl } from "@/lib/seo";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -455,30 +456,6 @@ export async function countVacancyApplications(
 // Written with the service key and never thrown: a lost notification must not
 // undo the application or the decision that caused it.
 
-type Recipient = { email: string; locale: Locale; name: string };
-
-async function loadRecipient(admin: SupabaseClient, userId: string): Promise<Recipient | null> {
-  const [{ data: auth }, { data: profile }] = await Promise.all([
-    admin.auth.admin.getUserById(userId),
-    admin.from("profiles").select("name, username").eq("user_id", userId).maybeSingle(),
-  ]);
-
-  const email = auth?.user?.email;
-
-  if (!email) {
-    return null;
-  }
-
-  const rawLocale = auth?.user?.user_metadata?.locale as string | undefined;
-  const person = profile as { name: string | null; username: string | null } | null;
-
-  return {
-    email,
-    locale: rawLocale && isLocale(rawLocale) ? rawLocale : defaultLocale,
-    name: person?.name?.trim() || person?.username || "",
-  };
-}
-
 function absoluteUrl(locale: Locale, path: string): string {
   return `${getSiteUrl().replace(/\/$/, "")}/${locale}${path}`;
 }
@@ -531,7 +508,7 @@ export async function notifyApplicationReceived({
     const applicantName = applicant?.name?.trim() || applicant?.username || "";
 
     for (const userId of recipients) {
-      const recipient = await loadRecipient(admin, userId);
+      const recipient = await loadEmailRecipient(admin, userId);
       if (!recipient) continue;
 
       const message = buildApplicationReceivedEmail({
@@ -576,7 +553,7 @@ async function notifyApplicant(
     return;
   }
 
-  const recipient = await loadRecipient(admin, applicantUserId);
+  const recipient = await loadEmailRecipient(admin, applicantUserId);
   if (!recipient) return;
 
   const message = buildApplicationStatusEmail({

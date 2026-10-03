@@ -1,17 +1,21 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import CompanyLogo from "@/components/company-logo";
 import MySpaceChecklist from "@/components/my-space-checklist";
 import MySpaceStats from "@/components/my-space-stats";
 import OpenToCard from "@/components/open-to-card";
 import ProfileCompletenessButton from "@/components/profile-completeness-button";
 import ProfileSharePanel from "@/components/profile-share-panel";
 import { ButtonLink } from "@/components/ui/Button";
+import LocalizedLink from "@/components/ui/localized-link";
 import { MY_APPLICATIONS_PATH } from "@/lib/applications";
 import { buildLoginHref } from "@/lib/auth/redirect";
+import { buildCompanyPath } from "@/lib/companies";
 import { countMyApplications } from "@/lib/db/applications";
 import { hasCompanyMembership } from "@/lib/db/companies";
+import { listMyJobAlerts } from "@/lib/db/job-alerts";
 import { getOnboardingSnapshot } from "@/lib/db/onboarding";
-import { getMyContactOpens } from "@/lib/db/open-to";
+import { getMyContactOpenCompanies, getMyContactOpens } from "@/lib/db/open-to";
 import { getUserStats } from "@/lib/db/stats";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -64,15 +68,27 @@ export default async function MySpacePage({
   }
 
   const dictionary = getDictionary(locale);
-  const [viewer, userStats, onboarding, contactOpens, hasCompanies, applicationsCount] =
-    await Promise.all([
-      getCurrentViewerRole(),
-      getUserStats(user.id),
-      getOnboardingSnapshot(),
-      getMyContactOpens(supabase),
-      hasCompanyMembership(supabase, user.id),
-      countMyApplications(supabase, user.id),
-    ]);
+  const [
+    viewer,
+    userStats,
+    onboarding,
+    contactOpens,
+    hasCompanies,
+    applicationsCount,
+    jobAlerts,
+    openedByCompanies,
+  ] = await Promise.all([
+    getCurrentViewerRole(),
+    getUserStats(user.id),
+    getOnboardingSnapshot(),
+    getMyContactOpens(supabase),
+    hasCompanyMembership(supabase, user.id),
+    countMyApplications(supabase, user.id),
+    listMyJobAlerts(supabase, user.id),
+    getMyContactOpenCompanies(supabase),
+  ]);
+  const profileAlert = jobAlerts.find((alert) => alert.target.type === "profile") ?? null;
+  const companiesOpenedCopy = dictionary.openTo.companiesOpened;
   const applicationsCopy = dictionary.applications.mySpaceCard;
   const companiesCopy = dictionary.companies.mySpaceCard;
   const usernameHint = onboarding?.checklist.needsUsername
@@ -120,7 +136,33 @@ export default async function MySpacePage({
           className="mb-8 rounded-hero app-card p-5 sm:p-6"
           initialOpenTo={onboarding.profile.open_to}
           initialUpdatedAt={onboarding.profile.open_to_updated_at}
+          jobAlert={{ alertId: profileAlert?.id ?? null }}
         />
+      ) : null}
+
+      {openedByCompanies.length > 0 ? (
+        <section className="mb-8 rounded-hero app-card p-5 sm:p-6" aria-labelledby="my-space-companies-opened">
+          <h2
+            id="my-space-companies-opened"
+            className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
+          >
+            {companiesOpenedCopy.title}
+          </h2>
+          <p className="mt-1 text-sm app-muted">{companiesOpenedCopy.text}</p>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {openedByCompanies.slice(0, 12).map((company) => (
+              <li key={company.id}>
+                <LocalizedLink
+                  href={buildCompanyPath(company.slug)}
+                  className="inline-flex max-w-full items-center gap-2 rounded-full border app-border py-1 pl-1 pr-3 text-sm text-[color:var(--foreground)] transition-colors hover:border-[color:var(--foreground)]"
+                >
+                  <CompanyLogo name={company.name} logoUrl={company.logoUrl} alt="" size="xs" />
+                  <span className="truncate">{company.name}</span>
+                </LocalizedLink>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       {onboarding && shareUsername ? (

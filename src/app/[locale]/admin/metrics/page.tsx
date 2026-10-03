@@ -6,7 +6,8 @@ import {
   ColumnGroups,
   type LegendItem,
 } from "@/components/charts/chart-primitives";
-import { getProductMetrics } from "@/lib/db/product-metrics";
+import { getHiringMetrics, getProductMetrics } from "@/lib/db/product-metrics";
+import type { HiringMetrics, ShareCell } from "@/lib/hiring-metrics";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import {
@@ -130,6 +131,111 @@ function RankedList({
   );
 }
 
+function shareValue(cell: ShareCell): string {
+  return percent(cell.part, cell.whole);
+}
+
+/** Stage 8.4: vacancies, applications, job alerts and company contact opens. */
+function HiringSection({
+  hiring,
+  copy,
+  weekLabel,
+}: {
+  hiring: HiringMetrics | null;
+  copy: MetricsCopy;
+  weekLabel: (start: string) => string;
+}) {
+  const ui = copy.hiring;
+
+  if (!hiring) {
+    return (
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8">
+        <h2 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+          {ui.title}
+        </h2>
+        <p className="mt-6 rounded-2xl app-panel p-4 text-sm text-[color:var(--foreground)]">{ui.unavailable}</p>
+      </section>
+    );
+  }
+
+  const groups = hiring.weeks.map((week) => ({ label: weekLabel(week.start), values: [week.applications] }));
+  const series: LegendItem[] = [{ name: ui.chart, tone: 1 }];
+
+  return (
+    <>
+      <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8">
+        <h2 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+          {ui.title}
+        </h2>
+        <p className="mt-2 max-w-2xl app-muted">{ui.description}</p>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile
+            label={ui.openVacancies}
+            value={String(hiring.openVacancies)}
+            hint={fill(ui.openVacanciesHint, { count: hiring.openCompanies })}
+          />
+          <StatTile label={ui.applications} value={String(hiring.applicationsInWindow)} />
+          <StatTile
+            label={ui.viewedWithin7}
+            value={shareValue(hiring.viewedWithin7Days)}
+            hint={fill(ui.shareHint, {
+              part: hiring.viewedWithin7Days.part,
+              whole: hiring.viewedWithin7Days.whole,
+            })}
+          />
+          <StatTile
+            label={ui.replyWithin14}
+            value={shareValue(hiring.replyWithin14Days)}
+            hint={fill(ui.shareHint, {
+              part: hiring.replyWithin14Days.part,
+              whole: hiring.replyWithin14Days.whole,
+            })}
+          />
+          <StatTile
+            label={ui.medianFirst}
+            value={formatHours(hiring.medianHoursToFirstApplication, copy.units)}
+            hint={ui.medianFirstHint}
+          />
+          <StatTile
+            label={ui.alertPeople}
+            value={String(hiring.alerts.people)}
+            hint={fill(ui.alertPeopleHint, {
+              alerts: hiring.alerts.alerts,
+              email: hiring.alerts.emailAlerts,
+              profile: hiring.alerts.profileAlerts,
+            })}
+          />
+          <StatTile
+            label={ui.alertDeliveries}
+            value={String(hiring.alerts.delivered30Days)}
+            hint={fill(ui.alertDeliveriesHint, { count: hiring.alerts.emailed30Days })}
+          />
+          <StatTile
+            label={ui.companyOpens}
+            value={String(hiring.companyContactOpens.opens30Days)}
+            hint={fill(ui.companyOpensHint, { count: hiring.companyContactOpens.companies30Days })}
+          />
+        </div>
+        <p className="mt-4 max-w-2xl text-xs leading-5 app-muted">{ui.note}</p>
+      </section>
+
+      <ChartFigure title={ui.chart} note={ui.chartNote}>
+        <div className="overflow-x-auto">
+          <div className="min-w-[26rem]">
+            <ColumnGroups
+              groups={groups}
+              series={series}
+              max={Math.max(1, ...groups.flatMap((group) => group.values))}
+              format={(value) => String(value)}
+            />
+          </div>
+        </div>
+      </ChartFigure>
+    </>
+  );
+}
+
 export default async function AdminMetricsPage({
   params,
 }: {
@@ -137,7 +243,7 @@ export default async function AdminMetricsPage({
 }) {
   const locale = await resolveLocale(params);
   const copy = getDictionary(locale).admin.metrics;
-  const result = await getProductMetrics();
+  const [result, hiring] = await Promise.all([getProductMetrics(), getHiringMetrics()]);
 
   const header = (
     <>
@@ -362,6 +468,8 @@ export default async function AdminMetricsPage({
           empty={copy.portfolioSignups.empty}
         />
       </div>
+
+      <HiringSection hiring={hiring} copy={copy} weekLabel={weekLabel} />
     </div>
   );
 }

@@ -21,10 +21,10 @@ import {
 } from "@/lib/vacancies";
 import type { VacancyPayload } from "@/lib/validation/vacancies";
 
-const COMPANY_JOIN = "company:company_id ( id, slug, name, logo_url, verified_at, moderation_status )";
-const NAME_JOINS = "country:country_id ( name ), category:category_id ( name )";
+export const COMPANY_JOIN = "company:company_id ( id, slug, name, logo_url, verified_at, moderation_status )";
+export const NAME_JOINS = "country:country_id ( name ), category:category_id ( name )";
 
-const SUMMARY_COLUMNS =
+export const SUMMARY_COLUMNS =
   "id, slug, title, kind, hours, work_formats, city, experience_level, pay_min, pay_max, pay_currency, pay_period, locale, status, published_at, expires_at, moderation_status, company_id";
 
 const DETAIL_COLUMNS = `${SUMMARY_COLUMNS}, description, country_id, category_id, author_user_id, closed_at, created_at, updated_at`;

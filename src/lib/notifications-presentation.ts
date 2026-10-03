@@ -4,6 +4,8 @@ import type {
   NotificationItem,
   NotificationType,
 } from "@/lib/constants/notifications";
+import { JOB_ALERTS_PATH } from "@/lib/job-alerts";
+import { formatCount } from "@/lib/vacancies";
 
 type NotificationDict = Dictionary["notifications"];
 
@@ -19,6 +21,7 @@ export type NotificationCategory =
   | "content"
   | "coAuthors"
   | "companies"
+  | "jobs"
   | "applications"
   | "moderation"
   | "badges";
@@ -45,6 +48,8 @@ const CATEGORY_BY_TYPE: Record<NotificationType, NotificationCategory> = {
   company_project_declined: "companies",
   vacancy_approved: "companies",
   vacancy_expired: "companies",
+  company_contact_opened: "companies",
+  vacancy_match: "jobs",
   application_received: "applications",
   application_status: "applications",
   moderation_decision: "moderation",
@@ -79,9 +84,14 @@ export function resolveActorName(
   if (item.type === "vacancy_expired") {
     return item.metadata.vacancyTitle || dict.someone;
   }
-  // The company answers an application: "Acme would like to talk about…".
-  if (item.type === "application_status") {
+  // The company answers an application: "Acme would like to talk about…",
+  // or opened the person's contacts.
+  if (item.type === "application_status" || item.type === "company_contact_opened") {
     return item.metadata.companyName || dict.someone;
+  }
+  // "Job alerts: 3 new vacancies…"
+  if (item.type === "vacancy_match") {
+    return dict.jobAlertsActor;
   }
   return (
     item.metadata.actorName || item.metadata.actorUsername || dict.someone
@@ -103,6 +113,8 @@ export function resolveNotificationEmoji(
   if (item.type === "application_status") {
     return item.metadata.applicationStatus === "hired" ? "🎉" : "💼";
   }
+  if (item.type === "vacancy_match") return "🔔";
+  if (item.type === "company_contact_opened") return "🏢";
   return null;
 }
 
@@ -232,6 +244,20 @@ export function describeNotification(
           )
         : "";
     }
+    case "vacancy_match": {
+      const count = item.metadata.matchCount ?? 0;
+      if (count <= 1 && item.metadata.vacancyTitle) {
+        return dict.actions.vacancyMatchOne
+          .replace("{title}", item.metadata.vacancyTitle)
+          .replace("{company}", item.metadata.companyName ?? "");
+      }
+      const text = formatCount(Math.max(count, 1), dict.actions.vacancyMatchMany, dict.pluralLocale);
+      return item.metadata.searchName
+        ? dict.actions.vacancyMatchSearch.replace("{count}", text).replace("{search}", item.metadata.searchName)
+        : text;
+    }
+    case "company_contact_opened":
+      return dict.actions.companyContactOpened;
     default:
       return "";
   }
@@ -273,6 +299,20 @@ export function buildNotificationHref(
 
   if (item.type === "application_status") {
     return `${base}/my-space/applications`;
+  }
+
+  // One new vacancy opens it; several, the alerts page with the latest ones.
+  if (item.type === "vacancy_match") {
+    return (item.metadata.matchCount ?? 0) <= 1 && item.metadata.vacancySlug
+      ? `${base}/jobs/${item.metadata.vacancySlug}`
+      : `${base}${JOB_ALERTS_PATH}`;
+  }
+
+  // The company that opened the contacts.
+  if (item.type === "company_contact_opened") {
+    return item.metadata.companySlug
+      ? `${base}/companies/${item.metadata.companySlug}`
+      : `${base}/my-space`;
   }
 
   // An expired vacancy is extended from the team's list.
