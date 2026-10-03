@@ -24,6 +24,7 @@ export default defineConfig({
       // broad globs over untested IO (e.g. all of src/lib/db/**), that would
       // dilute the gate. Security-adjacent modules get a per-file floor below.
       include: [
+        "src/lib/applications.ts",
         "src/lib/articles.ts",
         "src/lib/auth/validation.ts",
         "src/lib/auto-moderation.ts",

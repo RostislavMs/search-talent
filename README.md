@@ -1,6 +1,6 @@
 # SearchTalent
 
-A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is built around creator portfolios, rating, and community signal. Specialists mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors reach them through a "Contact" button. Companies create pages with their team and its work, and post vacancies — jobs, internships and paid freelance tasks (hiring, part 8 of the plan; portfolio applications come next).
+A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is built around creator portfolios, rating, and community signal. Specialists mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors reach them through a "Contact" button. Companies create pages with their team and its work, and post vacancies — jobs, internships and paid freelance tasks — that people apply to with their portfolio (hiring, part 8 of the plan).
 
 ---
 
@@ -105,6 +105,14 @@ search-talent/
 - Life cycle in the database (`guard_vacancy_columns`): draft → published → closed or expired; the dates are stamped by the database — open for 60 days from going out, "extend" means 60 days from now, the first publication date stays. At most 5 new vacancies per company a day. The daily cron `/api/cron/expire-vacancies` marks ended ones and notifies the author; pages treat a vacancy past `expires_at` as ended even before that.
 - Moderation: a verified company's vacancy goes live at once (auto-moderation still screens it, with extra rules against "pay for training" and "write to us on Telegram" scams); an unverified company's vacancy waits in `/admin/content/vacancies` when it first goes out and again whenever its text changes. A report of a scam hides a vacancy until a moderator decides. Reports and moderation actions now target companies and vacancies too.
 - `/jobs` is rendered on the server with filters in the address (type, format, level, field, country, skill, "with pay", title search). It stays out of the menu and search engines until there are 5 open vacancies from 3 companies (`SECTION_VISIBILITY_THRESHOLDS.jobs`). A vacancy page is indexed, listed in the sitemap and carries `JobPosting` JSON-LD only while it is open and its company is verified, and only in the language it is written in.
+
+### Applications (hiring, stage 8.3)
+
+- A candidate applies with their portfolio, not a CV (`vacancy_applications`, `database/2026-10-02-applications.sql`): 1–3 of their published projects (own or co-authored), a message up to 1 000 characters, and consent to hand this company their email and phone. It takes a confirmed email and a public profile; once per vacancy, 20 a day, never to one's own company's vacancy.
+- Everything is written through SECURITY DEFINER functions (`apply_to_vacancy`, `withdraw_vacancy_application`, `set_vacancy_application_status`, `mark_vacancy_applications_viewed`); the table has no write grants. The candidate sees their own applications, the company's team those to its vacancies, platform admins none.
+- The team's funnel in `/my-space/vacancies/[id]`: new → viewed (stamped when the list is on screen) → shortlisted → rejected or hired; a decision can be taken back. The candidate gets a notification for the first look and each decision, and an email for decisions — a rejection is a short, kind note. The vacancy's author gets a notification and an email for every new application.
+- Contacts reach the team only through `vacancy_application_contacts()`: the profile's contact email (or the account email) and phone, nothing for withdrawn applications, and nothing while the vacancy or the company is hidden by moderation.
+- Withdrawing wipes the message and the projects and cannot be followed by a new application to the same vacancy. Applications are deleted 12 months after their vacancy closed or ran out (the same daily cron, `purge_old_vacancy_applications()`).
 
 ### Projects
 
@@ -211,7 +219,9 @@ search-talent/
 | `/my-space/saved` | Bookmarked profiles and projects |
 | `/my-space/companies` | Your company pages and invitations to join |
 | `/companies/new`, `/companies/edit/[id]` | Create a company page / edit it, team, verification |
-| `/my-space/vacancies` | Vacancies of your companies: drafts, open, closed, views |
+| `/my-space/vacancies` | Vacancies of your companies: drafts, open, closed, views, applications |
+| `/my-space/vacancies/[id]` | Applications to one vacancy: portfolio, message, contacts, status (company team) |
+| `/my-space/applications` | Your applications and where each one stands; withdraw |
 | `/jobs/new`, `/jobs/edit/[id]` | Vacancy form (company team) |
 | `/analytics` | Platform-wide analytics |
 | `/notifications` | Inbox |
@@ -291,7 +301,11 @@ search-talent/
 | POST | `/api/vacancies` | Write a vacancy for your company, as a draft or published (10/hour, 5 per company a day) |
 | PATCH/DELETE | `/api/vacancies/[id]` | Edit (team) / delete (author, owner or admin) |
 | POST | `/api/vacancies/[id]/status` | `publish` a draft, `close`, or `extend` for 60 days (also reopens) |
-| GET | `/api/cron/expire-vacancies` | Daily cron: mark ended vacancies, notify authors (`CRON_SECRET`) |
+| POST | `/api/vacancies/[id]/applications` | Apply with 1–3 projects, a message and consent (20 a day, once per vacancy) |
+| PATCH | `/api/applications/[id]` | Team: `viewed`, `shortlisted`, `rejected` or `hired`; the candidate is notified (10 changes an hour per application) |
+| POST | `/api/applications/[id]/withdraw` | Candidate withdraws an application |
+| POST | `/api/applications/viewed` | Team: mark the new applications on screen as viewed |
+| GET | `/api/cron/expire-vacancies` | Daily cron: mark ended vacancies, notify authors, delete applications 12 months after their vacancy closed (`CRON_SECRET`) |
 
 ### Projects
 

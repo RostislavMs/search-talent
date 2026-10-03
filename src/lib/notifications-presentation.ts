@@ -19,6 +19,7 @@ export type NotificationCategory =
   | "content"
   | "coAuthors"
   | "companies"
+  | "applications"
   | "moderation"
   | "badges";
 
@@ -44,6 +45,8 @@ const CATEGORY_BY_TYPE: Record<NotificationType, NotificationCategory> = {
   company_project_declined: "companies",
   vacancy_approved: "companies",
   vacancy_expired: "companies",
+  application_received: "applications",
+  application_status: "applications",
   moderation_decision: "moderation",
   new_badge: "badges",
 };
@@ -76,6 +79,10 @@ export function resolveActorName(
   if (item.type === "vacancy_expired") {
     return item.metadata.vacancyTitle || dict.someone;
   }
+  // The company answers an application: "Acme would like to talk about…".
+  if (item.type === "application_status") {
+    return item.metadata.companyName || dict.someone;
+  }
   return (
     item.metadata.actorName || item.metadata.actorUsername || dict.someone
   );
@@ -93,6 +100,9 @@ export function resolveNotificationEmoji(
   if (item.type === "moderation_decision") return "🛡️";
   if (item.type === "company_verified" || item.type === "vacancy_approved") return "✅";
   if (item.type === "vacancy_expired") return "⏳";
+  if (item.type === "application_status") {
+    return item.metadata.applicationStatus === "hired" ? "🎉" : "💼";
+  }
   return null;
 }
 
@@ -208,6 +218,20 @@ export function describeNotification(
           ? dict.actions.vacancyApproved
           : dict.actions.vacancyExpired
       ).replace("{title}", item.metadata.vacancyTitle ?? "");
+    case "application_received":
+      return dict.actions.applicationReceived.replace(
+        "{title}",
+        item.metadata.vacancyTitle ?? "",
+      );
+    case "application_status": {
+      const status = item.metadata.applicationStatus;
+      return status
+        ? dict.actions.applicationStatus[status].replace(
+            "{title}",
+            item.metadata.vacancyTitle ?? "",
+          )
+        : "";
+    }
     default:
       return "";
   }
@@ -237,6 +261,18 @@ export function buildNotificationHref(
       : item.metadata.contentKind === "vacancy"
         ? `${base}/my-space/vacancies`
         : `${base}/my-space`;
+  }
+
+  // A new application is read in the team's list for that vacancy; an answer
+  // to one's own application, in "My applications".
+  if (item.type === "application_received") {
+    return item.metadata.vacancyId
+      ? `${base}/my-space/vacancies/${item.metadata.vacancyId}`
+      : `${base}/my-space/vacancies`;
+  }
+
+  if (item.type === "application_status") {
+    return `${base}/my-space/applications`;
   }
 
   // An expired vacancy is extended from the team's list.

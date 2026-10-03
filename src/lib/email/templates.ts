@@ -202,3 +202,93 @@ export function buildCompanyVerificationEmail(input: CompanyVerificationEmailInp
     text,
   };
 }
+
+type ApplicationReceivedEmailInput = {
+  recipientName: string;
+  applicantName: string;
+  vacancyTitle: string;
+  companyName: string;
+  url: string;
+  locale: Locale;
+};
+
+/**
+ * A candidate applied. Who and to what, nothing more: the message and the
+ * contacts stay on the site, behind the team's sign-in.
+ */
+export function buildApplicationReceivedEmail(input: ApplicationReceivedEmailInput) {
+  const email = getDictionary(input.locale).emails.applicationReceived;
+  const greeting = input.recipientName ? email.greeting : email.greetingNoName;
+  const fill = (template: string, escape: boolean) => {
+    const value = (text: string) => (escape ? escapeHtml(text) : text);
+    return template
+      .replace("{name}", value(input.recipientName || ""))
+      .replace("{candidate}", value(input.applicantName || email.someone))
+      .replace("{vacancy}", value(input.vacancyTitle))
+      .replace("{company}", value(input.companyName));
+  };
+
+  const bodyHtml = `
+    <h1 style="margin: 0 0 12px 0; font-size: 22px; line-height: 1.3; color: #0f172a;">${fill(greeting, true)}</h1>
+    <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.6; color: #334155;">${fill(email.intro, true)}</p>
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #334155;">${escapeHtml(email.body)}</p>
+    ${ctaButton(email.cta, input.url)}
+    <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #94a3b8;">${escapeHtml(email.signature)}</p>`;
+
+  const text = [
+    fill(greeting, false),
+    fill(email.intro, false),
+    email.body,
+    "",
+    `${email.cta}: ${input.url}`,
+    "",
+    email.signature,
+  ].join("\n");
+
+  return { subject: fill(email.subject, false), html: renderEmailShell(input.locale, bodyHtml), text };
+}
+
+type ApplicationStatusEmailInput = {
+  recipientName: string;
+  vacancyTitle: string;
+  companyName: string;
+  notice: "shortlisted" | "rejected" | "hired";
+  url: string;
+  locale: Locale;
+};
+
+/**
+ * The company decided: shortlisted, rejected or hired. A rejection reads as a
+ * short, kind note rather than silence.
+ */
+export function buildApplicationStatusEmail(input: ApplicationStatusEmailInput) {
+  const email = getDictionary(input.locale).emails.applicationStatus;
+  const greeting = input.recipientName ? email.greeting : email.greetingNoName;
+  const copy = email[input.notice];
+  const fill = (template: string, escape: boolean) => {
+    const value = (text: string) => (escape ? escapeHtml(text) : text);
+    return template
+      .replace("{name}", value(input.recipientName || ""))
+      .replace("{vacancy}", value(input.vacancyTitle))
+      .replace("{company}", value(input.companyName));
+  };
+
+  const bodyHtml = `
+    <h1 style="margin: 0 0 12px 0; font-size: 22px; line-height: 1.3; color: #0f172a;">${fill(greeting, true)}</h1>
+    <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.6; color: #334155;">${fill(copy.intro, true)}</p>
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #334155;">${fill(copy.body, true)}</p>
+    ${ctaButton(email.cta, input.url)}
+    <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #94a3b8;">${escapeHtml(email.signature)}</p>`;
+
+  const text = [
+    fill(greeting, false),
+    fill(copy.intro, false),
+    fill(copy.body, false),
+    "",
+    `${email.cta}: ${input.url}`,
+    "",
+    email.signature,
+  ].join("\n");
+
+  return { subject: fill(copy.subject, false), html: renderEmailShell(input.locale, bodyHtml), text };
+}
