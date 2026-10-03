@@ -1,12 +1,13 @@
 import OptimizedImage from "@/components/ui/optimized-image";
 
 const SIZE_CLASSES = {
+  xs: "h-7 w-7 rounded-full text-xs",
   sm: "h-10 w-10 rounded-xl text-base",
   md: "h-14 w-14 rounded-2xl text-xl",
   lg: "h-20 w-20 rounded-2xl text-3xl sm:h-24 sm:w-24",
 } as const;
 
-const SIZE_PX = { sm: 40, md: 56, lg: 96 } as const;
+const SIZE_PX = { xs: 28, sm: 40, md: 56, lg: 96 } as const;
 
 /**
  * A company's logo on a square tile, or its first letter when there is none.

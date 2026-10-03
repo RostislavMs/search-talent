@@ -1,6 +1,6 @@
 # SearchTalent
 
-A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is built around creator portfolios, rating, and community signal. Specialists mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors reach them through a "Contact" button. Companies create pages with their team and its work, and post vacancies — jobs, internships and paid freelance tasks — that people apply to with their portfolio (hiring, part 8 of the plan).
+A bilingual (Ukrainian / English) community and portfolio platform for IT specialists. Authors publish profiles, projects, technical articles, and community polls — optionally with co-authors — while visitors discover, follow, and react to content. The product is built around creator portfolios, rating, and community signal. Specialists mark what they are open to (freelance, a job, an internship, collaboration, mentoring), and visitors reach them through a "Contact" button. Companies create pages with their team and its work, and post vacancies — jobs, internships and paid freelance tasks — that people apply to with their portfolio and can follow by email (hiring, part 8 of the plan).
 
 ---
 
@@ -28,8 +28,6 @@ A bilingual (Ukrainian / English) community and portfolio platform for IT specia
 ```text
 search-talent/
 ├── public/                           Static assets (favicon, llms.txt, og fallbacks)
-├── supabase/                         Numbered SQL schema files (run in order)
-├── database/                         Incremental dated migrations applied on top of supabase/
 ├── tests/unit/                       Vitest unit tests
 ├── src/
 │   ├── app/
@@ -82,7 +80,7 @@ search-talent/
 
 - Rich profile sections: bio, work experience, education, certificates, skills, languages, Q&A, contacts.
 - "Open to…" status (freelance, job, internship, collaboration, mentoring) with a two-click toggle in My Space and a reminder after 60 days.
-- "Contact" dialog: public channels for everyone; email and phone live in the owner-only `profile_private_details` table and reach signed-in visitors only through `open_profile_contacts()`, which counts the opening for the owner and caps new profiles at 20/hour and 60/day per account. Salary expectations and the hourly rate (for freelance, "from N per hour") are hidden unless the owner shows them, each with its own switch.
+- "Contact" dialog: public channels for everyone; email and phone live in the owner-only `profile_private_details` table and reach signed-in visitors only through `open_profile_contacts()`, which counts the opening for the owner and caps new profiles at 20/hour and 60/day per account. A member of a verified company can open them on behalf of the company: the owner then sees which companies did (`my_contact_open_companies()`) and gets a notification the first time; the whole team shares an extra cap of 30/hour and 100/day. Salary expectations and the hourly rate (for freelance, "from N per hour") are hidden unless the owner shows them, each with its own switch.
 - Per-section visibility controls and customisable presentation (palette, fonts, hero alignment, section order, sizes, cover/video background).
 - AI-generated public summary (Gemini), opt-in regeneration with rate limits.
 - PDF export of the current profile, with a link and a QR code to the portfolio.
@@ -93,7 +91,7 @@ search-talent/
 
 ### Companies (hiring, stage 8.1)
 
-- Any signed-in person with a confirmed email creates a page for a company or an educational institution (`companies`, `database/2026-09-30-companies.sql`) and stays a specialist too — there is no separate employer account. Up to 5 pages per creator; one person is in at most 3 teams at a time.
+- Any signed-in person with a confirmed email creates a page for a company or an educational institution (`companies`) and stays a specialist too — there is no separate employer account. Up to 5 pages per creator; one person is in at most 3 teams at a time.
 - Team with roles owner / admin / recruiter (`company_members`): invitations like co-authoring (pending → accepted/declined), at most 25 people, always at least one owner. Every change goes through SECURITY DEFINER functions (`invite_company_member`, `respond_company_invite`, `set_company_member_role`, `remove_company_member`); there are no direct write policies on the team.
 - "Verified company": an owner or admin proves they can read mail on the website's domain — in one click if their account email is already there, otherwise with a 6-digit code sent (Resend) to any work address on that domain. Only the domain and an HMAC of the code are stored (`company_verification_codes`, service key only; 15 minutes, 5 attempts). Not for public mail services and not for schools, which a platform admin verifies in `/admin/companies`. A new name or website takes the mark off (`guard_company_columns`). Only verified pages are indexed and listed in the sitemap, with `Organization` JSON-LD.
 - The page shows only the projects attached to the company (`company_projects`, up to 3 companies per project): a member's project appears at once, anyone else's waits as a request until an owner/admin accepts it. The company can also confirm a project ("Confirmed by the company", `confirm_company_project`). The author or the company's owners/admins take it off; projects stay when the author leaves the team, and the managers are notified (the removed person is notified too). The project page links back to the company. Auto-moderation holds a flagged page for review.
@@ -101,18 +99,25 @@ search-talent/
 
 ### Vacancies (hiring, stage 8.2)
 
-- Only company pages post vacancies (`vacancies`, `vacancy_skills`, `database/2026-09-30-vacancies.sql`): any accepted member of the team writes, publishes, closes and extends them; the author or an owner/admin deletes. Kinds follow "Open to" (job, internship, freelance, collaboration); a job or an internship must state its pay (an amount or a range, UAH/EUR/USD, per month or hour; freelance per hour or for the project).
-- Life cycle in the database (`guard_vacancy_columns`): draft → published → closed or expired; the dates are stamped by the database — open for 60 days from going out, "extend" means 60 days from now, the first publication date stays. At most 5 new vacancies per company a day. The daily cron `/api/cron/expire-vacancies` marks ended ones and notifies the author; pages treat a vacancy past `expires_at` as ended even before that.
+- Only company pages post vacancies (`vacancies`, `vacancy_skills`): any accepted member of the team writes, publishes, closes and extends them; the author or an owner/admin deletes. Kinds follow "Open to" (job, internship, freelance, collaboration); a job or an internship must state its pay (an amount or a range, UAH/EUR/USD, per month or hour; freelance per hour or for the project).
+- Life cycle in the database (`guard_vacancy_columns`): draft → published → closed or expired; the dates are stamped by the database — open for 60 days from going out, "extend" means 60 days from now, the first publication date stays. At most 5 new vacancies per company a day. The daily cron `/api/cron/expire-vacancies` marks ended ones and notifies the author (the same run sends the job alerts); pages treat a vacancy past `expires_at` as ended even before that.
 - Moderation: a verified company's vacancy goes live at once (auto-moderation still screens it, with extra rules against "pay for training" and "write to us on Telegram" scams); an unverified company's vacancy waits in `/admin/content/vacancies` when it first goes out and again whenever its text changes. A report of a scam hides a vacancy until a moderator decides. Reports and moderation actions now target companies and vacancies too.
 - `/jobs` is rendered on the server with filters in the address (type, format, level, field, country, skill, "with pay", title search). It stays out of the menu and search engines until there are 5 open vacancies from 3 companies (`SECTION_VISIBILITY_THRESHOLDS.jobs`). A vacancy page is indexed, listed in the sitemap and carries `JobPosting` JSON-LD only while it is open and its company is verified, and only in the language it is written in.
 
 ### Applications (hiring, stage 8.3)
 
-- A candidate applies with their portfolio, not a CV (`vacancy_applications`, `database/2026-10-02-applications.sql`): 1–3 of their published projects (own or co-authored), a message up to 1 000 characters, and consent to hand this company their email and phone. It takes a confirmed email and a public profile; once per vacancy, 20 a day, never to one's own company's vacancy.
+- A candidate applies with their portfolio, not a CV (`vacancy_applications`): 1–3 of their published projects (own or co-authored), a message up to 1 000 characters, and consent to hand this company their email and phone. It takes a confirmed email and a public profile; once per vacancy, 20 a day, never to one's own company's vacancy.
 - Everything is written through SECURITY DEFINER functions (`apply_to_vacancy`, `withdraw_vacancy_application`, `set_vacancy_application_status`, `mark_vacancy_applications_viewed`); the table has no write grants. The candidate sees their own applications, the company's team those to its vacancies, platform admins none.
 - The team's funnel in `/my-space/vacancies/[id]`: new → viewed (stamped when the list is on screen) → shortlisted → rejected or hired; a decision can be taken back. The candidate gets a notification for the first look and each decision, and an email for decisions — a rejection is a short, kind note. The vacancy's author gets a notification and an email for every new application.
 - Contacts reach the team only through `vacancy_application_contacts()`: the profile's contact email (or the account email) and phone, nothing for withdrawn applications, and nothing while the vacancy or the company is hidden by moderation.
 - Withdrawing wipes the message and the projects and cannot be followed by a new application to the same vacancy. Applications are deleted 12 months after their vacancy closed or ran out (the same daily cron, `purge_old_vacancy_applications()`).
+
+### Job alerts (hiring, stage 8.4)
+
+- A saved search of vacancies (`saved_searches` in mode `vacancies`): "Follow this search" on `/jobs` stores the filters exactly as the address carries them, and "Vacancies that fit me" (`{"match": "profile"}`, switched on under "Open to…" in My Space) matches the kinds the person is open to, their skills and work format. Up to 10 per person, the same filters once; once saved, only the name and the email switch change.
+- Every morning the daily cron finds vacancies that went live since the alert was made (published, or approved by a moderator later; a reopened one is not news) and sends each person one `vacancy_match` notification and, for alerts with email on, one email — only to a confirmed address, through Resend's batch API. `job_alert_deliveries` remembers what each alert sent (written by the server, read by the owner, kept 90 days), so nothing arrives twice; vacancies of the person's own company are skipped; if an email fails, that person's matches wait for the next run.
+- Every email has a one-click unsubscribe (`List-Unsubscribe` + `List-Unsubscribe-Post`, an HMAC token, no sign-in) that turns the emails off and leaves the alerts in notifications. `/my-space/job-alerts` lists the alerts, the latest vacancies each sent, the email switches and "Remove".
+- `/admin/metrics` has a hiring section: open vacancies and companies, applications per week, the share viewed within 7 days (the health number), the share of vacancies with an application within 14 days, the median time to the first application, job alerts and contacts opened by companies.
 
 ### Projects
 
@@ -200,6 +205,7 @@ search-talent/
 | `/rating-guide` | How the rating system works |
 | `/about`, `/faq`, `/feedback` | Marketing & support |
 | `/terms`, `/privacy`, `/cookies`, `/legal` | Legal hub |
+| `/job-alerts/unsubscribe` | Turns job alert emails off from the link in an email (no sign-in) |
 
 ### Auth
 
@@ -222,6 +228,7 @@ search-talent/
 | `/my-space/vacancies` | Vacancies of your companies: drafts, open, closed, views, applications |
 | `/my-space/vacancies/[id]` | Applications to one vacancy: portfolio, message, contacts, status (company team) |
 | `/my-space/applications` | Your applications and where each one stands; withdraw |
+| `/my-space/job-alerts` | Searches you follow, "Vacancies that fit me", the email switch, the latest matches |
 | `/jobs/new`, `/jobs/edit/[id]` | Vacancy form (company team) |
 | `/analytics` | Platform-wide analytics |
 | `/notifications` | Inbox |
@@ -270,7 +277,7 @@ search-talent/
 | GET | `/api/badge/{username}.svg` | README badge with the portfolio score (public, cached) |
 | GET/POST/PATCH | `/api/profile` | Read & update own profile |
 | PATCH | `/api/profile/open-to` | Set or confirm the "Open to…" status |
-| POST | `/api/profile-contacts` | Email & phone behind "Contact" (signed in, counted, rate limited) |
+| POST | `/api/profile-contacts` | Email & phone behind "Contact" (signed in, counted, rate limited); `companyId` opens them on behalf of a verified company |
 | POST | `/api/profile-vote` | Up/down-vote a profile |
 | GET/POST/DELETE | `/api/follows` | Follow graph |
 | GET/POST/DELETE | `/api/bookmarks` | Bookmark profiles & projects |
@@ -305,7 +312,10 @@ search-talent/
 | PATCH | `/api/applications/[id]` | Team: `viewed`, `shortlisted`, `rejected` or `hired`; the candidate is notified (10 changes an hour per application) |
 | POST | `/api/applications/[id]/withdraw` | Candidate withdraws an application |
 | POST | `/api/applications/viewed` | Team: mark the new applications on screen as viewed |
-| GET | `/api/cron/expire-vacancies` | Daily cron: mark ended vacancies, notify authors, delete applications 12 months after their vacancy closed (`CRON_SECRET`) |
+| POST | `/api/job-alerts` | Follow the `/jobs` filters, or switch on "Vacancies that fit me" (30/hour) |
+| PATCH/DELETE | `/api/job-alerts/[id]` | Switch an alert's email / stop following |
+| POST | `/api/job-alerts/unsubscribe` | Turn job alert emails off by the token from an email (RFC 8058 one-click) |
+| GET | `/api/cron/expire-vacancies` | Daily cron: mark ended vacancies, notify authors, delete applications 12 months after their vacancy closed, send the morning job alerts (`CRON_SECRET`) |
 
 ### Projects
 
@@ -354,7 +364,7 @@ search-talent/
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/api/search` | Talent and project discovery |
-| GET | `/api/saved-searches` | Saved talent filters |
+| GET | `/api/saved-searches` | Saved talent and project filters |
 | GET/POST | `/api/reactions` | Emoji reactions |
 | GET | `/api/mentions/suggest` | Mention autocomplete |
 | GET | `/api/notifications` | Inbox (+ `mark-read`, `unread-count`) |
@@ -422,7 +432,7 @@ Supabase Auth with three methods:
 
 Password policy: 8–72 chars, mixed case, digits. Protected routes redirect to `/login?next=…` and come back after signing in (only internal paths are accepted, see `src/lib/auth/redirect.ts`). A Postgres profile row is auto-provisioned on the first authenticated page load with a temporary `user-xxxxxx` nick (`ensureProfileForUser`); the person picks their own on the first onboarding step. The same helper turns on the "email verified" mark once Supabase Auth has confirmed the email.
 
-The first sign-in opens `/onboarding` (three skippable steps: who you are, first project, share the link). State lives in the owner-only `user_onboarding` table (`database/2026-09-27-onboarding.sql`); until that migration is applied nobody is redirected there automatically.
+The first sign-in opens `/onboarding` (three skippable steps: who you are, first project, share the link). State lives in the owner-only `user_onboarding` table.
 
 ---
 
@@ -522,9 +532,9 @@ The app targets Vercel out of the box:
 
 1. Import the repo into Vercel.
 2. Set all required env vars (see table above) in the project settings.
-3. Configure the Supabase Auth redirect URLs to allow `${NEXT_PUBLIC_APP_URL}/api/auth/callback` with any query string, set the Site URL to `${NEXT_PUBLIC_APP_URL}`, and paste the email templates from `supabase/email-templates`.
+3. Configure the Supabase Auth redirect URLs to allow `${NEXT_PUBLIC_APP_URL}/api/auth/callback` with any query string, set the Site URL to `${NEXT_PUBLIC_APP_URL}`, and set up the auth email templates.
 4. Configure the GitHub OAuth callback at `${NEXT_PUBLIC_APP_URL}/api/integrations/github/callback`.
-5. First deploy → run the SQL files in order against the production Supabase project.
+5. Before the first deploy, apply the database schema to the production Supabase project.
 
 Speed Insights is wired automatically when running on Vercel.
 

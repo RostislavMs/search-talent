@@ -16,6 +16,40 @@ type RevealState =
   | { status: "idle" | "loading" | "rate_limited" | "error" }
   | { status: "ready"; email: string | null; phone: string | null };
 
+type ContactCompany = { id: string; name: string };
+
+type ContactsResponse = {
+  email: string | null;
+  phone: string | null;
+  /** The company the opening was recorded for, or null for the person. */
+  asCompanyId?: string | null;
+  /** Verified companies the visitor may speak for. */
+  companies?: ContactCompany[];
+};
+
+// The company a recruiter last spoke for, so the next dialog opens as it.
+const CONTACT_AS_KEY = "st:contact-as-company";
+
+function readRememberedCompany(): string | null {
+  try {
+    return window.localStorage.getItem(CONTACT_AS_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function rememberCompany(companyId: string | null) {
+  try {
+    if (companyId) {
+      window.localStorage.setItem(CONTACT_AS_KEY, companyId);
+    } else {
+      window.localStorage.removeItem(CONTACT_AS_KEY);
+    }
+  } catch {
+    // Private mode: the choice just isn't remembered.
+  }
+}
+
 export type ProfileContactInfo = {
   profileId: string;
   displayName: string;
@@ -57,6 +91,10 @@ function telegramUrl(handle: string) {
  * touch. Telegram, LinkedIn and the site are public anyway; email and phone
  * are loaded from /api/profile-contacts only for a signed-in visitor, which
  * also counts the opening for the author and caps address harvesting.
+ *
+ * A member of a verified company can switch to "as Acme": the author then
+ * sees that Acme opened their contacts. The choice is remembered for the next
+ * profile.
  */
 export default function ProfileContactButton({
   contact,
@@ -75,23 +113,61 @@ export default function ProfileContactButton({
   const titleId = useId();
   const [open, setOpen] = useState(false);
   const [reveal, setReveal] = useState<RevealState>({ status: "idle" });
+  const [companies, setCompanies] = useState<ContactCompany[]>([]);
+  const [asCompanyId, setAsCompanyId] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
+  const [companyLimited, setCompanyLimited] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  const loadPrivate = useCallback(async () => {
-    setReveal({ status: "loading" });
+  const loadPrivate = useCallback(
+    async (companyId: string | null) => {
+      setReveal((previous) => (previous.status === "ready" ? previous : { status: "loading" }));
 
-    const result = await apiFetch<{ email: string | null; phone: string | null }>(
-      "/api/profile-contacts",
-      { method: "POST", body: { profileId: contact.profileId } },
-    );
+      const post = (id: string | null) =>
+        apiFetch<ContactsResponse>("/api/profile-contacts", {
+          method: "POST",
+          body: id ? { profileId: contact.profileId, companyId: id } : { profileId: contact.profileId },
+        });
 
-    if (result.ok) {
-      setReveal({ status: "ready", email: result.data.email, phone: result.data.phone });
-    } else {
+      let result = await post(companyId);
+      let limitedForCompany = false;
+
+      // The company can't be used (left the team, page no longer verified) or
+      // has opened too many today: open as a person instead.
+      if (
+        !result.ok &&
+        companyId &&
+        (result.code === "company_not_allowed" || result.code === "company_rate_limited")
+      ) {
+        if (result.code === "company_not_allowed") {
+          rememberCompany(null);
+        }
+        limitedForCompany = result.code === "company_rate_limited";
+        result = await post(null);
+      }
+
+      setCompanyLimited(limitedForCompany);
+
+      if (result.ok) {
+        setReveal({ status: "ready", email: result.data.email, phone: result.data.phone });
+        setCompanies(result.data.companies ?? []);
+        setAsCompanyId(result.data.asCompanyId ?? null);
+        return;
+      }
+
       setReveal({ status: result.status === 429 ? "rate_limited" : "error" });
-    }
-  }, [contact.profileId]);
+    },
+    [contact.profileId],
+  );
+
+  const chooseSender = async (companyId: string | null) => {
+    if (companyId === asCompanyId || switching) return;
+    rememberCompany(companyId);
+    setSwitching(true);
+    await loadPrivate(companyId);
+    setSwitching(false);
+  };
 
   const close = useCallback(() => {
     setOpen(false);
@@ -104,7 +180,7 @@ export default function ProfileContactButton({
     // Signed in: always ask, even without email or phone on file, so the author's
     // "opened your contacts" count covers everyone who pressed the button.
     if (isAuthenticated && (reveal.status === "idle" || reveal.status === "error")) {
-      void loadPrivate();
+      void loadPrivate(readRememberedCompany());
     }
   };
 
@@ -279,9 +355,52 @@ export default function ProfileContactButton({
           {reveal.status === "error" ? (
             <div className="flex flex-wrap items-center gap-3" role="alert">
               <p className="text-sm text-rose-600 dark:text-rose-400">{t.loadFailed}</p>
-              <Button variant="secondary" size="sm" onClick={() => void loadPrivate()}>
+              <Button variant="secondary" size="sm" onClick={() => void loadPrivate(asCompanyId)}>
                 {t.retry}
               </Button>
+            </div>
+          ) : null}
+
+          {reveal.status === "ready" && companies.length > 0 ? (
+            <div className="rounded-xl border app-border p-3" aria-busy={switching}>
+              <p id={`${titleId}-as`} className="text-xs app-muted">
+                {t.contactAs}
+              </p>
+              <div role="radiogroup" aria-labelledby={`${titleId}-as`} className="mt-2 flex flex-wrap gap-2">
+                {[{ id: null, name: t.contactAsYou }, ...companies].map((sender) => {
+                  const active = sender.id === asCompanyId;
+                  return (
+                    <button
+                      key={sender.id ?? "self"}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      disabled={switching}
+                      onClick={() => void chooseSender(sender.id)}
+                      className={[
+                        "cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-wait",
+                        active
+                          ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
+                          : "border app-border bg-[color:var(--surface)] text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",
+                      ].join(" ")}
+                    >
+                      {sender.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs leading-5 app-muted">
+                {asCompanyId
+                  ? t.contactAsCompanyNote
+                      .replace("{name}", contact.displayName)
+                      .replace("{company}", companies.find((company) => company.id === asCompanyId)?.name ?? "")
+                  : t.contactAsHint.replace("{name}", contact.displayName)}
+              </p>
+              {companyLimited ? (
+                <p className="mt-2 text-xs text-rose-600 dark:text-rose-400" role="alert">
+                  {t.companyRateLimited}
+                </p>
+              ) : null}
             </div>
           ) : null}
         </div>

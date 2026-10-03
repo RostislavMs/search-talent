@@ -1,6 +1,7 @@
 import { escapeHtml } from "@/lib/email/resend";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/i18n/config";
+import { formatCount } from "@/lib/vacancies";
 
 type FollowerEmailInput = {
   recipientName: string;
@@ -291,4 +292,104 @@ export function buildApplicationStatusEmail(input: ApplicationStatusEmailInput) 
   ].join("\n");
 
   return { subject: fill(copy.subject, false), html: renderEmailShell(input.locale, bodyHtml), text };
+}
+
+export type JobAlertEmailItem = {
+  title: string;
+  company: string;
+  /** "Internship · 500–800 USD per month · Remote", already worded. */
+  details: string;
+  url: string;
+};
+
+export type JobAlertEmailSection = {
+  name: string;
+  items: JobAlertEmailItem[];
+  /** Matches not listed in the email. */
+  more: number;
+  moreUrl: string;
+};
+
+type JobAlertDigestEmailInput = {
+  recipientName: string;
+  sections: JobAlertEmailSection[];
+  total: number;
+  manageUrl: string;
+  /** The page that turns these emails off; null without the service key. */
+  unsubscribeUrl: string | null;
+  locale: Locale;
+};
+
+/**
+ * The morning job alert: new vacancies, grouped by the alert that found them.
+ * Every vacancy links to its page; the footer turns the emails off in one
+ * click, without signing in.
+ */
+export function buildJobAlertDigestEmail(input: JobAlertDigestEmailInput) {
+  const email = getDictionary(input.locale).emails.jobAlert;
+  const greeting = input.recipientName
+    ? email.greeting.replace("{name}", input.recipientName)
+    : email.greetingNoName;
+  const subject = formatCount(input.total, email.subject, input.locale);
+
+  const sectionsHtml = input.sections
+    .map((section) => {
+      const items = section.items
+        .map(
+          (item) => `
+        <li style="padding: 12px 0; border-top: 1px solid #e6edf5;">
+          <a href="${escapeHtml(item.url)}" style="font-size: 15px; font-weight: 600; line-height: 1.4; color: #0f172a; text-decoration: none;">${escapeHtml(item.title)}</a>
+          <div style="margin-top: 2px; font-size: 13px; line-height: 1.5; color: #64748b;">${escapeHtml([item.company, item.details].filter(Boolean).join(" · "))}</div>
+        </li>`,
+        )
+        .join("");
+      const more =
+        section.more > 0
+          ? `<p style="margin: 8px 0 0 0; font-size: 14px;"><a href="${escapeHtml(section.moreUrl)}" style="color: #b45309;">${escapeHtml(formatCount(section.more, email.more, input.locale))}</a></p>`
+          : "";
+
+      return `
+    <h2 style="margin: 24px 0 4px 0; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b;">${escapeHtml(section.name)}</h2>
+    <ul style="list-style: none; margin: 0; padding: 0;">${items}</ul>${more}`;
+    })
+    .join("");
+
+  const footerLinks = [
+    `<a href="${escapeHtml(input.manageUrl)}" style="color: #94a3b8;">${escapeHtml(email.manage)}</a>`,
+    input.unsubscribeUrl
+      ? `<a href="${escapeHtml(input.unsubscribeUrl)}" style="color: #94a3b8;">${escapeHtml(email.unsubscribe)}</a>`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const bodyHtml = `
+    <h1 style="margin: 0 0 12px 0; font-size: 22px; line-height: 1.3; color: #0f172a;">${escapeHtml(greeting)}</h1>
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #334155;">${escapeHtml(email.intro)}</p>
+    ${sectionsHtml}
+    ${ctaButton(email.cta, input.manageUrl)}
+    <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #94a3b8;">${escapeHtml(email.footer)}<br />${footerLinks}</p>`;
+
+  const text = [
+    greeting,
+    email.intro,
+    ...input.sections.flatMap((section) => [
+      "",
+      section.name.toUpperCase(),
+      ...section.items.map(
+        (item) => `- ${item.title} (${[item.company, item.details].filter(Boolean).join(" · ")})\n  ${item.url}`,
+      ),
+      section.more > 0 ? `${formatCount(section.more, email.more, input.locale)}: ${section.moreUrl}` : "",
+    ]),
+    "",
+    `${email.cta}: ${input.manageUrl}`,
+    "",
+    email.footer,
+    input.unsubscribeUrl ? `${email.unsubscribe}: ${input.unsubscribeUrl}` : "",
+  ]
+    .filter((line, index, lines) => line !== "" || lines[index - 1] !== "")
+    .join("\n")
+    .trim();
+
+  return { subject, html: renderEmailShell(input.locale, bodyHtml), text };
 }

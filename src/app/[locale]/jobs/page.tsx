@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import JobAlertFollow from "@/components/job-alert-follow";
 import JsonLd from "@/components/json-ld";
 import VacancyCard from "@/components/vacancy-card";
 import VacancyFilters from "@/components/vacancy-filters";
 import { ButtonLink } from "@/components/ui/Button";
 import Pagination from "@/components/ui/pagination";
+import { buildLoginHref } from "@/lib/auth/redirect";
 import { hasCompanyMembership } from "@/lib/db/companies";
+import { listMyJobAlerts } from "@/lib/db/job-alerts";
 import { getSectionVisibility } from "@/lib/db/section-visibility";
 import { getJobsFilterOptions, listOpenVacancies } from "@/lib/db/vacancies";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
@@ -14,6 +17,7 @@ import { buildItemListSchema, buildMetadata, getMetadataBase, toBcp47 } from "@/
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/supabase/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { sameJobAlertFilters, withoutPage } from "@/lib/job-alerts";
 import {
   JOBS_PAGE_SIZE,
   JOBS_PATH,
@@ -80,13 +84,20 @@ export default async function JobsPage({
   // member's drafts never mix into the list.
   const supabase = createPublicReadOnlyClient() ?? (await createClient());
   const user = await getCurrentUser();
+  const session = user ? await createClient() : null;
 
-  const [{ items, total }, options, sections, isMember] = await Promise.all([
+  const [{ items, total }, options, sections, isMember, alerts] = await Promise.all([
     listOpenVacancies(supabase, filters),
     getJobsFilterOptions(supabase),
     getSectionVisibility(),
-    user ? hasCompanyMembership(await createClient(), user.id) : Promise.resolve(false),
+    user && session ? hasCompanyMembership(session, user.id) : Promise.resolve(false),
+    user && session ? listMyJobAlerts(session, user.id) : Promise.resolve([]),
   ]);
+
+  const followedFilters = withoutPage(filters);
+  const followedAlert = alerts.find(
+    (alert) => alert.target.type === "filters" && sameJobAlertFilters(alert.target.filters, followedFilters),
+  );
 
   const totalPages = Math.max(1, Math.ceil(total / JOBS_PAGE_SIZE));
   const filtered = hasVacancyFilters(filters);
@@ -139,13 +150,23 @@ export default async function JobsPage({
       </section>
 
       <section className="mt-6 sm:mt-8" aria-labelledby="jobs-results">
-        {/* With nothing found the empty card says it; "0 positions" above it would repeat. */}
-        <h2
-          id="jobs-results"
-          className={total > 0 ? "px-5 text-sm font-medium app-muted sm:px-0" : "sr-only"}
-        >
-          {total > 0 ? formatCount(total, copy.list.count, locale) : copy.list.title}
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-0">
+          {/* With nothing found the empty card says it; "0 positions" above it would repeat. */}
+          <h2
+            id="jobs-results"
+            className={total > 0 ? "text-sm font-medium app-muted" : "sr-only"}
+          >
+            {total > 0 ? formatCount(total, copy.list.count, locale) : copy.list.title}
+          </h2>
+          <div className="ml-auto">
+            <JobAlertFollow
+              filters={followedFilters}
+              alertId={followedAlert?.id ?? null}
+              isAuthenticated={Boolean(user)}
+              loginHref={buildLoginHref(locale, buildJobsHref(followedFilters))}
+            />
+          </div>
+        </div>
 
         {items.length > 0 ? (
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -48,6 +48,7 @@ const DISALLOW = [
   "/*/companies/edit/",
   "/*/jobs/new",
   "/*/jobs/edit/",
+  "/*/job-alerts/",
   "/*?*filter=",
   "/*?*sort=",
   "/*?*page=",
