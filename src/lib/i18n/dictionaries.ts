@@ -70,6 +70,7 @@ export const dictionaries = {
         audit: "Audit log",
         popups: "Popups",
         companies: "Companies",
+        trash: "Trash",
       },
       metrics: {
         title: "Product metrics",
@@ -227,7 +228,7 @@ export const dictionaries = {
             "This user will lose access to admin tools. They keep their regular account.",
           confirmDeleteTitle: "Delete account?",
           confirmDeleteMessage:
-            "This permanently deletes the account, profile, projects, and articles. This action cannot be undone.",
+            "The account, profile, projects, and articles disappear from the site at once and wait 60 days in the Trash, where they can be restored.",
           confirmButton: "Confirm",
           cancel: "Cancel",
           errorFallback: "Operation failed. Please try again.",
@@ -308,6 +309,67 @@ export const dictionaries = {
         },
         dismiss: "Dismiss",
       },
+      trash: {
+        title: "Trash",
+        description:
+          "Everything deleted on the site waits here for 60 days — by its author, by an admin, or together with an account. Restore brings it back with whatever was deleted along with it. After 60 days it is erased for good, files included.",
+        unavailable: "The trash is not set up in the database yet.",
+        empty: "The trash is empty.",
+        filterAll: "All",
+        filterLabel: "Show",
+        kinds: {
+          account: "Accounts",
+          project: "Projects",
+          article: "Articles",
+          poll: "Polls",
+          comment: "Comments",
+          company: "Companies",
+          vacancy: "Jobs",
+          other: "Other",
+        },
+        kindSingular: {
+          account: "Account",
+          project: "Project",
+          article: "Article",
+          poll: "Poll",
+          comment: "Comment",
+          company: "Company",
+          vacancy: "Job",
+          other: "Other",
+        },
+        reasons: {
+          user: "Deleted by the author",
+          admin: "Removed by an admin",
+          account: "Deleted with the account",
+          system: "Deleted automatically",
+        },
+        untitled: "Untitled",
+        owner: "Owner",
+        deletedBy: "by @{username}",
+        deletedAt: "Deleted {date}",
+        purgeAt: "Erased for good on {date}",
+        related: "+{count} deleted with it",
+        restore: "Restore",
+        restoring: "Restoring…",
+        erase: "Erase now",
+        erasing: "Erasing…",
+        restoreTitle: "Restore this item?",
+        restoreMessage: "It comes back as it was, together with everything deleted along with it.",
+        restoreAccountMessage:
+          "The profile and everything in it come back, and the person can sign in again. They set a new password through “Forgot password”.",
+        eraseTitle: "Erase for good?",
+        eraseMessage: "This cannot be undone: the item and its files are deleted now.",
+        eraseAccountMessage: "The account is deleted for good now, with everything it held. This cannot be undone.",
+        cancel: "Cancel",
+        more: "Show more",
+        errors: {
+          conflict: "Can't restore: its address or nickname is taken now.",
+          missing_parent: "Can't restore: what it belonged to has been erased.",
+          not_found: "This item was already restored or erased.",
+          forbidden: "Only admins can do this.",
+          failed: "Something went wrong. Try again.",
+        },
+      },
       content: {
         articlesTitle: "Articles",
         articlesDescription:
@@ -360,12 +422,12 @@ export const dictionaries = {
         },
         confirmBulkTitle: "Apply to selected?",
         confirmBulkMessage:
-          "This will apply the chosen action to every selected item. You can undo status changes later, but deletions are permanent.",
+          "This will apply the chosen action to every selected item. Status changes can be undone later; deleted items wait 60 days in the Trash.",
         confirmBulkButton: "Apply",
         cancel: "Cancel",
         confirmDeleteCommentTitle: "Delete comment?",
         confirmDeleteCommentMessage:
-          "The comment will be permanently removed. This action cannot be undone.",
+          "The comment disappears from the site and waits 60 days in the Trash.",
         errorFallback: "Operation failed. Please try again.",
         openItem: "Open",
       },
@@ -436,7 +498,7 @@ export const dictionaries = {
         },
         confirmDeleteTitle: "Delete popup?",
         confirmDeleteMessage:
-          "This permanently removes the popup. This action cannot be undone.",
+          "The popup goes to the Trash for 60 days.",
         confirmDeleteButton: "Delete",
         errorFallback: "Operation failed. Please try again.",
         messageEmptyError:
@@ -1134,10 +1196,10 @@ export const dictionaries = {
       danger: {
         title: "Delete the page",
         description:
-          "The page and the team list go away for good. Team members keep their profiles and projects.",
+          "The page and the team list disappear from the site. Team members keep their profiles and projects.",
         button: "Delete page",
         confirmTitle: "Delete “{company}”?",
-        confirmText: "This can't be undone.",
+        confirmText: "If it was a mistake, write to us within 60 days and we will restore it.",
         deleting: "Deleting…",
         deleted: "Page deleted",
         error: "Couldn't delete the page. Try again.",
@@ -1517,7 +1579,7 @@ export const dictionaries = {
         closeTitle: "Close “{title}”?",
         closeText: "It stays on the site marked as closed. You can reopen it later.",
         deleteTitle: "Delete “{title}”?",
-        deleteText: "The vacancy and its applications will be gone for good. This can't be undone.",
+        deleteText: "The vacancy and its applications disappear from the site. If it was a mistake, write to us within 60 days and we will restore them.",
       },
       mine: {
         title: "Vacancies",
@@ -2572,7 +2634,7 @@ export const dictionaries = {
       deleteProject: "Delete project",
       deletingProject: "Deleting...",
       deleteProjectFailed: "Could not delete this project right now.",
-      confirmDeleteProject: "Delete this project permanently?",
+      confirmDeleteProject: "Delete this project? If you change your mind, write to us within 60 days and we will restore it.",
       projectDeleted: "Project deleted",
     },
     dashboardProfile: {
@@ -2627,7 +2689,7 @@ export const dictionaries = {
       deleteAccount: {
         sectionTitle: "Danger zone",
         sectionDescription:
-          "Deleting your account removes your profile, projects, votes, likes, and saved data. You can choose whether your articles and comments are deleted with the account or preserved as anonymous content.",
+          "Deleting your account removes your profile, projects, votes, likes, and saved data from the site at once. You can choose whether your articles and comments go with it or stay as anonymous content. For 60 days we keep a closed copy in case you change your mind — write to us and we will restore the account. After that, everything is erased for good.",
         openButton: "Delete my account",
         step1Title: "Delete your account",
         step1Description:
@@ -2635,7 +2697,7 @@ export const dictionaries = {
         modeLegend: "What should happen to your articles and comments?",
         modeEraseTitle: "Delete everything",
         modeEraseDescription:
-          "Your profile, projects, articles, and comments are removed permanently. This cannot be undone.",
+          "Your profile, projects, articles, and comments disappear from the site.",
         modeAnonymizeTitle: "Keep articles and comments anonymously",
         modeAnonymizeDescription:
           "Your account is deleted, but your articles and comments stay on the platform listed as \"Deleted user\".",
@@ -2644,10 +2706,10 @@ export const dictionaries = {
         sendFailed: "Could not send the code right now. Please try again.",
         step2Title: "Enter the code from your email",
         step2Description:
-          "Open the email we just sent to {email} and enter the code below to permanently delete your account.",
+          "Open the email we just sent to {email} and enter the code below to delete your account.",
         codeLabel: "Confirmation code",
         codePlaceholder: "12345678",
-        confirmDelete: "Permanently delete account",
+        confirmDelete: "Delete account",
         deleting: "Deleting...",
         cancel: "Cancel",
         resend: "Resend code",
@@ -3711,7 +3773,7 @@ export const dictionaries = {
         },
         {
           q: "How do I delete my account?",
-          a: "Open your profile settings and use the \"Delete my account\" button at the bottom of the page. We will email you a confirmation code that is valid for 5 minutes. Before confirming, you can choose whether to delete everything — your profile, projects, articles, and comments are removed permanently — or to keep your articles and comments as anonymous content attributed to \"Deleted user\" while the rest of your account is removed. Either way, your profile, projects, votes, likes, and saved data are always deleted, and the action cannot be undone.",
+          a: "Open your profile settings and use the \"Delete my account\" button at the bottom of the page. We will email you a confirmation code that is valid for 5 minutes. Before confirming, you can choose whether to delete everything — your profile, projects, articles, and comments — or to keep your articles and comments as anonymous content attributed to \"Deleted user\" while the rest of your account is removed. Either way, your account disappears from the site at once. For 60 days we keep a closed copy in case you change your mind: write to us and we will restore it. After that, everything is erased for good, files included.",
         },
       ],
     },
@@ -3832,6 +3894,7 @@ export const dictionaries = {
         audit: "Журнал дій",
         popups: "Попапи",
         companies: "Компанії",
+        trash: "Кошик",
       },
       metrics: {
         title: "Метрики продукту",
@@ -3989,7 +4052,7 @@ export const dictionaries = {
             "Користувач втратить доступ до адмін-панелі. Звичайний акаунт збережеться.",
           confirmDeleteTitle: "Видалити акаунт?",
           confirmDeleteMessage:
-            "Це назавжди видалить акаунт, профіль, проєкти й статті. Дію неможливо скасувати.",
+            "Акаунт, профіль, проєкти й статті одразу зникнуть із сайту й 60 днів чекатимуть у кошику — там їх можна відновити.",
           confirmButton: "Підтвердити",
           cancel: "Скасувати",
           errorFallback: "Операцію не вдалося виконати. Спробуйте ще раз.",
@@ -4070,6 +4133,67 @@ export const dictionaries = {
         },
         dismiss: "Прибрати",
       },
+      trash: {
+        title: "Кошик",
+        description:
+          "Усе видалене на сайті 60 днів чекає тут: видалене автором, адміном чи разом з акаунтом. «Відновити» повертає запис разом з усім, що видалилося разом із ним. Через 60 днів усе стирається остаточно, разом із файлами.",
+        unavailable: "Кошик ще не налаштовано в базі.",
+        empty: "Кошик порожній.",
+        filterAll: "Усе",
+        filterLabel: "Показати",
+        kinds: {
+          account: "Акаунти",
+          project: "Проєкти",
+          article: "Статті",
+          poll: "Опитування",
+          comment: "Коментарі",
+          company: "Компанії",
+          vacancy: "Вакансії",
+          other: "Інше",
+        },
+        kindSingular: {
+          account: "Акаунт",
+          project: "Проєкт",
+          article: "Стаття",
+          poll: "Опитування",
+          comment: "Коментар",
+          company: "Компанія",
+          vacancy: "Вакансія",
+          other: "Інше",
+        },
+        reasons: {
+          user: "Видалив автор",
+          admin: "Прибрав адмін",
+          account: "Видалено разом з акаунтом",
+          system: "Видалено автоматично",
+        },
+        untitled: "Без назви",
+        owner: "Власник",
+        deletedBy: "@{username}",
+        deletedAt: "Видалено {date}",
+        purgeAt: "Зникне остаточно {date}",
+        related: "+{count} видалено разом",
+        restore: "Відновити",
+        restoring: "Відновлюємо…",
+        erase: "Стерти зараз",
+        erasing: "Стираємо…",
+        restoreTitle: "Відновити?",
+        restoreMessage: "Повернеться як було, разом з усім, що видалилося разом із ним.",
+        restoreAccountMessage:
+          "Повернеться профіль з усім вмістом, і людина знову зможе увійти. Новий пароль вона задасть через «Забули пароль».",
+        eraseTitle: "Стерти остаточно?",
+        eraseMessage: "Цього не скасувати: запис і його файли зникнуть зараз.",
+        eraseAccountMessage: "Акаунт буде видалено остаточно зараз, з усім вмістом. Цього не скасувати.",
+        cancel: "Скасувати",
+        more: "Показати ще",
+        errors: {
+          conflict: "Не відновити: адресу чи нік уже зайнято.",
+          missing_parent: "Не відновити: те, до чого належав запис, уже стерто.",
+          not_found: "Цей запис уже відновили або стерли.",
+          forbidden: "Це може лише адмін.",
+          failed: "Щось пішло не так. Спробуйте ще раз.",
+        },
+      },
       content: {
         articlesTitle: "Статті",
         articlesDescription:
@@ -4122,12 +4246,12 @@ export const dictionaries = {
         },
         confirmBulkTitle: "Застосувати до обраних?",
         confirmBulkMessage:
-          "Обрану дію буде застосовано до кожного позначеного запису. Зміну статусу можна відкотити, а видалення — ні.",
+          "Обрану дію буде застосовано до кожного позначеного запису. Зміну статусу можна відкотити, а видалене 60 днів чекатиме в кошику.",
         confirmBulkButton: "Застосувати",
         cancel: "Скасувати",
         confirmDeleteCommentTitle: "Видалити коментар?",
         confirmDeleteCommentMessage:
-          "Коментар буде видалений назавжди. Дію неможливо скасувати.",
+          "Коментар зникне з сайту й 60 днів чекатиме в кошику.",
         errorFallback: "Не вдалося виконати операцію. Спробуйте ще раз.",
         openItem: "Відкрити",
       },
@@ -4198,7 +4322,7 @@ export const dictionaries = {
         },
         confirmDeleteTitle: "Видалити попап?",
         confirmDeleteMessage:
-          "Це назавжди видалить попап. Дію не можна скасувати.",
+          "Попап на 60 днів потрапить у кошик.",
         confirmDeleteButton: "Видалити",
         errorFallback: "Не вдалося виконати дію. Спробуйте ще раз.",
         messageEmptyError:
@@ -4896,10 +5020,10 @@ export const dictionaries = {
       danger: {
         title: "Видалити сторінку",
         description:
-          "Сторінка й склад команди зникнуть назавжди. Профілі та проєкти учасників лишаться.",
+          "Сторінка й склад команди зникнуть із сайту. Профілі та проєкти учасників лишаться.",
         button: "Видалити сторінку",
         confirmTitle: "Видалити «{company}»?",
-        confirmText: "Це не можна скасувати.",
+        confirmText: "Якщо це помилка, напишіть нам протягом 60 днів — ми відновимо сторінку.",
         deleting: "Видаляємо…",
         deleted: "Сторінку видалено",
         error: "Не вдалося видалити сторінку. Спробуйте ще раз.",
@@ -5280,7 +5404,7 @@ export const dictionaries = {
         closeTitle: "Закрити «{title}»?",
         closeText: "Вакансія лишиться на сайті з позначкою «Закрита». Згодом її можна відкрити знову.",
         deleteTitle: "Видалити «{title}»?",
-        deleteText: "Вакансія і відгуки на неї зникнуть назавжди. Це не можна скасувати.",
+        deleteText: "Вакансія і відгуки на неї зникнуть із сайту. Якщо це помилка, напишіть нам протягом 60 днів — ми їх відновимо.",
       },
       mine: {
         title: "Вакансії",
@@ -6338,7 +6462,7 @@ export const dictionaries = {
       deleteProject: "Видалити проєкт",
       deletingProject: "Видалення...",
       deleteProjectFailed: "Зараз не вдалося видалити цей проєкт.",
-      confirmDeleteProject: "Видалити цей проєкт назавжди?",
+      confirmDeleteProject: "Видалити цей проєкт? Якщо передумаєте, напишіть нам протягом 60 днів — ми його відновимо.",
       projectDeleted: "Проєкт видалено",
     },
     dashboardProfile: {
@@ -6393,7 +6517,7 @@ export const dictionaries = {
       deleteAccount: {
         sectionTitle: "Небезпечна зона",
         sectionDescription:
-          "Видалення акаунту прибирає ваш профіль, проєкти, голоси, лайки та збережені дані. Ви можете обрати, чи видаляти статті та коментарі разом з акаунтом, чи залишити їх на платформі як анонімний контент.",
+          "Видалення акаунта одразу прибирає з сайту ваш профіль, проєкти, голоси, лайки та збережені дані. Ви можете обрати, чи видаляти статті та коментарі разом з акаунтом, чи залишити їх анонімно. Ще 60 днів ми зберігаємо закриту копію на випадок, якщо ви передумаєте: напишіть нам, і ми відновимо акаунт. Після цього все стирається назавжди.",
         openButton: "Видалити акаунт",
         step1Title: "Видалення акаунту",
         step1Description:
@@ -6401,7 +6525,7 @@ export const dictionaries = {
         modeLegend: "Що зробити зі статтями та коментарями?",
         modeEraseTitle: "Видалити все",
         modeEraseDescription:
-          "Ваш профіль, проєкти, статті та коментарі буде видалено назавжди. Цю дію не можна скасувати.",
+          "Ваш профіль, проєкти, статті та коментарі зникнуть із сайту.",
         modeAnonymizeTitle: "Залишити статті та коментарі анонімно",
         modeAnonymizeDescription:
           "Акаунт буде видалено, а ваші статті та коментарі залишаться на платформі з підписом «Видалений користувач».",
@@ -6410,10 +6534,10 @@ export const dictionaries = {
         sendFailed: "Зараз не вдалося надіслати код. Спробуйте ще раз.",
         step2Title: "Введіть код з листа",
         step2Description:
-          "Відкрийте лист, який ми щойно надіслали на {email}, і введіть код нижче, щоб назавжди видалити акаунт.",
+          "Відкрийте лист, який ми щойно надіслали на {email}, і введіть код нижче, щоб видалити акаунт.",
         codeLabel: "Код підтвердження",
         codePlaceholder: "12345678",
-        confirmDelete: "Видалити акаунт назавжди",
+        confirmDelete: "Видалити акаунт",
         deleting: "Видалення...",
         cancel: "Скасувати",
         resend: "Надіслати код повторно",
@@ -7475,7 +7599,7 @@ export const dictionaries = {
         },
         {
           q: "Як видалити акаунт?",
-          a: "Відкрийте налаштування профілю й натисніть кнопку «Видалити акаунт» внизу сторінки. Ми надішлемо вам на пошту код підтвердження, який діє 5 хвилин. Перед підтвердженням ви можете обрати: видалити все — профіль, проєкти, статті та коментарі будуть прибрані назавжди — або залишити статті та коментарі анонімно з підписом «Видалений користувач», а решту акаунту видалити. У будь-якому випадку профіль, проєкти, голоси, лайки та збережені дані видаляються, і цю дію неможливо скасувати.",
+          a: "Відкрийте налаштування профілю й натисніть кнопку «Видалити акаунт» внизу сторінки. Ми надішлемо вам на пошту код підтвердження, який діє 5 хвилин. Перед підтвердженням ви можете обрати: видалити все — профіль, проєкти, статті та коментарі — або залишити статті та коментарі анонімно з підписом «Видалений користувач», а решту акаунта видалити. У будь-якому разі акаунт одразу зникає із сайту. Ще 60 днів ми зберігаємо закриту копію на випадок, якщо ви передумаєте: напишіть нам, і ми його відновимо. Після цього все стирається назавжди, разом із файлами.",
         },
       ],
     },

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { isProjectStoragePath } from "@/lib/project-media";
 import { generateUniqueProjectSlug } from "@/lib/projects";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
-import { deleteStorageObject } from "@/lib/storage/provider";
 import { createClient } from "@/lib/supabase/server";
 import { projectPayloadSchema, routeProjectIdSchema } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
@@ -280,15 +278,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const { data: mediaItems, error: mediaError } = await supabase
-    .from("project_media")
-    .select("url, storage_path")
-    .eq("project_id", project.id);
-
-  if (mediaError) {
-    return NextResponse.json({ error: mediaError.message }, { status: 400 });
-  }
-
+  // The project and everything under it go to the trash for 60 days (a
+  // database trigger); its files stay in storage until the trash is emptied.
   const { error: deleteProjectError } = await supabase
     .from("projects")
     .delete()
@@ -300,34 +291,6 @@ export async function DELETE(
       { error: deleteProjectError.message || "Could not delete project" },
       { status: 400 },
     );
-  }
-
-  // Only keys under this project's own prefix are ours to delete.
-  const itemsToClean = (mediaItems || []).filter(
-    (item): item is { url: string; storage_path: string } =>
-      Boolean(item.url) && isProjectStoragePath(project.id, item.storage_path),
-  );
-
-  const cleanupWarnings: string[] = [];
-
-  for (const item of itemsToClean) {
-    const { error: storageError } = await deleteStorageObject({
-      supabase,
-      bucket: "project-media",
-      url: item.url,
-      storagePath: item.storage_path,
-    });
-
-    if (storageError) {
-      cleanupWarnings.push(storageError.message);
-    }
-  }
-
-  if (cleanupWarnings.length > 0) {
-    return NextResponse.json({
-      success: true,
-      cleanupWarning: cleanupWarnings[0],
-    });
   }
 
   return NextResponse.json({ success: true });

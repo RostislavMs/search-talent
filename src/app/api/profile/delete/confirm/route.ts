@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { deleteAccount } from "@/lib/db/trash";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -17,13 +18,15 @@ const OTP_TTL_MS = 5 * 60 * 1000;
 /**
  * POST /api/profile/delete/confirm
  *
- * Validates the 6-digit nonce received via Supabase reauthentication and,
- * on success, deletes the current user's auth account (which cascades the
- * profile and all owned content via FK constraints).
+ * Validates the 6-digit nonce received via Supabase reauthentication and, on
+ * success, deletes the account the trash way: the database moves the profile
+ * and everything the person owns into one trash group at once (gone from the
+ * site), sign-in is blocked, and the daily cron deletes the auth user when
+ * the 60 days are over. Until then an admin can restore it on request.
  *
  * The nonce is validated as a side-effect of `updateUser({ password, nonce })`.
- * We rotate to a throwaway random password — the account is removed immediately
- * after, so the new password is never used.
+ * We rotate to a throwaway random password — after a restore the person sets
+ * a new one through "Forgot password".
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -79,40 +82,19 @@ export async function POST(request: Request) {
     );
   }
 
-  if (parsed.data.mode === "anonymize") {
-    const anonymizeTables = [
-      "articles",
-      "article_comments",
-      "project_comments",
-    ] as const;
+  // One SQL function does the whole removal (and the erase/anonymize choice)
+  // in a single transaction.
+  const result = await deleteAccount(adminClient, user.id, parsed.data.mode);
 
-    for (const table of anonymizeTables) {
-      const { error } = await adminClient
-        .from(table)
-        .update({ author_user_id: null })
-        .eq("author_user_id", user.id);
-
-      if (error) {
-        return NextResponse.json(
-          { error: `Failed to anonymize ${table}: ${error.message}` },
-          { status: 500 },
-        );
-      }
-    }
-  }
-
-  const { error: deleteError } = await adminClient.auth.admin.deleteUser(
-    user.id,
-  );
-
-  if (deleteError) {
+  if (!result.ok) {
     return NextResponse.json(
-      { error: deleteError.message || "Could not delete the account" },
-      { status: 400 },
+      { error: result.code === "already_deleted" ? "already_deleted" : "Could not delete the account" },
+      { status: result.code === "already_deleted" ? 409 : 400 },
     );
   }
 
-  await supabase.auth.signOut();
+  // End every session, not only this browser's.
+  await supabase.auth.signOut({ scope: "global" });
 
   return NextResponse.json({ success: true });
 }

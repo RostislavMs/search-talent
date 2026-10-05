@@ -230,10 +230,11 @@ describe("DELETE /api/companies/:id", () => {
     expect(deleteCompanyLogo).not.toHaveBeenCalled();
   });
 
-  it("deletes the page and its logo for the owner", async () => {
+  it("deletes the page for the owner and keeps the logo for the trash", async () => {
     setMock(confirmed, () => ({ data: [{ id: COMPANY_ID }] }));
     vi.mocked(getCompanyRole).mockResolvedValueOnce("owner");
     expect((await DELETE(req("DELETE"), params())).status).toBe(200);
-    expect(deleteCompanyLogo).toHaveBeenCalledWith(COMPANY_ID);
+    // The page waits 60 days in the trash; the logo goes when it is erased.
+    expect(deleteCompanyLogo).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { deleteAccount } from "@/lib/db/trash";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -53,23 +54,23 @@ export async function DELETE(
     );
   }
 
-  const adminClient = createAdminClient();
-
-  if (!adminClient) {
+  // Blocking sign-in needs the Auth admin API, so without the service key
+  // nothing is deleted at all.
+  if (!createAdminClient()) {
     return NextResponse.json(
       { error: "Admin client is not configured" },
       { status: 500 },
     );
   }
 
-  const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(
-    profile.user_id,
-  );
+  // Into the trash for 60 days, like a self-deletion; the database checks
+  // that the caller is an admin removing someone else.
+  const result = await deleteAccount(context.supabase, profile.user_id, "erase");
 
-  if (authDeleteError) {
+  if (!result.ok) {
     return NextResponse.json(
-      { error: authDeleteError.message || "Could not delete user account" },
-      { status: 400 },
+      { error: result.code === "already_deleted" ? "already_deleted" : "Could not delete user account" },
+      { status: result.code === "forbidden" ? 403 : result.code === "already_deleted" ? 409 : 400 },
     );
   }
 

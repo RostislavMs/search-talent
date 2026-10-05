@@ -177,6 +177,8 @@ search-talent/
 - User-submitted reports with reasons (copyright, abuse, spam, harassment, …) and auto-priority (normal / high / urgent).
 - Statuses: `approved`, `under_review`, `restricted`, `removed`.
 - Single admin console at `/admin` (overview, content tables, moderation queue, users, audit log, feedback inbox). Article moderation lives under `/admin/content/articles`.
+- Trash: anything deleted (by its author, an admin, or with an account) waits 60 days in a database archive before it is erased for good, files included. A trigger captures every deleted row — a direct delete through the API is caught too — and whatever an FK cascade removed with it joins the same group, so a project comes back with its media, votes and comments. `/admin/trash` lists, restores and erases; the daily cron erases what is due.
+- Account deletion moves everything the person owns into the trash in one transaction ("erase" removes articles and comments too; "anonymize" unlinks them and remembers which) and blocks sign-in; the auth user is deleted on day 60. Until then an admin can restore the account on request.
 
 ### Internationalisation
 
@@ -252,6 +254,7 @@ search-talent/
 | `/admin/companies` | Verify company pages, moderation status |
 | `/admin/feedback` | Inbound feedback |
 | `/admin/audit` | Audit log |
+| `/admin/trash` | Deleted items kept for 60 days: restore or erase now |
 
 > All localised routes are prefixed with `/[locale]/` (e.g. `/uk/talents`, `/en/projects`).
 
@@ -393,6 +396,7 @@ search-talent/
 | POST | `/api/admin/bulk` | Bulk moderation actions |
 | GET/POST | `/api/admin/users` / `[id]` | User management |
 | GET | `/api/admin/feedback` / `[id]` | Feedback inbox |
+| POST/DELETE | `/api/admin/trash/[group]` | Restore a deleted item / erase it now |
 
 ---
 
@@ -439,6 +443,7 @@ The first sign-in opens `/onboarding` (three skippable steps: who you are, first
 ## Security
 
 - **Row-Level Security** on every Supabase table; admin operations go through the service-role client.
+- **The database enforces the rules itself.** Guard triggers pin system columns (moderation, scores, counters, dates, the follower fan-out flag) and check comments, links, co-author invites, reports and feedback, so a direct PostgREST call with a user's own token cannot bypass what the API routes check. Toggle rows (likes, follows, reactions) and comments cannot be updated; OAuth tokens are written only by the server.
 - **CSP** restricts script/style/connect sources to Supabase, Resend, Vercel, Gemini.
 - **HSTS** enabled in production (2 years, includeSubDomains).
 - **Permissions-Policy** disables camera / microphone / geolocation.

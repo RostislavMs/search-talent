@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { buildSanitizedTranslations } from "@/lib/article-translations";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
-import { deleteStorageObject } from "@/lib/storage/provider";
 import { createClient } from "@/lib/supabase/server";
 import { articlePayloadSchema, routeArticleIdSchema } from "@/lib/validation/articles";
 import { ensureUniqueArticleSlug } from "@/lib/db/articles";
@@ -235,7 +234,7 @@ export async function DELETE(
 
   const { data: article, error: articleError } = await supabase
     .from("articles")
-    .select("id, author_user_id, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path")
+    .select("id, author_user_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -247,6 +246,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Article not found" }, { status: 404 });
   }
 
+  // Into the trash for 60 days (a database trigger); the cover, video and
+  // inline images stay in storage until the trash is emptied.
   const { error: deleteError } = await supabase
     .from("articles")
     .delete()
@@ -258,41 +259,6 @@ export async function DELETE(
       { error: deleteError.message || "Could not delete article" },
       { status: 400 },
     );
-  }
-
-  const assets: Array<{ url: string; storagePath: string }> = [];
-  if (article.cover_image_storage_path?.trim() && article.cover_image_url) {
-    assets.push({
-      url: article.cover_image_url,
-      storagePath: article.cover_image_storage_path.trim(),
-    });
-  }
-  if (article.hero_video_storage_path?.trim() && article.hero_video_url) {
-    assets.push({
-      url: article.hero_video_url,
-      storagePath: article.hero_video_storage_path.trim(),
-    });
-  }
-
-  const cleanupWarnings: string[] = [];
-  for (const asset of assets) {
-    const { error: storageError } = await deleteStorageObject({
-      supabase,
-      bucket: "project-media",
-      url: asset.url,
-      storagePath: asset.storagePath,
-    });
-
-    if (storageError) {
-      cleanupWarnings.push(storageError.message);
-    }
-  }
-
-  if (cleanupWarnings.length > 0) {
-    return NextResponse.json({
-      success: true,
-      cleanupWarning: cleanupWarnings[0],
-    });
   }
 
   return NextResponse.json({ success: true });

@@ -4,7 +4,6 @@ import { canDeleteCompany, canEditCompany } from "@/lib/companies";
 import {
   companyPayloadToRow,
   companyWriteErrorCode,
-  deleteCompanyLogo,
   getCompanyRole,
   holdCompanyForReview,
 } from "@/lib/db/companies";
@@ -132,7 +131,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Company not found" }, { status: 404 });
   }
 
-  await deleteCompanyLogo(id);
-
+  // The page, its team and vacancies wait 60 days in the trash (a database
+  // trigger); the logo is deleted from storage when the trash is emptied.
   return NextResponse.json({ success: true });
 }

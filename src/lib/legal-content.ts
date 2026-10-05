@@ -40,7 +40,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "These Terms describe the rules for using SearchTalent. They form a living document and may expand as the product grows.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "October 3, 2026",
+      lastUpdatedValue: "October 5, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -129,7 +129,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           title: "Deleting your account",
           paragraphs: [
             "You can delete your account at any time from your profile settings, confirmed with a code sent to your email.",
-            "You choose how deletion happens: full erasure removes your profile, projects, articles, comments, and related data; or you can keep your articles and comments as anonymous content attributed to a deleted user while the rest of your account is removed. Deletion is permanent and cannot be undone.",
+            "You choose how deletion happens: full erasure removes your profile, projects, articles, comments, and related data; or you can keep your articles and comments as anonymous content attributed to a deleted user while the rest of your account is removed. The account disappears from the site at once. For 60 days you can ask us to restore it; after that the deletion is final.",
           ],
         },
         {
@@ -155,7 +155,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "This Privacy Policy explains what data SearchTalent handles, why it is needed, who processes it, and the rights you have over your information.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "October 3, 2026",
+      lastUpdatedValue: "October 5, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -286,20 +286,22 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
         {
           title: "Deleting your account",
           paragraphs: [
-            "You can delete your account from your profile settings. We email you a confirmation code, and you choose how deletion happens: full erasure removes your profile, projects, articles, comments, votes, and related data permanently; or you can keep your articles and comments as anonymous content attributed to a deleted user while the rest of your account is removed. In both cases your profile, projects, votes, likes, and saved data are deleted, and the action cannot be undone.",
+            "You can delete your account from your profile settings. We email you a confirmation code, and you choose how deletion happens: full erasure removes your profile, projects, articles, comments, votes, and related data; or you can keep your articles and comments as anonymous content attributed to a deleted user while the rest of your account is removed. Either way the account disappears from the site at once and can no longer be signed in to.",
+            "For 60 days after deletion we keep a copy in a closed archive that only platform administrators can reach, so a mistaken deletion can be undone: write to us within that time and we will restore the account. After 60 days the account and its copy are erased for good, uploaded files included. Until then the files are no longer linked from the site, but someone who already has a direct link to a file may still open it.",
           ],
         },
         {
           title: "Data retention",
           paragraphs: [
             "We keep your data while your account is active and remove or anonymize it when you delete your account as described above.",
+            "Anything you delete — a project, an article, a poll, a comment, a company page, a vacancy, a job alert — leaves the site at once and is kept in the same closed archive for 60 days, then erased for good, files included. Administrators see what was deleted and when, but not the contents of contact details or application messages.",
             "Limited records may persist for a short time where needed for security, backups, or legal obligations.",
             "View statistics keep no data that identifies a visitor once the day's key is deleted. Statistics about views of your pages are deleted together with your account.",
             "A record that one account opened another's contacts is deleted when either account is deleted. A record that a company opened your contacts is deleted with your account or the company page; if the team member who opened them deletes their account, the record stays without them.",
             "A job alert is deleted when you remove it or delete your account. The record of which vacancies an alert sent is kept for 90 days.",
             "Your place in a company's team is deleted when you leave the team or delete your account. A company page is deleted by its owner, or when the last person in its team deletes their account.",
             "Projects you added stay on the company page after you leave the team; you or the company can take them off at any time. A project's budget and its links to company pages are deleted together with the project.",
-            "Applications are deleted 12 months after their vacancy closes or its term ends, or earlier together with the vacancy, the company page, or your account. Until then a withdrawn application keeps only which vacancy you applied to and when.",
+            "Applications are deleted 12 months after their vacancy closes or its term ends, or earlier together with the vacancy, the company page, or your account. Until then a withdrawn application keeps only which vacancy you applied to and when. A deleted application is kept in the closed archive for another 60 days.",
           ],
         },
         {
@@ -392,7 +394,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ці Умови описують правила користування SearchTalent. Документ є робочим і може розширюватися разом із розвитком продукту.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "3 жовтня 2026",
+      lastUpdatedValue: "5 жовтня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -481,7 +483,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           title: "Видалення акаунта",
           paragraphs: [
             "Ви можете видалити акаунт будь-коли в налаштуваннях профілю, підтвердивши це кодом, надісланим на email.",
-            "Ви обираєте спосіб видалення: повне видалення прибирає профіль, проєкти, статті, коментарі та пов'язані дані; або ви можете залишити статті й коментарі як анонімний контент із підписом «Видалений користувач», а решту акаунта видалити. Видалення є остаточним і його неможливо скасувати.",
+            "Ви обираєте спосіб видалення: повне видалення прибирає профіль, проєкти, статті, коментарі та пов'язані дані; або ви можете залишити статті й коментарі як анонімний контент із підписом «Видалений користувач», а решту акаунта видалити. Акаунт одразу зникає із сайту. Протягом 60 днів ви можете попросити нас його відновити; після цього видалення остаточне.",
           ],
         },
         {
@@ -507,7 +509,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ця Політика конфіденційності пояснює, які дані обробляє SearchTalent, навіщо вони потрібні, хто їх обробляє та які права ви маєте щодо своєї інформації.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "3 жовтня 2026",
+      lastUpdatedValue: "5 жовтня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -638,20 +640,22 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
         {
           title: "Видалення акаунта",
           paragraphs: [
-            "Видалити акаунт можна в налаштуваннях профілю. Ми надсилаємо код підтвердження на email, і ви обираєте спосіб видалення: повне видалення безповоротно прибирає профіль, проєкти, статті, коментарі, голоси та пов'язані дані; або ви можете залишити статті й коментарі як анонімний контент із підписом «Видалений користувач», а решту акаунта видалити. В обох випадках профіль, проєкти, голоси, лайки та збережені дані видаляються, і цю дію неможливо скасувати.",
+            "Видалити акаунт можна в налаштуваннях профілю. Ми надсилаємо код підтвердження на email, і ви обираєте спосіб видалення: повне видалення прибирає профіль, проєкти, статті, коментарі, голоси та пов'язані дані; або ви можете залишити статті й коментарі як анонімний контент із підписом «Видалений користувач», а решту акаунта видалити. В обох випадках акаунт одразу зникає із сайту, і увійти в нього вже не можна.",
+            "Протягом 60 днів після видалення ми зберігаємо копію в закритому архіві, доступному лише адміністраторам платформи, щоб помилкове видалення можна було скасувати: напишіть нам у цей строк, і ми відновимо акаунт. Через 60 днів акаунт і його копія стираються остаточно, разом із завантаженими файлами. До того файли вже не показуються на сайті, але той, хто має пряме посилання на файл, ще може його відкрити.",
           ],
         },
         {
           title: "Зберігання даних",
           paragraphs: [
             "Ми зберігаємо ваші дані, поки акаунт активний, і видаляємо або анонімізуємо їх, коли ви видаляєте акаунт у спосіб, описаний вище.",
+            "Усе, що ви видаляєте — проєкт, статтю, опитування, коментар, сторінку компанії, вакансію, підписку на вакансії, — одразу зникає із сайту й 60 днів зберігається в тому самому закритому архіві, а потім стирається остаточно, разом із файлами. Адміністратори бачать, що й коли видалено, але не бачать вмісту контактів і повідомлень у відгуках.",
             "Окремі записи можуть зберігатися нетривалий час, якщо це потрібно для безпеки, резервних копій або виконання правових зобов'язань.",
             "Після видалення добового ключа статистика переглядів не містить даних, за якими можна впізнати відвідувача. Статистика переглядів ваших сторінок видаляється разом з акаунтом.",
             "Запис про те, що один акаунт відкрив контакти іншого, видаляється, коли видаляють будь-який із цих акаунтів. Запис про те, що компанія відкрила ваші контакти, видаляється разом із вашим акаунтом або сторінкою компанії; якщо учасник команди, який їх відкрив, видаляє акаунт, запис лишається вже без нього.",
             "Підписка на вакансії видаляється, коли ви її прибираєте або видаляєте акаунт. Запис про те, які вакансії надіслала підписка, зберігається 90 днів.",
             "Ваше місце в команді компанії видаляється, коли ви виходите з команди або видаляєте акаунт. Сторінку компанії видаляє її власник; вона також видаляється, коли останній учасник команди видаляє свій акаунт.",
             "Проєкти, які ви додали, лишаються на сторінці компанії й після того, як ви вийдете з команди; прибрати їх можете ви або компанія будь-коли. Бюджет проєкту та його зв'язки зі сторінками компаній видаляються разом із проєктом.",
-            "Відгуки видаляються через 12 місяців після того, як вакансію закрили або минув її термін, а раніше — разом із вакансією, сторінкою компанії чи вашим акаунтом. До того відкликаний відгук зберігає лише те, на яку вакансію і коли ви відгукувалися.",
+            "Відгуки видаляються через 12 місяців після того, як вакансію закрили або минув її термін, а раніше — разом із вакансією, сторінкою компанії чи вашим акаунтом. До того відкликаний відгук зберігає лише те, на яку вакансію і коли ви відгукувалися. Видалений відгук ще 60 днів зберігається в закритому архіві.",
           ],
         },
         {

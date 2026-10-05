@@ -25,6 +25,7 @@ type Props = {
     audit: string;
     popups: string;
     companies: string;
+    trash: string;
   };
   contentLabels: {
     articles: string;
@@ -89,6 +90,7 @@ export default function AdminSidebar({
         { href: "/admin/feedback", label: feedbackLabel, icon: "✉" },
         { href: "/admin/popups", label: labels.popups, icon: "◍" },
         { href: "/admin/audit", label: labels.audit, icon: "≡" },
+        { href: "/admin/trash", label: labels.trash, icon: "⌫" },
       ],
     },
   ];
