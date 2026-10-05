@@ -67,7 +67,9 @@ describe("PATCH /api/co-author-invitations/[id]", () => {
     vi.mocked(respondToCoAuthorInvitation).mockResolvedValue({ ok: true, published: false } as never);
     const res = await PATCH(req({ contentType: CONTENT_TYPE, action: "accept" }), params());
     expect(res.status).toBe(200);
+    // With the caller's own client: the database checks the invitation is theirs.
     expect(vi.mocked(respondToCoAuthorInvitation)).toHaveBeenCalledWith({
+      supabase: holder.mock!.client,
       contentType: CONTENT_TYPE,
       invitationId: INV_ID,
       userId: USER_ID,

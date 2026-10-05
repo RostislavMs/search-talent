@@ -31,19 +31,19 @@ vi.mock("@/lib/auto-moderation", () => ({
 }));
 vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
-vi.mock("@/lib/db/co-authors", () => ({ inviteCoAuthors: vi.fn() }));
-vi.mock("@/lib/db/project-companies", () => ({
-  saveProjectBudget: vi.fn(async () => true),
-  syncProjectCompanies: vi.fn(async () => undefined),
+vi.mock("@/lib/db/save-project", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/db/save-project")>()),
+  saveProject: vi.fn(),
+  notifyProjectSaved: vi.fn(async () => undefined),
 }));
+vi.mock("server-only", () => ({}));
 
 import { POST } from "@/app/api/projects/route";
 import { NextResponse } from "next/server";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { screenContentForModeration } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
-import { inviteCoAuthors } from "@/lib/db/co-authors";
-import { saveProjectBudget, syncProjectCompanies } from "@/lib/db/project-companies";
+import { notifyProjectSaved, saveProject } from "@/lib/db/save-project";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const CO_AUTHOR = "33333333-3333-4333-8333-333333333333";
@@ -57,11 +57,27 @@ function setMock(user: MockUser, resolve: (t: string, v: string) => QueryResult)
   return holder.mock;
 }
 
-function okResolver(table: string, verb: string): QueryResult {
-  if (table === "projects" && verb === "insert") {
-    return { data: { id: PROJECT_ID, slug: "unique-slug", status: "published" } };
-  }
+function okResolver(): QueryResult {
   return { error: null };
+}
+
+function saved(status = "published") {
+  return {
+    project: { id: PROJECT_ID, slug: "unique-slug", status, invited: [], companyRequests: [] },
+    error: null,
+  } as never;
+}
+
+/** What the route asked save_project for. */
+function saveInput() {
+  return vi.mocked(saveProject).mock.calls[0]?.[1] as {
+    id: string | null;
+    row: Record<string, unknown>;
+    skillIds: number[];
+    budget: unknown;
+    coAuthorIds: string[] | null;
+    companyIds: string[] | null;
+  };
 }
 
 function req(body: unknown = base): Request {
@@ -75,6 +91,7 @@ function req(body: unknown = base): Request {
 afterEach(() => {
   holder.mock = null;
   vi.clearAllMocks();
+  vi.mocked(saveProject).mockResolvedValue(saved());
   vi.mocked(screenContentForModeration).mockReturnValue({ flagged: false, note: "" } as never);
 });
 
@@ -99,68 +116,62 @@ describe("POST /api/projects", () => {
     expect((await POST(req({ title: "" }))).status).toBe(400);
   });
 
-  it("inserts a project owned by the caller", async () => {
-    const mock = setMock(authUser, okResolver);
+  it("saves a new project in one call", async () => {
+    setMock(authUser, okResolver);
     const res = await POST(req());
     expect(res.status).toBe(200);
-    const insert = mock.calls.find((c) => c.table === "projects" && c.verb === "insert");
-    expect(insert?.payload).toMatchObject({ owner_id: USER_ID, slug: "unique-slug" });
-    expect(vi.mocked(inviteCoAuthors)).not.toHaveBeenCalled();
+    const input = saveInput();
+    expect(input.id).toBeNull();
+    expect(input.row).toMatchObject({ title: "My New Project", slug: "unique-slug", publish_on_confirm: false });
+    expect(input.row).not.toHaveProperty("owner_id");
+    expect(input).toMatchObject({ budget: null, coAuthorIds: [], companyIds: [] });
+    expect(notifyProjectSaved).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "My New Project", creatorUserId: USER_ID }),
+    );
   });
 
-  it("saves for whom and for how much, the budget and the company pages", async () => {
-    const mock = setMock(authUser, okResolver);
+  it("passes for whom and for how much, the budget and the company pages", async () => {
+    setMock(authUser, okResolver);
     const companyId = "44444444-4444-4444-8444-444444444444";
     const budget = { amount: 8000, currency: "uah", type: "fixed", isPublic: false };
     const res = await POST(
       req({ ...base, origin: "client", clientName: "Acme", clientNda: false, budget, companyIds: [companyId] }),
     );
     expect(res.status).toBe(200);
-    const insert = mock.calls.find((c) => c.table === "projects" && c.verb === "insert");
-    expect(insert?.payload).toMatchObject({ origin: "client", client_name: "Acme", client_nda: false });
-    expect(insert?.payload).not.toHaveProperty("budget");
-    expect(saveProjectBudget).toHaveBeenCalledWith(expect.anything(), PROJECT_ID, budget);
-    expect(syncProjectCompanies).toHaveBeenCalledWith(
-      expect.objectContaining({ projectId: PROJECT_ID, userId: USER_ID, desiredCompanyIds: [companyId], published: true }),
-    );
+    const input = saveInput();
+    expect(input.row).toMatchObject({ origin: "client", client_name: "Acme", client_nda: false });
+    expect(input.row).not.toHaveProperty("budget");
+    expect(input.budget).toEqual(budget);
+    expect(input.companyIds).toEqual([companyId]);
   });
 
-  it("does not touch the budget or company pages when there are none", async () => {
-    setMock(authUser, okResolver);
-    await POST(req());
-    expect(saveProjectBudget).not.toHaveBeenCalled();
-    expect(syncProjectCompanies).not.toHaveBeenCalled();
-  });
-
-  it("auto-removes flagged content", async () => {
+  it("auto-removes flagged content and shares it with nobody", async () => {
     vi.mocked(screenContentForModeration).mockReturnValue({ flagged: true, note: "bad" } as never);
     setMock(authUser, okResolver);
-    const res = await POST(req());
+    const res = await POST(req({ ...base, coAuthorUserIds: [CO_AUTHOR], companyIds: ["44444444-4444-4444-8444-444444444444"] }));
     expect(res.status).toBe(200);
+    expect(saveInput()).toMatchObject({ coAuthorIds: [], companyIds: [] });
     expect(vi.mocked(autoRemoveContent)).toHaveBeenCalledWith({ table: "projects", id: PROJECT_ID, note: "bad" });
     expect((await res.json()).autoRemoved).toBe(true);
   });
 
   it("holds as a draft and invites co-authors when provided", async () => {
-    const mock = setMock(authUser, (table, verb) =>
-      table === "projects" && verb === "insert"
-        ? { data: { id: PROJECT_ID, slug: "unique-slug", status: "draft" } }
-        : okResolver(table, verb),
-    );
+    setMock(authUser, okResolver);
+    vi.mocked(saveProject).mockResolvedValue(saved("draft"));
     const res = await POST(req({ ...base, coAuthorUserIds: [CO_AUTHOR] }));
     expect(res.status).toBe(200);
-    const insert = mock.calls.find((c) => c.table === "projects" && c.verb === "insert");
-    expect((insert?.payload as { status: string }).status).toBe("draft");
-    expect(vi.mocked(inviteCoAuthors)).toHaveBeenCalledOnce();
+    const input = saveInput();
+    expect(input.row).toMatchObject({ status: "draft", publish_on_confirm: true });
+    expect(input.coAuthorIds).toEqual([CO_AUTHOR]);
     expect((await res.json()).awaitingCoAuthors).toBe(true);
   });
 
-  it("maps an insert error to 400", async () => {
-    setMock(authUser, (table, verb) =>
-      table === "projects" && verb === "insert" ? { error: { message: "insert boom" } } : {},
-    );
+  it("maps a save error to 400 and notifies nobody", async () => {
+    setMock(authUser, okResolver);
+    vi.mocked(saveProject).mockResolvedValue({ project: null, error: { message: "insert boom" } } as never);
     const res = await POST(req());
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe("insert boom");
+    expect(notifyProjectSaved).not.toHaveBeenCalled();
   });
 });

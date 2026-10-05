@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { markOnboarding } from "@/lib/db/onboarding";
+import { isUsernameTakenError } from "@/lib/db/save-profile";
 import { normalizeProfileSettings } from "@/lib/profile-presentation";
 import {
   applyProfileTemplate,
@@ -13,13 +14,6 @@ import {
   onboardingProfileSchema,
 } from "@/lib/validation/onboarding";
 import { parseJsonRequest } from "@/lib/validation/request";
-
-function isDuplicateUsernameError(message: string | undefined) {
-  return Boolean(
-    message &&
-      (message.includes("profiles_username_key") || message.includes("duplicate key value")),
-  );
-}
 
 /**
  * PATCH /api/onboarding — saves the "who you are" step: name, nick, direction,
@@ -78,13 +72,14 @@ export async function PATCH(request: Request) {
     };
   }
 
-  const { error: updateError } = await supabase
-    .from("profiles")
-    .update(update)
-    .eq("user_id", user.id);
+  // The row and the skills in one transaction: a taken nick no longer leaves
+  // the skills half replaced.
+  const { error: saveError } = await supabase.rpc("save_my_profile", {
+    p: { profile: update, skills: payload.skill_ids },
+  });
 
-  if (updateError) {
-    const taken = isDuplicateUsernameError(updateError.message);
+  if (saveError) {
+    const taken = isUsernameTakenError(saveError);
 
     return NextResponse.json(
       {
@@ -93,31 +88,6 @@ export async function PATCH(request: Request) {
       },
       { status: taken ? 409 : 400 },
     );
-  }
-
-  const { error: deleteError } = await supabase
-    .from("profile_skills")
-    .delete()
-    .eq("profile_id", profile.id);
-
-  if (deleteError) {
-    return NextResponse.json(
-      { error: "Could not update skills", code: "save_failed" },
-      { status: 400 },
-    );
-  }
-
-  if (payload.skill_ids.length > 0) {
-    const { error: insertError } = await supabase.from("profile_skills").insert(
-      payload.skill_ids.map((skillId) => ({ profile_id: profile.id, skill_id: skillId })),
-    );
-
-    if (insertError) {
-      return NextResponse.json(
-        { error: "Could not update skills", code: "save_failed" },
-        { status: 400 },
-      );
-    }
   }
 
   return NextResponse.json({ success: true, username: payload.username });

@@ -24,7 +24,7 @@ import {
   mapVacancySummary,
   notifyVacancyApproved,
   notifyVacancyModeration,
-  setVacancySkills,
+  saveVacancy,
   vacancyPayloadToRow,
   type VacancyDetailRow,
   type VacancySummaryRow,
@@ -445,36 +445,20 @@ describe("listTeamVacancies and views", () => {
   });
 });
 
-describe("setVacancySkills", () => {
-  it("replaces the skills", async () => {
-    const mock = client(() => ({}));
-    expect(await setVacancySkills(mock.client as never, VACANCY_ID, [3, 5])).toBeNull();
-    expect(mock.calls.map((call) => [call.table, call.verb])).toEqual([
-      ["vacancy_skills", "delete"],
-      ["vacancy_skills", "insert"],
-    ]);
-    expect(mock.calls[0].filters).toEqual([{ method: "eq", args: ["vacancy_id", VACANCY_ID] }]);
-    expect(mock.calls[1].payload).toEqual([
-      { vacancy_id: VACANCY_ID, skill_id: 3 },
-      { vacancy_id: VACANCY_ID, skill_id: 5 },
-    ]);
+describe("saveVacancy", () => {
+  const saved = { id: VACANCY_ID, slug: "designer-abc123", status: "draft", moderation_status: "approved" };
+
+  it("saves the vacancy and its skills in one database call", async () => {
+    const rpc = vi.fn(async () => ({ data: saved, error: null }));
+    const result = await saveVacancy({ rpc } as never, null, { title: "Designer" }, [3, 5]);
+    expect(rpc).toHaveBeenCalledWith("save_vacancy", { p_id: null, p_row: { title: "Designer" }, p_skill_ids: [3, 5] });
+    expect(result).toEqual({ vacancy: saved, error: null });
   });
 
-  it("only clears them for an empty list", async () => {
-    const mock = client(() => ({}));
-    expect(await setVacancySkills(mock.client as never, VACANCY_ID, [])).toBeNull();
-    expect(mock.calls.map((call) => call.verb)).toEqual(["delete"]);
-  });
-
-  it("returns the first database error", async () => {
-    const deleteError = { message: "no" };
-    const failingDelete = client((call) => (call.verb === "delete" ? { error: deleteError } : {}));
-    expect(await setVacancySkills(failingDelete.client as never, VACANCY_ID, [1])).toEqual(deleteError);
-    expect(failingDelete.calls).toHaveLength(1);
-
-    const insertError = { message: "vacancy_skills_limit_reached", code: "P0001" };
-    const failingInsert = client((call) => (call.verb === "insert" ? { error: insertError } : {}));
-    expect(await setVacancySkills(failingInsert.client as never, VACANCY_ID, [1])).toEqual(insertError);
+  it("passes the database error on, as is", async () => {
+    const error = { message: "vacancy_skills_limit_reached", code: "P0001" };
+    const rpc = vi.fn(async () => ({ data: null, error }));
+    expect(await saveVacancy({ rpc } as never, VACANCY_ID, {}, [1])).toEqual({ vacancy: null, error });
   });
 });
 

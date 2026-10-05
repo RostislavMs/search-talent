@@ -15,7 +15,11 @@ vi.mock("@/lib/poll-translations", () => ({ buildSanitizedPollTranslations: () =
 vi.mock("@/lib/db/polls", () => ({ ensureUniquePollSlug: vi.fn(async () => "generated") }));
 vi.mock("@/lib/storage/provider", () => ({ deleteStorageObject: vi.fn(async () => ({ error: null })) }));
 vi.mock("@/lib/db/publish-events", () => ({ dispatchPublishSideEffects: vi.fn() }));
-vi.mock("@/lib/db/co-authors", () => ({ syncCoAuthors: vi.fn() }));
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/db/co-authors", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/db/co-authors")>()),
+  notifyCoAuthorInvites: vi.fn(async () => undefined),
+}));
 vi.mock("@/lib/auto-moderation", () => ({
   CLEAN_MODERATION_RESULT: { flagged: false, note: "" },
   collectPollModerationText: () => "",
@@ -28,6 +32,7 @@ vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") 
 import { PUT, DELETE } from "@/app/api/polls/[id]/route";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyCoAuthorInvites } from "@/lib/db/co-authors";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_ID = "99999999-9999-4999-8999-999999999999";
@@ -56,7 +61,7 @@ function viewer(
   user: MockUser,
   isAdmin: boolean,
   resolve: (table: string, verb: string) => QueryResult,
-  rpc?: () => QueryResult,
+  rpc?: (fn: string, args?: unknown) => QueryResult,
 ) {
   const mock = createSupabaseMock({ user, resolve: (c) => resolve(c.table, c.verb), rpc });
   holder.mock = mock;
@@ -118,13 +123,20 @@ describe("PUT /api/polls/[id] — happy paths", () => {
     return {};
   }
 
-  it("saves via the save_poll RPC for the author", async () => {
-    const rpc = vi.fn(() => ({ data: { id: POLL_ID, slug: "stable-slug" } }));
+  it("saves the poll and its co-authors in one call for the author", async () => {
+    const CO = "33333333-3333-4333-8333-333333333333";
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => ({ data: { id: POLL_ID, slug: "stable-slug", invited: [{ id: "inv1", userId: CO }] } }));
     viewer(authUser, false, baseResolve, rpc);
-    const res = await PUT(putReq(), params());
+    const res = await PUT(putReq({ ...validPayload, coAuthorUserIds: [CO, USER_ID] }), params());
     expect(res.status).toBe(200);
-    expect(rpc).toHaveBeenCalled();
-    expect((await res.json()).poll).toMatchObject({ id: POLL_ID, slug: "stable-slug" });
+    expect(rpc).toHaveBeenCalledWith(
+      "save_poll_with_co_authors",
+      expect.objectContaining({ p_hold: false, p_co_author_ids: [CO] }),
+    );
+    expect((await res.json()).poll).toEqual({ id: POLL_ID, slug: "stable-slug" });
+    expect(notifyCoAuthorInvites).toHaveBeenCalledWith(
+      expect.objectContaining({ contentId: POLL_ID, creatorUserId: USER_ID, invited: [{ id: "inv1", userId: CO }] }),
+    );
   });
 
   it("400 when the RPC returns an error", async () => {
@@ -134,7 +146,8 @@ describe("PUT /api/polls/[id] — happy paths", () => {
     expect((await res.json()).error).toBe("rpc boom");
   });
 
-  it("lets an admin edit a poll they do not own", async () => {
+  it("lets an admin edit a poll they do not own (the author stays the creator)", async () => {
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => ({ data: { id: POLL_ID, slug: "stable-slug", invited: [] } }));
     viewer(
       authUser,
       true,
@@ -142,9 +155,11 @@ describe("PUT /api/polls/[id] — happy paths", () => {
         if (table === "polls" && verb === "select") return { data: { ...existingPoll, author_user_id: OTHER_ID } };
         return baseResolve(table, verb);
       },
-      () => ({ data: { id: POLL_ID, slug: "stable-slug" } }),
+      rpc,
     );
-    expect((await PUT(putReq(), params())).status).toBe(200);
+    expect((await PUT(putReq({ ...validPayload, coAuthorUserIds: [OTHER_ID] }), params())).status).toBe(200);
+    // The owner is never their own co-author.
+    expect(rpc.mock.calls[0][1]).toMatchObject({ p_co_author_ids: [] });
   });
 });
 

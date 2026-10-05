@@ -8,7 +8,11 @@ import {
 } from "./helpers/supabase-mock";
 
 const { holder } = vi.hoisted(() => ({
-  holder: { mock: null as SupabaseMock | null, isAdmin: false },
+  holder: {
+    mock: null as SupabaseMock | null,
+    isAdmin: false,
+    resolve: (() => ({})) as (call: QueryCall) => QueryResult,
+  },
 }));
 
 vi.mock("@/lib/moderation-server", () => ({
@@ -29,14 +33,30 @@ vi.mock("@/lib/db/vacancies", async (importOriginal) => {
   return {
     ...actual,
     holdVacancyForReview: vi.fn(async () => true),
-    setVacancySkills: vi.fn(async () => null),
+    // Stands in for save_vacancy: the row (with its skills, in the same
+    // transaction) goes through the test's resolver as the insert or update
+    // the database would run, and is recorded like any other query.
+    saveVacancy: vi.fn(async (_supabase: unknown, id: string | null, row: Record<string, unknown>) => {
+      const call: QueryCall = {
+        table: "vacancies",
+        verb: id ? "update" : "insert",
+        filters: id ? [{ method: "eq", args: ["id", id] }] : [],
+        modifiers: [],
+        payload: row,
+      };
+      holder.mock!.calls.push(call);
+      const result = holder.resolve(call);
+      if (result.error) return { vacancy: null, error: result.error };
+      if (!result.data) return { vacancy: null, error: { code: "P0002", message: "vacancy not found" } };
+      return { vacancy: result.data, error: null };
+    }),
   };
 });
 
 import { POST } from "@/app/api/vacancies/route";
 import { DELETE, PATCH } from "@/app/api/vacancies/[id]/route";
 import { getCompanyRole } from "@/lib/db/companies";
-import { holdVacancyForReview, setVacancySkills } from "@/lib/db/vacancies";
+import { holdVacancyForReview, saveVacancy } from "@/lib/db/vacancies";
 import { dbRateLimit } from "@/lib/rate-limit";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -68,6 +88,7 @@ const createPayload = { ...vacancy, company_id: COMPANY_ID };
 const SLUG_PATTERN = /^junior-frontend-developer-[0-9a-z]{6}$/;
 
 function setMock(user: MockUser, resolve: (call: QueryCall) => QueryResult = () => ({})) {
+  holder.resolve = resolve;
   holder.mock = createSupabaseMock({ user, resolve });
   return holder.mock;
 }
@@ -100,7 +121,6 @@ beforeEach(() => {
   holder.isAdmin = false;
   vi.mocked(getCompanyRole).mockResolvedValue("recruiter");
   vi.mocked(holdVacancyForReview).mockResolvedValue(true);
-  vi.mocked(setVacancySkills).mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -226,12 +246,13 @@ describe("POST /api/vacancies — creation", () => {
       pay_period: "month",
       locale: "en",
       company_id: COMPANY_ID,
-      author_user_id: USER_ID,
       status: "published",
       slug: body.vacancy.slug,
     });
+    // The database makes the caller the author.
+    expect(insert.payload).not.toHaveProperty("author_user_id");
     expect((insert.payload as { description: string }).description).toContain(longText);
-    expect(setVacancySkills).toHaveBeenCalledWith(mock.client, VACANCY_ID, [1, 2]);
+    expect(saveVacancy).toHaveBeenCalledWith(mock.client, null, expect.anything(), [1, 2]);
     expect(holdVacancyForReview).not.toHaveBeenCalled();
   });
 
@@ -249,9 +270,8 @@ describe("POST /api/vacancies — creation", () => {
       }),
     );
     const payload = inserts(mock)[0].payload as Record<string, unknown>;
-    expect(payload.author_user_id).toBe(USER_ID);
     expect(payload.slug).toMatch(SLUG_PATTERN);
-    for (const key of ["moderation_status", "published_at", "expires_at", "closed_at", "skill_ids", "moderated_by"]) {
+    for (const key of ["author_user_id", "moderation_status", "published_at", "expires_at", "closed_at", "skill_ids", "moderated_by"]) {
       expect(payload).not.toHaveProperty(key);
     }
   });
@@ -310,18 +330,16 @@ describe("POST /api/vacancies — creation", () => {
     expect(res.status).toBe(status);
     expect(await res.json()).toEqual({ error: error.message, code });
     expect(inserts(mock)).toHaveLength(1);
-    expect(setVacancySkills).not.toHaveBeenCalled();
   });
 
-  it("takes the vacancy back when its skills could not be saved", async () => {
-    const mock = setMock(confirmed, created());
-    vi.mocked(setVacancySkills).mockResolvedValueOnce({ code: "P0001", message: "vacancy_skills_limit_reached" });
+  it("leaves nothing behind when the skills could not be saved", async () => {
+    // One transaction: the database drops the vacancy with its skills, so the
+    // route has nothing to take back.
+    const mock = setMock(confirmed, () => ({ error: { code: "P0001", message: "vacancy_skills_limit_reached" } }));
     const res = await POST(req("POST", createPayload));
     expect(res.status).toBe(400);
     expect((await res.json()).code).toBe("skills_limit");
-
-    const rollback = mock.calls.find((call) => call.table === "vacancies" && call.verb === "delete");
-    expect(rollback?.filters).toEqual([{ method: "eq", args: ["id", VACANCY_ID] }]);
+    expect(mock.calls.some((call) => call.verb === "delete")).toBe(false);
     expect(holdVacancyForReview).not.toHaveBeenCalled();
   });
 
@@ -461,7 +479,7 @@ describe("PATCH /api/vacancies/:id", () => {
     expect(update.payload).not.toHaveProperty("slug");
     expect(update.payload).not.toHaveProperty("expires_at");
     expect(update.filters).toEqual([{ method: "eq", args: ["id", VACANCY_ID] }]);
-    expect(setVacancySkills).toHaveBeenCalledWith(mock.client, VACANCY_ID, [1, 2]);
+    expect(saveVacancy).toHaveBeenCalledWith(mock.client, VACANCY_ID, expect.anything(), [1, 2]);
   });
 
   it.each(["published", "closed", "expired"])(
@@ -541,7 +559,6 @@ describe("PATCH /api/vacancies/:id", () => {
     const res = await PATCH(req("PATCH", vacancy), params());
     expect(res.status).toBe(status);
     expect((await res.json()).code).toBe(code);
-    expect(setVacancySkills).not.toHaveBeenCalled();
   });
 
   it("404 when the update matched nothing", async () => {
@@ -550,8 +567,7 @@ describe("PATCH /api/vacancies/:id", () => {
   });
 
   it("reports a failed skills save", async () => {
-    const mock = editing("published");
-    vi.mocked(setVacancySkills).mockResolvedValueOnce({ code: "P0001", message: "vacancy_skills_limit_reached" });
+    const mock = editing("published", {}, { error: { code: "P0001", message: "vacancy_skills_limit_reached" } });
     const res = await PATCH(req("PATCH", vacancy), params());
     expect(res.status).toBe(400);
     expect((await res.json()).code).toBe("skills_limit");

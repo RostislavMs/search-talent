@@ -16,7 +16,7 @@ import {
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { getRequestLocale } from "@/lib/i18n/server";
-import { inviteCoAuthors } from "@/lib/db/co-authors";
+import { notifyCoAuthorInvites, parseNewCoAuthorInvites } from "@/lib/db/co-authors";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
 
 // Community feed for the `/polls` page. Listing filters (category, author,
@@ -91,7 +91,11 @@ export async function POST(request: Request) {
 
   const slug = await ensureUniquePollSlug(payload.title);
 
-  const { data, error } = await context.supabase.rpc("save_poll", {
+  // The poll, its hold until every co-author answers, and the invitations in
+  // one transaction. A flagged poll invites nobody — nothing to share yet.
+  const { data, error } = await context.supabase.rpc("save_poll_with_co_authors", {
+    p_hold: holdForCoAuthors,
+    p_co_author_ids: screen.flagged ? [] : coAuthorIds,
     p_payload: buildSavePollPayload(
       // Held for co-authors: insert as a draft so it stays private until every
       // invitee accepts, then auto-publishes.
@@ -116,31 +120,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = data as { id: string; slug: string };
+  const saved = data as { id: string; slug: string; invited?: unknown };
+  const result = { id: saved.id, slug: saved.slug };
 
   if (screen.flagged) {
     await autoRemoveContent({ table: "polls", id: result.id, note: screen.note });
   }
 
-  if (holdForCoAuthors) {
-    // `save_poll` doesn't know about the publish-on-confirm guard column.
-    await context.supabase
-      .from("polls")
-      .update({ publish_on_confirm: true })
-      .eq("id", result.id);
-  }
-
-  if (coAuthorIds.length > 0 && !screen.flagged) {
-    await inviteCoAuthors({
-      supabase: context.supabase,
-      contentType: "poll",
-      contentId: result.id,
-      contentTitle: payload.title,
-      contentSlug: result.slug,
-      creatorUserId: context.user.id,
-      coAuthorUserIds: coAuthorIds,
-    });
-  }
+  await notifyCoAuthorInvites({
+    contentType: "poll",
+    contentId: result.id,
+    contentTitle: payload.title,
+    contentSlug: result.slug,
+    creatorUserId: context.user.id,
+    invited: parseNewCoAuthorInvites(saved.invited),
+  });
 
   // Notify followers only when the poll is actually public (published AND not
   // auto-removed). A draft held for co-authors notifies on auto-publish.

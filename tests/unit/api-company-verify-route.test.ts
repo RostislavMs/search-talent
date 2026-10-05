@@ -85,8 +85,11 @@ function setUser(value: MockUser) {
   holder.mock = createSupabaseMock({ user: value, resolve: () => ({}) });
 }
 
-function setAdmin(resolve: (call: QueryCall) => QueryResult) {
-  holder.admin = createSupabaseMock({ user: null, resolve });
+function setAdmin(
+  resolve: (call: QueryCall) => QueryResult,
+  rpc?: (fn: string, args?: unknown) => QueryResult,
+) {
+  holder.admin = createSupabaseMock({ user: null, resolve, rpc });
   return holder.admin;
 }
 
@@ -283,12 +286,24 @@ describe("POST /verify/code — sending the code", () => {
 });
 
 describe("POST /verify with a code", () => {
+  /**
+   * The stored code behind claim_company_verification_attempt: the stand-in
+   * answers as the SQL function does, counting the attempt before the route
+   * compares the code.
+   */
   function adminWithCode(row: Record<string, unknown> | null, updateResult: QueryResult = { data: [{ id: COMPANY_ID }] }) {
-    return setAdmin((call) => {
-      if (call.table === "company_verification_codes" && call.verb === "select") return { data: row };
-      if (call.table === "companies") return updateResult;
-      return {};
+    const stored = row ? { ...row } : null;
+    const claim = vi.fn((fn: string, args?: unknown): QueryResult => {
+      if (fn !== "claim_company_verification_attempt") return {};
+      const { p_max_attempts } = args as { p_max_attempts: number };
+      if (!stored) return { data: { status: "missing" } };
+      if (new Date(stored.expires_at as string).getTime() <= Date.now()) return { data: { status: "expired" } };
+      if ((stored.attempts as number) >= p_max_attempts) return { data: { status: "too_many" } };
+      stored.attempts = (stored.attempts as number) + 1;
+      return { data: { status: "ok", codeHash: stored.code_hash, emailDomain: stored.email_domain } };
     });
+    const admin = setAdmin((call) => (call.table === "companies" ? updateResult : {}), claim);
+    return Object.assign(admin, { claim, stored });
   }
 
   it("verifies with the right code and drops it", async () => {
@@ -302,13 +317,20 @@ describe("POST /verify with a code", () => {
     });
   });
 
-  it("counts a wrong code", async () => {
+  it("counts the attempt in the database before comparing", async () => {
     setUser(user("jane@gmail.com"));
     const admin = adminWithCode(codeRow({ attempts: 2 }));
     const res = await POST(req({ code: "654321" }), params());
     expect(res.status).toBe(400);
     expect((await res.json()).code).toBe("wrong_code");
-    expect(admin.calls.find((entry) => entry.verb === "update")?.payload).toEqual({ attempts: 3 });
+    expect(admin.claim).toHaveBeenCalledWith("claim_company_verification_attempt", {
+      p_company_id: COMPANY_ID,
+      p_user_id: USER_ID,
+      p_max_attempts: 5,
+    });
+    expect(admin.stored?.attempts).toBe(3);
+    // No read-then-write of the counter in the route any more.
+    expect(admin.calls.some((entry) => entry.verb === "update" && entry.table === "company_verification_codes")).toBe(false);
     expect(admin.calls.some((entry) => entry.table === "companies")).toBe(false);
   });
 

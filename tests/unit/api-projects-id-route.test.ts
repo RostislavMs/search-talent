@@ -24,15 +24,16 @@ vi.mock("@/lib/auto-moderation", () => ({
 }));
 vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
-vi.mock("@/lib/db/co-authors", () => ({ syncCoAuthors: vi.fn() }));
-vi.mock("@/lib/db/project-companies", () => ({
-  saveProjectBudget: vi.fn(async () => true),
-  syncProjectCompanies: vi.fn(async () => undefined),
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/db/save-project", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/db/save-project")>()),
+  saveProject: vi.fn(),
+  notifyProjectSaved: vi.fn(async () => undefined),
 }));
 
 import { PATCH, DELETE } from "@/app/api/projects/[id]/route";
 import { generateUniqueProjectSlug } from "@/lib/projects";
-import { saveProjectBudget, syncProjectCompanies } from "@/lib/db/project-companies";
+import { notifyProjectSaved, saveProject } from "@/lib/db/save-project";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_ID = "99999999-9999-4999-8999-999999999999";
@@ -69,7 +70,25 @@ const existingProject = {
 afterEach(() => {
   holder.mock = null;
   vi.clearAllMocks();
+  vi.mocked(saveProject).mockResolvedValue(saved());
 });
+
+function saved(slug = "my-project") {
+  return {
+    project: { id: PROJECT_ID, slug, status: "published", invited: [], companyRequests: [] },
+    error: null,
+  } as never;
+}
+
+function saveInput() {
+  return vi.mocked(saveProject).mock.calls[0]?.[1] as {
+    id: string | null;
+    row: Record<string, unknown>;
+    budget: unknown;
+    coAuthorIds: string[] | null;
+    companyIds: string[] | null;
+  };
+}
 
 describe("PATCH /api/projects/[id] — owner-only edit", () => {
   it("401 when unauthenticated", async () => {
@@ -89,51 +108,44 @@ describe("PATCH /api/projects/[id] — owner-only edit", () => {
     expect((await PATCH(patchReq({ title: "" }), params())).status).toBe(400);
   });
 
-  it("updates and keeps the slug stable when unchanged", async () => {
-    const mock = setMock(authUser, (table, verb) => {
-      if (table === "projects" && verb === "select") return { data: existingProject };
-      if (table === "projects" && verb === "update") return { data: { slug: "my-project", status: "published" } };
-      if (table === "project_skills") return { error: null };
-      return {};
-    });
+  it("updates in one call and keeps the slug stable when unchanged", async () => {
+    setMock(authUser, (table) => (table === "projects" ? { data: existingProject } : {}));
     const res = await PATCH(patchReq(), params());
     expect(res.status).toBe(200);
 
-    const update = mock.calls.find((c) => c.table === "projects" && c.verb === "update");
-    expect((update?.payload as { slug: string }).slug).toBe("my-project");
+    const input = saveInput();
+    expect(input.id).toBe(PROJECT_ID);
+    expect(input.row.slug).toBe("my-project");
     expect(vi.mocked(generateUniqueProjectSlug)).not.toHaveBeenCalled();
-    // Old project_skills are cleared as part of the edit.
-    expect(mock.calls.some((c) => c.table === "project_skills" && c.verb === "delete")).toBe(true);
+    expect(notifyProjectSaved).toHaveBeenCalledOnce();
   });
 
   it("regenerates the slug when the title (and slug) change", async () => {
-    setMock(authUser, (table, verb) => {
-      if (table === "projects" && verb === "select") return { data: existingProject };
-      if (table === "projects" && verb === "update") return { data: { slug: "fresh-slug", status: "published" } };
-      if (table === "project_skills") return { error: null };
-      return {};
-    });
+    setMock(authUser, (table) => (table === "projects" ? { data: existingProject } : {}));
+    vi.mocked(saveProject).mockResolvedValue(saved("fresh-slug"));
     const res = await PATCH(patchReq({ title: "A Totally Different Name" }), params());
     expect(res.status).toBe(200);
     expect(vi.mocked(generateUniqueProjectSlug)).toHaveBeenCalledOnce();
+    expect(saveInput().row.slug).toBe("fresh-slug");
   });
 
-  it("keeps the budget and company pages in line with the form", async () => {
-    const mock = setMock(authUser, (table, verb) => {
-      if (table === "projects" && verb === "select") return { data: existingProject };
-      if (table === "projects" && verb === "update") return { data: { slug: "my-project", status: "published" } };
-      return {};
-    });
+  it("keeps the budget, co-authors and company pages in line with the form", async () => {
+    setMock(authUser, (table) => (table === "projects" ? { data: existingProject } : {}));
     await PATCH(patchReq({ ...payload, origin: "personal", clientName: "Acme" }), params());
 
-    const update = mock.calls.find((c) => c.table === "projects" && c.verb === "update");
+    const input = saveInput();
     // Personal work has no client: the name is dropped, not stored.
-    expect(update?.payload).toMatchObject({ origin: "personal", client_name: null, client_nda: false });
-    // No budget in the form means the stored one is removed.
-    expect(saveProjectBudget).toHaveBeenCalledWith(expect.anything(), PROJECT_ID, null);
-    expect(syncProjectCompanies).toHaveBeenCalledWith(
-      expect.objectContaining({ projectId: PROJECT_ID, desiredCompanyIds: [], published: true }),
-    );
+    expect(input.row).toMatchObject({ origin: "personal", client_name: null, client_nda: false });
+    // No budget, co-authors or companies in the form: all of them are cleared.
+    expect(input).toMatchObject({ budget: null, coAuthorIds: [], companyIds: [] });
+  });
+
+  it("400 with the database message when the save fails", async () => {
+    setMock(authUser, (table) => (table === "projects" ? { data: existingProject } : {}));
+    vi.mocked(saveProject).mockResolvedValue({ project: null, error: { message: "no luck" } } as never);
+    const res = await PATCH(patchReq(), params());
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("no luck");
   });
 });
 

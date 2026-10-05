@@ -437,30 +437,36 @@ export async function countVacancyViews(ids: string[]): Promise<Map<string, numb
 
 // --- Writing ----------------------------------------------------------------------------
 
-/** Replaces the vacancy's skills. Returns the database error, if any. */
-export async function setVacancySkills(
+export type SavedVacancy = { id: string; slug: string; status: string; moderation_status: string };
+
+/**
+ * Creates (`id` null) or updates a vacancy together with its skills in one
+ * transaction (`save_vacancy`): a vacancy is never left without the skills it
+ * was saved with. RLS and the vacancy guards decide who may do what. Returns
+ * the database error as is, for `vacancyWriteErrorResponse`.
+ */
+export async function saveVacancy(
   supabase: SupabaseClient,
-  vacancyId: string,
+  id: string | null,
+  row: Record<string, unknown>,
   skillIds: number[],
-): Promise<{ message?: string | null; code?: string | null } | null> {
-  const { error: deleteError } = await supabase
-    .from("vacancy_skills")
-    .delete()
-    .eq("vacancy_id", vacancyId);
+): Promise<
+  | { vacancy: SavedVacancy; error: null }
+  | { vacancy: null; error: { message?: string | null; code?: string | null } | null }
+> {
+  const { data, error } = await supabase.rpc("save_vacancy", {
+    p_id: id,
+    p_row: row,
+    p_skill_ids: skillIds,
+  });
 
-  if (deleteError) {
-    return deleteError;
+  const vacancy = data as SavedVacancy | null;
+
+  if (error || !vacancy?.id) {
+    return { vacancy: null, error: error ?? null };
   }
 
-  if (skillIds.length === 0) {
-    return null;
-  }
-
-  const { error } = await supabase
-    .from("vacancy_skills")
-    .insert(skillIds.map((skillId) => ({ vacancy_id: vacancyId, skill_id: skillId })));
-
-  return error ?? null;
+  return { vacancy, error: null };
 }
 
 /**

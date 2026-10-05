@@ -29,7 +29,11 @@ vi.mock("@/lib/auto-moderation", () => ({
 }));
 vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
-vi.mock("@/lib/db/co-authors", () => ({ inviteCoAuthors: vi.fn() }));
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/db/co-authors", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/db/co-authors")>()),
+  notifyCoAuthorInvites: vi.fn(async () => undefined),
+}));
 
 import { POST } from "@/app/api/polls/route";
 import { NextResponse } from "next/server";
@@ -37,7 +41,7 @@ import { dbRateLimit } from "@/lib/rate-limit";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { screenContentForModeration } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
-import { inviteCoAuthors } from "@/lib/db/co-authors";
+import { notifyCoAuthorInvites } from "@/lib/db/co-authors";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const CO_AUTHOR = "33333333-3333-4333-8333-333333333333";
@@ -58,7 +62,7 @@ function viewer(
   user: MockUser,
   isAdmin: boolean,
   resolve: (t: string, v: string) => QueryResult,
-  rpc?: () => QueryResult,
+  rpc?: (fn: string, args?: unknown) => QueryResult,
 ) {
   const mock = createSupabaseMock({ user, resolve: (c) => resolve(c.table, c.verb), rpc });
   holder.mock = mock;
@@ -66,7 +70,7 @@ function viewer(
   return mock;
 }
 
-const savedOk = () => ({ data: { id: POLL_ID, slug: "poll-slug" } });
+const savedOk = () => ({ data: { id: POLL_ID, slug: "poll-slug", invited: [] } });
 function catResolver(table: string): QueryResult {
   if (table === "poll_categories") return { data: { id: 7, admin_only: false } };
   return { error: null };
@@ -120,31 +124,43 @@ describe("POST /api/polls — guards", () => {
 });
 
 describe("POST /api/polls — creation", () => {
-  it("creates the poll via the save_poll RPC", async () => {
-    const rpc = vi.fn(savedOk);
+  it("creates the poll in one call, nobody held or invited", async () => {
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => savedOk());
     viewer(authUser, false, catResolver, rpc);
     const res = await POST(req());
     expect(res.status).toBe(200);
-    expect(rpc).toHaveBeenCalled();
-    expect((await res.json()).poll).toMatchObject({ id: POLL_ID, slug: "poll-slug" });
-    expect(vi.mocked(inviteCoAuthors)).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith(
+      "save_poll_with_co_authors",
+      expect.objectContaining({ p_hold: false, p_co_author_ids: [] }),
+    );
+    const body = await res.json();
+    expect(body.poll).toEqual({ id: POLL_ID, slug: "poll-slug" });
+    expect(notifyCoAuthorInvites).toHaveBeenCalledWith(expect.objectContaining({ invited: [] }));
   });
 
-  it("auto-removes flagged content", async () => {
+  it("auto-removes flagged content and invites nobody", async () => {
     vi.mocked(screenContentForModeration).mockReturnValue({ flagged: true, note: "bad" } as never);
-    viewer(authUser, false, catResolver, savedOk);
-    const res = await POST(req());
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => savedOk());
+    viewer(authUser, false, catResolver, rpc);
+    const res = await POST(req({ ...base, coAuthorUserIds: [CO_AUTHOR] }));
     expect(res.status).toBe(200);
+    expect(rpc.mock.calls[0][1]).toMatchObject({ p_co_author_ids: [] });
     expect(vi.mocked(autoRemoveContent)).toHaveBeenCalledWith({ table: "polls", id: POLL_ID, note: "bad" });
     expect((await res.json()).autoRemoved).toBe(true);
   });
 
-  it("holds as a draft (publish_on_confirm) and invites co-authors", async () => {
-    const mock = viewer(authUser, false, catResolver, savedOk);
+  it("holds as a draft and invites co-authors in the same call", async () => {
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => ({ data: { id: POLL_ID, slug: "poll-slug", invited: [{ id: "inv1", userId: CO_AUTHOR }] } }));
+    const mock = viewer(authUser, false, catResolver, rpc);
     const res = await POST(req({ ...base, coAuthorUserIds: [CO_AUTHOR] }));
     expect(res.status).toBe(200);
-    expect(mock.calls.some((c) => c.table === "polls" && c.verb === "update")).toBe(true);
-    expect(vi.mocked(inviteCoAuthors)).toHaveBeenCalledOnce();
+    const args = rpc.mock.calls[0][1] as { p_hold: boolean; p_co_author_ids: string[]; p_payload: { status: string } };
+    expect(args).toMatchObject({ p_hold: true, p_co_author_ids: [CO_AUTHOR], p_payload: { status: "draft" } });
+    // No separate write for the hold any more.
+    expect(mock.calls.some((c) => c.table === "polls" && c.verb === "update")).toBe(false);
+    expect(notifyCoAuthorInvites).toHaveBeenCalledWith(
+      expect.objectContaining({ invited: [{ id: "inv1", userId: CO_AUTHOR }] }),
+    );
     expect((await res.json()).awaitingCoAuthors).toBe(true);
   });
 
