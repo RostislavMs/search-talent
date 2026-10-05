@@ -148,3 +148,31 @@ export function isR2Url(url: string | null | undefined) {
     host.endsWith(".r2.dev")
   );
 }
+
+/**
+ * The object key behind one of our public R2 URLs (`<base>/<key>`), or null
+ * for any other URL. A `?v=` cache buster is not part of the key.
+ */
+export function getR2KeyFromUrl(url: string): string | null {
+  if (!isR2Url(url)) {
+    return null;
+  }
+
+  try {
+    let path = new URL(url).pathname;
+    const basePath = publicBaseUrl
+      ? new URL(publicBaseUrl).pathname.replace(/\/+$/, "")
+      : "";
+    if (basePath && path.startsWith(`${basePath}/`)) {
+      path = path.slice(basePath.length);
+    }
+    const key = path
+      .replace(/^\/+/, "")
+      .split("/")
+      .map((segment) => decodeURIComponent(segment))
+      .join("/");
+    return key || null;
+  } catch {
+    return null;
+  }
+}

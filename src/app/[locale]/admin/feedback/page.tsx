@@ -85,8 +85,7 @@ export default async function AdminFeedbackPage({
           dismiss: copy.dismiss,
           dismissing: "Видалення...",
           confirmTitle: "Прибрати відгук?",
-          confirmMessage:
-            "Запис буде видалений з системи. Дію не можна скасувати.",
+          confirmMessage: "Запис на 60 днів потрапить у кошик.",
           confirmButton: "Прибрати",
           cancel: "Скасувати",
           errorFallback: "Не вдалося прибрати відгук.",
@@ -101,8 +100,7 @@ export default async function AdminFeedbackPage({
           dismiss: copy.dismiss,
           dismissing: "Removing...",
           confirmTitle: "Dismiss feedback?",
-          confirmMessage:
-            "This entry will be removed from the system. This action cannot be undone.",
+          confirmMessage: "The entry goes to the Trash for 60 days.",
           confirmButton: "Dismiss",
           cancel: "Cancel",
           errorFallback: "Could not dismiss the feedback entry.",

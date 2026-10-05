@@ -4,7 +4,6 @@ import { buildSanitizedPollTranslations } from "@/lib/poll-translations";
 import { ensureUniquePollSlug } from "@/lib/db/polls";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
-import { deleteStorageObject } from "@/lib/storage/provider";
 import { createClient } from "@/lib/supabase/server";
 import { pollPayloadSchema, routePollIdSchema } from "@/lib/validation/polls";
 import { parseJsonRequest } from "@/lib/validation/request";
@@ -230,7 +229,7 @@ export async function DELETE(
 
   const { data: poll, error: pollError } = await supabase
     .from("polls")
-    .select("id, author_user_id, cover_image_url, cover_image_storage_path")
+    .select("id, author_user_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -242,6 +241,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Poll not found" }, { status: 404 });
   }
 
+  // Into the trash for 60 days (a database trigger); the cover stays in
+  // storage until the trash is emptied.
   const { error: deleteError } = await supabase
     .from("polls")
     .delete()
@@ -253,19 +254,6 @@ export async function DELETE(
       { error: deleteError.message || "Could not delete poll" },
       { status: 400 },
     );
-  }
-
-  if (poll.cover_image_storage_path?.trim() && poll.cover_image_url) {
-    const { error: storageError } = await deleteStorageObject({
-      supabase,
-      bucket: "project-media",
-      url: poll.cover_image_url,
-      storagePath: poll.cover_image_storage_path.trim(),
-    });
-
-    if (storageError) {
-      return NextResponse.json({ success: true, cleanupWarning: storageError.message });
-    }
   }
 
   return NextResponse.json({ success: true });

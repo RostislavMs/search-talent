@@ -57,6 +57,7 @@ export default defineConfig({
         "src/lib/rich-text-lists.ts",
         "src/lib/search-ranking.ts",
         "src/lib/seo.ts",
+        "src/lib/trash.ts",
         "src/lib/url-validation.ts",
         "src/lib/view-tracking.ts",
         "src/lib/ai/github-draft-prompt.ts",

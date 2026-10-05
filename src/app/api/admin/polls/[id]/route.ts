@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
-import { deleteStorageObject } from "@/lib/storage/provider";
 import {
   pollModerationPayloadSchema,
   routePollIdSchema,
@@ -93,7 +92,7 @@ export async function DELETE(
   const { id } = routeParams.data;
   const { data: poll, error: pollError } = await context.supabase
     .from("polls")
-    .select("id, cover_image_url, cover_image_storage_path")
+    .select("id")
     .eq("id", id)
     .maybeSingle();
 
@@ -105,6 +104,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Poll not found" }, { status: 404 });
   }
 
+  // Into the trash for 60 days (a database trigger); the cover stays in
+  // storage until the trash is emptied, so the poll can be restored.
   const { error: deleteError } = await context.supabase
     .from("polls")
     .delete()
@@ -115,19 +116,6 @@ export async function DELETE(
       { error: deleteError.message || "Could not delete poll" },
       { status: 400 },
     );
-  }
-
-  if (poll.cover_image_storage_path?.trim() && poll.cover_image_url) {
-    const { error: storageError } = await deleteStorageObject({
-      supabase: context.supabase,
-      bucket: "project-media",
-      url: poll.cover_image_url,
-      storagePath: poll.cover_image_storage_path.trim(),
-    });
-
-    if (storageError) {
-      return NextResponse.json({ success: true, cleanupWarning: storageError.message });
-    }
   }
 
   return NextResponse.json({ success: true });

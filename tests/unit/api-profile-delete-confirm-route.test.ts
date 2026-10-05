@@ -1,12 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextResponse } from "next/server";
-import { createSupabaseMock } from "./helpers/supabase-mock";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => null) }));
+vi.mock("@/lib/db/trash", () => ({
+  deleteAccount: vi.fn(async () => ({ ok: true, groupId: "33333333-3333-4333-8333-333333333333" })),
+}));
 
 import { POST } from "@/app/api/profile/delete/confirm/route";
+import { deleteAccount } from "@/lib/db/trash";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
@@ -44,11 +47,7 @@ function buildSupabase(user: unknown, updateResult: UpdateResult = { error: null
   };
 }
 
-function buildAdmin(deleteError: { message: string } | null = null) {
-  const from = createSupabaseMock({ resolve: () => ({ error: null }) }).client.from;
-  const deleteUser = vi.fn(async () => ({ error: deleteError }));
-  return { admin: { from, auth: { admin: { deleteUser } } }, deleteUser };
-}
+const ADMIN = { service: true };
 
 function req(body: unknown) {
   return new Request("http://test/api/profile/delete/confirm", {
@@ -107,26 +106,46 @@ describe("POST /api/profile/delete/confirm", () => {
     expect((await POST(req({ code: "123456" }))).status).toBe(500);
   });
 
-  it("erases the account: deletes the auth user and signs out", async () => {
+  it("moves the account into the trash with the service key and ends every session", async () => {
     const { supabase, signOut } = buildSupabase(buildUser(60_000));
-    const { admin, deleteUser } = buildAdmin();
     vi.mocked(createClient).mockResolvedValue(supabase as never);
-    vi.mocked(createAdminClient).mockReturnValue(admin as never);
+    vi.mocked(createAdminClient).mockReturnValue(ADMIN as never);
 
     const res = await POST(req({ code: "123456", mode: "erase" }));
     expect(res.status).toBe(200);
-    expect(deleteUser).toHaveBeenCalledWith(USER_ID);
-    expect(signOut).toHaveBeenCalledOnce();
+    expect(deleteAccount).toHaveBeenCalledWith(ADMIN, USER_ID, "erase");
+    expect(signOut).toHaveBeenCalledWith({ scope: "global" });
   });
 
-  it("anonymizes authored content before deleting when mode=anonymize", async () => {
+  it("passes the anonymize choice to the database", async () => {
     const { supabase } = buildSupabase(buildUser(60_000));
-    const { admin, deleteUser } = buildAdmin();
     vi.mocked(createClient).mockResolvedValue(supabase as never);
-    vi.mocked(createAdminClient).mockReturnValue(admin as never);
+    vi.mocked(createAdminClient).mockReturnValue(ADMIN as never);
 
     const res = await POST(req({ code: "123456", mode: "anonymize" }));
     expect(res.status).toBe(200);
-    expect(deleteUser).toHaveBeenCalledWith(USER_ID);
+    expect(deleteAccount).toHaveBeenCalledWith(ADMIN, USER_ID, "anonymize");
+  });
+
+  it("409 when the account is already waiting for deletion; no sign-out", async () => {
+    const { supabase, signOut } = buildSupabase(buildUser(60_000));
+    vi.mocked(createClient).mockResolvedValue(supabase as never);
+    vi.mocked(createAdminClient).mockReturnValue(ADMIN as never);
+    vi.mocked(deleteAccount).mockResolvedValueOnce({ ok: false, code: "already_deleted" });
+
+    const res = await POST(req({ code: "123456" }));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("already_deleted");
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it("400 when the database refuses", async () => {
+    const { supabase, signOut } = buildSupabase(buildUser(60_000));
+    vi.mocked(createClient).mockResolvedValue(supabase as never);
+    vi.mocked(createAdminClient).mockReturnValue(ADMIN as never);
+    vi.mocked(deleteAccount).mockResolvedValueOnce({ ok: false, code: "failed" });
+
+    expect((await POST(req({ code: "123456" }))).status).toBe(400);
+    expect(signOut).not.toHaveBeenCalled();
   });
 });

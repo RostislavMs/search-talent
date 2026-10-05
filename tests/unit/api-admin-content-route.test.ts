@@ -7,14 +7,17 @@ import {
 } from "./helpers/supabase-mock";
 
 vi.mock("@/lib/moderation-server", () => ({ getCurrentViewerRole: vi.fn() }));
-vi.mock("@/lib/storage/provider", () => ({ deleteStorageObject: vi.fn(async () => ({ error: null })) }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
+vi.mock("@/lib/db/trash", () => ({
+  deleteAccount: vi.fn(async () => ({ ok: true, groupId: "33333333-3333-4333-8333-333333333333" })),
+}));
 
 import { PATCH as articlePatch, DELETE as articleDelete } from "@/app/api/admin/articles/[id]/route";
 import { PATCH as pollPatch } from "@/app/api/admin/polls/[id]/route";
 import { DELETE as projectDelete } from "@/app/api/admin/projects/[id]/route";
 import { DELETE as profileDelete } from "@/app/api/admin/profiles/[id]/route";
 import { DELETE as feedbackDelete } from "@/app/api/admin/feedback/[id]/route";
+import { deleteAccount } from "@/lib/db/trash";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -85,14 +88,15 @@ describe("admin/projects/[id] DELETE", () => {
     viewer(adminUser, true, (t) => (t === "projects" ? { data: null } : {}));
     expect((await projectDelete(delReq(), params())).status).toBe(404);
   });
-  it("deletes the project", async () => {
+  it("deletes the project (into the trash) without touching its files", async () => {
     const mock = viewer(adminUser, true, (t, v) => {
       if (t === "projects" && v === "select") return { data: { id: ID } };
-      if (t === "project_media") return { data: [] };
       return { error: null };
     });
     expect((await projectDelete(delReq(), params())).status).toBe(200);
     expect(mock.calls.some((c) => c.table === "projects" && c.verb === "delete")).toBe(true);
+    // Files go when the trash is emptied, so a restore keeps its images.
+    expect(mock.calls.some((c) => c.table === "project_media")).toBe(false);
   });
 });
 
@@ -110,12 +114,21 @@ describe("admin/profiles/[id] DELETE", () => {
     vi.mocked(createAdminClient).mockReturnValue(null as never);
     expect((await profileDelete(delReq(), params())).status).toBe(500);
   });
-  it("deletes the underlying auth user", async () => {
-    viewer(adminUser, true, (t) => (t === "profiles" ? { data: { id: ID, user_id: "other" } } : {}));
-    const deleteUser = vi.fn(async () => ({ error: null }));
-    vi.mocked(createAdminClient).mockReturnValue({ auth: { admin: { deleteUser } } } as never);
+  it("moves the account into the trash with the admin's own session", async () => {
+    const mock = viewer(adminUser, true, (t) => (t === "profiles" ? { data: { id: ID, user_id: "other" } } : {}));
+    vi.mocked(createAdminClient).mockReturnValue({ service: true } as never);
     expect((await profileDelete(delReq(), params())).status).toBe(200);
-    expect(deleteUser).toHaveBeenCalledWith("other");
+    expect(deleteAccount).toHaveBeenCalledWith(mock.client, "other", "erase");
+  });
+  it("maps a refusal from the database", async () => {
+    viewer(adminUser, true, (t) => (t === "profiles" ? { data: { id: ID, user_id: "other" } } : {}));
+    vi.mocked(createAdminClient).mockReturnValue({ service: true } as never);
+    vi.mocked(deleteAccount).mockResolvedValueOnce({ ok: false, code: "already_deleted" });
+    expect((await profileDelete(delReq(), params())).status).toBe(409);
+    vi.mocked(deleteAccount).mockResolvedValueOnce({ ok: false, code: "forbidden" });
+    expect((await profileDelete(delReq(), params())).status).toBe(403);
+    vi.mocked(deleteAccount).mockResolvedValueOnce({ ok: false, code: "failed" });
+    expect((await profileDelete(delReq(), params())).status).toBe(400);
   });
 });
 

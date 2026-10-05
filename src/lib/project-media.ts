@@ -267,25 +267,6 @@ export function formatFileSize(size: number | null | undefined) {
   return `${rounded} ${units[unitIndex]}`;
 }
 
-/**
- * Whether a stored media key lives under the project's own prefix
- * (`<projectId>/<file>`, as the presign route issues it). Anything else —
- * another project's folder, an avatar, a path with `..` — must never be
- * deleted on this project's behalf.
- */
-export function isProjectStoragePath(
-  projectId: string,
-  storagePath: string | null | undefined,
-): storagePath is string {
-  if (!storagePath || !projectId) return false;
-  const prefix = `${projectId}/`;
-  return (
-    storagePath.startsWith(prefix) &&
-    storagePath.length > prefix.length &&
-    !storagePath.split("/").includes("..")
-  );
-}
-
 export function sanitizeStorageFileName(fileName: string) {
   const lastDotIndex = fileName.lastIndexOf(".");
   const name = lastDotIndex > -1 ? fileName.slice(0, lastDotIndex) : fileName;

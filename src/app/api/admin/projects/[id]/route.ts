@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
-import { isProjectStoragePath } from "@/lib/project-media";
-import { deleteStorageObject } from "@/lib/storage/provider";
 import { routeProjectIdSchema } from "@/lib/validation/project";
 
 export async function DELETE(
@@ -42,15 +40,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const { data: mediaItems, error: mediaError } = await context.supabase
-    .from("project_media")
-    .select("url, storage_path")
-    .eq("project_id", project.id);
-
-  if (mediaError) {
-    return NextResponse.json({ error: mediaError.message }, { status: 400 });
-  }
-
+  // Into the trash for 60 days (a database trigger); the files stay in
+  // storage until the trash is emptied, so the project can be restored.
   const { error: deleteError } = await context.supabase
     .from("projects")
     .delete()
@@ -61,38 +52,6 @@ export async function DELETE(
       { error: deleteError.message || "Could not delete project" },
       { status: 400 },
     );
-  }
-
-  const itemsToClean = (mediaItems || [])
-    .map(
-      (item) =>
-        item as { url: string | null; storage_path: string | null },
-    )
-    // Only keys under this project's own prefix are ours to delete.
-    .filter(
-      (item): item is { url: string; storage_path: string } =>
-        Boolean(item.url) && isProjectStoragePath(project.id, item.storage_path),
-    );
-
-  const cleanupWarnings: string[] = [];
-  for (const item of itemsToClean) {
-    const { error: storageError } = await deleteStorageObject({
-      supabase: context.supabase,
-      bucket: "project-media",
-      url: item.url,
-      storagePath: item.storage_path,
-    });
-
-    if (storageError) {
-      cleanupWarnings.push(storageError.message);
-    }
-  }
-
-  if (cleanupWarnings.length > 0) {
-    return NextResponse.json({
-      success: true,
-      cleanupWarning: cleanupWarnings[0],
-    });
   }
 
   return NextResponse.json({ success: true });
