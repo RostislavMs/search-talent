@@ -10,7 +10,8 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildSavePollPayload } from "@/lib/db/save-poll-payload";
-import { syncCoAuthors } from "@/lib/db/co-authors";
+import { notifyCoAuthorInvites, parseNewCoAuthorInvites } from "@/lib/db/co-authors";
+import { sanitizeCoAuthorIds } from "@/lib/co-authors";
 import {
   CLEAN_MODERATION_RESULT,
   collectPollModerationText,
@@ -96,7 +97,11 @@ export async function PUT(
       ? existing.slug
       : await ensureUniquePollSlug(payload.title, id);
 
-  const { data, error } = await context.supabase.rpc("save_poll", {
+  // The poll and its co-authors (added invited, removed dropped) in one
+  // transaction; the hold flag is left as it is.
+  const { data, error } = await context.supabase.rpc("save_poll_with_co_authors", {
+    p_hold: false,
+    p_co_author_ids: sanitizeCoAuthorIds(payload.coAuthorUserIds, existing.author_user_id),
     p_payload: buildSavePollPayload(payload, {
       id,
       slug,
@@ -116,7 +121,8 @@ export async function PUT(
     );
   }
 
-  const result = data as { id: string; slug: string };
+  const saved = data as { id: string; slug: string; invited?: unknown };
+  const result = { id: saved.id, slug: saved.slug };
 
   // Editing an already-published poll stamps a dedicated "edited" date. save_poll
   // already preserves the original published_at (coalesce), so we only add the
@@ -132,15 +138,13 @@ export async function PUT(
     await autoRemoveContent({ table: "polls", id, note: screen.note });
   }
 
-  // Reconcile co-authors: add newly invited (pending + notify), drop removed.
-  await syncCoAuthors({
-    supabase: context.supabase,
+  await notifyCoAuthorInvites({
     contentType: "poll",
     contentId: id,
     contentTitle: payload.title,
     contentSlug: result.slug,
     creatorUserId: existing.author_user_id,
-    desiredUserIds: payload.coAuthorUserIds,
+    invited: parseNewCoAuthorInvites(saved.invited),
   });
 
   // First publish notifies the author's followers exactly once. A freshly

@@ -265,35 +265,22 @@ export async function PUT(request: Request) {
     );
   }
 
-  const { data: existing, error: existingError } = await ownership.supabase
-    .from("project_media")
-    .select("id")
-    .eq("project_id", projectId);
+  // One statement in the database: either the whole new order lands or none
+  // of it, and an id from another project fails it.
+  const { error: reorderError } = await ownership.supabase.rpc("reorder_project_media", {
+    p_project_id: projectId,
+    p_media_ids: mediaIds,
+  });
 
-  if (existingError) {
-    return NextResponse.json({ error: existingError.message }, { status: 400 });
-  }
-
-  const existingIds = new Set((existing || []).map((item) => item.id));
-  const invalid = mediaIds.filter((id) => !existingIds.has(id));
-
-  if (invalid.length > 0) {
+  if (reorderError) {
     return NextResponse.json(
-      { error: "Some media items do not belong to this project" },
+      {
+        error: reorderError.message.includes("do not belong")
+          ? "Some media items do not belong to this project"
+          : reorderError.message,
+      },
       { status: 400 },
     );
-  }
-
-  for (let index = 0; index < mediaIds.length; index += 1) {
-    const { error: updateError } = await ownership.supabase
-      .from("project_media")
-      .update({ sort_index: index })
-      .eq("id", mediaIds[index])
-      .eq("project_id", projectId);
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 400 });
-    }
   }
 
   const { data: orderedRows } = await ownership.supabase

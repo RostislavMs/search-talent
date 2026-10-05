@@ -1,7 +1,6 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { notifyCompanyProjectRequest } from "@/lib/db/companies";
 import {
   toProjectBudget,
   type EditorProjectBudget,
@@ -68,66 +67,6 @@ export async function loadProjectCompanyLinks(
   return links;
 }
 
-/**
- * Brings a project's company pages in line with the form: links the author
- * removed go, new ones are added. The database decides whether a new link is
- * shown at once (the author is in that company's team) or waits for the
- * company; for a waiting one on a published project the company is told.
- * Failures are logged, never thrown: the project itself is already saved.
- */
-export async function syncProjectCompanies({
-  supabase,
-  projectId,
-  userId,
-  desiredCompanyIds,
-  published,
-}: {
-  supabase: SupabaseClient;
-  projectId: string;
-  userId: string;
-  desiredCompanyIds: string[];
-  published: boolean;
-}): Promise<void> {
-  const { data } = await supabase
-    .from("company_projects")
-    .select("company_id")
-    .eq("project_id", projectId);
-
-  const current = new Set(((data ?? []) as Array<{ company_id: string }>).map((row) => row.company_id));
-  const desired = new Set(desiredCompanyIds);
-
-  const removed = [...current].filter((id) => !desired.has(id));
-  if (removed.length > 0) {
-    const { error } = await supabase
-      .from("company_projects")
-      .delete()
-      .eq("project_id", projectId)
-      .in("company_id", removed);
-    if (error) {
-      console.error("[project-companies] remove failed", error.message);
-    }
-  }
-
-  for (const companyId of desiredCompanyIds) {
-    if (current.has(companyId)) continue;
-
-    const { data: inserted, error } = await supabase
-      .from("company_projects")
-      .insert({ company_id: companyId, project_id: projectId, added_by: userId })
-      .select("status")
-      .maybeSingle();
-
-    if (error) {
-      console.error("[project-companies] add failed", { companyId, error: error.message });
-      continue;
-    }
-
-    if (published && (inserted as { status?: string } | null)?.status === "pending") {
-      await notifyCompanyProjectRequest({ companyId, projectId, actorUserId: userId });
-    }
-  }
-}
-
 /** The author's own budget for the editor (owner-only table). */
 export async function loadProjectBudget(
   supabase: SupabaseClient,
@@ -151,34 +90,6 @@ export async function loadProjectBudget(
   };
   const budget = toProjectBudget({ amount: row.budget_amount, currency: row.budget_currency, type: row.budget_type });
   return budget ? { ...budget, isPublic: Boolean(row.budget_public) } : null;
-}
-
-/** Saves the budget, or removes it when the form sends none. */
-export async function saveProjectBudget(
-  supabase: SupabaseClient,
-  projectId: string,
-  budget: EditorProjectBudget | null,
-): Promise<boolean> {
-  if (!budget) {
-    const { error } = await supabase.from("project_private_details").delete().eq("project_id", projectId);
-    return !error;
-  }
-
-  const { error } = await supabase.from("project_private_details").upsert(
-    {
-      project_id: projectId,
-      budget_amount: budget.amount,
-      budget_currency: budget.currency,
-      budget_type: budget.type,
-      budget_public: budget.isPublic,
-    },
-    { onConflict: "project_id" },
-  );
-
-  if (error) {
-    console.error("[project-companies] budget save failed", error.message);
-  }
-  return !error;
 }
 
 /** The budget as the project page may show it: only when the author chose to. */

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCompanyRole } from "@/lib/db/companies";
-import { setVacancySkills, vacancyPayloadToRow } from "@/lib/db/vacancies";
+import { saveVacancy, vacancyPayloadToRow } from "@/lib/db/vacancies";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import {
   routeVacancyIdSchema,
@@ -89,29 +89,22 @@ export async function PATCH(request: Request, { params }: Params) {
     }
   }
 
-  const { data, error } = await context.supabase
-    .from("vacancies")
-    .update({
+  // The text and the skills in one transaction.
+  const { vacancy: saved, error } = await saveVacancy(
+    context.supabase,
+    id,
+    {
       ...vacancyPayloadToRow(payload, description.html),
       ...(isDraft ? { status: payload.status } : {}),
-    })
-    .eq("id", id)
-    .select("id, slug, status, moderation_status")
-    .maybeSingle();
+    },
+    payload.skill_ids,
+  );
 
-  if (error) {
+  if (!saved) {
+    if (error?.code === "P0002") {
+      return NextResponse.json({ error: "Vacancy not found" }, { status: 404 });
+    }
     return vacancyWriteErrorResponse(error, "Could not save the vacancy");
-  }
-
-  if (!data) {
-    return NextResponse.json({ error: "Vacancy not found" }, { status: 404 });
-  }
-
-  const saved = data as { id: string; slug: string; status: string; moderation_status: string };
-  const skillsError = await setVacancySkills(context.supabase, id, payload.skill_ids);
-
-  if (skillsError) {
-    return vacancyWriteErrorResponse(skillsError, "Could not save the skills");
   }
 
   // A vacancy waiting for a moderator is screened too: the note tells the

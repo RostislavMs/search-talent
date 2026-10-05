@@ -16,9 +16,9 @@ const bodySchema = z.object({
  * content types, so the client passes `contentType` (known from the listing or
  * the notification metadata) to locate the right junction table.
  *
- * The response work runs server-side with the service-role client, which both
- * verifies the caller owns the invitation and lets the final acceptance publish
- * a held draft without granting co-authors write access to the content.
+ * The answer is one database call (`respond_co_author_invite`), which checks
+ * the caller owns the invitation and lets the last answer publish a held
+ * draft without granting co-authors write access to the content.
  */
 export async function PATCH(
   request: Request,
@@ -44,6 +44,7 @@ export async function PATCH(
   }
 
   const result = await respondToCoAuthorInvitation({
+    supabase,
     contentType: parsedBody.data.contentType,
     invitationId: parsedParams.data.id,
     userId: user.id,

@@ -111,113 +111,81 @@ function createMockClient(handler: (spec: Spec) => Result) {
   };
 }
 
-const hasEq = (spec: Spec, col: string, val: unknown) =>
-  spec.filters.some((f) => f.kind === "eq" && f.col === col && f.val === val);
-
 afterEach(() => {
   vi.clearAllMocks();
   hoisted.adminClient = null;
 });
 
 describe("respondToCoAuthorInvitation", () => {
-  const baseInvite = {
-    id: "inv1",
-    user_id: "u1",
-    status: "pending",
-    project_id: "c1",
-  };
-  const draftContent = {
-    id: "c1",
-    title: "Shared project",
-    slug: "shared-project",
-    status: "draft",
-    publish_on_confirm: true,
-    owner_id: "owner1",
-  };
-
-  function handlerFor(opts: {
-    invite?: Record<string, unknown> | null;
-    content?: Record<string, unknown> | null;
-    pendingCount?: number;
-    accepted?: Array<{ user_id: string }>;
-  }) {
-    return (spec: Spec): Result => {
-      if (spec.table === "project_authors") {
-        if (spec.op === "select" && spec.single) {
-          return { data: opts.invite ?? baseInvite };
-        }
-        if (spec.op === "select" && spec.count && spec.head) {
-          return { count: opts.pendingCount ?? 0 };
-        }
-        if (spec.op === "select" && hasEq(spec, "status", "accepted")) {
-          return { data: opts.accepted ?? [{ user_id: "u1" }] };
-        }
-        return { error: null }; // update / delete
-      }
-      if (spec.table === "projects") {
-        if (spec.op === "select") return { data: opts.content ?? draftContent };
-        return { error: null }; // publish update
-      }
-      return {};
-    };
+  // The database answers in one call (respond_co_author_invite); this checks
+  // what the code does with that answer: who is told, and the publish fan-out.
+  function rpcClient(row: Record<string, unknown> | null, error: unknown = null) {
+    const rpc = vi.fn(async () => ({ data: row, error }));
+    return { client: { rpc } as never, rpc };
   }
 
-  it("publishes a held draft when the last pending invite is accepted", async () => {
-    const client = createMockClient(handlerFor({ pendingCount: 0 }));
-    hoisted.adminClient = client;
+  const answer = {
+    ok: true,
+    contentId: "c1",
+    ownerId: "owner1",
+    title: "Shared project",
+    slug: "shared-project",
+  };
 
-    const result = await respondToCoAuthorInvitation({
-      contentType: "project",
-      invitationId: "inv1",
-      userId: "u1",
-      accept: true,
-    });
-
-    expect(result).toEqual({ ok: true, status: "accepted", published: true });
-
-    // The content was flipped to published.
-    const publishUpdate = client.calls.find(
-      (c) => c.table === "projects" && c.op === "update",
-    );
-    expect(publishUpdate?.payload).toMatchObject({ status: "published" });
-
-    // Creator notified of acceptance + co-authors notified of publish.
-    const types = hoisted.createNotifications.mock.calls.flatMap((call) => {
+  function notificationTypes() {
+    return hoisted.createNotifications.mock.calls.flatMap((call) => {
       const input = (call as unknown[])[1];
-      return (Array.isArray(input) ? input : [input]).map(
-        (n) => (n as { type: string }).type,
-      );
+      return (Array.isArray(input) ? input : [input]).map((n) => (n as { type: string }).type);
     });
-    expect(types).toContain("co_author_accepted");
-    expect(types).toContain("co_author_published");
-    expect(hoisted.dispatchPublishSideEffects).toHaveBeenCalledOnce();
-  });
+  }
 
-  it("does not publish while other invites are still pending", async () => {
-    const client = createMockClient(handlerFor({ pendingCount: 2 }));
-    hoisted.adminClient = client;
+  it("passes the answer to the database and tells the creator", async () => {
+    const { client, rpc } = rpcClient({ ...answer, status: "accepted", published: false });
+    hoisted.adminClient = createMockClient(() => ({ data: [] }));
 
     const result = await respondToCoAuthorInvitation({
+      supabase: client,
       contentType: "project",
       invitationId: "inv1",
       userId: "u1",
       accept: true,
     });
 
-    expect(result.published).toBe(false);
-    expect(
-      client.calls.some((c) => c.table === "projects" && c.op === "update"),
-    ).toBe(false);
+    expect(rpc).toHaveBeenCalledWith("respond_co_author_invite", {
+      p_content_type: "project",
+      p_invitation_id: "inv1",
+      p_accept: true,
+    });
+    expect(result).toEqual({ ok: true, status: "accepted", published: false });
+    expect(notificationTypes()).toEqual(["co_author_accepted"]);
     expect(hoisted.dispatchPublishSideEffects).not.toHaveBeenCalled();
   });
 
-  it("rejects a response from a user who does not own the invitation", async () => {
-    const client = createMockClient(
-      handlerFor({ invite: { ...baseInvite, user_id: "someone-else" } }),
+  it("fans out once the database published the held draft", async () => {
+    const { client } = rpcClient({ ...answer, status: "declined", published: true });
+    hoisted.adminClient = createMockClient((spec) =>
+      spec.table === "project_authors" ? { data: [{ user_id: "u2" }] } : {},
     );
-    hoisted.adminClient = client;
 
     const result = await respondToCoAuthorInvitation({
+      supabase: client,
+      contentType: "project",
+      invitationId: "inv1",
+      userId: "u1",
+      accept: false,
+    });
+
+    expect(result).toEqual({ ok: true, status: "declined", published: true });
+    expect(notificationTypes()).toEqual(["co_author_declined", "co_author_published"]);
+    expect(hoisted.dispatchPublishSideEffects).toHaveBeenCalledOnce();
+  });
+
+  it("does nothing when the invitation is not the caller's or not pending", async () => {
+    const { client } = rpcClient({ ok: false });
+    hoisted.adminClient = createMockClient(() => ({}));
+
+    const result = await respondToCoAuthorInvitation({
+      supabase: client,
       contentType: "project",
       invitationId: "inv1",
       userId: "u1",
@@ -225,134 +193,60 @@ describe("respondToCoAuthorInvitation", () => {
     });
 
     expect(result).toEqual({ ok: false, status: null, published: false });
-    // No mutation happened.
-    expect(client.calls.some((c) => c.op === "update")).toBe(false);
     expect(hoisted.createNotifications).not.toHaveBeenCalled();
   });
 
-  it("ignores an invitation that is no longer pending", async () => {
-    const client = createMockClient(
-      handlerFor({ invite: { ...baseInvite, status: "accepted" } }),
-    );
-    hoisted.adminClient = client;
+  it("reports a database error as not handled", async () => {
+    const { client } = rpcClient(null, { message: "boom" });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const result = await respondToCoAuthorInvitation({
-      contentType: "project",
+      supabase: client,
+      contentType: "poll",
       invitationId: "inv1",
       userId: "u1",
       accept: true,
     });
 
     expect(result.ok).toBe(false);
-  });
-
-  it("declining the last pending invite still publishes (without the decliner)", async () => {
-    const client = createMockClient(handlerFor({ pendingCount: 0 }));
-    hoisted.adminClient = client;
-
-    const result = await respondToCoAuthorInvitation({
-      contentType: "project",
-      invitationId: "inv1",
-      userId: "u1",
-      accept: false,
-    });
-
-    expect(result.status).toBe("declined");
-    expect(result.published).toBe(true);
-    const publishUpdate = client.calls.find(
-      (c) => c.table === "projects" && c.op === "update",
-    );
-    expect(publishUpdate?.payload).toMatchObject({ status: "published" });
-
-    const types = hoisted.createNotifications.mock.calls.flatMap((call) => {
-      const input = (call as unknown[])[1];
-      return (Array.isArray(input) ? input : [input]).map(
-        (n) => (n as { type: string }).type,
-      );
-    });
-    expect(types).toContain("co_author_declined");
-  });
-
-  it("declining while other invites are still pending does not publish", async () => {
-    const client = createMockClient(handlerFor({ pendingCount: 1 }));
-    hoisted.adminClient = client;
-
-    const result = await respondToCoAuthorInvitation({
-      contentType: "project",
-      invitationId: "inv1",
-      userId: "u1",
-      accept: false,
-    });
-
-    expect(result.status).toBe("declined");
-    expect(result.published).toBe(false);
-    expect(
-      client.calls.some((c) => c.table === "projects" && c.op === "update"),
-    ).toBe(false);
+    spy.mockRestore();
   });
 });
 
 describe("syncCoAuthors", () => {
-  it("removes dropped co-authors and invites newly added ones", async () => {
-    const client = createMockClient((spec): Result => {
-      if (spec.table === "project_authors" && spec.op === "select") {
-        return {
-          data: [
-            { id: "r1", user_id: "keep" },
-            { id: "r2", user_id: "drop" },
-          ],
-        };
-      }
-      if (spec.table === "profiles") {
-        return {
-          data: [
-            { user_id: "new", username: "newbie", name: "New", avatar_url: null },
-          ],
-        };
-      }
-      if (spec.table === "project_authors" && spec.op === "insert") {
-        return { data: [{ id: "r3", user_id: "new" }] };
-      }
-      return { error: null };
-    });
-    hoisted.adminClient = {}; // truthy so inviteCoAuthors attempts notifications
+  it("syncs in one database call and notifies only the new invitations", async () => {
+    const rpc = vi.fn(async () => ({ data: [{ id: "r3", userId: "new" }], error: null }));
+    hoisted.adminClient = {};
 
-    await syncCoAuthors({
-      supabase: client as never,
+    const invited = await syncCoAuthors({
+      supabase: { rpc } as never,
       contentType: "project",
       contentId: "c1",
       contentTitle: "Shared",
       contentSlug: "shared",
       creatorUserId: "creator",
-      desiredUserIds: ["keep", "new"],
+      desiredUserIds: ["keep", "new", "creator", "new"],
     });
 
-    // Removed only the dropped row.
-    const del = client.calls.find((c) => c.op === "delete");
-    expect(del).toBeDefined();
-    const inFilter = del?.filters.find((f) => f.kind === "in" && f.col === "id");
-    expect(inFilter?.val).toEqual(["r2"]);
-
-    // Inserted a pending row for the new co-author.
-    const insert = client.calls.find((c) => c.op === "insert");
-    expect(insert).toBeDefined();
-    expect(insert?.payload).toEqual([
-      expect.objectContaining({ user_id: "new", invited_by: "creator", status: "pending" }),
+    expect(rpc).toHaveBeenCalledWith("sync_co_authors", {
+      p_content_type: "project",
+      p_content_id: "c1",
+      p_user_ids: ["keep", "new"],
+    });
+    expect(invited).toBe(1);
+    const [, notifications] = hoisted.createNotifications.mock.calls[0] as unknown as [unknown, Array<{ recipientUserId: string; type: string; metadata: { invitationId: string } }>];
+    expect(notifications).toEqual([
+      expect.objectContaining({ recipientUserId: "new", type: "co_author_invite", metadata: expect.objectContaining({ invitationId: "r3" }) }),
     ]);
   });
 
-  it("makes no changes when the desired set equals the current set", async () => {
-    const client = createMockClient((spec): Result => {
-      if (spec.table === "project_authors" && spec.op === "select") {
-        return { data: [{ id: "r1", user_id: "keep" }] };
-      }
-      return { error: null };
-    });
+  it("sends nothing when nobody new was invited", async () => {
+    const rpc = vi.fn(async () => ({ data: [], error: null }));
     hoisted.adminClient = {};
 
     await syncCoAuthors({
-      supabase: client as never,
-      contentType: "project",
+      supabase: { rpc } as never,
+      contentType: "poll",
       contentId: "c1",
       contentTitle: "Shared",
       contentSlug: "shared",
@@ -360,7 +254,6 @@ describe("syncCoAuthors", () => {
       desiredUserIds: ["keep"],
     });
 
-    expect(client.calls.some((c) => c.op === "delete")).toBe(false);
-    expect(client.calls.some((c) => c.op === "insert")).toBe(false);
+    expect(hoisted.createNotifications).not.toHaveBeenCalled();
   });
 });

@@ -26,12 +26,6 @@ const CONTENT_TABLE: Record<CoAuthorContentType, string> = {
   poll: "polls",
 };
 
-const OWNER_COLUMN: Record<CoAuthorContentType, string> = {
-  project: "owner_id",
-  article: "author_user_id",
-  poll: "author_user_id",
-};
-
 type ProfileLite = {
   user_id: string;
   username: string | null;
@@ -58,17 +52,61 @@ async function hydrateProfiles(
   return map;
 }
 
+/** A pending invitation `sync_co_authors` / `save_project` just created. */
+export type NewCoAuthorInvite = { id: string; userId: string };
+
+/** The `invited` list of a save function's result, checked. */
+export function parseNewCoAuthorInvites(value: unknown): NewCoAuthorInvite[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const row = item as { id?: unknown; userId?: unknown } | null;
+    return row && typeof row.id === "string" && typeof row.userId === "string"
+      ? [{ id: row.id, userId: row.userId }]
+      : [];
+  });
+}
+
 /**
- * Invites co-authors to a freshly created piece of content. Inserts pending
- * junction rows (RLS lets the creator do this) and fires `co_author_invite`
- * notifications via the service-role client.
- *
- * Returns the number of valid invitations actually created. Invalid ids
- * (non-existent profiles, the creator, duplicates) are silently dropped — the
- * caller is expected to have sanitized with `sanitizeCoAuthorIds` first.
- *
- * Fire-and-forget for notifications: a notification failure is logged, never
- * thrown, so it cannot break content creation.
+ * `co_author_invite` notifications for invitations the database just created,
+ * through the service-role client. A failure is logged, never thrown: the
+ * work is already saved.
+ */
+export async function notifyCoAuthorInvites(params: {
+  contentType: CoAuthorContentType;
+  contentId: string;
+  contentTitle: string;
+  contentSlug: string;
+  creatorUserId: string;
+  invited: NewCoAuthorInvite[];
+}): Promise<void> {
+  const { contentType, contentId, contentTitle, contentSlug, creatorUserId, invited } = params;
+  if (invited.length === 0) return;
+
+  const admin = createAdminClient();
+  if (!admin) return;
+
+  await createNotifications(
+    admin,
+    invited.map((row) => ({
+      recipientUserId: row.userId,
+      actorUserId: creatorUserId,
+      type: "co_author_invite" as const,
+      targetType: contentType,
+      targetId: contentId,
+      metadata: {
+        invitationId: row.id,
+        coAuthorContentType: contentType,
+        coAuthorContentSlug: contentSlug,
+        coAuthorContentTitle: contentTitle,
+      },
+    })),
+  );
+}
+
+/**
+ * Invites co-authors to a freshly created piece of content: pending rows in
+ * one database call (`sync_co_authors` — not the creator, real profiles only,
+ * at most 4), then the notifications. Returns how many were invited.
  */
 export async function inviteCoAuthors(params: {
   supabase: SupabaseClient;
@@ -79,67 +117,9 @@ export async function inviteCoAuthors(params: {
   creatorUserId: string;
   coAuthorUserIds: string[];
 }): Promise<number> {
-  const {
-    supabase,
-    contentType,
-    contentId,
-    contentTitle,
-    contentSlug,
-    creatorUserId,
-    coAuthorUserIds,
-  } = params;
+  if (params.coAuthorUserIds.length === 0) return 0;
 
-  if (coAuthorUserIds.length === 0) return 0;
-
-  // Keep only ids that resolve to a real profile (and never the creator).
-  const profiles = await hydrateProfiles(supabase, coAuthorUserIds);
-  const validIds = coAuthorUserIds.filter(
-    (id) => id !== creatorUserId && profiles.has(id),
-  );
-  if (validIds.length === 0) return 0;
-
-  const table = CO_AUTHOR_TABLE[contentType];
-  const contentColumn = CO_AUTHOR_CONTENT_COLUMN[contentType];
-
-  const { data: inserted, error } = await supabase
-    .from(table)
-    .insert(
-      validIds.map((userId, index) => ({
-        [contentColumn]: contentId,
-        user_id: userId,
-        invited_by: creatorUserId,
-        status: "pending",
-        position: index,
-      })),
-    )
-    .select("id, user_id");
-
-  if (error || !inserted) {
-    console.error("[co-authors] invite insert failed", error);
-    return 0;
-  }
-
-  const admin = createAdminClient();
-  if (admin) {
-    await createNotifications(
-      admin,
-      (inserted as { id: string; user_id: string }[]).map((row) => ({
-        recipientUserId: row.user_id,
-        actorUserId: creatorUserId,
-        type: "co_author_invite" as const,
-        targetType: contentType,
-        targetId: contentId,
-        metadata: {
-          invitationId: row.id,
-          coAuthorContentType: contentType,
-          coAuthorContentSlug: contentSlug,
-          coAuthorContentTitle: contentTitle,
-        },
-      })),
-    );
-  }
-
-  return inserted.length;
+  return syncCoAuthors({ ...params, desiredUserIds: params.coAuthorUserIds });
 }
 
 type RespondResult = {
@@ -150,150 +130,92 @@ type RespondResult = {
   published: boolean;
 };
 
+type RespondRow = {
+  ok?: boolean;
+  status?: "accepted" | "declined";
+  published?: boolean;
+  contentId?: string;
+  ownerId?: string;
+  title?: string | null;
+  slug?: string | null;
+};
+
 /**
- * Accept or decline a co-author invitation. Runs entirely through the
- * service-role client after verifying the invitation belongs to `userId` and is
- * still pending — this lets a non-owner flip the content to published (the
- * publish-on-confirm flow) without granting them write RLS on the content.
+ * Accept or decline a co-author invitation. The database does the whole
+ * answer in one transaction (`respond_co_author_invite`): checks the
+ * invitation is the caller's and pending, records the answer, and — once no
+ * invite is left pending on a work held for its co-authors — publishes it,
+ * exactly once even when two people answer at the same moment. Whether the
+ * last answer was an accept or a decline, the work goes live with whoever
+ * accepted. The notifications follow here.
  */
 export async function respondToCoAuthorInvitation(params: {
+  supabase: SupabaseClient;
   contentType: CoAuthorContentType;
   invitationId: string;
   userId: string;
   accept: boolean;
 }): Promise<RespondResult> {
-  const { contentType, invitationId, userId, accept } = params;
-  const admin = createAdminClient();
-  if (!admin) return { ok: false, status: null, published: false };
+  const { supabase, contentType, invitationId, userId, accept } = params;
 
-  const table = CO_AUTHOR_TABLE[contentType];
-  const contentColumn = CO_AUTHOR_CONTENT_COLUMN[contentType];
-
-  const { data: invite } = await admin
-    .from(table)
-    .select(`id, user_id, status, ${contentColumn}`)
-    .eq("id", invitationId)
-    .maybeSingle();
-
-  // Dynamic `.select()` strings defeat the typed PostgREST parser, so we read
-  // these rows through `unknown` and access columns by name.
-  const inviteRow = invite as unknown as
-    | { user_id?: string; status?: string; [key: string]: unknown }
-    | null;
-
-  // Only the invited user can respond, and only while pending.
-  if (
-    !inviteRow ||
-    inviteRow.user_id !== userId ||
-    inviteRow.status !== "pending"
-  ) {
-    return { ok: false, status: null, published: false };
-  }
-
-  const contentId = inviteRow[contentColumn] as string;
-  const newStatus = accept ? "accepted" : "declined";
-
-  const { error: updateError } = await admin
-    .from(table)
-    .update({ status: newStatus, responded_at: new Date().toISOString() })
-    .eq("id", invitationId);
-
-  if (updateError) {
-    console.error("[co-authors] respond update failed", updateError);
-    return { ok: false, status: null, published: false };
-  }
-
-  const contentTable = CONTENT_TABLE[contentType];
-  const ownerColumn = OWNER_COLUMN[contentType];
-
-  const { data: content } = await admin
-    .from(contentTable)
-    .select(
-      `id, title, slug, status, publish_on_confirm, ${ownerColumn}`,
-    )
-    .eq("id", contentId)
-    .maybeSingle();
-
-  const contentRow = content as unknown as
-    | {
-        title?: string;
-        slug?: string;
-        status?: string;
-        publish_on_confirm?: boolean;
-        [key: string]: unknown;
-      }
-    | null;
-
-  if (!contentRow) return { ok: true, status: newStatus, published: false };
-
-  const ownerId = contentRow[ownerColumn] as string;
-  const contentTitle = contentRow.title ?? "";
-  const contentSlug = contentRow.slug ?? "";
-
-  // Always tell the creator how the invitee responded.
-  await createNotifications(admin, {
-    recipientUserId: ownerId,
-    actorUserId: userId,
-    type: accept ? "co_author_accepted" : "co_author_declined",
-    targetType: contentType,
-    targetId: contentId,
-    metadata: {
-      coAuthorContentType: contentType,
-      coAuthorContentSlug: contentSlug,
-      coAuthorContentTitle: contentTitle,
-    },
+  const { data, error } = await supabase.rpc("respond_co_author_invite", {
+    p_content_type: contentType,
+    p_invitation_id: invitationId,
+    p_accept: accept,
   });
 
-  // Publish-on-confirm: once no invite is left pending — whether the last one
-  // ACCEPTED or DECLINED — flip the held draft live with whoever accepted (the
-  // creator alone if everyone declined). This keeps a decline from stranding
-  // the draft forever; declined co-authors simply aren't attributed.
-  let published = false;
-  if (contentRow.publish_on_confirm && contentRow.status === "draft") {
-    const { count: pendingCount } = await admin
-      .from(table)
-      .select("id", { count: "exact", head: true })
-      .eq(contentColumn, contentId)
-      .eq("status", "pending");
+  const row = data as RespondRow | null;
 
-    if ((pendingCount ?? 0) === 0) {
-      const patch: Record<string, unknown> = {
-        status: "published",
-        publish_on_confirm: false,
-      };
-      if (contentType !== "project") {
-        patch.published_at = new Date().toISOString();
-      }
+  if (error || !row?.ok || !row.status || !row.contentId || !row.ownerId) {
+    if (error) console.error("[co-authors] respond failed", error);
+    return { ok: false, status: null, published: false };
+  }
 
-      const { error: publishError } = await admin
-        .from(contentTable)
-        .update(patch)
-        .eq("id", contentId)
-        .eq("status", "draft");
+  const contentId = row.contentId;
+  const ownerId = row.ownerId;
+  const contentTitle = row.title ?? "";
+  const contentSlug = row.slug ?? "";
+  const published = row.published === true;
+  const admin = createAdminClient();
 
-      if (!publishError) {
-        published = true;
-        void dispatchPublishSideEffects({
-          contentType,
-          contentId,
-          authorUserId: ownerId,
-          title: contentTitle,
-          articleSlug: contentType === "article" ? contentSlug : undefined,
-          pollSlug: contentType === "poll" ? contentSlug : undefined,
-        });
-        await notifyCoAuthorsPublished({
-          admin,
-          contentType,
-          contentId,
-          contentTitle,
-          contentSlug,
-          ownerId,
-        });
-      }
+  if (admin) {
+    // Always tell the creator how the invitee responded.
+    await createNotifications(admin, {
+      recipientUserId: ownerId,
+      actorUserId: userId,
+      type: accept ? "co_author_accepted" : "co_author_declined",
+      targetType: contentType,
+      targetId: contentId,
+      metadata: {
+        coAuthorContentType: contentType,
+        coAuthorContentSlug: contentSlug,
+        coAuthorContentTitle: contentTitle,
+      },
+    });
+  }
+
+  if (published) {
+    void dispatchPublishSideEffects({
+      contentType,
+      contentId,
+      authorUserId: ownerId,
+      title: contentTitle,
+      articleSlug: contentType === "article" ? contentSlug : undefined,
+      pollSlug: contentType === "poll" ? contentSlug : undefined,
+    });
+    if (admin) {
+      await notifyCoAuthorsPublished({
+        admin,
+        contentType,
+        contentId,
+        contentTitle,
+        contentSlug,
+        ownerId,
+      });
     }
   }
 
-  return { ok: true, status: newStatus, published };
+  return { ok: true, status: row.status, published };
 }
 
 async function notifyCoAuthorsPublished(params: {
@@ -455,11 +377,11 @@ export async function loadCoAuthorsForEditor(
 }
 
 /**
- * Reconciles a content's co-authors to `desiredUserIds` when editing: removes
- * dropped ones (any status) and invites newly added ones (pending + notify).
- * The owner must already own the content (RLS enforces insert/delete). Existing
- * accepted co-authors that remain are left untouched, so re-saving never
- * re-notifies or resets anyone.
+ * Reconciles a content's co-authors to `desiredUserIds`: removes dropped ones
+ * (any status) and invites newly added ones (pending + notify), in one
+ * database call (`sync_co_authors`). Co-authors that stay are left untouched,
+ * so re-saving never re-notifies or resets anyone. Returns how many were
+ * invited; a failure is logged, never thrown (the work itself is saved).
  */
 export async function syncCoAuthors(params: {
   supabase: SupabaseClient;
@@ -469,49 +391,23 @@ export async function syncCoAuthors(params: {
   contentSlug: string;
   creatorUserId: string;
   desiredUserIds: string[];
-}): Promise<void> {
-  const {
-    supabase,
-    contentType,
-    contentId,
-    contentTitle,
-    contentSlug,
-    creatorUserId,
-    desiredUserIds,
-  } = params;
+}): Promise<number> {
+  const { supabase, contentType, contentId, creatorUserId, desiredUserIds } = params;
 
-  const table = CO_AUTHOR_TABLE[contentType];
-  const contentColumn = CO_AUTHOR_CONTENT_COLUMN[contentType];
-  const desired = sanitizeCoAuthorIds(desiredUserIds, creatorUserId);
+  const { data, error } = await supabase.rpc("sync_co_authors", {
+    p_content_type: contentType,
+    p_content_id: contentId,
+    p_user_ids: sanitizeCoAuthorIds(desiredUserIds, creatorUserId),
+  });
 
-  const { data } = await supabase
-    .from(table)
-    .select("id, user_id")
-    .eq(contentColumn, contentId);
-
-  const current = (data ?? []) as unknown as { id: string; user_id: string }[];
-  const desiredSet = new Set(desired);
-  const currentIds = new Set(current.map((row) => row.user_id));
-
-  const removeIds = current
-    .filter((row) => !desiredSet.has(row.user_id))
-    .map((row) => row.id);
-  if (removeIds.length > 0) {
-    await supabase.from(table).delete().in("id", removeIds);
+  if (error) {
+    console.error("[co-authors] sync failed", error);
+    return 0;
   }
 
-  const addIds = desired.filter((id) => !currentIds.has(id));
-  if (addIds.length > 0) {
-    await inviteCoAuthors({
-      supabase,
-      contentType,
-      contentId,
-      contentTitle,
-      contentSlug,
-      creatorUserId,
-      coAuthorUserIds: addIds,
-    });
-  }
+  const invited = parseNewCoAuthorInvites(data);
+  await notifyCoAuthorInvites({ ...params, invited });
+  return invited.length;
 }
 
 /**

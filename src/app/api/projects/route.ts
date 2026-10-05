@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { generateUniqueProjectSlug } from "@/lib/projects";
-import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { createClient } from "@/lib/supabase/server";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { projectPayloadSchema } from "@/lib/validation/project";
@@ -9,7 +8,6 @@ import { getIntegrationForUser } from "@/lib/db/github-integrations";
 import { fetchRepoFullDetail } from "@/lib/integrations/github";
 import { mapRepoToProjectColumns } from "@/lib/db/github-sync";
 import { buildProjectSourceColumns } from "@/lib/db/provider-sync";
-import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import {
   CLEAN_MODERATION_RESULT,
@@ -19,9 +17,8 @@ import {
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { getRequestLocale } from "@/lib/i18n/server";
-import { inviteCoAuthors } from "@/lib/db/co-authors";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
-import { saveProjectBudget, syncProjectCompanies } from "@/lib/db/project-companies";
+import { buildProjectRow, notifyProjectSaved, saveProject } from "@/lib/db/save-project";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -109,109 +106,34 @@ export async function POST(request: Request) {
       )) ?? {};
   }
 
-  const { data: project, error } = await supabase
-    .from("projects")
-    .insert({
-      owner_id: user.id,
-      title: payload.title,
+  // The project, its skills, budget, co-authors and company pages in one
+  // transaction: a failure leaves nothing half-made behind. A flagged project
+  // gets no co-authors or company pages — there is nothing to share yet.
+  const { project, error } = await saveProject(supabase, {
+    id: null,
+    row: {
+      ...buildProjectRow(payload),
       slug: uniqueSlug,
-      description: payload.description
-        ? sanitizeRichTextHtml(payload.description)
-        : payload.description,
-      role: payload.role,
-      kind: payload.kind,
-      kind_metadata: normalizeProjectKindMetadata(
-        payload.kind,
-        payload.kindMetadata,
-      ),
-      project_status: payload.projectStatus,
-      team_size: payload.teamSize,
-      project_url: payload.projectUrl,
-      repository_url: payload.repositoryUrl,
-      started_on: payload.startedOn,
-      completed_on: payload.completedOn,
-      problem: payload.problem,
-      solution: payload.solution,
-      results: payload.results,
-      github_role: payload.githubRole,
-      github_contribution: payload.githubContribution,
-      github_motivation: payload.githubMotivation,
-      github_tech_decisions: payload.githubTechDecisions,
-      github_learnings: payload.githubLearnings,
-      github_showcase_notes: payload.githubShowcaseNotes,
-      github_production_usage: payload.githubProductionUsage,
-      github_display_options: payload.githubDisplayOptions ?? undefined,
-      github_auto_sync: payload.githubAutoSync,
-      allow_downloads: payload.allowDownloads,
-      origin: payload.origin,
-      client_name: payload.clientName,
-      client_nda: payload.clientNda,
       status: holdForCoAuthors ? "draft" : payload.status,
       publish_on_confirm: holdForCoAuthors,
       ...githubColumns,
       ...sourceColumns,
-    })
-    .select("id, slug, status")
-    .single();
+    },
+    skillIds: payload.skillIds,
+    budget: payload.budget,
+    coAuthorIds: screen.flagged ? [] : coAuthorIds,
+    companyIds: screen.flagged ? [] : payload.companyIds,
+  });
 
-  if (error || !project) {
-    return NextResponse.json(
-      { error: error?.message || "Could not create project" },
-      { status: 400 },
-    );
+  if (!project) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
   if (screen.flagged) {
     await autoRemoveContent({ table: "projects", id: project.id, note: screen.note });
   }
 
-  if (payload.skillIds.length > 0) {
-    const { error: skillError } = await supabase.from("project_skills").insert(
-      payload.skillIds.map((skillId) => ({
-        project_id: project.id,
-        skill_id: skillId,
-      })),
-    );
-
-    if (skillError) {
-      await supabase.from("projects").delete().eq("id", project.id);
-
-      return NextResponse.json(
-        { error: skillError.message },
-        { status: 400 },
-      );
-    }
-  }
-
-  // Invite co-authors (pending until they accept). Skip when the project was
-  // flagged and auto-removed — there is nothing to collaborate on yet.
-  if (coAuthorIds.length > 0 && !screen.flagged) {
-    await inviteCoAuthors({
-      supabase,
-      contentType: "project",
-      contentId: project.id,
-      contentTitle: payload.title,
-      contentSlug: project.slug,
-      creatorUserId: user.id,
-      coAuthorUserIds: coAuthorIds,
-    });
-  }
-
-  // The budget sits in the owner-only table; company pages are linked or asked
-  // for. Neither may undo the project that is already saved.
-  if (payload.budget) {
-    await saveProjectBudget(supabase, project.id, payload.budget);
-  }
-
-  if (payload.companyIds.length > 0 && !screen.flagged) {
-    await syncProjectCompanies({
-      supabase,
-      projectId: project.id,
-      userId: user.id,
-      desiredCompanyIds: payload.companyIds,
-      published: project.status === "published",
-    });
-  }
+  await notifyProjectSaved({ project, title: payload.title, creatorUserId: user.id });
 
   // Notify followers only when the project is actually public (published AND
   // not auto-removed). A draft held for co-authors notifies on auto-publish.

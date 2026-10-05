@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { generateUniqueProjectSlug } from "@/lib/projects";
-import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { createClient } from "@/lib/supabase/server";
 import { projectPayloadSchema, routeProjectIdSchema } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
-import { normalizeProjectKindMetadata } from "@/lib/project-kind-metadata";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildProjectSourceColumns } from "@/lib/db/provider-sync";
@@ -17,8 +15,8 @@ import {
 } from "@/lib/auto-moderation";
 import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { getRequestLocale } from "@/lib/i18n/server";
-import { syncCoAuthors } from "@/lib/db/co-authors";
-import { saveProjectBudget, syncProjectCompanies } from "@/lib/db/project-companies";
+import { sanitizeCoAuthorIds } from "@/lib/co-authors";
+import { buildProjectRow, notifyProjectSaved, saveProject } from "@/lib/db/save-project";
 
 export async function PATCH(
   request: Request,
@@ -103,55 +101,25 @@ export async function PATCH(
         )) ?? { source_integration: null });
   }
 
-  const { data: updatedProject, error: projectError } = await supabase
-    .from("projects")
-    .update({
-      title: payload.title,
+  // Row, skills, co-authors, budget (removed when the form sends none) and
+  // company pages in one transaction. Company pages wait while an
+  // auto-removed edit has nothing to show.
+  const { project: updatedProject, error: projectError } = await saveProject(supabase, {
+    id: project.id,
+    row: {
+      ...buildProjectRow(payload),
       slug: nextSlug,
-      description: payload.description
-        ? sanitizeRichTextHtml(payload.description)
-        : payload.description,
-      role: payload.role,
-      kind: payload.kind,
-      kind_metadata: normalizeProjectKindMetadata(
-        payload.kind,
-        payload.kindMetadata,
-      ),
-      project_status: payload.projectStatus,
-      team_size: payload.teamSize,
-      project_url: payload.projectUrl,
-      repository_url: payload.repositoryUrl,
-      started_on: payload.startedOn,
-      completed_on: payload.completedOn,
-      problem: payload.problem,
-      solution: payload.solution,
-      results: payload.results,
       status: payload.status,
-      github_role: payload.githubRole,
-      github_contribution: payload.githubContribution,
-      github_motivation: payload.githubMotivation,
-      github_tech_decisions: payload.githubTechDecisions,
-      github_learnings: payload.githubLearnings,
-      github_showcase_notes: payload.githubShowcaseNotes,
-      github_production_usage: payload.githubProductionUsage,
-      github_display_options: payload.githubDisplayOptions ?? undefined,
-      github_auto_sync: payload.githubAutoSync,
-      allow_downloads: payload.allowDownloads,
-      origin: payload.origin,
-      client_name: payload.clientName,
-      client_nda: payload.clientNda,
       ...sourceColumns,
-    })
-    .eq("id", project.id)
-    .eq("owner_id", user.id)
-    .select("slug, status")
-    .single();
+    },
+    skillIds: payload.skillIds,
+    budget: payload.budget,
+    coAuthorIds: sanitizeCoAuthorIds(payload.coAuthorUserIds, user.id),
+    companyIds: willRemove ? null : payload.companyIds,
+  });
 
-  if (projectError || !updatedProject) {
-    return NextResponse.json(
-      { error: projectError?.message || "Could not update project" },
-      { status: 400 },
-    );
+  if (!updatedProject) {
+    return NextResponse.json({ error: projectError.message }, { status: 400 });
   }
 
   if (willRemove) {
@@ -162,57 +130,7 @@ export async function PATCH(
     });
   }
 
-  const { error: deleteSkillsError } = await supabase
-    .from("project_skills")
-    .delete()
-    .eq("project_id", project.id);
-
-  if (deleteSkillsError) {
-    return NextResponse.json(
-      { error: deleteSkillsError.message },
-      { status: 400 },
-    );
-  }
-
-  if (payload.skillIds.length > 0) {
-    const { error: skillError } = await supabase.from("project_skills").insert(
-      payload.skillIds.map((skillId) => ({
-        project_id: project.id,
-        skill_id: skillId,
-      })),
-    );
-
-    if (skillError) {
-      return NextResponse.json(
-        { error: skillError.message },
-        { status: 400 },
-      );
-    }
-  }
-
-  // Reconcile co-authors: add newly invited (pending + notify), drop removed.
-  await syncCoAuthors({
-    supabase,
-    contentType: "project",
-    contentId: project.id,
-    contentTitle: payload.title,
-    contentSlug: updatedProject.slug,
-    creatorUserId: user.id,
-    desiredUserIds: payload.coAuthorUserIds,
-  });
-
-  // The budget follows the form (removed when the form sends none); company
-  // pages too, except while an auto-removed edit has nothing to show.
-  await saveProjectBudget(supabase, project.id, payload.budget);
-  if (!willRemove) {
-    await syncProjectCompanies({
-      supabase,
-      projectId: project.id,
-      userId: user.id,
-      desiredCompanyIds: payload.companyIds,
-      published: updatedProject.status === "published",
-    });
-  }
+  await notifyProjectSaved({ project: updatedProject, title: payload.title, creatorUserId: user.id });
 
   // First publish (draft -> published) notifies the owner's followers. The
   // followers_notified_at guard keeps re-publishes and later edits silent.

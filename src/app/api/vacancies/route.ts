@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCompanyRole } from "@/lib/db/companies";
-import { setVacancySkills, vacancyPayloadToRow } from "@/lib/db/vacancies";
+import { saveVacancy, vacancyPayloadToRow } from "@/lib/db/vacancies";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { buildVacancySlug } from "@/lib/vacancies";
@@ -70,43 +70,35 @@ export async function POST(request: Request) {
     }
   }
 
+  // The author is the caller; save_vacancy sets it.
   const row = {
     ...vacancyPayloadToRow(payload, description.html),
     company_id: payload.company_id,
-    author_user_id: context.user.id,
     status: payload.status,
   };
 
-  // The address is the title plus a random tail; a clash only means another
-  // roll.
-  let result = await context.supabase
-    .from("vacancies")
-    .insert({ ...row, slug: buildVacancySlug(payload.title) })
-    .select("id, slug, status, moderation_status")
-    .single();
+  // The vacancy and its skills in one transaction. The address is the title
+  // plus a random tail; a clash only means another roll.
+  let result = await saveVacancy(
+    context.supabase,
+    null,
+    { ...row, slug: buildVacancySlug(payload.title) },
+    payload.skill_ids,
+  );
 
   if (result.error?.code === "23505") {
-    result = await context.supabase
-      .from("vacancies")
-      .insert({ ...row, slug: buildVacancySlug(payload.title) })
-      .select("id, slug, status, moderation_status")
-      .single();
+    result = await saveVacancy(
+      context.supabase,
+      null,
+      { ...row, slug: buildVacancySlug(payload.title) },
+      payload.skill_ids,
+    );
   }
 
-  const { data, error } = result;
+  const { vacancy, error } = result;
 
-  if (error || !data) {
+  if (!vacancy) {
     return vacancyWriteErrorResponse(error, "Could not create the vacancy");
-  }
-
-  const vacancy = data as { id: string; slug: string; status: string; moderation_status: string };
-  const skillsError = await setVacancySkills(context.supabase, vacancy.id, payload.skill_ids);
-
-  if (skillsError) {
-    // A vacancy without the skills it was saved with is not what the author
-    // wrote; take it back rather than leave half of it.
-    await context.supabase.from("vacancies").delete().eq("id", vacancy.id);
-    return vacancyWriteErrorResponse(skillsError, "Could not save the skills");
   }
 
   const heldForReview =

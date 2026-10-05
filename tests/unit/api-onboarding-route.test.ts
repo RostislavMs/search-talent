@@ -25,9 +25,17 @@ function nextUser(): NonNullable<MockUser> {
   return { id: `44444444-4444-4444-8444-${String(userCounter).padStart(12, "0")}` };
 }
 
+const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => ({ data: { profileId: "p1" } }));
+
 function setMock(user: MockUser, resolve: (call: QueryCall) => QueryResult = () => ({})) {
-  holder.mock = createSupabaseMock({ user, resolve });
+  holder.mock = createSupabaseMock({ user, resolve, rpc });
   return holder.mock;
+}
+
+/** What the step sent to save_my_profile. */
+function sent() {
+  expect(rpc.mock.calls[0]?.[0]).toBe("save_my_profile");
+  return (rpc.mock.calls[0]?.[1] as { p: { profile: Record<string, unknown>; skills: number[] } }).p;
 }
 
 function jsonRequest(method: string, body: unknown) {
@@ -75,50 +83,50 @@ describe("PATCH /api/onboarding", () => {
   });
 
   it("409 when the nick is taken", async () => {
-    setMock(nextUser(), (call) => {
-      if (call.table === "profiles" && call.verb === "select") return { data: { id: "p1" } };
-      if (call.table === "profiles" && call.verb === "update") {
-        return { error: { message: 'duplicate key value violates unique constraint "profiles_username_key"' } };
-      }
-      return {};
-    });
+    setMock(nextUser(), (call) =>
+      call.table === "profiles" && call.verb === "select" ? { data: { id: "p1" } } : {},
+    );
+    rpc.mockReturnValueOnce({ error: { code: "23505", message: "username_taken" } });
     const response = await PATCH(jsonRequest("PATCH", validProfile));
     expect(response.status).toBe(409);
     expect((await response.json()).code).toBe("username_taken");
   });
 
-  it("saves only the step's fields and replaces the skills", async () => {
-    const mock = setMock(nextUser(), (call) =>
+  it("saves only the step's fields and the skills in one call", async () => {
+    setMock(nextUser(), (call) =>
       call.table === "profiles" && call.verb === "select" ? { data: { id: "p1" } } : {},
     );
     const response = await PATCH(jsonRequest("PATCH", validProfile));
     expect(response.status).toBe(200);
     expect((await response.json()).username).toBe("olena.koval");
 
-    const update = mock.calls.find((call) => call.table === "profiles" && call.verb === "update");
-    expect(update?.payload).toEqual({ name: "Olena Koval", username: "olena.koval", category_id: 5 });
-
-    const skillCalls = mock.calls.filter((call) => call.table === "profile_skills");
-    expect(skillCalls.map((call) => call.verb)).toEqual(["delete", "insert"]);
-    expect(skillCalls[1].payload).toEqual([
-      { profile_id: "p1", skill_id: 3 },
-      { profile_id: "p1", skill_id: 7 },
-    ]);
+    expect(sent()).toEqual({
+      profile: { name: "Olena Koval", username: "olena.koval", category_id: 5 },
+      skills: [3, 7],
+    });
   });
 
-  it("clears the skills without inserting when none are picked", async () => {
-    const mock = setMock(nextUser(), (call) =>
+  it("clears the skills when none are picked", async () => {
+    setMock(nextUser(), (call) =>
       call.table === "profiles" && call.verb === "select" ? { data: { id: "p1" } } : {},
     );
     const response = await PATCH(jsonRequest("PATCH", { ...validProfile, skill_ids: [] }));
     expect(response.status).toBe(200);
-    expect(
-      mock.calls.filter((call) => call.table === "profile_skills").map((call) => call.verb),
-    ).toEqual(["delete"]);
+    expect(sent().skills).toEqual([]);
+  });
+
+  it("400 when the save fails for another reason", async () => {
+    setMock(nextUser(), (call) =>
+      call.table === "profiles" && call.verb === "select" ? { data: { id: "p1" } } : {},
+    );
+    rpc.mockReturnValueOnce({ error: { code: "23503", message: "skill missing" } });
+    const response = await PATCH(jsonRequest("PATCH", validProfile));
+    expect(response.status).toBe(400);
+    expect((await response.json()).code).toBe("save_failed");
   });
 
   it("puts a picked template on the profile, with its theme on the site look", async () => {
-    const mock = setMock(nextUser(), (call) =>
+    setMock(nextUser(), (call) =>
       call.table === "profiles" && call.verb === "select"
         ? { data: { id: "p1", profile_visibility: { about: false, presentation: { textScale: "lg" } } } }
         : {},
@@ -126,9 +134,7 @@ describe("PATCH /api/onboarding", () => {
     const response = await PATCH(jsonRequest("PATCH", { ...validProfile, template: "gallery" }));
     expect(response.status).toBe(200);
 
-    const update = mock.calls.find((call) => call.table === "profiles" && call.verb === "update");
-    const payload = update?.payload as { profile_visibility: ProfileSettings };
-    const settings = payload.profile_visibility;
+    const settings = sent().profile.profile_visibility as ProfileSettings;
     expect(getActiveProfileTemplateId(settings.presentation)).toBe("gallery");
     expect(getActiveProfileThemeId(settings.presentation)).toBe("mono");
     // The rest of the settings stay as they were.
@@ -137,16 +143,14 @@ describe("PATCH /api/onboarding", () => {
   });
 
   it("keeps the author's own colours when applying a template", async () => {
-    const mock = setMock(nextUser(), (call) =>
+    setMock(nextUser(), (call) =>
       call.table === "profiles" && call.verb === "select"
         ? { data: { id: "p1", profile_visibility: { presentation: { accentColor: "#123456" } } } }
         : {},
     );
     await PATCH(jsonRequest("PATCH", { ...validProfile, template: "resume" }));
 
-    const update = mock.calls.find((call) => call.table === "profiles" && call.verb === "update");
-    const presentation = (update?.payload as { profile_visibility: ProfileSettings })
-      .profile_visibility.presentation;
+    const presentation = (sent().profile.profile_visibility as ProfileSettings).presentation;
     expect(getActiveProfileTemplateId(presentation)).toBe("resume");
     expect(presentation.accentColor).toBe("#123456");
   });
