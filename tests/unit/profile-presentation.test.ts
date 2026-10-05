@@ -5,6 +5,7 @@ import {
   createDefaultProfileSettings,
   createDefaultViewerPreferences,
   getProfileFontStack,
+  getProfileItemsGridClass,
   getProfileSectionCardStyle,
   getProfileTextScale,
   isDefaultProfileTheme,
@@ -12,6 +13,8 @@ import {
   normalizeProfileSettings,
   normalizeSectionOrder,
   normalizeViewerPreferences,
+  pickProfileProjects,
+  PROFILE_PROJECTS_GRID_LIMIT,
   profileSectionIds,
   withAlpha,
 } from "@/lib/profile-presentation";
@@ -255,10 +258,33 @@ describe("normalizeProfilePresentation", () => {
 });
 
 describe("normalizeSectionOrder", () => {
+  const defaultOrder = createDefaultProfilePresentation().sectionOrder;
+
+  it("puts projects first in the default order", () => {
+    expect(defaultOrder[0]).toBe("projects");
+    expect([...defaultOrder].sort()).toEqual([...profileSectionIds].sort());
+  });
+
   it("returns default order for non-array input", () => {
-    expect(normalizeSectionOrder(null)).toEqual([...profileSectionIds]);
-    expect(normalizeSectionOrder("string")).toEqual([...profileSectionIds]);
-    expect(normalizeSectionOrder(42)).toEqual([...profileSectionIds]);
+    expect(normalizeSectionOrder(null)).toEqual(defaultOrder);
+    expect(normalizeSectionOrder("string")).toEqual(defaultOrder);
+    expect(normalizeSectionOrder(42)).toEqual(defaultOrder);
+  });
+
+  it("moves an untouched old default order to the new one", () => {
+    // Saved by the editor before 05.10 without the author moving any block.
+    expect(normalizeSectionOrder([...profileSectionIds])).toEqual(defaultOrder);
+  });
+
+  it("keeps an order the author chose", () => {
+    const custom = [...profileSectionIds].reverse();
+    expect(normalizeSectionOrder(custom)).toEqual(custom);
+  });
+
+  it("returns a fresh array each time", () => {
+    const first = normalizeSectionOrder(null);
+    first.reverse();
+    expect(normalizeSectionOrder(null)).toEqual(defaultOrder);
   });
 
   it("preserves valid order and appends missing sections", () => {
@@ -543,5 +569,58 @@ describe("getProfileTextScale", () => {
     const scale = getProfileTextScale("lg");
     expect(scale.body).toBeGreaterThan(1);
     expect(scale.heading).toBeGreaterThan(1);
+  });
+});
+
+describe("pickProfileProjects", () => {
+  const project = (id: string, pinned = false) => ({ id, is_pinned: pinned });
+
+  it("features the first project when it is pinned and the block is wide", () => {
+    const projects = [project("p", true), project("a"), project("b")];
+
+    for (const size of ["full", "wide"] as const) {
+      const { featured, grid } = pickProfileProjects(projects, size);
+      expect(featured?.id).toBe("p");
+      expect(grid.map((item) => item.id)).toEqual(["a", "b"]);
+    }
+  });
+
+  it("features nothing without a pin", () => {
+    const { featured, grid } = pickProfileProjects([project("a"), project("b")], "full");
+    expect(featured).toBeNull();
+    expect(grid).toHaveLength(2);
+  });
+
+  it("keeps a pinned project in the grid when the block is narrow", () => {
+    for (const size of ["regular", "compact"] as const) {
+      const { featured, grid } = pickProfileProjects([project("p", true), project("a")], size);
+      expect(featured).toBeNull();
+      expect(grid.map((item) => item.id)).toEqual(["p", "a"]);
+    }
+  });
+
+  it("caps the grid, not counting the featured card", () => {
+    const many = [project("p", true), ...Array.from({ length: 10 }, (_, i) => project(`n${i}`))];
+    const { featured, grid } = pickProfileProjects(many, "full");
+    expect(featured?.id).toBe("p");
+    expect(grid).toHaveLength(PROFILE_PROJECTS_GRID_LIMIT);
+    expect(grid[0].id).toBe("n0");
+  });
+
+  it("handles an empty list", () => {
+    expect(pickProfileProjects([], "full")).toEqual({ featured: null, grid: [] });
+  });
+});
+
+describe("getProfileItemsGridClass", () => {
+  it("uses three columns only in a full-width block", () => {
+    expect(getProfileItemsGridClass("full")).toContain("xl:grid-cols-3");
+    for (const size of ["wide", "regular", "compact"] as const) {
+      expect(getProfileItemsGridClass(size)).not.toContain("grid-cols-3");
+    }
+  });
+
+  it("drops to one column on large screens in a compact block", () => {
+    expect(getProfileItemsGridClass("compact")).toContain("lg:grid-cols-1");
   });
 });

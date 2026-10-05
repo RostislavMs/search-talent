@@ -104,7 +104,28 @@ export type ProfileSettings = ProfileVisibility & {
   viewerPreferences: ViewerPreferences;
 };
 
-const defaultSectionOrder: ProfileSectionId[] = [...profileSectionIds];
+// The work comes first: a portfolio, not a CV. Pairs in the 12-column grid
+// (about 8 + contacts 4, details 6 + experience 6, skills 4 + education 8)
+// keep the rows full with the default sizes below.
+const defaultSectionOrder: ProfileSectionId[] = [
+  "projects",
+  "about",
+  "contacts",
+  "professionalDetails",
+  "workExperience",
+  "skills",
+  "education",
+  "certificates",
+  "languages",
+  "qa",
+  "articles",
+];
+
+// Until 05.10 the default was `profileSectionIds` as listed, with projects
+// near the bottom. The editor saves the whole order on every save, so an order
+// equal to that list means the author never moved a block — they get the new
+// default. Any other order is the author's choice and stays.
+const legacyDefaultSectionOrder: readonly ProfileSectionId[] = profileSectionIds;
 
 function getDefaultSectionSize(sectionId: ProfileSectionId): ProfileSectionSize {
   switch (sectionId) {
@@ -205,7 +226,7 @@ export function createDefaultProfilePresentation(): ProfilePresentation {
     overlayStrength: 48,
     cardStyle: "glass",
     heroAlignment: "left",
-    sectionOrder: defaultSectionOrder,
+    sectionOrder: [...defaultSectionOrder],
     sectionSizes: Object.fromEntries(
       profileSectionIds.map((sectionId) => [sectionId, getDefaultSectionSize(sectionId)]),
     ) as Record<ProfileSectionId, ProfileSectionSize>,
@@ -214,7 +235,7 @@ export function createDefaultProfilePresentation(): ProfilePresentation {
 
 export function normalizeSectionOrder(value: unknown): ProfileSectionId[] {
   if (!Array.isArray(value)) {
-    return defaultSectionOrder;
+    return [...defaultSectionOrder];
   }
 
   const collected: ProfileSectionId[] = [];
@@ -229,7 +250,14 @@ export function normalizeSectionOrder(value: unknown): ProfileSectionId[] {
     }
   }
 
-  for (const sectionId of profileSectionIds) {
+  if (
+    collected.length === legacyDefaultSectionOrder.length &&
+    collected.every((sectionId, index) => sectionId === legacyDefaultSectionOrder[index])
+  ) {
+    return [...defaultSectionOrder];
+  }
+
+  for (const sectionId of defaultSectionOrder) {
     if (!collected.includes(sectionId)) {
       collected.push(sectionId);
     }
@@ -609,5 +637,41 @@ export function getProfileTextScale(textScale: ProfileTextScale) {
         body: 1,
         heading: 1,
       };
+  }
+}
+
+/** Cards in the profile's projects grid, not counting the featured one. */
+export const PROFILE_PROJECTS_GRID_LIMIT = 6;
+/** Articles shown on the profile before "View all". */
+export const PROFILE_ARTICLES_LIMIT = 3;
+
+/**
+ * Splits the profile's projects (pinned first, then newest) into the featured
+ * card and the grid. The first project is featured only when the author pinned
+ * it and the block is wide enough for a two-column card.
+ */
+export function pickProfileProjects<T extends { is_pinned?: boolean | null }>(
+  projects: readonly T[],
+  size: ProfileSectionSize,
+): { featured: T | null; grid: T[] } {
+  const roomForFeatured = size === "full" || size === "wide";
+  const featured = roomForFeatured && projects[0]?.is_pinned ? projects[0] : null;
+  const rest = featured ? projects.slice(1) : projects;
+
+  return { featured, grid: rest.slice(0, PROFILE_PROJECTS_GRID_LIMIT) };
+}
+
+/** Grid columns for project and article cards, by the block's width. */
+export function getProfileItemsGridClass(size: ProfileSectionSize): string {
+  switch (size) {
+    case "full":
+      return "sm:grid-cols-2 xl:grid-cols-3";
+    case "wide":
+      return "sm:grid-cols-2";
+    case "regular":
+      return "sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2";
+    case "compact":
+    default:
+      return "sm:grid-cols-2 lg:grid-cols-1";
   }
 }

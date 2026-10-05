@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toPlainText } from "@/lib/plain-text";
+import { toPlainText, toPlainTextWithBreaks } from "@/lib/plain-text";
 
 describe("toPlainText", () => {
   it("returns an empty string for nullish input", () => {
@@ -35,5 +35,30 @@ describe("toPlainText", () => {
     expect(toPlainText("Just a normal description")).toBe(
       "Just a normal description",
     );
+  });
+});
+
+describe("toPlainTextWithBreaks", () => {
+  it("keeps the author's line breaks and paragraphs", () => {
+    expect(toPlainTextWithBreaks("First line\nSecond line\n\nNew paragraph")).toBe(
+      "First line\nSecond line\n\nNew paragraph",
+    );
+  });
+
+  it("turns paragraph tags and <br> into line breaks", () => {
+    expect(toPlainTextWithBreaks("<p>One</p><p>Two<br>Three</p>")).toBe("One\nTwo\nThree");
+  });
+
+  it("collapses runs of spaces and extra empty lines", () => {
+    expect(toPlainTextWithBreaks("a   b \r\n\r\n\r\n\r\n  c")).toBe("a b\n\nc");
+  });
+
+  it("leaves a lone < in the text alone", () => {
+    expect(toPlainTextWithBreaks("a < b")).toBe("a < b");
+  });
+
+  it("returns an empty string for empty input", () => {
+    expect(toPlainTextWithBreaks(null)).toBe("");
+    expect(toPlainTextWithBreaks("")).toBe("");
   });
 });

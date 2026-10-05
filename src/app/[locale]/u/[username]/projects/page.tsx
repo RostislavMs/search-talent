@@ -12,6 +12,7 @@ import {
   isPublicModerationStatus,
   normalizeModerationStatus,
 } from "@/lib/moderation";
+import { formatCount } from "@/lib/plural";
 import { buildProjectPath } from "@/lib/projects";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -345,8 +346,11 @@ async function renderPublicView({
               {displayName}
             </h1>
             <p className="mt-2 text-sm app-muted">
-              {dictionary.creatorProfile.publishedWork} — {result.totalCount}{" "}
-              {dictionary.common.projects.toLowerCase()}
+              {formatCount(
+                result.totalCount,
+                dictionary.common.projectCount,
+                dictionary.common.pluralLocale,
+              )}
             </p>
           </div>
 

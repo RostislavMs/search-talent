@@ -19,6 +19,7 @@ import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import AuthorList from "@/components/author-list";
 import CompanyLogo from "@/components/company-logo";
 import { ButtonLink } from "@/components/ui/Button";
+import { buttonStyles } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import ShareButton from "@/components/ui/share-button";
 import { buildCompanyPath } from "@/lib/companies";
@@ -50,7 +51,8 @@ import {
   toBcp47,
 } from "@/lib/seo";
 import { getProjectKindLabel, normalizeProjectKind } from "@/lib/projects";
-import { toPlainText } from "@/lib/plain-text";
+import { toPlainTextWithBreaks } from "@/lib/plain-text";
+import { formatScore } from "@/lib/plural";
 import {
   isAudioKindMetadataEmpty,
   isCodeKindMetadataEmpty,
@@ -479,14 +481,41 @@ export default async function PublicProjectPage({
               {project.title}
             </h1>
 
-            <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:mt-4 sm:text-base sm:leading-8">
-              {toPlainText(project.description) ||
+            <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-7 app-muted sm:mt-4 sm:text-base sm:leading-8">
+              {toPlainTextWithBreaks(project.description) ||
                 dictionary.projectPage.noDescription}
             </p>
 
+            {/* The live site and the code are what a visitor wants next, so
+                they sit by the description rather than at the end of Details. */}
+            {(project.project_url || project.repository_url) && (
+              <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
+                {project.project_url && (
+                  <a
+                    href={project.project_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={buttonStyles({ size: "sm" })}
+                  >
+                    {dictionary.projectPage.liveProject}
+                  </a>
+                )}
+                {project.repository_url && (
+                  <a
+                    href={project.repository_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={buttonStyles({ variant: "secondary", size: "sm" })}
+                  >
+                    {dictionary.projectPage.repository}
+                  </a>
+                )}
+              </div>
+            )}
+
             <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-6">
               <span className="inline-flex items-center font-display rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-on-soft">
-                {rating ?? voteSummary.score} {dictionary.common.scoreSuffix}
+                {formatScore(rating ?? voteSummary.score, dictionary.common)}
               </span>
               <BookmarkButton
                 targetType="project"
@@ -566,6 +595,45 @@ export default async function PublicProjectPage({
 
       <section className="mt-5 grid grid-cols-1 gap-5 sm:mt-8 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-5 sm:space-y-8">
+          {/* The work itself comes first, then the story, then the facts. An
+              empty gallery is left out: the cover above already stands in. */}
+          {media.length > 0 && (
+            <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
+              <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-2xl">
+                {dictionary.projectPage.gallery}
+              </h2>
+              <div className="mt-4 sm:mt-6">
+                <ProjectGallery
+                  media={media}
+                  allowDownloads={project.allow_downloads !== false || isOwner}
+                />
+              </div>
+            </section>
+          )}
+
+          {(project.problem || project.solution || project.results) && (
+            <section className={`grid gap-4 ${storyGridCols}`}>
+              {(
+                [
+                  [dictionary.projectPage.problem, project.problem],
+                  [dictionary.projectPage.solution, project.solution],
+                  [dictionary.projectPage.results, project.results],
+                ] as const
+              ).map(([heading, text]) =>
+                text ? (
+                  <article key={heading} className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
+                    <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)] sm:text-xl">
+                      {heading}
+                    </h2>
+                    <p className="mt-3 whitespace-pre-line text-sm leading-7 app-muted sm:mt-4">
+                      {toPlainTextWithBreaks(text)}
+                    </p>
+                  </article>
+                ) : null,
+              )}
+            </section>
+          )}
+
           <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
             <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.projectPage.details}
@@ -610,7 +678,8 @@ export default async function PublicProjectPage({
                   )}
                 />
               )}
-              {typeof project.team_size === "number" && (
+              {/* A team of one is the default, not a fact worth a tile. */}
+              {typeof project.team_size === "number" && project.team_size > 1 && (
                 <DetailCard
                   label={dictionary.projectPage.teamSize}
                   value={String(project.team_size)}
@@ -711,71 +780,6 @@ export default async function PublicProjectPage({
               />
             ) : null}
 
-            {(project.project_url || project.repository_url) && (
-              <div className="mt-6 flex flex-wrap gap-3">
-                {project.project_url && (
-                  <a
-                    href={project.project_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full border app-border px-4 py-2 text-sm font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
-                  >
-                    {dictionary.projectPage.liveProject}
-                  </a>
-                )}
-                {project.repository_url && (
-                  <a
-                    href={project.repository_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full border app-border px-4 py-2 text-sm font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]"
-                  >
-                    {dictionary.projectPage.repository}
-                  </a>
-                )}
-              </div>
-            )}
-          </section>
-
-          {(project.problem || project.solution || project.results) && (
-            <section className={`grid gap-4 ${storyGridCols}`}>
-              {project.problem && (
-                <article className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
-                  <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)] sm:text-xl">
-                    {dictionary.projectPage.problem}
-                  </h2>
-                  <p className="mt-3 text-sm leading-7 app-muted sm:mt-4">{project.problem}</p>
-                </article>
-              )}
-              {project.solution && (
-                <article className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
-                  <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)] sm:text-xl">
-                    {dictionary.projectPage.solution}
-                  </h2>
-                  <p className="mt-3 text-sm leading-7 app-muted sm:mt-4">{project.solution}</p>
-                </article>
-              )}
-              {project.results && (
-                <article className="rounded-2xl app-card p-4 sm:rounded-hero sm:p-6">
-                  <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)] sm:text-xl">
-                    {dictionary.projectPage.results}
-                  </h2>
-                  <p className="mt-3 text-sm leading-7 app-muted sm:mt-4">{project.results}</p>
-                </article>
-              )}
-            </section>
-          )}
-
-          <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
-            <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-2xl">
-              {dictionary.projectPage.gallery}
-            </h2>
-            <div className="mt-4 sm:mt-6">
-              <ProjectGallery
-                media={media}
-                allowDownloads={project.allow_downloads !== false || isOwner}
-              />
-            </div>
           </section>
 
           {project.github_full_name ? (

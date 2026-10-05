@@ -89,7 +89,7 @@ describe("GET /api/link-preview", () => {
       description: "Systems engineer",
       imageShape: "avatar",
       // The composite leaderboard rating, not the persisted Wilson score (128).
-      badge: "62 score",
+      badge: "62 points",
       chips: ["Kyiv, Ukraine", "8 projects", "3 articles"],
     });
   });
@@ -156,7 +156,7 @@ describe("GET /api/link-preview", () => {
     );
 
     const preview = (await (await GET(req("/en/u/ada"))).json()).preview;
-    expect(preview.badge).toBe("3 score");
+    expect(preview.badge).toBe("3 points");
   });
 
   it("localizes the card from the locale in the href", async () => {
@@ -253,7 +253,7 @@ describe("GET /api/link-preview", () => {
       // Stored HTML is flattened before it reaches the card.
       description: "A shared component library.",
       imageShape: "cover",
-      badge: "55 score",
+      badge: "55 points",
     });
   });
 

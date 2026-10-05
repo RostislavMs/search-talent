@@ -3,6 +3,7 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { buttonStyles } from "@/components/ui/button-styles";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { formatOpenToList } from "@/lib/open-to";
+import { formatScore } from "@/lib/plural";
 
 type CreatorCardData = {
   username: string | null;
@@ -62,7 +63,7 @@ export default function CreatorCard({
 
           {typeof creator.score === "number" && (
             <span className="font-display shrink-0 self-start whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
-              {creator.score} {dictionary.common.scoreSuffix}
+              {formatScore(creator.score, dictionary.common)}
             </span>
           )}
         </div>

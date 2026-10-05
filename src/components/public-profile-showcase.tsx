@@ -21,7 +21,6 @@ import ProjectCard from "@/components/project-card";
 import VerifiedBadge from "@/components/verified-badge";
 import { ButtonLink } from "@/components/ui/Button";
 import ShareButton from "@/components/ui/share-button";
-import HorizontalCarousel from "@/components/ui/horizontal-carousel";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 import type { PublicProfilePageData } from "@/lib/db/public";
@@ -29,10 +28,13 @@ import {
   getProfileFontStack,
   getProfileHeroBackground,
   getProfileHeroOverlay,
+  getProfileItemsGridClass,
   getProfileSectionCardStyle,
   getProfileTextScale,
   getReadableTextColor,
   isDefaultProfileTheme,
+  pickProfileProjects,
+  PROFILE_ARTICLES_LIMIT,
   withAlpha,
   type ProfilePresentation,
   type ProfileSectionId,
@@ -41,6 +43,7 @@ import {
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { formatOpenToList } from "@/lib/open-to";
 import { formatHourlyRate } from "@/lib/profile-private";
+import { formatScore } from "@/lib/plural";
 import { getMetadataBase } from "@/lib/seo";
 
 function getExperienceLabel(value: string | null, locale: string) {
@@ -204,7 +207,11 @@ function getThemeStyle(presentation: ProfilePresentation) {
     // profile would keep the site-wide brand ink and ignore the accent.
     "--brand-ink": `color-mix(in srgb, ${accent} 70%, #000)`,
     "--brand-soft": withAlpha(accent, 0.16),
-    "--brand-on-soft": accent,
+    // Text on the soft accent fill (score pills). The raw accent vanished on a
+    // panel of a similar hue (purple on purple); pulling it towards the
+    // theme's text colour keeps the tint and makes it readable on light and
+    // dark palettes alike.
+    "--brand-on-soft": `color-mix(in srgb, ${accent} 55%, ${presentation.textColor})`,
     // Legible label for accent-coloured controls, derived from the accent
     // itself — not the background colour — so changing the profile background
     // never recolours button/badge text (e.g. the "Edit profile" button).
@@ -281,13 +288,28 @@ export default function PublicProfileShowcase({
     hourlyRateLine,
     workFormatsLine,
   };
+  const { featured: featuredProject, grid: gridProjects } = pickProfileProjects(
+    projects,
+    presentation.sectionSizes.projects,
+  );
+  const experienceLabel = getExperienceLabel(profile.experience_level, locale);
+  // "1 рік" alone reads as anything; the hero says "1 рік досвіду".
+  // "No experience" already says what it is.
+  const experienceChip =
+    experienceLabel && profile.experience_level !== "no_experience"
+      ? dictionary.creatorProfile.experienceChip.replace("{value}", experienceLabel)
+      : experienceLabel;
+  const ratingChip =
+    typeof profileRating === "number" ? formatScore(profileRating, dictionary.common) : null;
   // Hiding the contacts block (Visibility → Contacts) hides the button too.
   const canContact =
     !isOwner &&
     profile.visibility.links &&
     Boolean(hasPrivateContact || profile.telegram_username || profile.linkedin || profile.website);
   const sectionMap = new Map<ProfileSectionId, { title: string; content: ReactNode; visible: boolean }>([
-    ["about", { title: dictionary.creatorProfile.about, visible: profile.visibility.about && Boolean(profile.bio || profile.headline), content: <div className="space-y-4">{profile.headline && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.positionLabel}</p><p className="mt-2 leading-7 app-muted">{profile.headline}</p></div>}{profile.bio && <div style={{ fontSize: `${typeScale.body}rem` }}><ExpandableProfileBio content={profile.bio} locale={locale} accentColor={presentation.accentColor} /></div>}</div> }],
+    // The headline already sits under the name in the hero, so "About" carries
+    // only the bio instead of repeating it in a "Position" box.
+    ["about", { title: dictionary.creatorProfile.about, visible: profile.visibility.about && Boolean(profile.bio), content: <div style={{ fontSize: `${typeScale.body}rem` }}><ExpandableProfileBio content={profile.bio || ""} locale={locale} accentColor={presentation.accentColor} /></div> }],
     ["professionalDetails", { title: dictionary.creatorProfile.professionalDetails, visible: profile.visibility.professionalDetails && Boolean(profile.experience_level || salary || hourlyRate || profile.open_to.length > 0 || (profile.work_formats?.length || 0) > 0 || profile.additional_info), content: <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2">{profile.experience_level && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.totalExperienceYears}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{getExperienceLabel(profile.experience_level, locale)}</p></div>}{salary && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.salaryExpectations}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{salary.amount}{salary.currency ? ` ${salary.currency.toUpperCase()}` : ""}</p></div>}{hourlyRateLine && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.openTo.hourlyRate}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{hourlyRateLine}</p></div>}</div>{profile.open_to.length > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.openTo.toggle}</p><div className="mt-2 flex flex-wrap gap-2">{profile.open_to.map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{dictionary.openTo.options[item]}</span>)}</div></div>}{(profile.work_formats?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.workFormats}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.work_formats || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getWorkFormatLabel(item, dictionary)}</span>)}</div></div>}{profile.additional_info && <p className="text-sm leading-8 app-muted" style={{ fontSize: `${typeScale.body}rem` }}>{profile.additional_info}</p>}</div> }],
     ["workExperience", { title: dictionary.creatorProfile.workExperience, visible: profile.visibility.workExperience && workExperience.length > 0, content: <div className="space-y-4">{workExperience.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-[color:var(--foreground)]">{item.position || "—"}</h3><p className="mt-1 text-sm app-muted">{item.company_name || "—"}</p></div><span className="text-sm app-soft">{item.started_year || "—"} - {item.is_current ? dictionary.creatorProfile.present : item.ended_year || "—"}</span></div>{item.responsibilities && <p className="mt-3 text-sm leading-7 app-muted">{item.responsibilities}</p>}</article>)}</div> }],
     ["skills", { title: dictionary.creatorProfile.skills, visible: profile.visibility.skills && technologies.length > 0, content: <CollapsibleTags items={technologies} initialCount={12} showMoreLabel={dictionary.creatorProfile.skillsShowAll} showLessLabel={dictionary.creatorProfile.skillsShowLess} /> }],
@@ -309,10 +331,24 @@ export default function PublicProfileShowcase({
               profile.username ? `/u/${profile.username}/projects` : null
             }
             totalCount={projects.length}
-            carouselPrev={dictionary.creatorProfile.carouselPrev}
-            carouselNext={dictionary.creatorProfile.carouselNext}
-          >
-            {projects.slice(0, 10).map((project) => (
+            size={presentation.sectionSizes.projects}
+            featured={
+              featuredProject ? (
+                <ProjectCard
+                  dictionary={dictionary}
+                  hideOwner
+                  variant="featured"
+                  priority
+                  project={{
+                    ...featuredProject,
+                    slug: featuredProject.slug || "",
+                    ownerName: profile.name,
+                    ownerUsername: profile.username,
+                  }}
+                />
+              ) : null
+            }
+            items={gridProjects.map((project) => (
               <ProjectCard
                 key={project.id}
                 dictionary={dictionary}
@@ -325,7 +361,7 @@ export default function PublicProfileShowcase({
                 }}
               />
             ))}
-          </ProfileItemsBlock>
+          />
         ),
       },
     ],
@@ -342,17 +378,15 @@ export default function PublicProfileShowcase({
               profile.username ? `/u/${profile.username}/articles` : null
             }
             totalCount={articles.length}
-            carouselPrev={dictionary.creatorProfile.carouselPrev}
-            carouselNext={dictionary.creatorProfile.carouselNext}
-          >
-            {articles.slice(0, 10).map((item) => (
+            size={presentation.sectionSizes.articles}
+            items={articles.slice(0, PROFILE_ARTICLES_LIMIT).map((item) => (
               <ProfileArticleCard
                 key={item.id}
                 article={item}
                 locale={locale}
               />
             ))}
-          </ProfileItemsBlock>
+          />
         ),
       },
     ],
@@ -484,11 +518,21 @@ export default function PublicProfileShowcase({
                 <div className={`mt-3 flex flex-wrap items-center gap-2 sm:mt-4 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
                   <p className="text-sm app-muted">@{profile.username}</p>
                   <VerifiedBadge verified={profile.email_verified} />
+                  {ratingChip && (
+                    <LocalizedLink
+                      href="/rating-guide"
+                      aria-label={dictionary.creatorProfile.ratingChipLabel.replace("{score}", ratingChip)}
+                      title={dictionary.creatorProfile.profileRating}
+                      className="font-display rounded-full app-panel px-2.5 py-0.5 text-xs font-semibold text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)] sm:text-sm"
+                    >
+                      {ratingChip}
+                    </LocalizedLink>
+                  )}
                 </div>
                 {profile.headline && <p className="mt-3 text-sm leading-6 app-muted sm:leading-7">{profile.headline}</p>}
                 <div className={`mt-3 flex flex-wrap items-center gap-1.5 sm:mt-4 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}>
                   {(profile.city || profile.countryName) && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{[profile.city, profile.countryName].filter(Boolean).join(", ")}</span>}
-                  {profile.experience_level && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{getExperienceLabel(profile.experience_level, locale)}</span>}
+                  {experienceChip && <span className="rounded-full app-panel px-2.5 py-0.5 text-xs app-muted sm:text-sm">{experienceChip}</span>}
                   {isOwner && (
                     <ProfileCompletenessButton
                       completeness={completeness}
@@ -508,16 +552,13 @@ export default function PublicProfileShowcase({
                 )}
                 {badges.length > 0 && (
                   <div className={`mt-3 sm:mt-4 ${presentation.heroAlignment === "center" ? "flex justify-center" : ""}`}>
-                    <BadgeShelf badges={badges} locale={locale} maxVisible={10} maxVisibleMobile={5} />
+                    <BadgeShelf badges={badges} locale={locale} maxVisible={HERO_BADGES_VISIBLE} maxVisibleMobile={HERO_BADGES_VISIBLE_MOBILE} />
                   </div>
                 )}
               </div>
 
-              <div className="min-w-0 space-y-4 xl:self-start">
-                <div className="hidden xl:block">
-                  <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} rating={profileRating} isAuthenticated={isAuthenticated} isOwner={isOwner} />
-                </div>
-                <div className="flex flex-nowrap gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0 sm:flex-wrap sm:gap-2 sm:overflow-visible">
+              <div className="min-w-0 xl:self-end">
+                <div className={`flex flex-nowrap gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0 sm:flex-wrap sm:gap-2 sm:overflow-visible ${presentation.heroAlignment === "center" ? "sm:justify-center" : "xl:justify-end"}`}>
                   {isOwner && (
                     <ButtonLink href="/profile/edit" size="sm">
                       {dictionary.creatorProfile.editProfile}
@@ -547,10 +588,6 @@ export default function PublicProfileShowcase({
             </div>
           </section>
 
-          <div className="xl:hidden">
-            <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} rating={profileRating} isAuthenticated={isAuthenticated} isOwner={isOwner} className="mt-4 rounded-panel bg-[color:var(--surface-muted)] p-4 sm:mt-6 sm:p-5" />
-          </div>
-
           {profile.username ? (
             <div className="mt-4 sm:mt-6">
               <ProfileAiSummaryPublic
@@ -577,53 +614,53 @@ export default function PublicProfileShowcase({
               </div>
             ))}
           </div>
+
+          {/* Rated after the work, not before it: the score itself is a chip
+              next to the name, the votes come once the visitor has seen why. */}
+          <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} rating={profileRating} isAuthenticated={isAuthenticated} isOwner={isOwner} className="mt-4 rounded-panel bg-[color:var(--surface-muted)] p-4 sm:mt-6 sm:p-5" />
         </div>
       </div>
     </main>
   );
 }
 
-const CAROUSEL_THRESHOLD = 4;
-const VIEW_ALL_THRESHOLD = 10;
+const HERO_BADGES_VISIBLE = 5;
+const HERO_BADGES_VISIBLE_MOBILE = 4;
 
+/**
+ * Projects or articles on the profile: an optional featured card on top, then
+ * a plain grid. No carousel — every shown piece of work is visible at once,
+ * and "View all (N)" appears as soon as something is left out.
+ */
 function ProfileItemsBlock({
-  children,
+  items,
+  featured = null,
   description,
   viewAllLabel,
   viewAllHref,
   totalCount,
-  carouselPrev,
-  carouselNext,
+  size,
 }: {
-  children: ReactNode;
+  items: ReactNode[];
+  featured?: ReactNode;
   description: string;
   viewAllLabel: string;
   viewAllHref: string | null;
   totalCount: number;
-  carouselPrev: string;
-  carouselNext: string;
+  size: ProfileSectionSize;
 }) {
-  const items = Array.isArray(children) ? children : [children];
-  const showCarousel = totalCount >= CAROUSEL_THRESHOLD;
-  const showViewAll = totalCount > VIEW_ALL_THRESHOLD && Boolean(viewAllHref);
+  const shownCount = items.length + (featured ? 1 : 0);
+  const showViewAll = totalCount > shownCount && Boolean(viewAllHref);
 
   return (
     <>
       <p className="text-sm leading-7 app-muted">{description}</p>
 
-      <div className="mt-5">
-        {showCarousel ? (
-          <HorizontalCarousel
-            itemMinWidth={300}
-            ariaLabelPrev={carouselPrev}
-            ariaLabelNext={carouselNext}
-          >
-            {items}
-          </HorizontalCarousel>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">{items}</div>
-        )}
-      </div>
+      {featured ? <div className="mt-5">{featured}</div> : null}
+
+      {items.length > 0 ? (
+        <div className={`mt-5 grid gap-4 ${getProfileItemsGridClass(size)}`}>{items}</div>
+      ) : null}
 
       {showViewAll && viewAllHref ? (
         <div className="mt-5">
