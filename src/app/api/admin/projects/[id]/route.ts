@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
+import { isProjectStoragePath } from "@/lib/project-media";
 import { deleteStorageObject } from "@/lib/storage/provider";
 import { routeProjectIdSchema } from "@/lib/validation/project";
 
@@ -67,9 +68,10 @@ export async function DELETE(
       (item) =>
         item as { url: string | null; storage_path: string | null },
     )
+    // Only keys under this project's own prefix are ours to delete.
     .filter(
       (item): item is { url: string; storage_path: string } =>
-        Boolean(item.storage_path && item.url),
+        Boolean(item.url) && isProjectStoragePath(project.id, item.storage_path),
     );
 
   const cleanupWarnings: string[] = [];

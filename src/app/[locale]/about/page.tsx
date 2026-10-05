@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import {
   CommunityLoopIllustration,
   KnowledgeVignette,
-  OpenBuildIllustration,
   PlatformMapIllustration,
   PortfolioVignette,
   ProfileVignette,
@@ -235,7 +234,7 @@ export default async function AboutPage({
             >
               {about.description}
             </p>
-            {/* Three plain claims, dot-separated. Deliberately not chips: they
+            {/* Plain claims, dot-separated. Deliberately not chips: they
                 are statements, not filters, so nothing here is hoverable. */}
             <ul
               style={beat(2)}
@@ -428,28 +427,6 @@ export default async function AboutPage({
               </li>
             ))}
           </ul>
-        </MediaSplit>
-      </section>
-
-      {/* Built in the open */}
-      <section className={SECTION} aria-labelledby="about-open-source">
-        <MediaSplit
-          side="end"
-          aspect="aspect-16/9"
-          media={
-            <Art>
-              <OpenBuildIllustration label={about.openSourceIllustrationLabel} />
-            </Art>
-          }
-        >
-          <div className="app-cascade">
-            <h2 id="about-open-source" style={beat(0)} className={HEADING}>
-              {about.openSourceTitle}
-            </h2>
-            <p style={beat(1)} className={`mt-3 ${BODY}`}>
-              {about.openSourceText}
-            </p>
-          </div>
         </MediaSplit>
       </section>
 

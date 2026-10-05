@@ -7,10 +7,37 @@ import {
   getVideoEmbedThumbnail,
   getYouTubeVideoId,
   inferProjectMediaKind,
+  isProjectStoragePath,
   isYouTubeMediaUrl,
   normalizeProjectMediaItem,
   sanitizeStorageFileName,
 } from "@/lib/project-media";
+
+describe("isProjectStoragePath", () => {
+  const projectId = "a8a61ff1-fdb1-46f8-bbb7-8b9dd0e061f6";
+
+  it("accepts a key inside the project's own folder", () => {
+    expect(isProjectStoragePath(projectId, `${projectId}/1-abc-shot.png`)).toBe(true);
+  });
+
+  it("rejects missing values", () => {
+    expect(isProjectStoragePath(projectId, null)).toBe(false);
+    expect(isProjectStoragePath(projectId, undefined)).toBe(false);
+    expect(isProjectStoragePath(projectId, "")).toBe(false);
+    expect(isProjectStoragePath("", `${projectId}/x.png`)).toBe(false);
+  });
+
+  it("rejects another project's folder, other scopes and the bare prefix", () => {
+    expect(isProjectStoragePath(projectId, "11111111-1111-4111-8111-111111111111/x.png")).toBe(false);
+    expect(isProjectStoragePath(projectId, "avatars/someone/avatar")).toBe(false);
+    expect(isProjectStoragePath(projectId, `${projectId}/`)).toBe(false);
+    expect(isProjectStoragePath(projectId, `${projectId}x/file.png`)).toBe(false);
+  });
+
+  it("rejects a path that climbs out with ..", () => {
+    expect(isProjectStoragePath(projectId, `${projectId}/../avatars/someone/avatar`)).toBe(false);
+  });
+});
 
 describe("getYouTubeVideoId", () => {
   it("returns null for null/undefined/empty", () => {

@@ -3550,7 +3550,7 @@ export const dictionaries = {
       title: "SearchTalent — the community where work gets seen",
       description:
         "A platform for IT and digital specialists — show your portfolio, publish projects and articles, and build a professional reputation.",
-      heroPoints: ["Free to use", "Ukrainian and English", "Open source"],
+      heroPoints: ["Free to use", "Ukrainian and English"],
       heroIllustrationLabel:
         "Diagram: one profile feeding a project, an article, a leaderboard, and a rating mark",
       pillarsTitle: "What is inside",
@@ -3644,11 +3644,6 @@ export const dictionaries = {
       ],
       communityIllustrationLabel:
         "Diagram: a closed loop between three people and the work they react to",
-      openSourceTitle: "Built in the open",
-      openSourceText:
-        "SearchTalent is being built as an independent platform for IT and digital specialists. We develop it in the open, adding capabilities step by step and listening to the community itself.",
-      openSourceIllustrationLabel:
-        "Diagram: the platform on a bench with contributions arriving from outside",
       ctaTitle: "Ready to show your work?",
       ctaText:
         "The profile is free, the first project takes about ten minutes, and after that the work speaks for itself.",
@@ -7323,7 +7318,7 @@ export const dictionaries = {
       title: "SearchTalent — спільнота, де роботу видно",
       description:
         "Платформа для IT- та digital-фахівців, де можна показувати портфоліо, публікувати проєкти й статті та будувати професійну репутацію.",
-      heroPoints: ["Безкоштовно", "Українською та англійською", "З відкритим кодом"],
+      heroPoints: ["Безкоштовно", "Українською та англійською"],
       heroIllustrationLabel:
         "Схема: один профіль живить проєкт, статтю, лідерборд і рейтингову позначку",
       pillarsTitle: "Що всередині",
@@ -7413,11 +7408,6 @@ export const dictionaries = {
       ],
       communityIllustrationLabel:
         "Схема: замкнене коло між трьома людьми та роботою, на яку вони реагують",
-      openSourceTitle: "Створено відкрито",
-      openSourceText:
-        "SearchTalent створюється як незалежна платформа для IT- та digital-фахівців. Ми розвиваємо її відкрито, поступово додаючи нові можливості та прислухаючись до самої спільноти.",
-      openSourceIllustrationLabel:
-        "Схема: платформа на верстаті, а внески надходять іззовні",
       ctaTitle: "Готові показати свої роботи?",
       ctaText:
         "Профіль безкоштовний, перший проєкт займе хвилин десять, а далі все залежить від самої роботи.",

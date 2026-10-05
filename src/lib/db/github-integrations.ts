@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GithubIntegrationSummary } from "@/lib/constants/github";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 type IntegrationRow = {
   user_id: string;
@@ -47,19 +48,27 @@ export function toIntegrationSummary(
   };
 }
 
-export async function upsertIntegration(
-  supabase: SupabaseClient,
-  params: {
-    userId: string;
-    githubUserId: number;
-    githubLogin: string;
-    githubAvatarUrl: string | null;
-    accessToken: string;
-    tokenType: string;
-    scopes: string[];
-  },
-): Promise<boolean> {
-  const { error } = await supabase.from("github_integrations").upsert(
+/**
+ * Stores the connection after the OAuth code exchange. Clients have no write
+ * grant on `github_integrations` (a forged row would earn the GitHub badge and
+ * squat someone's `github_user_id`), so only the service key writes here.
+ */
+export async function upsertIntegration(params: {
+  userId: string;
+  githubUserId: number;
+  githubLogin: string;
+  githubAvatarUrl: string | null;
+  accessToken: string;
+  tokenType: string;
+  scopes: string[];
+}): Promise<boolean> {
+  const admin = createAdminClient();
+  if (!admin) {
+    console.error("[github-integrations] upsert skipped: no service key");
+    return false;
+  }
+
+  const { error } = await admin.from("github_integrations").upsert(
     {
       user_id: params.userId,
       github_user_id: params.githubUserId,

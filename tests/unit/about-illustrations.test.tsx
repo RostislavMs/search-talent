@@ -6,7 +6,6 @@ import { cleanup, render, screen } from "@testing-library/react";
 import {
   CommunityLoopIllustration,
   KnowledgeVignette,
-  OpenBuildIllustration,
   PlatformMapIllustration,
   PortfolioVignette,
   ProfileVignette,
@@ -24,7 +23,6 @@ const ILLUSTRATIONS = [
   ["StepFlowIllustration", StepFlowIllustration],
   ["ScatteredToProfileIllustration", ScatteredToProfileIllustration],
   ["CommunityLoopIllustration", CommunityLoopIllustration],
-  ["OpenBuildIllustration", OpenBuildIllustration],
   ["ProfileVignette", ProfileVignette],
   ["PortfolioVignette", PortfolioVignette],
   ["KnowledgeVignette", KnowledgeVignette],
@@ -79,7 +77,7 @@ describe("About copy", () => {
     pillars: 4,
     steps: 3,
     features: 6,
-    heroPoints: 3,
+    heroPoints: 2,
     communityPrinciples: 3,
   } as const;
 
@@ -123,7 +121,6 @@ describe("About copy", () => {
       about.stepsIllustrationLabel,
       about.missionIllustrationLabel,
       about.communityIllustrationLabel,
-      about.openSourceIllustrationLabel,
       ...about.pillars.map((pillar) => pillar.illustrationLabel),
     ]) {
       expect(label.trim().length).toBeGreaterThan(10);

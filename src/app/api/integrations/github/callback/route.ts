@@ -95,7 +95,7 @@ export async function GET(request: Request) {
     return redirectWithStatus(siteBase, returnTo, locale, "error", "github");
   }
 
-  const ok = await upsertIntegration(supabase, {
+  const ok = await upsertIntegration({
     userId: user.id,
     githubUserId: githubUser.id,
     githubLogin: githubUser.login,
