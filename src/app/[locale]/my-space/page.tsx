@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import CompanyLogo from "@/components/company-logo";
 import MySpaceChecklist from "@/components/my-space-checklist";
+import MySpacePortfolioViews from "@/components/my-space-portfolio-views";
 import MySpaceStats from "@/components/my-space-stats";
 import OpenToCard from "@/components/open-to-card";
 import ProfileCompletenessButton from "@/components/profile-completeness-button";
@@ -16,6 +17,7 @@ import { hasCompanyMembership } from "@/lib/db/companies";
 import { listMyJobAlerts } from "@/lib/db/job-alerts";
 import { getOnboardingSnapshot } from "@/lib/db/onboarding";
 import { getMyContactOpenCompanies, getMyContactOpens } from "@/lib/db/open-to";
+import { getMyPortfolioViews } from "@/lib/db/portfolio-views";
 import { getUserStats } from "@/lib/db/stats";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -77,6 +79,7 @@ export default async function MySpacePage({
     applicationsCount,
     jobAlerts,
     openedByCompanies,
+    portfolioViews,
   ] = await Promise.all([
     getCurrentViewerRole(),
     getUserStats(user.id),
@@ -86,6 +89,7 @@ export default async function MySpacePage({
     countMyApplications(supabase, user.id),
     listMyJobAlerts(supabase, user.id),
     getMyContactOpenCompanies(supabase),
+    getMyPortfolioViews(supabase),
   ]);
   const profileAlert = jobAlerts.find((alert) => alert.target.type === "profile") ?? null;
   const companiesOpenedCopy = dictionary.openTo.companiesOpened;
@@ -163,6 +167,12 @@ export default async function MySpacePage({
             ))}
           </ul>
         </section>
+      ) : null}
+
+      {/* Once there is a portfolio to look at: before the first project the
+          checklist above is the next step, not an empty chart. */}
+      {portfolioViews && onboarding && onboarding.publishedProjectsCount > 0 ? (
+        <MySpacePortfolioViews dictionary={dictionary} locale={locale} views={portfolioViews} />
       ) : null}
 
       {onboarding && shareUsername ? (

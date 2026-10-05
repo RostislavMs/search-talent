@@ -195,6 +195,78 @@ export function ColumnGroups({
   );
 }
 
+// ---- daily stacked columns ---------------------------------------------------
+
+export type DailyColumn = {
+  /** Shown as the native tooltip: the day and every series' value. */
+  title: string;
+  values: number[];
+};
+
+/**
+ * A run of days, one thin column each, the series stacked bottom-up. Too many
+ * marks to label one by one, so the figure carries a one-line description for
+ * assistive tech and each column its values as a tooltip; the axis names only
+ * the ends.
+ */
+export function DailyColumns({
+  columns,
+  series,
+  max,
+  ticks,
+  description,
+}: {
+  columns: DailyColumn[];
+  series: LegendItem[];
+  max: number;
+  ticks: string[];
+  description: string;
+}) {
+  return (
+    <div role="img" aria-label={description}>
+      <div className="flex h-28 items-end gap-[2px]" aria-hidden="true">
+        {columns.map((column, index) => {
+          const total = column.values.reduce((sum, value) => sum + value, 0);
+          return (
+            <span
+              key={index}
+              title={column.title}
+              // A third of the month per beat: thirty separate beats would
+              // stretch the cascade past the end of the scroll.
+              style={beat(Math.floor(index / 10))}
+              className="flex h-full min-w-0 flex-1 flex-col justify-end"
+            >
+              {total === 0 ? (
+                <span className="h-[2px] rounded-full" style={{ background: "var(--chart-grid)" }} />
+              ) : (
+                <span
+                  className="flex flex-col-reverse overflow-hidden rounded-t-[3px]"
+                  data-grow-y
+                  style={{ height: `${Math.max((total / max) * 100, 3)}%` }}
+                >
+                  {column.values.map((value, seriesIndex) =>
+                    value > 0 ? (
+                      <span
+                        key={series[seriesIndex]?.name ?? seriesIndex}
+                        style={{ flex: `${value} 1 0`, background: toneColor(series[seriesIndex]?.tone ?? 1) }}
+                      />
+                    ) : null,
+                  )}
+                </span>
+              )}
+            </span>
+          );
+        })}
+      </div>
+      <div className="mt-2 flex justify-between border-t app-border pt-2 text-[11px] leading-4 app-muted" aria-hidden="true">
+        {ticks.map((tick) => (
+          <span key={tick}>{tick}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ---- curves ----------------------------------------------------------------
 
 export type CurveSeries = {
