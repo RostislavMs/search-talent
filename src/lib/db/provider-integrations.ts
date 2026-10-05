@@ -11,10 +11,12 @@ import {
   getProviderCredentials,
 } from "@/lib/integrations/provider-registry";
 import type { ProviderTokenSet } from "@/lib/integrations/provider-types";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Token storage for the generic provider integrations. One row per
- * (user, provider). Reads are gated by RLS to the owning user, and the token
+ * (user, provider). Reads are gated by RLS to the owning user, writes go
+ * through the service key only, and the token
  * never leaves the server — client routes only ever see
  * `ProviderIntegrationSummary`.
  */
@@ -88,18 +90,25 @@ export function toProviderIntegrationSummary(
   };
 }
 
-export async function upsertProviderIntegration(
-  supabase: SupabaseClient,
-  params: {
-    userId: string;
-    provider: ProviderIntegrationId;
-    externalUserId: string;
-    externalLogin: string;
-    externalAvatarUrl: string | null;
-    token: ProviderTokenSet;
-  },
-): Promise<boolean> {
-  const { error } = await supabase.from(TABLE).upsert(
+/**
+ * Stores the connection (after the code exchange or a token refresh). Clients
+ * have no write grant on the table, so only the service key writes here.
+ */
+export async function upsertProviderIntegration(params: {
+  userId: string;
+  provider: ProviderIntegrationId;
+  externalUserId: string;
+  externalLogin: string;
+  externalAvatarUrl: string | null;
+  token: ProviderTokenSet;
+}): Promise<boolean> {
+  const admin = createAdminClient();
+  if (!admin) {
+    console.error("[provider-integrations] upsert skipped: no service key");
+    return false;
+  }
+
+  const { error } = await admin.from(TABLE).upsert(
     {
       user_id: params.userId,
       provider: params.provider,
@@ -185,7 +194,7 @@ export async function getUsableAccessToken(
     return null;
   }
 
-  await upsertProviderIntegration(supabase, {
+  await upsertProviderIntegration({
     userId,
     provider,
     externalUserId: row.external_user_id,

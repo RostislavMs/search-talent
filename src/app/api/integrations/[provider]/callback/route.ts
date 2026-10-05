@@ -119,7 +119,7 @@ export async function GET(
   const account = await adapter.fetchAccount(token.accessToken);
   if (!account) return fail("account");
 
-  const ok = await upsertProviderIntegration(supabase, {
+  const ok = await upsertProviderIntegration({
     userId: user.id,
     provider,
     externalUserId: account.id,

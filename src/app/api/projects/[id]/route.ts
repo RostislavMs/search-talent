@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isProjectStoragePath } from "@/lib/project-media";
 import { generateUniqueProjectSlug } from "@/lib/projects";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import { deleteStorageObject } from "@/lib/storage/provider";
@@ -301,9 +302,10 @@ export async function DELETE(
     );
   }
 
+  // Only keys under this project's own prefix are ours to delete.
   const itemsToClean = (mediaItems || []).filter(
     (item): item is { url: string; storage_path: string } =>
-      Boolean(item.storage_path && item.url),
+      Boolean(item.url) && isProjectStoragePath(project.id, item.storage_path),
   );
 
   const cleanupWarnings: string[] = [];

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   getVideoEmbedThumbnail,
+  isProjectStoragePath,
   normalizeProjectMediaItem,
 } from "@/lib/project-media";
 import { deleteStorageObject } from "@/lib/storage/provider";
@@ -374,7 +375,10 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: deleteError.message }, { status: 400 });
   }
 
-  if (media.storage_path) {
+  // Only ever delete objects under this project's own prefix: storage_path is
+  // a stored value, and a row pointing elsewhere must never make the server
+  // delete someone else's file with its own credentials.
+  if (isProjectStoragePath(projectId, media.storage_path)) {
     const { error: storageError } = await deleteStorageObject({
       supabase: ownership.supabase,
       bucket: "project-media",
