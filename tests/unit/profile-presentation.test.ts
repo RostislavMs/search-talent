@@ -1,10 +1,16 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   applyViewerCustomizationPreference,
   createDefaultProfilePresentation,
   createDefaultProfileSettings,
   createDefaultViewerPreferences,
+  getProfileFonts,
   getProfileFontStack,
+  getProfileFontStyle,
+  getReadableTextColor,
+  profileFontPresets,
   getProfileItemsGridClass,
   getProfileSectionCardStyle,
   getProfileTextScale,
@@ -499,21 +505,71 @@ describe("applyViewerCustomizationPreference", () => {
   });
 });
 
-describe("getProfileFontStack", () => {
-  it("returns serif stack for editorial", () => {
-    expect(getProfileFontStack("editorial")).toContain("Georgia");
+describe("profile fonts", () => {
+  it("every preset leads with a self-hosted webfont, then its metric fallback", () => {
+    const faces: Record<string, string> = {
+      modern: "Manrope",
+      clean: "Onest",
+      editorial: "Lora",
+      friendly: "Nunito",
+      technical: "JetBrains Mono",
+      bold: "Onest",
+    };
+
+    for (const preset of profileFontPresets) {
+      const face = faces[preset];
+      expect(getProfileFontStack(preset).startsWith(`"${face}", "${face} Fallback"`)).toBe(true);
+    }
   });
 
-  it("returns sans-serif stack for friendly", () => {
-    expect(getProfileFontStack("friendly")).toContain("Trebuchet MS");
+  it("each face a preset names is declared in fonts.css or profile-fonts.css", () => {
+    const css = ["src/app/fonts.css", "src/app/profile-fonts.css"]
+      .map((file) => readFileSync(path.resolve(file), "utf8"))
+      .join("\n");
+
+    for (const preset of profileFontPresets) {
+      const { body, heading } = getProfileFonts(preset);
+      for (const stack of [body, heading]) {
+        const face = /^"([^"]+)"/.exec(stack)?.[1];
+        expect(css).toContain(`font-family: "${face}";`);
+        expect(css).toContain(`font-family: "${face} Fallback";`);
+      }
+    }
   });
 
-  it("returns monospace stack for technical", () => {
-    expect(getProfileFontStack("technical")).toContain("Lucida Console");
+  it("bold pairs a display face for headings with a calmer body face", () => {
+    const { body, heading } = getProfileFonts("bold");
+    expect(heading).toContain("Unbounded");
+    expect(body).toContain("Onest");
   });
 
-  it("returns default sans-serif stack for modern", () => {
-    expect(getProfileFontStack("modern")).toContain("Segoe UI");
+  it("the style sets the variables font-display and font-sans read", () => {
+    const style = getProfileFontStyle("editorial");
+    expect(style.fontFamily).toContain("Lora");
+    expect(style["--font-body"]).toBe(style.fontFamily);
+    expect(style["--font-display"]).toContain("Lora");
+  });
+
+  it("modern never references --font-body, so setting that variable can't loop", () => {
+    expect(getProfileFontStyle("modern")["--font-body"]).not.toContain("var(");
+  });
+
+  it("the default preset is the site's own pairing", () => {
+    const { body, heading } = getProfileFonts(createDefaultProfilePresentation().fontPreset);
+    expect(body).toContain("Manrope");
+    expect(heading).toContain("Literata");
+  });
+});
+
+describe("getReadableTextColor", () => {
+  it("puts dark text on light accents and light text on dark ones", () => {
+    expect(getReadableTextColor("#fbbf24")).toBe("#0b1120");
+    expect(getReadableTextColor("#18181b")).toBe("#f8fafc");
+  });
+
+  it("picks the label with the higher contrast on mid-tone accents", () => {
+    // YIQ put white on this orange (2.7:1); dark text measures 6.7:1.
+    expect(getReadableTextColor("#f97316")).toBe("#0b1120");
   });
 });
 

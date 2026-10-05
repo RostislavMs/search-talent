@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import {
-  getProfileFontStack,
+  getProfileFonts,
   getProfileHeroBackground,
   getProfileHeroOverlay,
   getProfileSectionCardStyle,
@@ -30,6 +30,8 @@ export const EXAMPLE_MIN_COVERS = 3;
  */
 export type ExampleTheme = {
   fontFamily: string;
+  /** Optional: entries cached before 12.2 have only the body font. */
+  headingFontFamily?: string;
   surface: string;
   text: string;
   muted: string;
@@ -87,8 +89,11 @@ export function toExampleTheme(presentation: ProfilePresentation): ExampleTheme 
   const hasPhoto =
     presentation.backgroundMode === "image" && Boolean(presentation.backgroundUrl);
 
+  const fonts = getProfileFonts(presentation.fontPreset);
+
   return {
-    fontFamily: getProfileFontStack(presentation.fontPreset),
+    fontFamily: fonts.body,
+    headingFontFamily: fonts.heading,
     surface: presentation.surfaceColor,
     text: presentation.textColor,
     muted: presentation.mutedColor,
