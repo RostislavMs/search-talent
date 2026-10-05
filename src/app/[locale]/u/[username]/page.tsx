@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import ProfileVisitorViewBar from "@/components/profile-visitor-view-bar";
 import PublicProfileShowcase from "@/components/public-profile-showcase";
 import RelatedCreators from "@/components/related-creators";
 import ViewBeacon from "@/components/view-beacon";
@@ -9,6 +10,12 @@ import { getPublicProfilePageData } from "@/lib/db/public";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import {
+  isProfileHiddenFromVisitors,
+  isProfileVisitorViewRequested,
+  PROFILE_VISITOR_VIEW_PARAM,
+  toProfileVisitorView,
+} from "@/lib/profile-visitor-view";
 import {
   buildAutoProfileSeoParagraph,
   buildPersonSchema,
@@ -79,19 +86,28 @@ export async function generateMetadata({
 
 export default async function PublicProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; username: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, username } = await getRouteParams(params);
+  const query = await searchParams;
   const dictionary = getDictionary(locale);
-  const [data, viewer] = await Promise.all([
+  const [ownerData, viewer] = await Promise.all([
     getPublicProfilePageData(username, locale),
     getCurrentViewerRole(),
   ]);
 
-  if (!data) {
+  if (!ownerData) {
     notFound();
   }
+
+  // "View as visitor": only the owner can ask for it; for anyone else the
+  // parameter changes nothing, since they get the guest page anyway.
+  const visitorView =
+    ownerData.isOwner && isProfileVisitorViewRequested(query[PROFILE_VISITOR_VIEW_PARAM]);
+  const data = visitorView ? toProfileVisitorView(ownerData) : ownerData;
 
   const siteUrl = getMetadataBase().toString().replace(/\/$/, "");
   const profileUrl = `${siteUrl}/${locale}/u/${username}`;
@@ -149,7 +165,15 @@ export default async function PublicProfilePage({
 
   return (
     <>
-      <ViewBeacon targetType="profile" targetId={data.profile.id} />
+      {visitorView ? (
+        <ProfileVisitorViewBar
+          dictionary={dictionary}
+          username={data.profile.username || username}
+          hiddenFromVisitors={isProfileHiddenFromVisitors(data)}
+        />
+      ) : (
+        <ViewBeacon targetType="profile" targetId={data.profile.id} />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(profilePageSchema) }}
@@ -162,7 +186,7 @@ export default async function PublicProfilePage({
         locale={locale}
         dictionary={dictionary}
         data={data}
-        isAdmin={viewer.isAdmin}
+        isAdmin={visitorView ? false : viewer.isAdmin}
       />
       <Suspense
         fallback={

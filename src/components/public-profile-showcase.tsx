@@ -43,6 +43,7 @@ import {
   type ProfileSectionSize,
 } from "@/lib/profile-presentation";
 import { getProfileAccentInk } from "@/lib/profile-themes";
+import { getProfileVisitorViewHref } from "@/lib/profile-visitor-view";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { formatOpenToList } from "@/lib/open-to";
 import { formatHourlyRate } from "@/lib/profile-private";
@@ -574,6 +575,11 @@ export default function PublicProfileShowcase({
                   {isOwner && (
                     <ButtonLink href="/profile/edit" size="sm">
                       {dictionary.creatorProfile.editProfile}
+                    </ButtonLink>
+                  )}
+                  {isOwner && profile.username && (
+                    <ButtonLink href={getProfileVisitorViewHref(profile.username)} variant="secondary" size="sm">
+                      {dictionary.creatorProfile.visitorView}
                     </ButtonLink>
                   )}
                   {canContact && (
