@@ -108,6 +108,23 @@ describe("scoreRelatedCandidate", () => {
     ).toBe("quality");
   });
 
+  it("treats a shared technology in another format as weaker than the format", () => {
+    expect(
+      scoreRelatedCandidate(
+        candidate({ skillIds: [9], kind: "video" }),
+        reference,
+        context,
+      ).tier,
+    ).toBe("crossKind");
+    expect(
+      scoreRelatedCandidate(
+        candidate({ skillIds: [9], kind: null }),
+        reference,
+        context,
+      ).tier,
+    ).toBe("stack");
+  });
+
   it("ranks a rare-tag match above a common-tag match", () => {
     const rare = scoreRelatedCandidate(candidate({ id: "r", skillIds: [9] }), reference, context);
     const common = scoreRelatedCandidate(candidate({ id: "c", skillIds: [1] }), reference, context);
@@ -212,6 +229,20 @@ describe("selectRelated", () => {
     expect(picked.map((p) => p.item)).toEqual(["stack", "format", "pad"]);
   });
 
+  it("puts same-format work ahead of a shared technology in another format", () => {
+    const picked = selectRelated(
+      wrap([
+        candidate({ id: "other-format", skillIds: [9], kind: "video", score: 100 }),
+        candidate({ id: "same-format", skillIds: [777], kind: "code", score: 1 }),
+        candidate({ id: "stack", skillIds: [9], score: 1 }),
+      ]),
+      reference,
+      context,
+      3,
+    );
+    expect(picked.map((p) => p.item)).toEqual(["stack", "same-format", "other-format"]);
+  });
+
   it("caps how many slots one creator can take", () => {
     const picked = selectRelated(
       wrap([
@@ -242,6 +273,21 @@ describe("selectRelated", () => {
       3,
     );
     expect(picked).toHaveLength(3);
+  });
+
+  it("relaxes the cap for same-format work before using other formats", () => {
+    const picked = selectRelated(
+      wrap([
+        candidate({ id: "s1", ownerUserId: "editor", skillIds: [9] }),
+        candidate({ id: "s2", ownerUserId: "editor", skillIds: [9] }),
+        candidate({ id: "s3", ownerUserId: "editor", skillIds: [777] }),
+        candidate({ id: "web", ownerUserId: "dev", skillIds: [9], kind: "video", score: 100 }),
+      ]),
+      reference,
+      context,
+      3,
+    );
+    expect(picked.map((p) => p.item)).toEqual(["s1", "s2", "s3"]);
   });
 
   it("still fills the section for a project with no technologies at all", () => {

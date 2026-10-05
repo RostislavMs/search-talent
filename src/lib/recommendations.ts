@@ -129,7 +129,7 @@ function norm(skillIds: Set<number>, idf: (skillId: number) => number): number {
  * tiers so a weak-but-real match never displaces a strong one, and so the
  * section is only padded once genuine matches run out.
  */
-export type RelatedTier = "stack" | "kind" | "quality";
+export type RelatedTier = "stack" | "kind" | "crossKind" | "quality";
 
 export type ScoredRelated<T> = {
   item: T;
@@ -196,13 +196,29 @@ export function scoreRelatedCandidate(
       ? impersonal
       : (1 - PERSONAL_WEIGHT) * impersonal + PERSONAL_WEIGHT * affinity;
 
+  // A shared technology across formats is weaker evidence than the format
+  // itself: one shared "After Effects" put a developer's websites under an
+  // anime edit. So a cross-format stack match ranks after same-format work.
+  // A project with no format on either side still counts as a stack match.
+  const kindsDiffer =
+    candidate.kind !== null && reference.kind !== null && candidate.kind !== reference.kind;
   const tier: RelatedTier =
-    similarity > 0 ? "stack" : sameKind === 1 ? "kind" : "quality";
+    similarity > 0
+      ? kindsDiffer
+        ? "crossKind"
+        : "stack"
+      : sameKind === 1
+        ? "kind"
+        : "quality";
 
   return { score, similarity, tier };
 }
 
-const TIER_ORDER: RelatedTier[] = ["stack", "kind", "quality"];
+/** Similar work first, then weaker matches; see `selectRelated`. */
+const RELATED_TIER_GROUPS: readonly (readonly RelatedTier[])[] = [
+  ["stack", "kind"],
+  ["crossKind", "quality"],
+];
 
 /**
  * Rank and select the related list.
@@ -212,7 +228,8 @@ const TIER_ORDER: RelatedTier[] = ["stack", "kind", "quality"];
  * generic strong project used as padding. Within a tier, no creator may take
  * more than `MAX_PER_AUTHOR` slots — without that cap a prolific author fills
  * the whole section and the visitor sees one portfolio instead of the field.
- * The cap is relaxed only if the tiers cannot otherwise fill `limit`.
+ * The cap is relaxed only when similar work runs out, and for similar work
+ * before other formats are used to fill `limit`.
  */
 export function selectRelated<T>(
   candidates: Array<{ item: T; candidate: RelatedCandidate }>,
@@ -240,38 +257,36 @@ export function selectRelated<T>(
   const chosen = new Set<string>();
   const perAuthor = new Map<string, number>();
 
-  for (const tier of TIER_ORDER) {
-    for (const entry of scored) {
-      if (selected.length >= limit) {
-        return selected;
-      }
-      if (entry.tier !== tier || chosen.has(entry.candidate.id)) {
-        continue;
-      }
+  const take = (tiers: readonly RelatedTier[], capped: boolean) => {
+    for (const tier of tiers) {
+      for (const entry of scored) {
+        if (selected.length >= limit) {
+          return;
+        }
+        if (entry.tier !== tier || chosen.has(entry.candidate.id)) {
+          continue;
+        }
 
-      const authorCount = perAuthor.get(entry.candidate.ownerUserId) ?? 0;
-      if (authorCount >= MAX_PER_AUTHOR) {
-        continue;
-      }
+        const authorCount = perAuthor.get(entry.candidate.ownerUserId) ?? 0;
+        if (capped && authorCount >= MAX_PER_AUTHOR) {
+          continue;
+        }
 
-      selected.push(entry);
-      chosen.add(entry.candidate.id);
-      perAuthor.set(entry.candidate.ownerUserId, authorCount + 1);
-    }
-  }
-
-  // Still short: the author cap is a diversity preference, not a hard rule —
-  // an under-filled section is worse than two extra projects by one creator.
-  if (selected.length < limit) {
-    for (const entry of scored) {
-      if (selected.length >= limit) {
-        break;
-      }
-      if (!chosen.has(entry.candidate.id)) {
         selected.push(entry);
         chosen.add(entry.candidate.id);
+        perAuthor.set(entry.candidate.ownerUserId, authorCount + 1);
       }
     }
+  };
+
+  // The author cap is a diversity preference, not a hard rule. It is relaxed
+  // for genuinely similar work (same format) before anything weaker is used:
+  // two more anime edits by the same editor beat a stranger's website that
+  // merely shares a tool. Only then do other formats and padding come in,
+  // capped first and uncapped last, so the section is never left short.
+  for (const group of RELATED_TIER_GROUPS) {
+    take(group, true);
+    take(group, false);
   }
 
   return selected;

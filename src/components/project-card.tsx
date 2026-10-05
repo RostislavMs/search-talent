@@ -7,6 +7,7 @@ import {
   getProjectKindLabel,
   normalizeProjectKind,
 } from "@/lib/projects";
+import { formatScore } from "@/lib/plural";
 import { toPlainText } from "@/lib/plain-text";
 
 type ProjectCardData = {
@@ -46,8 +47,11 @@ export default function ProjectCard({
    * `masonry`: image keeps its natural aspect, `object-contain`, no crop.
    *   Pair with a CSS `columns` container so cards of different heights
    *   stack into the shortest column with no gaps.
+   * `featured`: one wide card for the author's pinned project — the cover on
+   *   the left, wider than the text, and a longer description on the right
+   *   from `md` up; stacks like `grid` on phones.
    */
-  variant?: "grid" | "masonry";
+  variant?: "grid" | "masonry" | "featured";
 }) {
   const ownerLabel = project.ownerName || project.ownerUsername;
   const showOwner = !hideOwner && Boolean(ownerLabel);
@@ -55,20 +59,27 @@ export default function ProjectCard({
   const extraAuthors = coAuthorNames.length;
   const scoreLabel =
     typeof project.score === "number"
-      ? `${project.score} ${dictionary.common.scoreSuffix}`
+      ? formatScore(project.score, dictionary.common)
       : dictionary.common.fresh;
   const kind = normalizeProjectKind(project.kind);
   const kindLabel = kind ? getProjectKindLabel(kind, dictionary) : null;
 
   const isMasonry = variant === "masonry";
+  const isFeatured = variant === "featured";
   const coverWrapperClass = isMasonry
     ? "relative w-full bg-[color:var(--surface-muted)]"
-    : "relative aspect-[16/10] bg-[color:var(--surface-muted)]";
+    : isFeatured
+      ? "relative aspect-[16/10] bg-[color:var(--surface-muted)] md:aspect-auto md:min-h-[18rem]"
+      : "relative aspect-[16/10] bg-[color:var(--surface-muted)]";
 
   return (
     <LocalizedLink
       href={buildProjectPath(project.id, project.slug)}
-      className="group flex h-full flex-col overflow-hidden rounded-3xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl"
+      className={`group h-full overflow-hidden rounded-3xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl ${
+        isFeatured
+          ? "flex flex-col md:grid md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
+          : "flex flex-col"
+      }`}
     >
       <div className={coverWrapperClass}>
         {project.is_pinned && (
@@ -103,7 +114,7 @@ export default function ProjectCard({
               src={project.cover_url}
               alt={project.title}
               fill
-              sizePreset="card"
+              sizePreset={isFeatured ? "banner" : "card"}
               priority={priority}
               className="object-cover transition duration-300 group-hover:scale-[1.02]"
             />
@@ -150,7 +161,9 @@ export default function ProjectCard({
         </div>
 
         {project.description && (
-          <p className="mt-4 line-clamp-3 text-sm leading-6 app-muted">
+          <p
+            className={`mt-4 text-sm leading-6 app-muted ${isFeatured ? "line-clamp-6" : "line-clamp-3"}`}
+          >
             {toPlainText(project.description)}
           </p>
         )}

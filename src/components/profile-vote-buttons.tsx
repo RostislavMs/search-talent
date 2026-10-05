@@ -7,6 +7,7 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { getModerationCopy } from "@/lib/moderation-copy";
+import { formatScore } from "@/lib/plural";
 import { getOptimisticVoteState, type VoteState, type VoteValue } from "@/lib/vote-state";
 
 type ProfileVoteButtonsProps = {
@@ -126,10 +127,10 @@ export default function ProfileVoteButtons({
         </div>
 
         <span className="font-display shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
-          {typeof rating === "number"
-            ? rating
-            : voteState.likes - voteState.dislikes}{" "}
-          {dictionary.common.scoreSuffix}
+          {formatScore(
+            typeof rating === "number" ? rating : voteState.likes - voteState.dislikes,
+            dictionary.common,
+          )}
         </span>
       </div>
 

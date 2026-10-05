@@ -8,6 +8,7 @@ import type { Locale } from "@/lib/i18n/config";
 import type { LinkPreview, LinkPreviewTarget } from "@/lib/link-preview";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { toPlainText } from "@/lib/plain-text";
+import { formatScore } from "@/lib/plural";
 import {
   getProjectKindLabel,
   normalizeProjectKind,
@@ -103,7 +104,7 @@ function scoreBadge(
   const score = rating ?? fallbackScore;
 
   return typeof score === "number"
-    ? `${score} ${dictionary.common.scoreSuffix}`
+    ? formatScore(score, dictionary.common)
     : null;
 }
 

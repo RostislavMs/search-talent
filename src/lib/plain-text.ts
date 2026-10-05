@@ -21,3 +21,24 @@ export function toPlainText(input: string | null | undefined): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/**
+ * Same as `toPlainText`, but keeps the author's paragraphs: block ends and
+ * `<br>` become line breaks, runs of spaces collapse, and at most one empty
+ * line survives between paragraphs. Render it with `whitespace-pre-line`.
+ */
+export function toPlainTextWithBreaks(input: string | null | undefined): string {
+  if (!input) {
+    return "";
+  }
+
+  return input
+    .replace(/\r\n?/g, "\n")
+    .replace(BLOCK_BOUNDARY, "\n")
+    .replace(LINE_BREAK, "\n")
+    .replace(FORMATTING_TAG, "")
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
