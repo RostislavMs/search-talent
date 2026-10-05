@@ -2,11 +2,13 @@
 
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ProfileTemplateOptions } from "@/components/profile-template-picker";
 import FormSelect from "@/components/ui/form-select";
 import TagSelect from "@/components/ui/tag-select";
 import { apiFetch } from "@/lib/api-client";
 import type { MetaOption } from "@/lib/db/onboarding";
 import { useDictionary } from "@/lib/i18n/client";
+import { suggestProfileTemplate, type ProfileTemplateId } from "@/lib/profile-templates";
 import { USERNAME_PATTERN, suggestUsernameFromName } from "@/lib/username";
 
 export type OnboardingProfileInitial = {
@@ -16,6 +18,10 @@ export type OnboardingProfileInitial = {
   usernameIsTemporary: boolean;
   categoryId: number | null;
   skillIds: number[];
+  /** The template the profile layout matches now, if any. */
+  templateId: ProfileTemplateId | null;
+  /** Nobody arranged the blocks yet, so the suggested template is preselected. */
+  layoutIsDefault: boolean;
 };
 
 type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid";
@@ -60,6 +66,10 @@ export default function OnboardingProfileStep({
   const [takenOnSave, setTakenOnSave] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(initial.categoryId);
   const [skillIds, setSkillIds] = useState<number[]>(initial.skillIds);
+  // Until the person picks a template, the choice follows the direction.
+  const [pickedTemplate, setPickedTemplate] = useState<{ id: ProfileTemplateId | null } | null>(
+    null,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,6 +119,12 @@ export default function OnboardingProfileStep({
     };
   }, [needsCheck, trimmedUsername]);
 
+  const categoryName = meta.categories.find((option) => option.id === categoryId)?.name ?? null;
+  const suggestedTemplate = suggestProfileTemplate(categoryName);
+  const templateId = pickedTemplate
+    ? pickedTemplate.id
+    : (initial.templateId ?? (initial.layoutIsDefault ? suggestedTemplate : null));
+
   const handleNameChange = (value: string) => {
     setName(value);
 
@@ -135,6 +151,8 @@ export default function OnboardingProfileStep({
         username: trimmedUsername || initial.username,
         category_id: categoryId,
         skill_ids: skillIds,
+        // Sent only as a change: the layout already on the profile stays put.
+        template: templateId && templateId !== initial.templateId ? templateId : undefined,
       },
     });
 
@@ -253,6 +271,21 @@ export default function OnboardingProfileStep({
             placeholder={copy.skillsPlaceholder}
             onChange={(values) => setSkillIds(values.map(Number))}
           />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <p className="text-sm font-medium text-[color:var(--foreground)]">
+            {dictionary.profileTemplates.onboardingTitle}
+          </p>
+          <p className="text-xs leading-5 app-muted">{dictionary.profileTemplates.onboardingHint}</p>
+          <div className="mt-1.5">
+            <ProfileTemplateOptions
+              value={templateId}
+              suggestedId={suggestedTemplate}
+              onSelect={(id) => setPickedTemplate({ id })}
+              onClear={() => setPickedTemplate({ id: null })}
+            />
+          </div>
         </div>
       </div>
 

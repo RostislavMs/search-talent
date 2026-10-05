@@ -50,9 +50,25 @@ export default function ProjectCard({
    * `featured`: one wide card for the author's pinned project — the cover on
    *   the left, wider than the text, and a longer description on the right
    *   from `md` up; stacks like `grid` on phones.
+   * `gallery`: the cover is the card — 4:3, with only the title and score
+   *   under it. For profiles that show visual work.
+   * `galleryFeatured`: the same, one wide card on top of a gallery.
+   * `case`: cover beside a longer description once the card itself is wide
+   *   enough (a container query, so a narrow block keeps it stacked).
    */
-  variant?: "grid" | "masonry" | "featured";
+  variant?: "grid" | "masonry" | "featured" | "gallery" | "galleryFeatured" | "case";
 }) {
+  if (variant === "gallery" || variant === "galleryFeatured") {
+    return (
+      <ProjectGalleryCard
+        dictionary={dictionary}
+        project={project}
+        wide={variant === "galleryFeatured"}
+        priority={priority}
+      />
+    );
+  }
+
   const ownerLabel = project.ownerName || project.ownerUsername;
   const showOwner = !hideOwner && Boolean(ownerLabel);
   const coAuthorNames = (project.coAuthorNames ?? []).filter(Boolean);
@@ -66,21 +82,17 @@ export default function ProjectCard({
 
   const isMasonry = variant === "masonry";
   const isFeatured = variant === "featured";
+  const isCase = variant === "case";
   const coverWrapperClass = isMasonry
     ? "relative w-full bg-[color:var(--surface-muted)]"
     : isFeatured
       ? "relative aspect-[16/10] bg-[color:var(--surface-muted)] md:aspect-auto md:min-h-[18rem]"
-      : "relative aspect-[16/10] bg-[color:var(--surface-muted)]";
+      : isCase
+        ? "relative aspect-[16/10] bg-[color:var(--surface-muted)] @lg:aspect-auto @lg:min-h-[13rem]"
+        : "relative aspect-[16/10] bg-[color:var(--surface-muted)]";
 
-  return (
-    <LocalizedLink
-      href={buildProjectPath(project.id, project.slug)}
-      className={`group h-full overflow-hidden rounded-3xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl ${
-        isFeatured
-          ? "flex flex-col md:grid md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
-          : "flex flex-col"
-      }`}
-    >
+  const content = (
+    <>
       <div className={coverWrapperClass}>
         {project.is_pinned && (
           <span
@@ -161,7 +173,9 @@ export default function ProjectCard({
 
         {project.description && (
           <p
-            className={`mt-4 text-sm leading-6 app-muted ${isFeatured ? "line-clamp-6" : "line-clamp-3"}`}
+            className={`mt-4 text-sm leading-6 app-muted ${
+              isFeatured ? "line-clamp-6" : isCase ? "line-clamp-5" : "line-clamp-3"
+            }`}
           >
             {toPlainText(project.description)}
           </p>
@@ -172,6 +186,95 @@ export default function ProjectCard({
             {dictionary.common.viewProject}
           </span>
         </div>
+      </div>
+    </>
+  );
+
+  return (
+    <LocalizedLink
+      href={buildProjectPath(project.id, project.slug)}
+      className={`group h-full overflow-hidden rounded-3xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl ${
+        isFeatured
+          ? "flex flex-col md:grid md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
+          : isCase
+            ? "@container block"
+            : "flex flex-col"
+      }`}
+    >
+      {isCase ? (
+        // The card is the container, so a case laid out in a narrow block
+        // stays stacked even on a wide screen.
+        <div className="flex h-full flex-col @lg:grid @lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          {content}
+        </div>
+      ) : (
+        content
+      )}
+    </LocalizedLink>
+  );
+}
+
+/** The `gallery` variants: the cover is the card, the title sits under it. */
+function ProjectGalleryCard({
+  dictionary,
+  project,
+  wide,
+  priority,
+}: {
+  dictionary: Dictionary;
+  project: ProjectCardData;
+  wide: boolean;
+  priority: boolean;
+}) {
+  const scoreLabel =
+    typeof project.score === "number"
+      ? formatScore(project.score, dictionary.common)
+      : dictionary.common.fresh;
+
+  return (
+    <LocalizedLink
+      href={buildProjectPath(project.id, project.slug)}
+      className="group flex h-full flex-col overflow-hidden rounded-2xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-3xl"
+    >
+      <div
+        className={`relative bg-[color:var(--surface-muted)] ${
+          wide ? "aspect-[4/3] sm:aspect-[21/9]" : "aspect-[4/3]"
+        }`}
+      >
+        {project.is_pinned && (
+          <span
+            title={dictionary.common.pinned}
+            className="absolute left-2.5 top-2.5 z-20 rounded-full bg-[color:var(--foreground)] px-2.5 py-0.5 text-[11px] font-semibold text-[color:var(--background)] shadow-md"
+          >
+            {dictionary.common.pinned}
+          </span>
+        )}
+        {project.cover_url ? (
+          <OptimizedImage
+            src={project.cover_url}
+            alt={project.title}
+            fill
+            sizePreset={wide ? "banner" : "card"}
+            priority={priority}
+            className="object-cover transition duration-300 group-hover:scale-[1.02]"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center p-4 text-center">
+            <span className="font-display line-clamp-3 text-lg font-semibold tracking-tight app-muted">
+              {project.title}
+            </span>
+          </div>
+        )}
+      </div>
+      {/* Two to a row on a phone leaves no room beside the title, so the
+          score goes under it there. */}
+      <div className="flex flex-col gap-0.5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:px-4 sm:py-3">
+        <h3 className="font-display min-w-0 truncate text-sm font-semibold tracking-tight text-[color:var(--foreground)] sm:text-base">
+          {project.title}
+        </h3>
+        <span className="font-display shrink-0 whitespace-nowrap text-xs font-semibold app-muted">
+          {scoreLabel}
+        </span>
       </div>
     </LocalizedLink>
   );

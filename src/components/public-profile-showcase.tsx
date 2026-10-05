@@ -39,6 +39,7 @@ import {
   withAlpha,
   type ProfilePresentation,
   type ProfileSectionId,
+  type ProfileProjectLayout,
   type ProfileSectionSize,
 } from "@/lib/profile-presentation";
 import { getProfileAccentInk } from "@/lib/profile-themes";
@@ -290,10 +291,14 @@ export default function PublicProfileShowcase({
     hourlyRateLine,
     workFormatsLine,
   };
+  const projectLayout = presentation.projectLayout;
   const { featured: featuredProject, grid: gridProjects } = pickProfileProjects(
     projects,
     presentation.sectionSizes.projects,
+    projectLayout,
   );
+  const projectCardVariant =
+    projectLayout === "gallery" ? "gallery" : projectLayout === "cases" ? "case" : "grid";
   const experienceLabel = getExperienceLabel(profile.experience_level, locale);
   // "1 рік" alone reads as anything; the hero says "1 рік досвіду".
   // "No experience" already says what it is.
@@ -334,12 +339,13 @@ export default function PublicProfileShowcase({
             }
             totalCount={projects.length}
             size={presentation.sectionSizes.projects}
+            layout={projectLayout}
             featured={
               featuredProject ? (
                 <ProjectCard
                   dictionary={dictionary}
                   hideOwner
-                  variant="featured"
+                  variant={projectLayout === "gallery" ? "galleryFeatured" : "featured"}
                   priority
                   project={{
                     ...featuredProject,
@@ -355,6 +361,7 @@ export default function PublicProfileShowcase({
                 key={project.id}
                 dictionary={dictionary}
                 hideOwner
+                variant={projectCardVariant}
                 project={{
                   ...project,
                   slug: project.slug || "",
@@ -645,6 +652,7 @@ function ProfileItemsBlock({
   viewAllHref,
   totalCount,
   size,
+  layout = "grid",
 }: {
   items: ReactNode[];
   featured?: ReactNode;
@@ -653,6 +661,7 @@ function ProfileItemsBlock({
   viewAllHref: string | null;
   totalCount: number;
   size: ProfileSectionSize;
+  layout?: ProfileProjectLayout;
 }) {
   const shownCount = items.length + (featured ? 1 : 0);
   const showViewAll = totalCount > shownCount && Boolean(viewAllHref);
@@ -664,7 +673,7 @@ function ProfileItemsBlock({
       {featured ? <div className="mt-5">{featured}</div> : null}
 
       {items.length > 0 ? (
-        <div className={`mt-5 grid gap-4 ${getProfileItemsGridClass(size)}`}>{items}</div>
+        <div className={`mt-5 grid gap-4 ${getProfileItemsGridClass(size, layout)}`}>{items}</div>
       ) : null}
 
       {showViewAll && viewAllHref ? (

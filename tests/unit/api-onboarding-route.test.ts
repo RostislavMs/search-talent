@@ -12,6 +12,9 @@ const { holder } = vi.hoisted(() => ({ holder: { mock: null as SupabaseMock | nu
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => holder.mock!.client) }));
 
 import { PATCH, POST } from "@/app/api/onboarding/route";
+import type { ProfileSettings } from "@/lib/profile-presentation";
+import { getActiveProfileThemeId } from "@/lib/profile-themes";
+import { getActiveProfileTemplateId } from "@/lib/profile-templates";
 import { GET as checkUsername } from "@/app/api/onboarding/username/route";
 
 // Each test uses its own user id so the in-memory rate limiter never carries
@@ -112,6 +115,46 @@ describe("PATCH /api/onboarding", () => {
     expect(
       mock.calls.filter((call) => call.table === "profile_skills").map((call) => call.verb),
     ).toEqual(["delete"]);
+  });
+
+  it("puts a picked template on the profile, with its theme on the site look", async () => {
+    const mock = setMock(nextUser(), (call) =>
+      call.table === "profiles" && call.verb === "select"
+        ? { data: { id: "p1", profile_visibility: { about: false, presentation: { textScale: "lg" } } } }
+        : {},
+    );
+    const response = await PATCH(jsonRequest("PATCH", { ...validProfile, template: "gallery" }));
+    expect(response.status).toBe(200);
+
+    const update = mock.calls.find((call) => call.table === "profiles" && call.verb === "update");
+    const payload = update?.payload as { profile_visibility: ProfileSettings };
+    const settings = payload.profile_visibility;
+    expect(getActiveProfileTemplateId(settings.presentation)).toBe("gallery");
+    expect(getActiveProfileThemeId(settings.presentation)).toBe("mono");
+    // The rest of the settings stay as they were.
+    expect(settings.about).toBe(false);
+    expect(settings.presentation.textScale).toBe("lg");
+  });
+
+  it("keeps the author's own colours when applying a template", async () => {
+    const mock = setMock(nextUser(), (call) =>
+      call.table === "profiles" && call.verb === "select"
+        ? { data: { id: "p1", profile_visibility: { presentation: { accentColor: "#123456" } } } }
+        : {},
+    );
+    await PATCH(jsonRequest("PATCH", { ...validProfile, template: "resume" }));
+
+    const update = mock.calls.find((call) => call.table === "profiles" && call.verb === "update");
+    const presentation = (update?.payload as { profile_visibility: ProfileSettings })
+      .profile_visibility.presentation;
+    expect(getActiveProfileTemplateId(presentation)).toBe("resume");
+    expect(presentation.accentColor).toBe("#123456");
+  });
+
+  it("400 on an unknown template", async () => {
+    setMock(nextUser());
+    const response = await PATCH(jsonRequest("PATCH", { ...validProfile, template: "bento" }));
+    expect(response.status).toBe(400);
   });
 
   it("404 when the profile row is missing", async () => {

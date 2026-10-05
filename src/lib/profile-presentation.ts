@@ -41,6 +41,14 @@ export const profileSectionSizes = [
   "full",
 ] as const;
 
+/**
+ * How the projects block lays out its cards:
+ *  - grid: the standard card — cover, kind, title, a short description;
+ *  - gallery: the cover is the card, with just the title under it (visual work);
+ *  - cases: a wide card, cover beside a longer description (development, QA).
+ */
+export const profileProjectLayouts = ["grid", "gallery", "cases"] as const;
+
 export const profileSectionIds = [
   "about",
   "professionalDetails",
@@ -64,6 +72,7 @@ export type ProfileCardStyle = (typeof profileCardStyles)[number];
 export type ProfileHeroAlignment = (typeof profileHeroAlignments)[number];
 export type ProfileSectionSize = (typeof profileSectionSizes)[number];
 export type ProfileSectionId = (typeof profileSectionIds)[number];
+export type ProfileProjectLayout = (typeof profileProjectLayouts)[number];
 
 export type ProfilePresentation = {
   accentColor: string;
@@ -91,6 +100,7 @@ export type ProfilePresentation = {
   heroAlignment: ProfileHeroAlignment;
   sectionOrder: ProfileSectionId[];
   sectionSizes: Record<ProfileSectionId, ProfileSectionSize>;
+  projectLayout: ProfileProjectLayout;
 };
 
 // Viewer-side preferences: how *this* user experiences the profiles they
@@ -130,7 +140,7 @@ const defaultSectionOrder: ProfileSectionId[] = [
 // default. Any other order is the author's choice and stays.
 const legacyDefaultSectionOrder: readonly ProfileSectionId[] = profileSectionIds;
 
-function getDefaultSectionSize(sectionId: ProfileSectionId): ProfileSectionSize {
+export function getDefaultSectionSize(sectionId: ProfileSectionId): ProfileSectionSize {
   switch (sectionId) {
     case "contacts":
     case "skills":
@@ -233,6 +243,7 @@ export function createDefaultProfilePresentation(): ProfilePresentation {
     sectionSizes: Object.fromEntries(
       profileSectionIds.map((sectionId) => [sectionId, getDefaultSectionSize(sectionId)]),
     ) as Record<ProfileSectionId, ProfileSectionSize>,
+    projectLayout: "grid",
   };
 }
 
@@ -333,6 +344,11 @@ export function normalizeProfilePresentation(value: unknown): ProfilePresentatio
         return acc;
       },
       {} as Record<ProfileSectionId, ProfileSectionSize>,
+    ),
+    projectLayout: normalizeEnumValue(
+      value.projectLayout,
+      profileProjectLayouts,
+      defaults.projectLayout,
     ),
   };
 }
@@ -684,6 +700,8 @@ export function getProfileTextScale(textScale: ProfileTextScale) {
 
 /** Cards in the profile's projects grid, not counting the featured one. */
 export const PROFILE_PROJECTS_GRID_LIMIT = 6;
+/** Gallery cards are small: three full rows of three. */
+export const PROFILE_GALLERY_GRID_LIMIT = 9;
 /** Articles shown on the profile before "View all". */
 export const PROFILE_ARTICLES_LIMIT = 3;
 
@@ -695,16 +713,43 @@ export const PROFILE_ARTICLES_LIMIT = 3;
 export function pickProfileProjects<T extends { is_pinned?: boolean | null }>(
   projects: readonly T[],
   size: ProfileSectionSize,
+  layout: ProfileProjectLayout = "grid",
 ): { featured: T | null; grid: T[] } {
   const roomForFeatured = size === "full" || size === "wide";
   const featured = roomForFeatured && projects[0]?.is_pinned ? projects[0] : null;
   const rest = featured ? projects.slice(1) : projects;
+  const limit = layout === "gallery" ? PROFILE_GALLERY_GRID_LIMIT : PROFILE_PROJECTS_GRID_LIMIT;
 
-  return { featured, grid: rest.slice(0, PROFILE_PROJECTS_GRID_LIMIT) };
+  return { featured, grid: rest.slice(0, limit) };
 }
 
-/** Grid columns for project and article cards, by the block's width. */
-export function getProfileItemsGridClass(size: ProfileSectionSize): string {
+/**
+ * Grid columns for project and article cards, by the block's width. Gallery
+ * cards keep two columns even on a phone; case cards are wide, so only a
+ * full-width block puts two side by side.
+ */
+export function getProfileItemsGridClass(
+  size: ProfileSectionSize,
+  layout: ProfileProjectLayout = "grid",
+): string {
+  if (layout === "gallery") {
+    switch (size) {
+      case "full":
+        return "grid-cols-2 lg:grid-cols-3";
+      case "regular":
+        return "grid-cols-2 lg:grid-cols-1 xl:grid-cols-2";
+      case "compact":
+        return "grid-cols-2 lg:grid-cols-1";
+      case "wide":
+      default:
+        return "grid-cols-2";
+    }
+  }
+
+  if (layout === "cases") {
+    return size === "full" ? "xl:grid-cols-2" : "";
+  }
+
   switch (size) {
     case "full":
       return "sm:grid-cols-2 xl:grid-cols-3";
