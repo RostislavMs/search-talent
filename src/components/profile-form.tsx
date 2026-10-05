@@ -31,6 +31,7 @@ import {
 } from "@/lib/profile-sections";
 import "@/app/profile-fonts.css";
 import ProfileContrastCheck from "@/components/profile-contrast-check";
+import ProfileStyleFile from "@/components/profile-style-file";
 import ProfileTemplatePicker from "@/components/profile-template-picker";
 import ProfileThemePicker from "@/components/profile-theme-picker";
 import { getActiveProfileThemeId } from "@/lib/profile-themes";
@@ -2480,6 +2481,8 @@ export default function ProfileForm({
             </div>
           </ControlGroup>
         </div>
+
+        <ProfileStyleFile presentation={presentation} onChange={setPresentation} />
       </section>
 
       <section

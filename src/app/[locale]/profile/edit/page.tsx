@@ -17,6 +17,7 @@ import { buildLoginHref } from "@/lib/auth/redirect";
 import { getMyProfile } from "@/lib/db/profile";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getProfileVisitorViewHref } from "@/lib/profile-visitor-view";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 
@@ -111,6 +112,11 @@ export default async function ProfileEditPage({
             <ButtonLink href={publicProfileHref} variant="secondary">
               {dictionary.dashboardProfile.viewPublicProfile}
             </ButtonLink>
+            {profile.username ? (
+              <ButtonLink href={getProfileVisitorViewHref(profile.username)} variant="ghost">
+                {dictionary.creatorProfile.visitorView}
+              </ButtonLink>
+            ) : null}
           </div>
         </div>
 

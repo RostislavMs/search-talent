@@ -138,24 +138,32 @@ function ThemeOption({
   );
 }
 
-/** A thumbnail of the theme: page colour, hero strip, a heading and the accent. */
 function ThemeSwatch({ theme }: { theme: ProfileTheme }) {
-  const look = applyProfileLook(createDefaultProfilePresentation(), theme);
-  const fonts = getProfileFonts(theme.fontPreset);
+  return (
+    <ProfileLookSwatch presentation={applyProfileLook(createDefaultProfilePresentation(), theme)} />
+  );
+}
+
+/**
+ * A thumbnail of a look: page colour, hero strip, a heading and the accent.
+ * The hero is drawn with its colours only — a photo isn't part of a look.
+ */
+export function ProfileLookSwatch({ presentation }: { presentation: ProfilePresentation }) {
+  const fonts = getProfileFonts(presentation.fontPreset);
 
   return (
     <span
       className="block p-2"
-      style={{ backgroundColor: theme.palette.surfaceColor }}
+      style={{ backgroundColor: presentation.surfaceColor }}
       aria-hidden="true"
     >
       <span
         className="flex h-14 flex-col justify-end rounded-lg px-2.5 pb-2"
-        style={{ background: getProfileHeroBackground(look) }}
+        style={{ background: getProfileHeroBackground({ ...presentation, backgroundUrl: null }) }}
       >
         <span
           className="text-base font-semibold leading-none"
-          style={{ color: theme.palette.textColor, fontFamily: fonts.heading }}
+          style={{ color: presentation.textColor, fontFamily: fonts.heading }}
         >
           Aa
         </span>
@@ -164,8 +172,8 @@ function ThemeSwatch({ theme }: { theme: ProfileTheme }) {
         <span
           className="h-4 rounded-full px-2 text-[9px] font-semibold leading-4"
           style={{
-            backgroundColor: theme.palette.accentColor,
-            color: getReadableTextColor(theme.palette.accentColor),
+            backgroundColor: presentation.accentColor,
+            color: getReadableTextColor(presentation.accentColor),
             fontFamily: fonts.body,
           }}
         >
@@ -173,7 +181,7 @@ function ThemeSwatch({ theme }: { theme: ProfileTheme }) {
         </span>
         <span
           className="h-1.5 flex-1 rounded-full"
-          style={{ backgroundColor: theme.palette.mutedColor, opacity: 0.45 }}
+          style={{ backgroundColor: presentation.mutedColor, opacity: 0.45 }}
         />
       </span>
     </span>
@@ -181,7 +189,7 @@ function ThemeSwatch({ theme }: { theme: ProfileTheme }) {
 }
 
 /** Half light, half dark: the site look follows the visitor's site theme. */
-function SiteSwatch() {
+export function SiteSwatch() {
   return (
     <span className="grid grid-cols-2" aria-hidden="true">
       {[
