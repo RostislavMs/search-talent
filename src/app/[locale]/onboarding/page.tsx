@@ -7,6 +7,7 @@ import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isProviderConfigured } from "@/lib/integrations/provider-registry";
 import { getInitialOnboardingStep } from "@/lib/onboarding";
+import { getActiveProfileTemplateId, isDefaultProfileLayout } from "@/lib/profile-templates";
 import { buildMetadata, getSiteUrl } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 import { isTemporaryUsername } from "@/lib/username";
@@ -63,6 +64,7 @@ export default async function OnboardingPage({
   const meta = await getProfileMeta(supabase);
   const { profile, checklist, completeness, publishedProjectsCount, user } = snapshot;
   const username = profile.username ?? "";
+  const presentation = profile.profile_visibility.presentation;
   // The code import is offered only when at least one provider can actually
   // connect; without OAuth keys the wizard hides the import panels anyway.
   const codeImportAvailable =
@@ -81,6 +83,8 @@ export default async function OnboardingPage({
           usernameIsTemporary: isTemporaryUsername(username),
           categoryId: profile.category_id,
           skillIds: profile.skill_ids,
+          templateId: getActiveProfileTemplateId(presentation),
+          layoutIsDefault: isDefaultProfileLayout(presentation),
         }}
         meta={meta}
         profileUrl={new URL(`/u/${username}`, getSiteUrl()).toString()}

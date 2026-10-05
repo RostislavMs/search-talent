@@ -31,6 +31,7 @@ import {
 } from "@/lib/profile-sections";
 import "@/app/profile-fonts.css";
 import ProfileContrastCheck from "@/components/profile-contrast-check";
+import ProfileTemplatePicker from "@/components/profile-template-picker";
 import ProfileThemePicker from "@/components/profile-theme-picker";
 import { getActiveProfileThemeId } from "@/lib/profile-themes";
 import {
@@ -2994,6 +2995,8 @@ export default function ProfileForm({
             {draftUi.resetCustomization}
           </Button>
         </div>
+
+        <ProfileTemplatePicker presentation={presentation} onChange={setPresentation} />
 
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3">

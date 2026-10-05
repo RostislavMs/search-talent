@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ONBOARDING_MAX_SKILLS } from "@/lib/onboarding";
+import { profileTemplateIds } from "@/lib/profile-templates";
 import { USERNAME_PATTERN } from "@/lib/username";
 
 function normalizeOptionalString(value: unknown) {
@@ -34,6 +35,8 @@ export const onboardingProfileSchema = z.object({
     .max(ONBOARDING_MAX_SKILLS, "too_many_skills")
     .default([])
     .transform((values) => [...new Set(values)]),
+  /** A layout template to put on the profile; left out, the layout stays. */
+  template: z.enum(profileTemplateIds).optional(),
 });
 
 export type OnboardingProfilePayload = z.infer<typeof onboardingProfileSchema>;

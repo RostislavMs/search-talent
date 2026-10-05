@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { markOnboarding } from "@/lib/db/onboarding";
+import { normalizeProfileSettings } from "@/lib/profile-presentation";
+import {
+  applyProfileTemplate,
+  getProfileTemplate,
+  templateBringsThemeByDefault,
+} from "@/lib/profile-templates";
 import { rateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -16,9 +22,10 @@ function isDuplicateUsernameError(message: string | undefined) {
 }
 
 /**
- * PATCH /api/onboarding — saves the "who you are" step: name, nick, direction
- * and skills. Unlike `PUT /api/profile` it touches only these fields, so the
- * rest of an existing profile stays as it is.
+ * PATCH /api/onboarding — saves the "who you are" step: name, nick, direction,
+ * skills and, when one was picked, a layout template. Unlike `PUT /api/profile`
+ * it touches only these fields, so the rest of an existing profile stays as it
+ * is; a template changes the look only (blocks, cards, theme), never content.
  */
 export async function PATCH(request: Request) {
   const supabase = await createClient();
@@ -45,7 +52,7 @@ export async function PATCH(request: Request) {
   const payload = parsed.data;
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id")
+    .select("id, profile_visibility")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -53,13 +60,27 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
+  const update: Record<string, unknown> = {
+    name: payload.name,
+    username: payload.username,
+    category_id: payload.category_id,
+  };
+
+  if (payload.template) {
+    const settings = normalizeProfileSettings(profile.profile_visibility);
+    update.profile_visibility = {
+      ...settings,
+      presentation: applyProfileTemplate(
+        settings.presentation,
+        getProfileTemplate(payload.template),
+        { withTheme: templateBringsThemeByDefault(settings.presentation) },
+      ),
+    };
+  }
+
   const { error: updateError } = await supabase
     .from("profiles")
-    .update({
-      name: payload.name,
-      username: payload.username,
-      category_id: payload.category_id,
-    })
+    .update(update)
     .eq("user_id", user.id);
 
   if (updateError) {

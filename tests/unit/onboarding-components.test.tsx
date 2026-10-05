@@ -108,7 +108,16 @@ describe("<OnboardingProfileStep />", () => {
     usernameIsTemporary: true,
     categoryId: null,
     skillIds: [],
+    templateId: null,
+    layoutIsDefault: true,
   };
+
+  function lastPatchBody() {
+    const patch = [...mockedFetch.mock.calls]
+      .reverse()
+      .find(([url, options]) => url === "/api/onboarding" && options?.method === "PATCH");
+    return patch?.[1]?.body as Record<string, unknown> | undefined;
+  }
 
   it("suggests a nick from the name while the nick is untouched", async () => {
     const user = userEvent.setup();
@@ -189,6 +198,89 @@ describe("<OnboardingProfileStep />", () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
+  it("preselects the template that suits the direction and saves it", async () => {
+    const user = userEvent.setup();
+    const onDone = vi.fn();
+    render(
+      <OnboardingProfileStep
+        initial={{ ...initial, categoryId: 5 }}
+        meta={meta}
+        onDone={onDone}
+        onSkip={vi.fn()}
+      />,
+    );
+
+    const gallery = screen.getByRole("button", { name: /Галерея/ });
+    expect(gallery).toHaveAttribute("aria-pressed", "true");
+    expect(gallery).toHaveTextContent(uk.profileTemplates.suggested);
+
+    await user.click(screen.getByRole("button", { name: uk.onboarding.saveAndNext }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(lastPatchBody()?.template).toBe("gallery");
+  });
+
+  it("saves a template picked by hand, and nothing once it is unpicked", async () => {
+    const user = userEvent.setup();
+    const onDone = vi.fn();
+    render(
+      <OnboardingProfileStep
+        initial={{ ...initial, categoryId: 5 }}
+        meta={meta}
+        onDone={onDone}
+        onSkip={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Резюме/ }));
+    expect(screen.getByRole("button", { name: /Резюме/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /Галерея/ })).toHaveAttribute("aria-pressed", "false");
+    await user.click(screen.getByRole("button", { name: uk.onboarding.saveAndNext }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    expect(lastPatchBody()?.template).toBe("resume");
+
+    await user.click(screen.getByRole("button", { name: /Резюме/ }));
+    expect(screen.getByRole("button", { name: /Резюме/ })).toHaveAttribute("aria-pressed", "false");
+    await user.click(screen.getByRole("button", { name: uk.onboarding.saveAndNext }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(2));
+    expect(lastPatchBody()?.template).toBeUndefined();
+  });
+
+  it("leaves a layout the author arranged alone", async () => {
+    const user = userEvent.setup();
+    const onDone = vi.fn();
+    render(
+      <OnboardingProfileStep
+        initial={{ ...initial, categoryId: 5, layoutIsDefault: false }}
+        meta={meta}
+        onDone={onDone}
+        onSkip={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryAllByRole("button", { pressed: true })).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: uk.onboarding.saveAndNext }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(lastPatchBody()?.template).toBeUndefined();
+  });
+
+  it("does not resend the template the profile already has", async () => {
+    const user = userEvent.setup();
+    const onDone = vi.fn();
+    render(
+      <OnboardingProfileStep
+        initial={{ ...initial, categoryId: 5, templateId: "cases", layoutIsDefault: false }}
+        meta={meta}
+        onDone={onDone}
+        onSkip={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /Кейси/ })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: uk.onboarding.saveAndNext }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(lastPatchBody()?.template).toBeUndefined();
+  });
+
   it("skips without saving", async () => {
     const user = userEvent.setup();
     const onSkip = vi.fn();
@@ -247,6 +339,8 @@ describe("<OnboardingFlow />", () => {
             usernameIsTemporary: true,
             categoryId: null,
             skillIds: [],
+            templateId: null,
+            layoutIsDefault: true,
           }}
           meta={meta}
           profileUrl="https://searchtalent.dev/u/user-ab12cd"
