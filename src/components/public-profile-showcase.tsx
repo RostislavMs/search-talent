@@ -24,8 +24,9 @@ import ShareButton from "@/components/ui/share-button";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 import type { PublicProfilePageData } from "@/lib/db/public";
+import "@/app/profile-fonts.css";
 import {
-  getProfileFontStack,
+  getProfileFontStyle,
   getProfileHeroBackground,
   getProfileHeroOverlay,
   getProfileItemsGridClass,
@@ -40,6 +41,7 @@ import {
   type ProfileSectionId,
   type ProfileSectionSize,
 } from "@/lib/profile-presentation";
+import { getProfileAccentInk } from "@/lib/profile-themes";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { formatOpenToList } from "@/lib/open-to";
 import { formatHourlyRate } from "@/lib/profile-private";
@@ -202,10 +204,10 @@ function getThemeStyle(presentation: ProfilePresentation) {
     // the site-wide brand colour, so the "Accent" picker actually applies.
     "--brand": accent,
     "--brand-strong": `color-mix(in srgb, ${accent} 85%, #000)`,
-    // Accent-coloured *text* is darkened harder than the fill colour, mirroring
-    // the --brand-strong/--brand-ink split in globals.css. Without this the
-    // profile would keep the site-wide brand ink and ignore the accent.
-    "--brand-ink": `color-mix(in srgb, ${accent} 70%, #000)`,
+    // Accent-coloured *text*, kept apart from the fill colour as in globals.css:
+    // the accent pushed just far enough to read on every backdrop of this
+    // palette — lighter on a dark page, darker on a light one.
+    "--brand-ink": getProfileAccentInk(presentation),
     "--brand-soft": withAlpha(accent, 0.16),
     // Text on the soft accent fill (score pills). The raw accent vanished on a
     // panel of a similar hue (purple on purple); pulling it towards the
@@ -433,13 +435,13 @@ export default function PublicProfileShowcase({
         backgroundColor: "var(--background)",
         color: "var(--foreground)",
         borderColor: "var(--border)",
-        fontFamily: getProfileFontStack(presentation.fontPreset),
+        ...getProfileFontStyle(presentation.fontPreset),
       }
     : {
         ...getThemeStyle(presentation),
         backgroundColor: presentation.surfaceColor,
         color: presentation.textColor,
-        fontFamily: getProfileFontStack(presentation.fontPreset),
+        ...getProfileFontStyle(presentation.fontPreset),
       };
 
   return (
@@ -558,7 +560,10 @@ export default function PublicProfileShowcase({
               </div>
 
               <div className="min-w-0 xl:self-end">
-                <div className={`flex flex-nowrap gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0 sm:flex-wrap sm:gap-2 sm:overflow-visible ${presentation.heroAlignment === "center" ? "sm:justify-center" : "xl:justify-end"}`}>
+                {/* Wraps on phones too: a sideways scroller with a hidden
+                    scrollbar left Save, PDF and Share off-screen with no hint
+                    that they were there. */}
+                <div className={`flex flex-wrap gap-1.5 sm:gap-2 ${presentation.heroAlignment === "center" ? "justify-center" : "xl:justify-end"}`}>
                   {isOwner && (
                     <ButtonLink href="/profile/edit" size="sm">
                       {dictionary.creatorProfile.editProfile}

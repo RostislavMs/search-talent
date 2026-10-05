@@ -29,10 +29,15 @@ import {
   type SalaryCurrency,
   type WorkFormat,
 } from "@/lib/profile-sections";
+import "@/app/profile-fonts.css";
+import ProfileContrastCheck from "@/components/profile-contrast-check";
+import ProfileThemePicker from "@/components/profile-theme-picker";
+import { getActiveProfileThemeId } from "@/lib/profile-themes";
 import {
   createDefaultProfilePresentation,
   createDefaultViewerPreferences,
-  getProfileFontStack,
+  getProfileFonts,
+  getProfileFontStyle,
   getProfileHeroBackground,
   getProfileHeroOverlay,
   getProfileSectionCardStyle,
@@ -625,11 +630,13 @@ export default function ProfileForm({
           solidColor:
             "\u041a\u043e\u043b\u0456\u0440 \u0444\u043e\u043d\u0443",
           fonts: {
-            modern: "\u0421\u0443\u0447\u0430\u0441\u043d\u0438\u0439",
+            modern: "\u042f\u043a \u043d\u0430 \u0441\u0430\u0439\u0442\u0456",
+            clean: "\u0427\u0456\u0442\u043a\u0438\u0439",
             editorial:
               "\u0420\u0435\u0434\u0430\u043a\u0446\u0456\u0439\u043d\u0438\u0439",
             friendly: "\u0416\u0438\u0432\u0438\u0439",
             technical: "\u0422\u0435\u0445\u043d\u0456\u0447\u043d\u0438\u0439",
+            bold: "\u0421\u043c\u0456\u043b\u0438\u0432\u0438\u0439",
           },
           scales: {
             sm: "\u041a\u043e\u043c\u043f\u0430\u043a\u0442\u043d\u0438\u0439",
@@ -703,10 +710,12 @@ export default function ProfileForm({
           gradientTo: "Gradient color 2",
           solidColor: "Background color",
           fonts: {
-            modern: "Modern",
+            modern: "Site default",
+            clean: "Clean",
             editorial: "Editorial",
             friendly: "Friendly",
             technical: "Technical",
+            bold: "Bold",
           },
           scales: {
             sm: "Compact",
@@ -749,6 +758,7 @@ export default function ProfileForm({
               "The order and width of blocks on your public page.",
           },
         };
+  const profileThemesUi = dictionary.profileThemes;
   const presentationExtrasUi =
     locale === "uk"
       ? {
@@ -1763,7 +1773,11 @@ export default function ProfileForm({
   };
 
   const previewScale = getProfileTextScale(presentation.textScale);
-  const previewFontFamily = getProfileFontStack(presentation.fontPreset);
+  const previewFonts = getProfileFonts(presentation.fontPreset);
+  const previewFontStyle = getProfileFontStyle(presentation.fontPreset);
+  // The hand-made colour controls open on their own once the palette is the
+  // author's own; behind a ready theme they'd only be noise.
+  const usesOwnPalette = getActiveProfileThemeId(presentation) === null;
   const getBuilderSpanClass = (size: ProfileSectionSize) => {
     switch (size) {
       case "compact":
@@ -2307,6 +2321,10 @@ export default function ProfileForm({
           </Button>
         </div>
 
+        <ProfileThemePicker presentation={presentation} onChange={setPresentation} />
+
+        <ProfileContrastCheck presentation={presentation} onChange={setPresentation} />
+
         {/* Palette-only preview: text + accent on the profile's base
             background, so colours/font/scale read clearly with no photo or
             card treatment (those live on the Background/Cards tabs). */}
@@ -2315,7 +2333,7 @@ export default function ProfileForm({
           style={{
             backgroundColor: presentation.surfaceColor,
             color: presentation.textColor,
-            fontFamily: previewFontFamily,
+            ...previewFontStyle,
           }}
         >
           <p
@@ -2327,6 +2345,7 @@ export default function ProfileForm({
           <h3
             className="mt-3 font-semibold"
             style={{
+              fontFamily: previewFonts.heading,
               fontSize: `${1.9 * previewScale.heading}rem`,
               lineHeight: 1.1,
             }}
@@ -2362,11 +2381,20 @@ export default function ProfileForm({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-          <ControlGroup
-            title={customizationUi.groups.colors}
-            className="lg:col-span-2"
+          {/* Keyed on the state so it re-opens by itself when the palette
+              stops matching a theme, and folds back when one is picked. */}
+          <details
+            key={usesOwnPalette ? "own" : "theme"}
+            open={usesOwnPalette}
+            className="group rounded-2xl border app-border bg-[color:var(--surface)] p-5 lg:col-span-2"
           >
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-[color:var(--foreground)] [&::-webkit-details-marker]:hidden">
+              {profileThemesUi.manual}
+              <span aria-hidden="true" className="app-soft transition-transform group-open:rotate-180">
+                ▾
+              </span>
+            </summary>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {(
                 [
                   ["accentColor", customizationUi.accentColor],
@@ -2387,7 +2415,7 @@ export default function ProfileForm({
                 />
               ))}
             </div>
-          </ControlGroup>
+          </details>
 
           <ControlGroup
             title={customizationUi.groups.typography}
@@ -2408,6 +2436,7 @@ export default function ProfileForm({
                           : "secondary"
                       }
                       size="sm"
+                      style={{ fontFamily: getProfileFonts(fontPreset).heading }}
                       onClick={() =>
                         updatePresentation(
                           "fontPreset",
@@ -2535,7 +2564,7 @@ export default function ProfileForm({
                 className="font-semibold"
                 style={{
                   color: presentation.textColor,
-                  fontFamily: previewFontFamily,
+                  fontFamily: previewFonts.heading,
                 }}
               >
                 {form.name || form.username || "Your profile"}
@@ -2555,6 +2584,8 @@ export default function ProfileForm({
             {customizationUi.groups.profileBackground}
           </p>
         </div>
+
+        <ProfileContrastCheck presentation={presentation} onChange={setPresentation} />
 
         <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
           <ControlGroup
@@ -2787,7 +2818,7 @@ export default function ProfileForm({
                 className="rounded-2xl p-4"
                 style={{
                   ...getProfileSectionCardStyle(presentation),
-                  fontFamily: previewFontFamily,
+                  ...previewFontStyle,
                 }}
               >
                 <div
@@ -2815,6 +2846,8 @@ export default function ProfileForm({
             ))}
           </div>
         </div>
+
+        <ProfileContrastCheck presentation={presentation} onChange={setPresentation} />
 
         <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
           <ControlGroup

@@ -133,32 +133,31 @@ export default function ProjectCard({
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-              {kindLabel || dictionary.common.project}
-            </p>
-            <h3 className="font-display mt-2 break-words text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
-              {project.title}
-            </h3>
-            {showOwner && (
-              <p className="mt-1.5 truncate text-xs app-soft">
-                {dictionary.common.by}{" "}
-                <span className="font-medium app-muted">{ownerLabel}</span>
-                {extraAuthors > 0 && (
-                  <span className="font-medium app-muted">
-                    , {coAuthorNames[0]}
-                    {extraAuthors > 1 ? ` +${extraAuthors - 1}` : ""}
-                  </span>
-                )}
-              </p>
-            )}
-          </div>
-
+        {/* The score shares the kind's row, so the title below gets the
+            card's full width instead of wrapping beside the pill. */}
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-eyebrow app-soft">
+            {kindLabel || dictionary.common.project}
+          </p>
           <span className="font-display shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
             {scoreLabel}
           </span>
         </div>
+        <h3 className="font-display mt-2 break-words text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
+          {project.title}
+        </h3>
+        {showOwner && (
+          <p className="mt-1.5 truncate text-xs app-soft">
+            {dictionary.common.by}{" "}
+            <span className="font-medium app-muted">{ownerLabel}</span>
+            {extraAuthors > 0 && (
+              <span className="font-medium app-muted">
+                , {coAuthorNames[0]}
+                {extraAuthors > 1 ? ` +${extraAuthors - 1}` : ""}
+              </span>
+            )}
+          </p>
+        )}
 
         {project.description && (
           <p

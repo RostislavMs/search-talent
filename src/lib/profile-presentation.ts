@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { contrastRatio } from "@/lib/color-contrast";
 import {
   createDefaultProfileVisibility,
   profileVisibilityKeys,
@@ -8,9 +9,11 @@ import {
 
 export const profileFontPresets = [
   "modern",
+  "clean",
   "editorial",
   "friendly",
   "technical",
+  "bold",
 ] as const;
 
 export const profileTextScales = ["sm", "md", "lg"] as const;
@@ -425,7 +428,7 @@ export function applyViewerCustomizationPreference(
 // look. Background media (hero photo/video), typography, text scale, hero
 // alignment and section layout are intentionally excluded — they don't change
 // whether the colour palette is "default".
-const defaultThemePaletteFields = [
+export const profileThemePaletteFields = [
   "accentColor",
   "surfaceColor",
   "panelColor",
@@ -452,23 +455,75 @@ export function isDefaultProfileTheme(
   presentation: ProfilePresentation,
 ): boolean {
   const defaults = createDefaultProfilePresentation();
-  return defaultThemePaletteFields.every(
+  return profileThemePaletteFields.every(
     (field) => presentation[field] === defaults[field],
   );
 }
 
-export function getProfileFontStack(fontPreset: ProfileFontPreset) {
+const SANS_FALLBACK = '"Segoe UI", "Helvetica Neue", Arial, sans-serif';
+const MANROPE = `"Manrope", "Manrope Fallback", ${SANS_FALLBACK}`;
+const ONEST = `"Onest", "Onest Fallback", ${SANS_FALLBACK}`;
+
+/**
+ * Real webfonts with Cyrillic, self-hosted: Manrope and JetBrains Mono come with
+ * the site (fonts.css), the rest from profile-fonts.css, which only pages that
+ * draw a profile in its author's style import. Headings get their own stack so
+ * a preset can pair a display face with a calmer body face.
+ */
+export function getProfileFonts(fontPreset: ProfileFontPreset): {
+  body: string;
+  heading: string;
+} {
   switch (fontPreset) {
-    case "editorial":
-      return 'Georgia, Cambria, "Times New Roman", serif';
-    case "friendly":
-      return '"Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif';
-    case "technical":
-      return '"Lucida Console", "Courier New", monospace';
+    case "clean":
+      return { body: ONEST, heading: ONEST };
+    case "editorial": {
+      const lora = '"Lora", "Lora Fallback", Georgia, "Times New Roman", serif';
+      return { body: lora, heading: lora };
+    }
+    case "friendly": {
+      const nunito = `"Nunito", "Nunito Fallback", "Trebuchet MS", ${SANS_FALLBACK}`;
+      return { body: nunito, heading: nunito };
+    }
+    case "technical": {
+      const mono =
+        '"JetBrains Mono", "JetBrains Mono Fallback", Consolas, "Courier New", monospace';
+      return { body: mono, heading: mono };
+    }
+    case "bold":
+      return {
+        body: ONEST,
+        heading: `"Unbounded", "Unbounded Fallback", ${SANS_FALLBACK}`,
+      };
+    // The site's own pairing, so a profile nobody styled matches the rest of
+    // the site (it is the default preset).
     case "modern":
     default:
-      return '"Segoe UI", "Helvetica Neue", Arial, sans-serif';
+      return {
+        body: MANROPE,
+        heading: '"Literata", "Literata Fallback", "Iowan Old Style", Georgia, serif',
+      };
   }
+}
+
+export function getProfileFontStack(fontPreset: ProfileFontPreset) {
+  return getProfileFonts(fontPreset).body;
+}
+
+/**
+ * Inline style that puts a profile subtree on its preset: the body font, plus
+ * the variables `font-display` and `font-sans` read, so headings and utility
+ * classes inside follow the preset instead of the site fonts.
+ */
+export function getProfileFontStyle(
+  fontPreset: ProfileFontPreset,
+): CSSProperties & Record<`--${string}`, string> {
+  const { body, heading } = getProfileFonts(fontPreset);
+  return {
+    fontFamily: body,
+    "--font-body": body,
+    "--font-display": heading,
+  };
 }
 
 export function withAlpha(hex: string, alpha: number) {
@@ -488,6 +543,9 @@ export function withAlpha(hex: string, alpha: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+const PROFILE_DARK_LABEL = "#0b1120";
+const PROFILE_LIGHT_LABEL = "#f8fafc";
+
 /**
  * Pick a legible text colour (near-black or near-white) for content that sits
  * on top of `hex`. Used for accent-coloured controls (buttons, badges) so their
@@ -495,28 +553,12 @@ export function withAlpha(hex: string, alpha: number) {
  * from any background colour so tuning the backdrop never changes button text.
  */
 export function getReadableTextColor(hex: string) {
-  const normalized = hex.replace("#", "");
-  const value =
-    normalized.length === 3
-      ? normalized
-          .split("")
-          .map((part) => `${part}${part}`)
-          .join("")
-      : normalized;
-  const parsed = Number.parseInt(value, 16);
-
-  if (Number.isNaN(parsed)) {
-    return "#0b1120";
-  }
-
-  const r = (parsed >> 16) & 255;
-  const g = (parsed >> 8) & 255;
-  const b = parsed & 255;
-  // Perceived brightness (YIQ). Bright accents get dark text, dark accents get
-  // light text.
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-
-  return brightness >= 150 ? "#0b1120" : "#f8fafc";
+  // Whichever of the two has the higher WCAG contrast on the accent. (A YIQ
+  // brightness cut-off used to decide, and it put white on mid-tone accents
+  // where dark text measured better.)
+  return contrastRatio(PROFILE_DARK_LABEL, hex) >= contrastRatio(PROFILE_LIGHT_LABEL, hex)
+    ? PROFILE_DARK_LABEL
+    : PROFILE_LIGHT_LABEL;
 }
 
 /**

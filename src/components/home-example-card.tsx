@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+import "@/app/profile-fonts.css";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 import type { HeroExamplePortfolio } from "@/lib/home-example";
@@ -61,11 +63,17 @@ export default function HomeExampleCard({
 
         <div
           className="p-2.5 sm:p-3"
-          style={{
-            backgroundColor: theme.surface,
-            color: theme.text,
-            fontFamily: theme.fontFamily,
-          }}
+          style={
+            {
+              backgroundColor: theme.surface,
+              color: theme.text,
+              fontFamily: theme.fontFamily,
+              "--font-body": theme.fontFamily,
+              ...(theme.headingFontFamily
+                ? { "--font-display": theme.headingFontFamily }
+                : {}),
+            } as CSSProperties
+          }
         >
           {/* Profile hero */}
           <div

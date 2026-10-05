@@ -2512,6 +2512,36 @@ export const dictionaries = {
       cardTitle: "Share your portfolio",
       cardDescription: "Your link, a ready post, a QR code and a badge for GitHub.",
     },
+    profileThemes: {
+      title: "Ready themes",
+      hint: "One click sets the colours, cards and font. Your photo, blocks and text stay as they are.",
+      site: "Site default",
+      siteHint: "Light or dark, like the rest of the site",
+      names: {
+        paper: "Paper",
+        mono: "Mono",
+        graphite: "Graphite",
+        ember: "Ember",
+        deep: "Deep sea",
+      },
+      random: "Random theme",
+      randomHint: "Matching colours and a font that always read well",
+      undo: "Undo",
+      undoHint: "Bring back the look you had before",
+      manual: "Customise colours by hand",
+      contrastOk: "Text reads well on every background.",
+      issues: {
+        text: "Main text is hard to read",
+        muted: "Secondary text is hard to read",
+        accent: "The accent blends into the background",
+        accentLabel: "Text on accent buttons is hard to read",
+      },
+      ratio: "Contrast {ratio}:1, needs at least {min}:1",
+      fix: "Fix",
+      fixHint: "Shifts the text and accent colours just enough. Backgrounds stay.",
+      mixedBackgrounds:
+        "Some backgrounds are light and some dark, so no single text colour suits them all. Make them all light or all dark.",
+    },
     openTo: {
       options: {
         freelance: "Freelance",
@@ -6353,6 +6383,36 @@ export const dictionaries = {
       close: "Закрити",
       cardTitle: "Поділіться портфоліо",
       cardDescription: "Посилання, готовий текст для допису, QR-код і значок для GitHub.",
+    },
+    profileThemes: {
+      title: "Готові теми",
+      hint: "Один клік — і кольори, картки та шрифт підібрані. Фото, блоки й текст лишаються як були.",
+      site: "Як на сайті",
+      siteHint: "Світла чи темна — як увесь сайт",
+      names: {
+        paper: "Папір",
+        mono: "Монохром",
+        graphite: "Графіт",
+        ember: "Жар",
+        deep: "Глибина",
+      },
+      random: "Випадкова тема",
+      randomHint: "Кольори й шрифт, що пасують одне одному і завжди добре читаються",
+      undo: "Повернути як було",
+      undoHint: "Відновити оформлення, яке було перед цим",
+      manual: "Налаштувати кольори вручну",
+      contrastOk: "Текст добре читається на всіх фонах.",
+      issues: {
+        text: "Основний текст погано видно",
+        muted: "Другорядний текст погано видно",
+        accent: "Акцент зливається з фоном",
+        accentLabel: "Напис на кнопках акценту погано видно",
+      },
+      ratio: "Контраст {ratio}:1, потрібно щонайменше {min}:1",
+      fix: "Виправити",
+      fixHint: "Трохи змінить колір тексту й акценту. Фони не чіпаємо.",
+      mixedBackgrounds:
+        "Частина фонів світла, а частина темна, тож один колір тексту не підійде всім. Зробіть фони однаково світлими або темними.",
     },
     openTo: {
       options: {
