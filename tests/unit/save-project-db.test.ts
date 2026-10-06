@@ -76,9 +76,23 @@ describe("saveProject", () => {
       id: PROJECT_ID,
       slug: "night-city",
       status: "draft",
+      moderationStatus: "approved",
+      autoRemoved: false,
       invited: [{ id: "inv1", userId: "u2" }],
       companyRequests: ["c1"],
     });
+  });
+
+  it("reads what auto-moderation did", () => {
+    expect(
+      parseSavedProject({
+        id: PROJECT_ID,
+        slug: "night-city",
+        status: "published",
+        moderation_status: "removed",
+        auto_removed: true,
+      }),
+    ).toMatchObject({ moderationStatus: "removed", autoRemoved: true, invited: [], companyRequests: [] });
   });
 
   it("passes the database error on", async () => {
@@ -105,6 +119,8 @@ describe("notifyProjectSaved", () => {
     id: PROJECT_ID,
     slug: "night-city",
     status: "published",
+    moderationStatus: "approved",
+    autoRemoved: false,
     invited: [{ id: "inv1", userId: "u2" }],
     companyRequests: ["c1", "c2"],
   };

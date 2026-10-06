@@ -9,10 +9,7 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { dispatchCommentSideEffects } from "@/lib/db/comment-events";
 import { isAllowedGifUrl } from "@/lib/gif/provider";
-import {
-  describeModerationResult,
-  screenContentForModeration,
-} from "@/lib/auto-moderation";
+import { commentModerationResult, describeModerationResult } from "@/lib/auto-moderation";
 import { getRequestLocale } from "@/lib/i18n/server";
 
 export async function POST(
@@ -56,22 +53,6 @@ export async function POST(
     return NextResponse.json({ error: "Invalid GIF URL" }, { status: 400 });
   }
 
-  // Comments have no review pipeline, so a flagged comment is rejected outright
-  // with a precise, localized explanation the author can act on. A GIF-only
-  // comment has no text to screen.
-  if (parsed.data.body.trim()) {
-    const screen = screenContentForModeration([parsed.data.body]);
-    if (screen.flagged) {
-      return NextResponse.json(
-        {
-          error: describeModerationResult(screen, await getRequestLocale()),
-          code: "moderation_blocked",
-        },
-        { status: 400 },
-      );
-    }
-  }
-
   const { data: article } = await supabase
     .from("articles")
     .select("id, slug, author_user_id, status, moderation_status")
@@ -107,6 +88,19 @@ export async function POST(
     })
     .select("id")
     .single();
+
+  // Comments have no review: the database refuses a flagged one
+  // (comment_moderation) and says what it found, so the author can fix it.
+  const blocked = commentModerationResult(error);
+  if (blocked) {
+    return NextResponse.json(
+      {
+        error: describeModerationResult(blocked, await getRequestLocale()),
+        code: "moderation_blocked",
+      },
+      { status: 400 },
+    );
+  }
 
   if (error || !inserted) {
     return NextResponse.json(

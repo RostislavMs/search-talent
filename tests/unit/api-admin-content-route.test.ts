@@ -6,6 +6,7 @@ import {
   type SupabaseMock,
 } from "./helpers/supabase-mock";
 
+vi.mock("server-only", () => ({}));
 vi.mock("@/lib/moderation-server", () => ({ getCurrentViewerRole: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 vi.mock("@/lib/db/trash", () => ({
@@ -25,8 +26,13 @@ const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
 const ID = "22222222-2222-4222-8222-222222222222";
 const adminUser: MockUser = { id: ADMIN_ID, email_confirmed_at: "2026-01-01T00:00:00Z" };
 
-function viewer(user: MockUser, isAdmin: boolean, resolve: (t: string, v: string) => QueryResult): SupabaseMock {
-  const mock = createSupabaseMock({ user, resolve: (c) => resolve(c.table, c.verb) });
+function viewer(
+  user: MockUser,
+  isAdmin: boolean,
+  resolve: (t: string, v: string) => QueryResult,
+  rpc?: (fn: string, args?: unknown) => QueryResult,
+): SupabaseMock {
+  const mock = createSupabaseMock({ user, resolve: (c) => resolve(c.table, c.verb), rpc });
   vi.mocked(getCurrentViewerRole).mockResolvedValue({ user: user as never, isAdmin, supabase: mock.client as never } as never);
   return mock;
 }
@@ -52,11 +58,27 @@ describe("admin/articles/[id]", () => {
     expect((await articlePatch(patchReq(moderate), params())).status).toBe(404);
   });
 
-  it("PATCH updates moderation status", async () => {
-    const mock = viewer(adminUser, true, (t, v) => (t === "articles" && v === "select" ? { data: { id: ID } } : { error: null }));
-    expect((await articlePatch(patchReq(moderate), params())).status).toBe(200);
-    const update = mock.calls.find((c) => c.table === "articles" && c.verb === "update");
-    expect((update?.payload as { moderation_status: string }).moderation_status).toBe("restricted");
+  it("PATCH is one moderate_content call (the database stamps, logs and notifies)", async () => {
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => ({
+      data: { items: [{ id: ID, previousStatus: "approved", status: "restricted", changed: true }] },
+    }));
+    vi.mocked(createAdminClient).mockReturnValue(null as never);
+    const mock = viewer(adminUser, true, () => ({ error: null }), rpc);
+    expect((await articlePatch(patchReq({ ...moderate, moderation_note: "copied" }), params())).status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith("moderate_content", {
+      p_target_type: "article",
+      p_target_ids: [ID],
+      p_status: "restricted",
+      p_note: "copied",
+      p_report_id: null,
+      p_report_status: null,
+    });
+    expect(mock.calls.some((c) => c.verb === "update")).toBe(false);
+  });
+
+  it("PATCH 404 when the article is gone", async () => {
+    viewer(adminUser, true, () => ({}), () => ({ data: { items: [] } }));
+    expect((await articlePatch(patchReq(moderate), params())).status).toBe(404);
   });
 
   it("DELETE removes the article", async () => {
@@ -67,10 +89,18 @@ describe("admin/articles/[id]", () => {
 });
 
 describe("admin/polls/[id] PATCH", () => {
-  it("updates poll moderation status", async () => {
-    const mock = viewer(adminUser, true, (t, v) => (t === "polls" && v === "select" ? { data: { id: ID } } : { error: null }));
+  it("updates poll moderation through moderate_content", async () => {
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => ({
+      data: { items: [{ id: ID, previousStatus: "restricted", status: "restricted", changed: false }] },
+    }));
+    viewer(adminUser, true, () => ({}), rpc);
     expect((await pollPatch(patchReq(moderate), params())).status).toBe(200);
-    expect(mock.calls.some((c) => c.table === "polls" && c.verb === "update")).toBe(true);
+    expect(rpc).toHaveBeenCalledWith("moderate_content", expect.objectContaining({ p_target_type: "poll", p_status: "restricted" }));
+  });
+
+  it("passes the database's error on", async () => {
+    viewer(adminUser, true, () => ({}), () => ({ data: null, error: { code: "22023", message: "invalid moderation status" } }));
+    expect((await pollPatch(patchReq(moderate), params())).status).toBe(400);
   });
 
   it("403 for non-admin", async () => {

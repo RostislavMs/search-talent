@@ -20,9 +20,10 @@ vi.mock("@/lib/moderation-server", () => ({
     return { supabase: client, user, isAdmin: holder.isAdmin };
   }),
 }));
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn(() => null) }));
 vi.mock("@/lib/db/companies", () => ({
   notifyCompanyVerified: vi.fn(async () => undefined),
-  notifyCompanyModeration: vi.fn(async () => undefined),
   getCompanyRole: vi.fn(async () => null),
   isCompanyLogoUrl: vi.fn(() => false),
   deleteCompanyLogo: vi.fn(async () => undefined),
@@ -34,7 +35,6 @@ import {
   deleteCompanyLogo,
   getCompanyRole,
   isCompanyLogoUrl,
-  notifyCompanyModeration,
   notifyCompanyVerified,
 } from "@/lib/db/companies";
 
@@ -42,8 +42,12 @@ const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
 const COMPANY_ID = "22222222-2222-4222-8222-222222222222";
 const admin: MockUser = { id: ADMIN_ID, email_confirmed_at: "2026-01-01T00:00:00Z" };
 
-function setMock(user: MockUser, resolve: (call: QueryCall) => QueryResult) {
-  holder.mock = createSupabaseMock({ user, resolve });
+function setMock(
+  user: MockUser,
+  resolve: (call: QueryCall) => QueryResult,
+  rpc: (fn: string, args?: unknown) => QueryResult = () => ({ data: { items: [] } }),
+) {
+  holder.mock = createSupabaseMock({ user, resolve, rpc });
   return holder.mock;
 }
 
@@ -117,28 +121,28 @@ describe("PATCH /api/admin/companies/:id", () => {
     });
   });
 
-  it("hides a page and tells its team, once", async () => {
-    const mock = setMock(admin, () => existing());
+  it("hides a page through moderate_content (the database logs it and tells the team)", async () => {
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => ({ data: { items: [] } }));
+    const mock = setMock(admin, () => existing(), rpc);
     const res = await PATCH(
       req("PATCH", { moderation_status: "removed", moderation_note: "fake employer" }),
       params,
     );
     expect(res.status).toBe(200);
-    const update = mock.calls.find((entry) => entry.verb === "update");
-    expect(update?.payload).toMatchObject({
-      moderation_status: "removed",
-      moderation_note: "fake employer",
-      moderated_by: ADMIN_ID,
+    expect(mock.calls.some((entry) => entry.verb === "update")).toBe(false);
+    expect(rpc).toHaveBeenCalledWith("moderate_content", {
+      p_target_type: "company",
+      p_target_ids: [COMPANY_ID],
+      p_status: "removed",
+      p_note: "fake employer",
+      p_report_id: null,
+      p_report_status: null,
     });
-    expect(notifyCompanyModeration).toHaveBeenCalledWith({
-      companyId: COMPANY_ID,
-      status: "removed",
-    });
+  });
 
-    vi.mocked(notifyCompanyModeration).mockClear();
-    setMock(admin, () => existing({ moderation_status: "removed" }));
-    await PATCH(req("PATCH", { moderation_status: "removed" }), params);
-    expect(notifyCompanyModeration).not.toHaveBeenCalled();
+  it("passes the database's refusal on", async () => {
+    setMock(admin, () => existing(), () => ({ data: null, error: { code: "42501", message: "only platform admins" } }));
+    expect((await PATCH(req("PATCH", { moderation_status: "removed" }), params)).status).toBe(403);
   });
 });
 

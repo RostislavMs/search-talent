@@ -5,7 +5,6 @@ import {
   TOP_PROJECTS_MAX_PER_OWNER,
 } from "@/lib/constants/visibility";
 import {
-  isLeaderboardSafeText,
   isTopCreatorEligible,
   selectFreshCreators,
   selectTopCreators,
@@ -98,26 +97,9 @@ describe("selectTopProjects", () => {
     expect(selectTopProjects(ranked, 5).map((p) => p.id)).toEqual(["1", "2", "4", "6", "3"]);
   });
 
-  it("never tops up with blocklisted projects", () => {
-    const ranked = [
-      project("1", "nyx"),
-      project("2", "nyx"),
-      project("3", "nyx", "Хентай ня"),
-    ];
-    expect(selectTopProjects(ranked).map((p) => p.id)).toEqual(["1", "2"]);
-  });
-
   it("caps ownerless projects individually instead of as one author", () => {
     const ranked = [project("a", null), project("b", null), project("c", null)];
     expect(selectTopProjects(ranked)).toHaveLength(3);
-  });
-
-  it("skips projects whose text the blocklist catches", () => {
-    const ranked = [
-      project("1", "edward", "Хентай ня"),
-      project("2", "nyx", "Edit Shinobu AMV"),
-    ];
-    expect(selectTopProjects(ranked).map((p) => p.id)).toEqual(["2"]);
   });
 
   it("stops at the display size", () => {
@@ -135,17 +117,5 @@ describe("selectFreshCreators", () => {
       creator("flagged-only", 1, 70, null),
     ];
     expect(selectFreshCreators(creators).map((c) => c.id)).toEqual(["new", "old"]);
-  });
-});
-
-describe("isLeaderboardSafeText", () => {
-  it("passes ordinary text and ignores spam heuristics", () => {
-    expect(isLeaderboardSafeText(["Growfy page layout", null])).toBe(true);
-    const shouting = "A".repeat(120);
-    expect(isLeaderboardSafeText([shouting])).toBe(true);
-  });
-
-  it("fails blocklisted text", () => {
-    expect(isLeaderboardSafeText(["free porn"])).toBe(false);
   });
 });

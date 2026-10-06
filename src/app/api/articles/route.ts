@@ -7,13 +7,7 @@ import { articlePayloadSchema } from "@/lib/validation/articles";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
-import {
-  CLEAN_MODERATION_RESULT,
-  collectArticleModerationText,
-  describeModerationResult,
-  screenContentForModeration,
-} from "@/lib/auto-moderation";
-import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { readAutoModerationReason } from "@/lib/db/moderation-actions";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { inviteCoAuthors } from "@/lib/db/co-authors";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
@@ -82,14 +76,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // Auto-moderation runs only on publish. A flagged article is auto-removed
-  // (hidden by RLS) right after insert and the author is notified; clean
-  // content keeps the previous auto-approve behaviour.
-  const screen =
-    payload.status === "published"
-      ? screenContentForModeration(collectArticleModerationText(payload))
-      : CLEAN_MODERATION_RESULT;
-
+  // The database screens an article that goes out (or waits for its
+  // co-authors): a flagged one is removed on insert and its author told.
   const slug = await ensureUniqueArticleSlug(
     payload.title,
     undefined,
@@ -120,7 +108,7 @@ export async function POST(request: Request) {
       published_at:
         payload.status === "published" && !holdForCoAuthors ? now : null,
     })
-    .select("id, slug")
+    .select("id, slug, moderation_status")
     .maybeSingle();
 
   if (error || !data) {
@@ -130,11 +118,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (screen.flagged) {
-    await autoRemoveContent({ table: "articles", id: data.id, note: screen.note });
-  }
+  const autoRemoved = data.moderation_status === "removed";
 
-  if (coAuthorIds.length > 0 && !screen.flagged) {
+  if (coAuthorIds.length > 0 && !autoRemoved) {
     await inviteCoAuthors({
       supabase: context.supabase,
       contentType: "article",
@@ -148,7 +134,7 @@ export async function POST(request: Request) {
 
   // Notify followers only when the article is actually public (published AND
   // not auto-removed). A draft held for co-authors notifies on auto-publish.
-  if (payload.status === "published" && !screen.flagged && !holdForCoAuthors) {
+  if (payload.status === "published" && !autoRemoved && !holdForCoAuthors) {
     void dispatchPublishSideEffects({
       contentType: "article",
       contentId: data.id,
@@ -159,10 +145,10 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({
-    article: data,
-    autoRemoved: screen.flagged,
-    moderationReason: screen.flagged
-      ? describeModerationResult(screen, await getRequestLocale())
+    article: { id: data.id, slug: data.slug },
+    autoRemoved,
+    moderationReason: autoRemoved
+      ? await readAutoModerationReason(context.supabase, "article", data.id, await getRequestLocale())
       : null,
     awaitingCoAuthors: holdForCoAuthors,
   });

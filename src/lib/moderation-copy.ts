@@ -14,7 +14,7 @@ export function getModerationCopy(locale: Locale) {
         eyebrow: "Модерація",
         title: "Черга перевірки контенту",
         description:
-          "Тут зібрані скарги, поточні статуси та швидкі дії для профілів і проєктів. Основа вже розрахована на великий потік перевірок.",
+          "Скарги на профілі, роботи, статті, опитування, коментарі, сторінки компаній і вакансії — з поточним статусом і діями. Кожне рішення потрапляє в журнал, а власник отримує сповіщення.",
         openQueue: "Відкрити модерацію",
         noAccess: "Ця сторінка доступна лише адміністраторам.",
         empty: "У черзі немає активних скарг.",
@@ -38,10 +38,16 @@ export function getModerationCopy(locale: Locale) {
         buttonProfile: "Поскаржитися на профіль",
         buttonCompany: "Поскаржитися на сторінку",
         buttonVacancy: "Поскаржитися на вакансію",
+        buttonArticle: "Поскаржитися на статтю",
+        buttonPoll: "Поскаржитися на опитування",
+        buttonComment: "Поскаржитися",
         titleProject: "Скарга на проєкт",
         titleProfile: "Скарга на профіль",
         titleCompany: "Скарга на сторінку компанії",
         titleVacancy: "Скарга на вакансію",
+        titleArticle: "Скарга на статтю",
+        titlePoll: "Скарга на опитування",
+        titleComment: "Скарга на коментар",
         description:
           "Опишіть проблему коротко й по суті. Це допоможе швидше пріоритезувати перевірку.",
         reasonLabel: "Причина скарги",
@@ -56,6 +62,7 @@ export function getModerationCopy(locale: Locale) {
         duplicate:
           "Схожа активна скарга від вас уже є. Не потрібно дублювати її ще раз.",
         errorFallback: "Не вдалося надіслати скаргу.",
+        rateLimited: "Забагато скарг за хвилину. Спробуйте трохи пізніше.",
         loginToReport: "Увійдіть, щоб поскаржитися",
       },
       actions: {
@@ -65,6 +72,8 @@ export function getModerationCopy(locale: Locale) {
         saveReview: "Перенести на перевірку",
         saveRestrict: "Обмежити показ",
         saveRemove: "Прибрати з публічного доступу",
+        removeComment: "Видалити коментар",
+        keepComment: "Залишити коментар",
         dismissReport: "Відхилити скаргу",
         resolveReport: "Закрити скаргу",
         saving: "Збереження...",
@@ -102,8 +111,12 @@ export function getModerationCopy(locale: Locale) {
         profile: "Профіль",
         project: "Проєкт",
         article: "Стаття",
+        poll: "Опитування",
         company: "Компанія",
         vacancy: "Вакансія",
+        project_comment: "Коментар до проєкту",
+        article_comment: "Коментар до статті",
+        poll_comment: "Коментар до опитування",
       } satisfies Record<ReportTargetType, string>,
     };
   }
@@ -113,7 +126,7 @@ export function getModerationCopy(locale: Locale) {
       eyebrow: "Moderation",
       title: "Content review queue",
       description:
-        "Reports, current statuses, and quick actions for profiles and projects. The structure is ready for a much larger review flow later.",
+        "Reports on profiles, projects, articles, polls, comments, company pages and vacancies — with the current status and actions. Every decision goes into the log, and the owner is notified.",
       openQueue: "Open moderation",
       noAccess: "This page is available only to administrators.",
       empty: "There are no active reports in the queue.",
@@ -137,10 +150,16 @@ export function getModerationCopy(locale: Locale) {
       buttonProfile: "Report profile",
       buttonCompany: "Report page",
       buttonVacancy: "Report vacancy",
+      buttonArticle: "Report article",
+      buttonPoll: "Report poll",
+      buttonComment: "Report",
       titleProject: "Report project",
       titleProfile: "Report profile",
       titleCompany: "Report company page",
       titleVacancy: "Report vacancy",
+      titleArticle: "Report article",
+      titlePoll: "Report poll",
+      titleComment: "Report comment",
       description:
         "Describe the issue clearly and briefly. That makes prioritization and review much easier.",
       reasonLabel: "Report reason",
@@ -155,6 +174,7 @@ export function getModerationCopy(locale: Locale) {
       duplicate:
         "You already have a similar active report for this item. No need to submit it again.",
       errorFallback: "Could not submit the report.",
+      rateLimited: "Too many reports in a minute. Try again a bit later.",
       loginToReport: "Log in to report",
     },
     actions: {
@@ -164,6 +184,8 @@ export function getModerationCopy(locale: Locale) {
       saveReview: "Move to review",
       saveRestrict: "Restrict visibility",
       saveRemove: "Remove from public access",
+      removeComment: "Delete the comment",
+      keepComment: "Keep the comment",
       dismissReport: "Dismiss report",
       resolveReport: "Resolve report",
       saving: "Saving...",
@@ -201,8 +223,12 @@ export function getModerationCopy(locale: Locale) {
       profile: "Profile",
       project: "Project",
       article: "Article",
+      poll: "Poll",
       company: "Company",
       vacancy: "Vacancy",
+      project_comment: "Project comment",
+      article_comment: "Article comment",
+      poll_comment: "Poll comment",
     } satisfies Record<ReportTargetType, string>,
   };
 }

@@ -23,14 +23,9 @@ vi.mock("@/lib/moderation-server", () => ({
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn(() => null) }));
 vi.mock("@/lib/db/notifications", () => ({ createNotifications: vi.fn(async () => undefined) }));
 vi.mock("@/lib/db/companies", () => ({ getCompanyRole: vi.fn(async () => null) }));
-vi.mock("@/lib/db/vacancies", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/db/vacancies")>();
-  return { ...actual, holdVacancyForReview: vi.fn(async () => true) };
-});
 
 import { POST } from "@/app/api/vacancies/[id]/status/route";
 import { getCompanyRole } from "@/lib/db/companies";
-import { holdVacancyForReview } from "@/lib/db/vacancies";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const COMPANY_ID = "22222222-2222-4222-8222-222222222222";
@@ -77,8 +72,9 @@ function setMock(
   row: ReturnType<typeof stored> | null,
   {
     savedModeration = "approved",
+    savedNote = null,
     updateResult,
-  }: { savedModeration?: string; updateResult?: QueryResult } = {},
+  }: { savedModeration?: string; savedNote?: string | null; updateResult?: QueryResult } = {},
 ) {
   holder.mock = createSupabaseMock({
     user,
@@ -94,6 +90,7 @@ function setMock(
             status: patch.status,
             expires_at: patch.expires_at ? "2026-11-30T12:00:00Z" : row?.expires_at ?? null,
             moderation_status: savedModeration,
+            moderation_note: savedNote,
           },
         };
       }
@@ -121,7 +118,6 @@ const future = (days: number) => new Date(Date.now() + days * DAY).toISOString()
 beforeEach(() => {
   holder.isAdmin = false;
   vi.mocked(getCompanyRole).mockResolvedValue("recruiter");
-  vi.mocked(holdVacancyForReview).mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -171,7 +167,7 @@ describe("POST /api/vacancies/:id/status — guards", () => {
 });
 
 describe("publish", () => {
-  it("sends a complete draft out and screens it", async () => {
+  it("sends a complete draft out", async () => {
     const mock = setMock(stored());
     const res = await POST(req({ action: "publish" }), params());
     expect(res.status).toBe(200);
@@ -181,7 +177,6 @@ describe("publish", () => {
       vacancy: { id: VACANCY_ID, status: "published", expiresAt: null, moderationStatus: "approved" },
       heldForReview: false,
     });
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
   });
 
   it.each(["published", "closed", "expired"])("409 for a %s vacancy", async (status) => {
@@ -218,31 +213,25 @@ describe("publish", () => {
     expect((await POST(req({ action: "publish" }), params())).status).toBe(200);
   });
 
-  it("holds a draft whose text reads like a scam at the moment it goes out", async () => {
-    setMock(stored({ description: `<p>${longText} Потрібно внести депозит за обладнання.</p>` }));
+  it("says when the database held the text as it went out", async () => {
+    setMock(stored(), { savedModeration: "under_review", savedNote: "[авто] Виявлено: ознаки шахрайства" });
     const res = await POST(req({ action: "publish" }), params());
     expect(await res.json()).toMatchObject({
       vacancy: { status: "published", moderationStatus: "under_review" },
       heldForReview: true,
     });
-    expect(holdVacancyForReview).toHaveBeenCalledWith(VACANCY_ID, expect.stringContaining("[авто]"));
   });
 
-  it("screens a vacancy the database sent to a moderator too, so the note says why", async () => {
-    setMock(stored({ description: `<p>${longText} Pay a registration fee.</p>` }), { savedModeration: "under_review" });
+  it("does not call an unverified company's wait a hold", async () => {
+    setMock(stored(), { savedModeration: "under_review" });
     const res = await POST(req({ action: "publish" }), params());
-    expect(await res.json()).toMatchObject({
-      vacancy: { moderationStatus: "under_review" },
-      heldForReview: true,
-    });
-    expect(holdVacancyForReview).toHaveBeenCalledWith(VACANCY_ID, expect.stringContaining("[авто]"));
+    expect(await res.json()).toMatchObject({ vacancy: { moderationStatus: "under_review" }, heldForReview: false });
   });
 
   it("leaves a stricter decision alone", async () => {
-    setMock(stored({ description: `<p>${longText} Pay a registration fee.</p>` }), { savedModeration: "removed" });
+    setMock(stored(), { savedModeration: "removed", savedNote: "[авто] old" });
     const res = await POST(req({ action: "publish" }), params());
     expect((await res.json()).heldForReview).toBe(false);
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
   });
 });
 
@@ -269,10 +258,12 @@ describe("close", () => {
     expect(updateOf(mock)).toBeUndefined();
   });
 
-  it("never screens on close", async () => {
-    setMock(stored({ status: "published", expires_at: future(30), description: `<p>${longText} Внесіть депозит.</p>` }));
-    await POST(req({ action: "close" }), params());
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
+  it("never reports a hold on close", async () => {
+    setMock(stored({ status: "published", expires_at: future(30) }), {
+      savedModeration: "under_review",
+      savedNote: "[авто] Виявлено: ознаки шахрайства",
+    });
+    expect((await (await POST(req({ action: "close" }), params())).json()).heldForReview).toBe(false);
   });
 });
 
@@ -298,7 +289,6 @@ describe("extend", () => {
       vacancy: { id: VACANCY_ID, status: "published", expiresAt: "2026-11-30T12:00:00Z", moderationStatus: "approved" },
       heldForReview: false,
     });
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
   });
 
   it("409 for a draft: it has to be published first", async () => {

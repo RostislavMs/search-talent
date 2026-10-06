@@ -19,10 +19,6 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import { getDiscussionsListing } from "@/lib/db/discussions";
 import { getAdminCommentsList } from "@/lib/db/admin-content";
-import {
-  collectArticleModerationText,
-  screenContentForModeration,
-} from "@/lib/auto-moderation";
 
 const CATEGORY_ID = 7;
 const VIEWER_ID = "viewer-1";
@@ -186,31 +182,5 @@ describe("admin comment moderation", () => {
   });
 });
 
-describe("auto-moderation applies to topics", () => {
-  // Topics are saved through the articles route, so they inherit its screening.
-  // This pins that the screened text actually includes a topic's two fields.
-  it("screens the title and the body of a topic payload", () => {
-    const parts = collectArticleModerationText({
-      title: "Title",
-      excerpt: null,
-      content: "<p>Body</p>",
-      translations: {},
-    });
-
-    expect(parts).toContain("Title");
-    expect(parts).toContain("<p>Body</p>");
-  });
-
-  it("returns a clean verdict for ordinary text", () => {
-    const screen = screenContentForModeration(
-      collectArticleModerationText({
-        title: "Як обрати стек для пет-проєкту",
-        excerpt: null,
-        content: "<p>Розкажіть, що використовуєте і чому.</p>",
-        translations: {},
-      }),
-    );
-
-    expect(screen.flagged).toBe(false);
-  });
-});
+// Topics are saved through the articles route, so the database screens them
+// like any article (title, excerpt, body and translations).

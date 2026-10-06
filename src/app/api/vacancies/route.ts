@@ -6,17 +6,14 @@ import { dbRateLimit } from "@/lib/rate-limit";
 import { buildVacancySlug } from "@/lib/vacancies";
 import { createVacancySchema, vacancyReadinessIssues } from "@/lib/validation/vacancies";
 import { parseJsonRequest } from "@/lib/validation/request";
-import {
-  sanitizeVacancyDescription,
-  screenVacancy,
-  vacancyWriteErrorResponse,
-} from "./shared";
+import { isAutoModerationNote } from "@/lib/auto-moderation";
+import { sanitizeVacancyDescription, vacancyWriteErrorResponse } from "./shared";
 
 /**
  * POST /api/vacancies — a company's team member writes a vacancy, as a draft
  * or straight out. The database stamps the dates, caps a company at 5 new
- * vacancies a day and sends an unverified company's vacancy to a moderator;
- * text that trips auto-moderation is held here.
+ * vacancies a day, sends an unverified company's vacancy to a moderator and
+ * holds one whose text trips auto-moderation.
  */
 export async function POST(request: Request) {
   const context = await getCurrentViewerRole();
@@ -102,19 +99,13 @@ export async function POST(request: Request) {
   }
 
   const heldForReview =
-    vacancy.status !== "draft"
-      ? await screenVacancy(vacancy.id, {
-          title: payload.title,
-          description: description.html,
-          city: payload.city,
-        })
-      : false;
+    vacancy.moderation_status === "under_review" && isAutoModerationNote(vacancy.moderation_note);
 
   return NextResponse.json(
     {
       vacancy: { id: vacancy.id, slug: vacancy.slug },
       heldForReview,
-      moderationStatus: heldForReview ? "under_review" : vacancy.moderation_status,
+      moderationStatus: vacancy.moderation_status,
     },
     { status: 201 },
   );

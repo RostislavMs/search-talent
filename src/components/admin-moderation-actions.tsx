@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/Button";
 import FormTextarea from "@/components/ui/form-textarea";
 import { apiFetch } from "@/lib/api-client";
 import type { ModerationCopy } from "@/lib/moderation-copy";
-import type { ModerationStatus, ReportTargetType } from "@/lib/moderation";
+import {
+  isCommentReportTarget,
+  type ModerationStatus,
+  type ReportTargetType,
+} from "@/lib/moderation";
 
 type AdminModerationActionsProps = {
   copy: ModerationCopy;
@@ -75,103 +79,129 @@ export default function AdminModerationActions({
         className="w-full bg-[color:var(--surface-muted)] px-4 py-3 text-sm leading-7 text-[color:var(--foreground)]"
       />
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          disabled={Boolean(pendingAction)}
-          onClick={() =>
-            applyAction({
-              key: "approve",
-              moderationStatus: "approved",
-              reportStatus: "resolved",
-            })
-          }
-        >
-          {pendingAction === "approve"
-            ? copy.actions.saving
-            : copy.actions.saveApprove}
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={Boolean(pendingAction)}
-          onClick={() =>
-            applyAction({
-              key: "review",
-              moderationStatus: "under_review",
-              reportStatus: "triaged",
-            })
-          }
-        >
-          {pendingAction === "review"
-            ? copy.actions.saving
-            : copy.actions.saveReview}
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={Boolean(pendingAction)}
-          onClick={() =>
-            applyAction({
-              key: "restrict",
-              moderationStatus: "restricted",
-              reportStatus: "resolved",
-            })
-          }
-        >
-          {pendingAction === "restrict"
-            ? copy.actions.saving
-            : copy.actions.saveRestrict}
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={Boolean(pendingAction)}
-          onClick={() =>
-            applyAction({
-              key: "remove",
-              moderationStatus: "removed",
-              reportStatus: "resolved",
-            })
-          }
-        >
-          {pendingAction === "remove"
-            ? copy.actions.saving
-            : copy.actions.saveRemove}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={Boolean(pendingAction)}
-          onClick={() =>
-            applyAction({
-              key: "dismiss",
-              moderationStatus: fallbackStatus,
-              reportStatus: "dismissed",
-            })
-          }
-        >
-          {pendingAction === "dismiss"
-            ? copy.actions.saving
-            : copy.actions.dismissReport}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={Boolean(pendingAction)}
-          onClick={() =>
-            applyAction({
-              key: "resolve",
-              moderationStatus: fallbackStatus,
-              reportStatus: "resolved",
-            })
-          }
-        >
-          {pendingAction === "resolve"
-            ? copy.actions.saving
-            : copy.actions.resolveReport}
-        </Button>
-      </div>
+      {isCommentReportTarget(targetType) ? (
+        // A comment has no review: it stays, or it is deleted (into the
+        // trash for 60 days) and its author is told.
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            disabled={Boolean(pendingAction)}
+            onClick={() =>
+              applyAction({ key: "remove", moderationStatus: "removed", reportStatus: "resolved" })
+            }
+          >
+            {pendingAction === "remove" ? copy.actions.saving : copy.actions.removeComment}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={Boolean(pendingAction)}
+            onClick={() =>
+              applyAction({ key: "dismiss", moderationStatus: "approved", reportStatus: "dismissed" })
+            }
+          >
+            {pendingAction === "dismiss" ? copy.actions.saving : copy.actions.keepComment}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            disabled={Boolean(pendingAction)}
+            onClick={() =>
+              applyAction({
+                key: "approve",
+                moderationStatus: "approved",
+                reportStatus: "resolved",
+              })
+            }
+          >
+            {pendingAction === "approve"
+              ? copy.actions.saving
+              : copy.actions.saveApprove}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={Boolean(pendingAction)}
+            onClick={() =>
+              applyAction({
+                key: "review",
+                moderationStatus: "under_review",
+                reportStatus: "triaged",
+              })
+            }
+          >
+            {pendingAction === "review"
+              ? copy.actions.saving
+              : copy.actions.saveReview}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={Boolean(pendingAction)}
+            onClick={() =>
+              applyAction({
+                key: "restrict",
+                moderationStatus: "restricted",
+                reportStatus: "resolved",
+              })
+            }
+          >
+            {pendingAction === "restrict"
+              ? copy.actions.saving
+              : copy.actions.saveRestrict}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={Boolean(pendingAction)}
+            onClick={() =>
+              applyAction({
+                key: "remove",
+                moderationStatus: "removed",
+                reportStatus: "resolved",
+              })
+            }
+          >
+            {pendingAction === "remove"
+              ? copy.actions.saving
+              : copy.actions.saveRemove}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={Boolean(pendingAction)}
+            onClick={() =>
+              applyAction({
+                key: "dismiss",
+                moderationStatus: fallbackStatus,
+                reportStatus: "dismissed",
+              })
+            }
+          >
+            {pendingAction === "dismiss"
+              ? copy.actions.saving
+              : copy.actions.dismissReport}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={Boolean(pendingAction)}
+            onClick={() =>
+              applyAction({
+                key: "resolve",
+                moderationStatus: fallbackStatus,
+                reportStatus: "resolved",
+              })
+            }
+          >
+            {pendingAction === "resolve"
+              ? copy.actions.saving
+              : copy.actions.resolveReport}
+          </Button>
+        </div>
+      )}
 
       {feedback && <p className="text-sm text-emerald-600">{feedback}</p>}
       {error && <p className="text-sm text-rose-600">{error}</p>}

@@ -21,13 +21,9 @@ vi.mock("@/lib/db/articles", () => ({
 }));
 vi.mock("@/lib/rich-text", () => ({ sanitizeRichTextHtml: (s: string) => s }));
 vi.mock("@/lib/db/publish-events", () => ({ dispatchPublishSideEffects: vi.fn() }));
-vi.mock("@/lib/auto-moderation", () => ({
-  CLEAN_MODERATION_RESULT: { flagged: false, note: "" },
-  collectArticleModerationText: () => "",
-  screenContentForModeration: vi.fn(() => ({ flagged: false, note: "" })),
-  describeModerationResult: () => "flagged reason",
+vi.mock("@/lib/db/moderation-actions", () => ({
+  readAutoModerationReason: vi.fn(async () => "flagged reason"),
 }));
-vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 vi.mock("@/lib/db/co-authors", () => ({ inviteCoAuthors: vi.fn() }));
 
@@ -35,8 +31,6 @@ import { POST } from "@/app/api/articles/route";
 import { NextResponse } from "next/server";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
-import { screenContentForModeration } from "@/lib/auto-moderation";
-import { autoRemoveContent, } from "@/lib/auto-moderation-apply";
 import { inviteCoAuthors } from "@/lib/db/co-authors";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -77,7 +71,6 @@ function req(body: unknown = base): Request {
 afterEach(() => {
   holder.mock = null;
   vi.clearAllMocks();
-  vi.mocked(screenContentForModeration).mockReturnValue({ flagged: false, note: "" } as never);
 });
 
 describe("POST /api/articles — rate limiting", () => {
@@ -128,13 +121,20 @@ describe("POST /api/articles — creation", () => {
     expect(vi.mocked(inviteCoAuthors)).not.toHaveBeenCalled();
   });
 
-  it("auto-removes flagged content and reports it in the response", async () => {
-    vi.mocked(screenContentForModeration).mockReturnValue({ flagged: true, note: "bad" } as never);
-    viewer(authUser, false, okResolver);
-    const res = await POST(req());
+  it("reports an article the database took down, and invites nobody", async () => {
+    viewer(authUser, false, (table, verb) =>
+      table === "articles" && verb === "insert"
+        ? { data: { id: ARTICLE_ID, slug: "generated-slug", moderation_status: "removed" } }
+        : okResolver(table, verb),
+    );
+    const res = await POST(req({ ...base, coAuthorUserIds: [CO_AUTHOR] }));
     expect(res.status).toBe(200);
-    expect(vi.mocked(autoRemoveContent)).toHaveBeenCalledWith({ table: "articles", id: ARTICLE_ID, note: "bad" });
-    expect((await res.json()).autoRemoved).toBe(true);
+    expect(await res.json()).toMatchObject({
+      article: { id: ARTICLE_ID, slug: "generated-slug" },
+      autoRemoved: true,
+      moderationReason: "flagged reason",
+    });
+    expect(vi.mocked(inviteCoAuthors)).not.toHaveBeenCalled();
   });
 
   it("holds a published article as a draft when co-authors are invited", async () => {

@@ -8,13 +8,7 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildSavePollPayload } from "@/lib/db/save-poll-payload";
-import {
-  CLEAN_MODERATION_RESULT,
-  collectPollModerationText,
-  describeModerationResult,
-  screenContentForModeration,
-} from "@/lib/auto-moderation";
-import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { readAutoModerationReason } from "@/lib/db/moderation-actions";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { notifyCoAuthorInvites, parseNewCoAuthorInvites } from "@/lib/db/co-authors";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
@@ -81,21 +75,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // Auto-moderation runs only on publish. `save_poll` always inserts as
-  // 'approved'; a flagged poll is auto-removed right after via the service-role
-  // client (the guard trigger blocks the author from changing moderation cols).
-  const screen =
-    payload.status === "published"
-      ? screenContentForModeration(collectPollModerationText(payload))
-      : CLEAN_MODERATION_RESULT;
-
   const slug = await ensureUniquePollSlug(payload.title);
 
   // The poll, its hold until every co-author answers, and the invitations in
-  // one transaction. A flagged poll invites nobody — nothing to share yet.
+  // one transaction. The database screens a poll that goes out (questions and
+  // options too): a flagged one is removed, its author told, and it invites
+  // nobody — nothing to share yet.
   const { data, error } = await context.supabase.rpc("save_poll_with_co_authors", {
     p_hold: holdForCoAuthors,
-    p_co_author_ids: screen.flagged ? [] : coAuthorIds,
+    p_co_author_ids: coAuthorIds,
     p_payload: buildSavePollPayload(
       // Held for co-authors: insert as a draft so it stays private until every
       // invitee accepts, then auto-publishes.
@@ -120,12 +108,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const saved = data as { id: string; slug: string; invited?: unknown };
+  const saved = data as { id: string; slug: string; invited?: unknown; auto_removed?: unknown };
   const result = { id: saved.id, slug: saved.slug };
-
-  if (screen.flagged) {
-    await autoRemoveContent({ table: "polls", id: result.id, note: screen.note });
-  }
+  const autoRemoved = saved.auto_removed === true;
 
   await notifyCoAuthorInvites({
     contentType: "poll",
@@ -138,7 +123,7 @@ export async function POST(request: Request) {
 
   // Notify followers only when the poll is actually public (published AND not
   // auto-removed). A draft held for co-authors notifies on auto-publish.
-  if (payload.status === "published" && !screen.flagged && !holdForCoAuthors) {
+  if (payload.status === "published" && !autoRemoved && !holdForCoAuthors) {
     void dispatchPublishSideEffects({
       contentType: "poll",
       contentId: result.id,
@@ -150,9 +135,9 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     poll: result,
-    autoRemoved: screen.flagged,
-    moderationReason: screen.flagged
-      ? describeModerationResult(screen, await getRequestLocale())
+    autoRemoved,
+    moderationReason: autoRemoved
+      ? await readAutoModerationReason(context.supabase, "poll", result.id, await getRequestLocale())
       : null,
     awaitingCoAuthors: holdForCoAuthors,
   });

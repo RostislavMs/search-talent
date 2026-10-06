@@ -26,14 +26,13 @@ vi.mock("@/lib/db/companies", async (importOriginal) => {
   return {
     ...actual,
     getCompanyRole: vi.fn(async () => null),
-    holdCompanyForReview: vi.fn(async () => true),
     deleteCompanyLogo: vi.fn(async () => undefined),
   };
 });
 
 import { POST } from "@/app/api/companies/route";
 import { DELETE, PATCH } from "@/app/api/companies/[id]/route";
-import { deleteCompanyLogo, getCompanyRole, holdCompanyForReview } from "@/lib/db/companies";
+import { deleteCompanyLogo, getCompanyRole } from "@/lib/db/companies";
 import { dbRateLimit } from "@/lib/rate-limit";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -124,7 +123,7 @@ describe("POST /api/companies", () => {
     });
     expect(insert?.payload).not.toHaveProperty("logo_url");
     expect(insert?.payload).not.toHaveProperty("verified_at");
-    expect(holdCompanyForReview).not.toHaveBeenCalled();
+    expect(insert?.payload).not.toHaveProperty("moderation_status");
   });
 
   it.each([
@@ -139,14 +138,16 @@ describe("POST /api/companies", () => {
     expect((await res.json()).code).toBe(code);
   });
 
-  it("holds a page whose text trips auto-moderation", async () => {
-    setMock(confirmed, () => ({ data: { id: COMPANY_ID, slug: "acme" } }));
-    const res = await POST(
-      req("POST", { ...payload, description: "Buy now ".repeat(5) + "FUCK" }),
+  it("says when the database put the new page on review", async () => {
+    // The insert answers before the screening; the page is read again after.
+    setMock(confirmed, (call) =>
+      call.verb === "insert"
+        ? { data: { id: COMPANY_ID, slug: "acme" } }
+        : { data: { moderation_status: "under_review" } },
     );
+    const res = await POST(req("POST", payload));
     expect(res.status).toBe(201);
-    expect((await res.json()).heldForReview).toBe(true);
-    expect(holdCompanyForReview).toHaveBeenCalledWith(COMPANY_ID, expect.stringContaining("[авто]"));
+    expect(await res.json()).toEqual({ company: { id: COMPANY_ID, slug: "acme" }, heldForReview: true });
   });
 });
 
@@ -201,6 +202,17 @@ describe("PATCH /api/companies/:id", () => {
     const update = mock.calls.find((call) => call.verb === "update");
     expect(update?.payload).toMatchObject({ name: "Acme Two" });
     expect(update?.payload).not.toHaveProperty("moderation_status");
+  });
+
+  it("says when an edit put an approved page on review", async () => {
+    setMock(confirmed, (call) =>
+      call.verb === "update"
+        ? { data: { id: COMPANY_ID, slug: "acme", verified_at: null, moderation_status: "under_review" } }
+        : { data: { id: COMPANY_ID, verified_at: null, moderation_status: "approved" } },
+    );
+    vi.mocked(getCompanyRole).mockResolvedValueOnce("owner");
+    const res = await PATCH(req("PATCH", payload), params());
+    expect((await res.json()).heldForReview).toBe(true);
   });
 
   it("409 when the new address is taken", async () => {

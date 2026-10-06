@@ -21,13 +21,9 @@ vi.mock("@/lib/db/polls", () => ({
 }));
 vi.mock("@/lib/rich-text", () => ({ sanitizeRichTextHtml: (s: string) => s }));
 vi.mock("@/lib/db/publish-events", () => ({ dispatchPublishSideEffects: vi.fn() }));
-vi.mock("@/lib/auto-moderation", () => ({
-  CLEAN_MODERATION_RESULT: { flagged: false, note: "" },
-  collectPollModerationText: () => "",
-  screenContentForModeration: vi.fn(() => ({ flagged: false, note: "" })),
-  describeModerationResult: () => "flagged reason",
+vi.mock("@/lib/db/moderation-actions", () => ({
+  readAutoModerationReason: vi.fn(async () => "flagged reason"),
 }));
-vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db/co-authors", async (importOriginal) => ({
@@ -39,8 +35,6 @@ import { POST } from "@/app/api/polls/route";
 import { NextResponse } from "next/server";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
-import { screenContentForModeration } from "@/lib/auto-moderation";
-import { autoRemoveContent } from "@/lib/auto-moderation-apply";
 import { notifyCoAuthorInvites } from "@/lib/db/co-authors";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -87,7 +81,6 @@ function req(body: unknown = base): Request {
 afterEach(() => {
   holder.mock = null;
   vi.clearAllMocks();
-  vi.mocked(screenContentForModeration).mockReturnValue({ flagged: false, note: "" } as never);
 });
 
 describe("POST /api/polls — rate limiting", () => {
@@ -138,15 +131,16 @@ describe("POST /api/polls — creation", () => {
     expect(notifyCoAuthorInvites).toHaveBeenCalledWith(expect.objectContaining({ invited: [] }));
   });
 
-  it("auto-removes flagged content and invites nobody", async () => {
-    vi.mocked(screenContentForModeration).mockReturnValue({ flagged: true, note: "bad" } as never);
-    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => savedOk());
+  it("reports a poll the database took down", async () => {
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => ({
+      data: { id: POLL_ID, slug: "poll-slug", invited: [], moderation_status: "removed", auto_removed: true },
+    }));
     viewer(authUser, false, catResolver, rpc);
     const res = await POST(req({ ...base, coAuthorUserIds: [CO_AUTHOR] }));
     expect(res.status).toBe(200);
-    expect(rpc.mock.calls[0][1]).toMatchObject({ p_co_author_ids: [] });
-    expect(vi.mocked(autoRemoveContent)).toHaveBeenCalledWith({ table: "polls", id: POLL_ID, note: "bad" });
-    expect((await res.json()).autoRemoved).toBe(true);
+    // The database invites nobody for a removed poll; the route asks as usual.
+    expect(rpc.mock.calls[0][1]).toMatchObject({ p_co_author_ids: [CO_AUTHOR] });
+    expect(await res.json()).toMatchObject({ autoRemoved: true, moderationReason: "flagged reason" });
   });
 
   it("holds as a draft and invites co-authors in the same call", async () => {

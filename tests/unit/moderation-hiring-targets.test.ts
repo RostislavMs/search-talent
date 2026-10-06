@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   REPORT_TARGETS,
   bulkModerationTargetTypes,
-  reportHoldsTarget,
-  reportReasons,
-  reportTargetColumns,
+  commentReportTargetTypes,
   reportTargetTypes,
 } from "@/lib/moderation";
 
@@ -15,47 +13,24 @@ describe("REPORT_TARGETS", () => {
       profile: { table: "profiles", column: "target_profile_id" },
       project: { table: "projects", column: "target_project_id" },
       article: { table: "articles", column: "target_article_id" },
+      poll: { table: "polls", column: "target_poll_id" },
       company: { table: "companies", column: "target_company_id" },
       vacancy: { table: "vacancies", column: "target_vacancy_id" },
+      project_comment: { table: "project_comments", column: "target_comment_id" },
+      article_comment: { table: "article_comments", column: "target_comment_id" },
+      poll_comment: { table: "poll_comments", column: "target_comment_id" },
     });
   });
 
-  it("never sends two targets to one column or table", () => {
+  it("never sends two targets to one table, and only comments share a column", () => {
     const entries = Object.values(REPORT_TARGETS);
     expect(new Set(entries.map((entry) => entry.table)).size).toBe(entries.length);
-    expect(new Set(entries.map((entry) => entry.column)).size).toBe(entries.length);
-  });
-});
 
-describe("reportTargetColumns", () => {
-  it.each(reportTargetTypes)("writes only the %s column", (type) => {
-    expect(reportTargetColumns(type, "id-1")).toEqual({ [REPORT_TARGETS[type].column]: "id-1" });
-  });
-});
-
-describe("reportHoldsTarget", () => {
-  it("holds a vacancy on a scam report", () => {
-    expect(reportHoldsTarget("vacancy", "spam_or_scam")).toBe(true);
-  });
-
-  it("holds anything on an urgent reason", () => {
-    for (const type of reportTargetTypes) {
-      for (const reason of ["sexual_content", "harmful_or_dangerous", "harassment_or_hate"] as const) {
-        expect(reportHoldsTarget(type, reason)).toBe(true);
-      }
-    }
-  });
-
-  it("does not hold other targets on a scam report, nor anything on a calm reason", () => {
-    for (const type of ["profile", "project", "article", "company"] as const) {
-      expect(reportHoldsTarget(type, "spam_or_scam")).toBe(false);
-    }
-    const calm = reportReasons.filter(
-      (reason) => !["sexual_content", "harmful_or_dangerous", "harassment_or_hate", "spam_or_scam"].includes(reason),
-    );
-    for (const reason of calm) {
-      expect(reportHoldsTarget("vacancy", reason)).toBe(false);
-    }
+    const columns = Object.entries(REPORT_TARGETS)
+      .filter(([type]) => !(commentReportTargetTypes as readonly string[]).includes(type))
+      .map(([, entry]) => entry.column);
+    expect(new Set(columns).size).toBe(columns.length);
+    expect(columns).not.toContain("target_comment_id");
   });
 });
 

@@ -204,8 +204,10 @@ export type AuditLogEntry = {
   targetId: string | null;
   targetLabel: string;
   targetHref: string | null;
-  actorLabel: string;
-  actorUserId: string;
+  /** Null when no person decided: auto-moderation, a report, the system. */
+  actorLabel: string | null;
+  actorUserId: string | null;
+  source: "admin" | "auto" | "report" | "system";
   note: string | null;
 };
 
@@ -226,7 +228,7 @@ export async function getAdminAuditLog(
   let query = supabase
     .from("moderation_actions")
     .select(
-      "id, created_at, action_type, previous_status, next_status, report_status, target_type, target_profile_id, target_project_id, target_article_id, target_company_id, target_vacancy_id, actor_user_id, note",
+      "id, created_at, action_type, previous_status, next_status, report_status, target_type, target_profile_id, target_project_id, target_article_id, target_poll_id, target_company_id, target_vacancy_id, target_comment_id, actor_user_id, source, note",
     )
     .order("created_at", { ascending: false })
     .limit(limit + 1);
@@ -262,7 +264,10 @@ export async function getAdminAuditLog(
     target_article_id: string | null;
     target_company_id?: string | null;
     target_vacancy_id?: string | null;
-    actor_user_id: string;
+    target_poll_id?: string | null;
+    target_comment_id?: string | null;
+    actor_user_id: string | null;
+    source?: string | null;
     note: string | null;
   };
 
@@ -271,7 +276,14 @@ export async function getAdminAuditLog(
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
   const actorIds = Array.from(
-    new Set(pageRows.map((row) => row.actor_user_id).filter(Boolean)),
+    new Set(pageRows.map((row) => row.actor_user_id).filter((id): id is string => Boolean(id))),
+  );
+  const pollIds = Array.from(
+    new Set(
+      pageRows
+        .map((row) => row.target_poll_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
   );
   const profileIds = Array.from(
     new Set(
@@ -316,6 +328,7 @@ export async function getAdminAuditLog(
     articlesResponse,
     companiesResponse,
     vacanciesResponse,
+    pollsResponse,
   ] =
     await Promise.all([
       actorIds.length
@@ -353,6 +366,12 @@ export async function getAdminAuditLog(
             .from("vacancies")
             .select("id, title, slug")
             .in("id", vacancyIds)
+        : Promise.resolve({ data: [] as { id: string; title: string; slug: string }[] }),
+      pollIds.length
+        ? supabase
+            .from("polls")
+            .select("id, title, slug")
+            .in("id", pollIds)
         : Promise.resolve({ data: [] as { id: string; title: string; slug: string }[] }),
     ]);
 
@@ -403,6 +422,13 @@ export async function getAdminAuditLog(
     ]),
   );
 
+  const pollMap = new Map(
+    ((pollsResponse.data || []) as { id: string; title: string; slug: string }[]).map((row) => [
+      row.id,
+      { label: row.title, href: `/polls/${row.slug}` },
+    ]),
+  );
+
   const items: AuditLogEntry[] = pageRows.map((row) => {
     let targetId: string | null = null;
     let targetLabel = "—";
@@ -433,6 +459,15 @@ export async function getAdminAuditLog(
       const vacancy = vacancyMap.get(row.target_vacancy_id);
       targetLabel = vacancy?.label || row.target_vacancy_id;
       targetHref = vacancy?.href || null;
+    } else if (row.target_type === "poll" && row.target_poll_id) {
+      targetId = row.target_poll_id;
+      const poll = pollMap.get(row.target_poll_id);
+      targetLabel = poll?.label || row.target_poll_id;
+      targetHref = poll?.href || null;
+    } else if (row.target_comment_id) {
+      // A removed comment is gone (it waits in the trash); its id is what is left.
+      targetId = row.target_comment_id;
+      targetLabel = `#${row.target_comment_id.slice(0, 8)}`;
     }
 
     return {
@@ -446,8 +481,12 @@ export async function getAdminAuditLog(
       targetId,
       targetLabel,
       targetHref,
-      actorLabel: actorMap.get(row.actor_user_id) || row.actor_user_id,
+      actorLabel: row.actor_user_id ? actorMap.get(row.actor_user_id) || row.actor_user_id : null,
       actorUserId: row.actor_user_id,
+      source:
+        row.source === "auto" || row.source === "report" || row.source === "system"
+          ? row.source
+          : "admin",
       note: row.note,
     };
   });

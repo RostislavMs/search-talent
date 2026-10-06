@@ -32,7 +32,6 @@ vi.mock("@/lib/db/vacancies", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/db/vacancies")>();
   return {
     ...actual,
-    holdVacancyForReview: vi.fn(async () => true),
     // Stands in for save_vacancy: the row (with its skills, in the same
     // transaction) goes through the test's resolver as the insert or update
     // the database would run, and is recorded like any other query.
@@ -56,7 +55,7 @@ vi.mock("@/lib/db/vacancies", async (importOriginal) => {
 import { POST } from "@/app/api/vacancies/route";
 import { DELETE, PATCH } from "@/app/api/vacancies/[id]/route";
 import { getCompanyRole } from "@/lib/db/companies";
-import { holdVacancyForReview, saveVacancy } from "@/lib/db/vacancies";
+import { saveVacancy } from "@/lib/db/vacancies";
 import { dbRateLimit } from "@/lib/rate-limit";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -94,11 +93,19 @@ function setMock(user: MockUser, resolve: (call: QueryCall) => QueryResult = () 
 }
 
 /** The insert answers with the row the database would return. */
-function created(moderationStatus = "approved") {
+function created(moderationStatus = "approved", moderationNote: string | null = null) {
   return (call: QueryCall): QueryResult => {
     if (call.table === "vacancies" && call.verb === "insert") {
       const row = call.payload as { slug: string; status: string };
-      return { data: { id: VACANCY_ID, slug: row.slug, status: row.status, moderation_status: moderationStatus } };
+      return {
+        data: {
+          id: VACANCY_ID,
+          slug: row.slug,
+          status: row.status,
+          moderation_status: moderationStatus,
+          moderation_note: moderationNote,
+        },
+      };
     }
     return {};
   };
@@ -120,7 +127,6 @@ const inserts = (mock: SupabaseMock) =>
 beforeEach(() => {
   holder.isAdmin = false;
   vi.mocked(getCompanyRole).mockResolvedValue("recruiter");
-  vi.mocked(holdVacancyForReview).mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -253,7 +259,6 @@ describe("POST /api/vacancies — creation", () => {
     expect(insert.payload).not.toHaveProperty("author_user_id");
     expect((insert.payload as { description: string }).description).toContain(longText);
     expect(saveVacancy).toHaveBeenCalledWith(mock.client, null, expect.anything(), [1, 2]);
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
   });
 
   it("does not let the form set what the database owns", async () => {
@@ -340,7 +345,6 @@ describe("POST /api/vacancies — creation", () => {
     expect(res.status).toBe(400);
     expect((await res.json()).code).toBe("skills_limit");
     expect(mock.calls.some((call) => call.verb === "delete")).toBe(false);
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
   });
 
   it("reports what the database decided about moderation", async () => {
@@ -351,55 +355,25 @@ describe("POST /api/vacancies — creation", () => {
 });
 
 describe("POST /api/vacancies — auto-moderation", () => {
-  it.each([
-    "Внесіть депозит за навчання, і ми вас візьмемо.",
-    "Before you start, pay a registration fee of 20 USD.",
-    "Пишіть у телеграм, там усе розкажемо.",
-  ])("holds a published vacancy that reads like a scam: %s", async (scam) => {
-    setMock(confirmed, created());
-    const res = await POST(req("POST", { ...createPayload, description: `<p>${longText} ${scam}</p>` }));
+  // The database screens the text (moderation_screen, scam phrases included);
+  // the route only tells its hold from the unverified company's wait.
+  it("says when auto-moderation held the vacancy", async () => {
+    setMock(confirmed, created("under_review", "[авто] Виявлено: ознаки шахрайства"));
+    const res = await POST(req("POST", createPayload));
     expect(res.status).toBe(201);
     expect(await res.json()).toMatchObject({ heldForReview: true, moderationStatus: "under_review" });
-    expect(holdVacancyForReview).toHaveBeenCalledWith(VACANCY_ID, expect.stringContaining("шахрайства"));
   });
 
-  it("screens the title and the city too", async () => {
-    setMock(confirmed, created());
-    await POST(req("POST", { ...createPayload, title: "Оплатіть навчання — і робота ваша" }));
-    expect(holdVacancyForReview).toHaveBeenCalledWith(VACANCY_ID, expect.stringContaining("[авто]"));
-  });
-
-  it("does not hold paid training or a freelancer's prepayment", async () => {
-    setMock(confirmed, created());
-    const perks = "Оплачуване навчання, компанія оплачує курси. Paid training. Передоплата 50% фрилансеру.";
-    const res = await POST(req("POST", { ...createPayload, description: `<p>${longText} ${perks}</p>` }));
-    expect((await res.json()).heldForReview).toBe(false);
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
-  });
-
-  it("does not screen a draft", async () => {
-    setMock(confirmed, created());
-    const res = await POST(
-      req("POST", { ...createPayload, status: "draft", description: `<p>${longText} Внесіть депозит.</p>` }),
-    );
-    expect((await res.json()).heldForReview).toBe(false);
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
-  });
-
-  it("says it was not held when the hold could not be written", async () => {
-    setMock(confirmed, created());
-    vi.mocked(holdVacancyForReview).mockResolvedValueOnce(false);
-    const res = await POST(
-      req("POST", { ...createPayload, description: `<p>${longText} Pay a registration fee first.</p>` }),
-    );
-    expect(await res.json()).toMatchObject({ heldForReview: false, moderationStatus: "approved" });
+  it("does not call a moderator's other note a hold", async () => {
+    setMock(confirmed, created("under_review", "Moved to review automatically after an urgent community report."));
+    expect(await (await POST(req("POST", createPayload))).json()).toMatchObject({ heldForReview: false });
   });
 });
 
 describe("PATCH /api/vacancies/:id", () => {
   function editing(
     existingStatus: string,
-    saved: Partial<{ status: string; moderation_status: string }> = {},
+    saved: Partial<{ status: string; moderation_status: string; moderation_note: string | null }> = {},
     updateResult?: QueryResult,
   ) {
     return setMock(confirmed, (call) => {
@@ -414,6 +388,7 @@ describe("PATCH /api/vacancies/:id", () => {
             slug: "junior-frontend-developer-abc123",
             status: saved.status ?? payload.status ?? existingStatus,
             moderation_status: saved.moderation_status ?? "approved",
+            moderation_note: saved.moderation_note ?? null,
           },
         };
       }
@@ -517,37 +492,18 @@ describe("PATCH /api/vacancies/:id", () => {
     );
     expect(res.status).toBe(200);
     expect(updateOf(mock)?.payload).toMatchObject({ status: "draft", pay_min: null });
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
   });
 
-  it("holds an approved vacancy whose new text reads like a scam", async () => {
-    editing("published");
-    const res = await PATCH(
-      req("PATCH", { ...vacancy, description: `<p>${longText} Upfront payment for the equipment is required.</p>` }),
-      params(),
-    );
+  it("says when the database held the edited text", async () => {
+    editing("published", { moderation_status: "under_review", moderation_note: "[авто] Виявлено: ознаки шахрайства" });
+    const res = await PATCH(req("PATCH", vacancy), params());
     expect(await res.json()).toMatchObject({ heldForReview: true, moderationStatus: "under_review" });
-    expect(holdVacancyForReview).toHaveBeenCalledWith(VACANCY_ID, expect.stringContaining("[авто]"));
   });
 
-  it("still screens a vacancy waiting for a moderator, so the note says why", async () => {
-    editing("published", { moderation_status: "under_review" });
-    const res = await PATCH(
-      req("PATCH", { ...vacancy, description: `<p>${longText} Message me on Telegram.</p>` }),
-      params(),
-    );
-    expect(await res.json()).toMatchObject({ heldForReview: true, moderationStatus: "under_review" });
-    expect(holdVacancyForReview).toHaveBeenCalledWith(VACANCY_ID, expect.stringContaining("[авто]"));
-  });
-
-  it("does not screen a vacancy a moderator already restricted", async () => {
-    editing("published", { moderation_status: "restricted" });
-    const res = await PATCH(
-      req("PATCH", { ...vacancy, description: `<p>${longText} Message me on Telegram.</p>` }),
-      params(),
-    );
+  it("passes a moderator's stricter decision through", async () => {
+    editing("published", { moderation_status: "restricted", moderation_note: "fake" });
+    const res = await PATCH(req("PATCH", vacancy), params());
     expect(await res.json()).toMatchObject({ heldForReview: false, moderationStatus: "restricted" });
-    expect(holdVacancyForReview).not.toHaveBeenCalled();
   });
 
   it.each([

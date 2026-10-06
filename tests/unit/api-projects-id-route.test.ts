@@ -16,13 +16,9 @@ vi.mock("@/lib/projects", async (importOriginal) => ({
 vi.mock("@/lib/rich-text", () => ({ sanitizeRichTextHtml: (s: string) => s }));
 vi.mock("@/lib/storage/provider", () => ({ deleteStorageObject: vi.fn(async () => ({ error: null })) }));
 vi.mock("@/lib/db/publish-events", () => ({ dispatchPublishSideEffects: vi.fn() }));
-vi.mock("@/lib/auto-moderation", () => ({
-  CLEAN_MODERATION_RESULT: { flagged: false, note: "" },
-  collectProjectModerationText: () => "",
-  screenContentForModeration: () => ({ flagged: false, note: "" }),
-  describeModerationResult: () => "",
+vi.mock("@/lib/db/moderation-actions", () => ({
+  readAutoModerationReason: vi.fn(async () => "flagged reason"),
 }));
-vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db/save-project", async (importOriginal) => ({
@@ -34,6 +30,7 @@ vi.mock("@/lib/db/save-project", async (importOriginal) => ({
 import { PATCH, DELETE } from "@/app/api/projects/[id]/route";
 import { generateUniqueProjectSlug } from "@/lib/projects";
 import { notifyProjectSaved, saveProject } from "@/lib/db/save-project";
+import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_ID = "99999999-9999-4999-8999-999999999999";
@@ -73,9 +70,17 @@ afterEach(() => {
   vi.mocked(saveProject).mockResolvedValue(saved());
 });
 
-function saved(slug = "my-project") {
+function saved(slug = "my-project", autoRemoved = false) {
   return {
-    project: { id: PROJECT_ID, slug, status: "published", invited: [], companyRequests: [] },
+    project: {
+      id: PROJECT_ID,
+      slug,
+      status: "published",
+      moderationStatus: autoRemoved ? "removed" : "approved",
+      autoRemoved,
+      invited: [],
+      companyRequests: [],
+    },
     error: null,
   } as never;
 }
@@ -138,6 +143,16 @@ describe("PATCH /api/projects/[id] — owner-only edit", () => {
     expect(input.row).toMatchObject({ origin: "personal", client_name: null, client_nda: false });
     // No budget, co-authors or companies in the form: all of them are cleared.
     expect(input).toMatchObject({ budget: null, coAuthorIds: [], companyIds: [] });
+  });
+
+  it("explains an edit the database took down, and tells no followers", async () => {
+    setMock(authUser, (table) =>
+      table === "projects" ? { data: { ...existingProject, followers_notified_at: null } } : {},
+    );
+    vi.mocked(saveProject).mockResolvedValue(saved("my-project", true));
+    const body = await (await PATCH(patchReq(), params())).json();
+    expect(body).toMatchObject({ autoRemoved: true, moderationReason: "flagged reason" });
+    expect(vi.mocked(dispatchPublishSideEffects)).not.toHaveBeenCalled();
   });
 
   it("400 with the database message when the save fails", async () => {

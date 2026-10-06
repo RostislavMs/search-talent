@@ -23,13 +23,9 @@ vi.mock("@/lib/db/github-integrations", () => ({ getIntegrationForUser: vi.fn(as
 vi.mock("@/lib/integrations/github", () => ({ fetchRepoFullDetail: vi.fn(async () => null) }));
 vi.mock("@/lib/db/github-sync", () => ({ mapRepoToProjectColumns: vi.fn(() => ({})) }));
 vi.mock("@/lib/db/publish-events", () => ({ dispatchPublishSideEffects: vi.fn() }));
-vi.mock("@/lib/auto-moderation", () => ({
-  CLEAN_MODERATION_RESULT: { flagged: false, note: "" },
-  collectProjectModerationText: () => "",
-  screenContentForModeration: vi.fn(() => ({ flagged: false, note: "" })),
-  describeModerationResult: () => "flagged reason",
+vi.mock("@/lib/db/moderation-actions", () => ({
+  readAutoModerationReason: vi.fn(async () => "flagged reason"),
 }));
-vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 vi.mock("@/lib/db/save-project", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/db/save-project")>()),
@@ -41,8 +37,8 @@ vi.mock("server-only", () => ({}));
 import { POST } from "@/app/api/projects/route";
 import { NextResponse } from "next/server";
 import { dbRateLimit } from "@/lib/rate-limit";
-import { screenContentForModeration } from "@/lib/auto-moderation";
-import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { readAutoModerationReason } from "@/lib/db/moderation-actions";
+import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { notifyProjectSaved, saveProject } from "@/lib/db/save-project";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -61,9 +57,17 @@ function okResolver(): QueryResult {
   return { error: null };
 }
 
-function saved(status = "published") {
+function saved(status = "published", autoRemoved = false) {
   return {
-    project: { id: PROJECT_ID, slug: "unique-slug", status, invited: [], companyRequests: [] },
+    project: {
+      id: PROJECT_ID,
+      slug: "unique-slug",
+      status,
+      moderationStatus: autoRemoved ? "removed" : "approved",
+      autoRemoved,
+      invited: [],
+      companyRequests: [],
+    },
     error: null,
   } as never;
 }
@@ -92,7 +96,6 @@ afterEach(() => {
   holder.mock = null;
   vi.clearAllMocks();
   vi.mocked(saveProject).mockResolvedValue(saved());
-  vi.mocked(screenContentForModeration).mockReturnValue({ flagged: false, note: "" } as never);
 });
 
 describe("POST /api/projects — rate limiting", () => {
@@ -145,14 +148,25 @@ describe("POST /api/projects", () => {
     expect(input.companyIds).toEqual([companyId]);
   });
 
-  it("auto-removes flagged content and shares it with nobody", async () => {
-    vi.mocked(screenContentForModeration).mockReturnValue({ flagged: true, note: "bad" } as never);
+  it("tells the author when the database took the project down", async () => {
+    vi.mocked(saveProject).mockResolvedValue(saved("published", true));
     setMock(authUser, okResolver);
-    const res = await POST(req({ ...base, coAuthorUserIds: [CO_AUTHOR], companyIds: ["44444444-4444-4444-8444-444444444444"] }));
+    const res = await POST(req({ ...base, coAuthorUserIds: [CO_AUTHOR] }));
     expect(res.status).toBe(200);
-    expect(saveInput()).toMatchObject({ coAuthorIds: [], companyIds: [] });
-    expect(vi.mocked(autoRemoveContent)).toHaveBeenCalledWith({ table: "projects", id: PROJECT_ID, note: "bad" });
-    expect((await res.json()).autoRemoved).toBe(true);
+    // The database decides what a removed project shares; the route asks for all.
+    expect(saveInput()).toMatchObject({ coAuthorIds: [CO_AUTHOR] });
+    const body = await res.json();
+    expect(body).toMatchObject({ autoRemoved: true, moderationReason: "flagged reason" });
+    expect(readAutoModerationReason).toHaveBeenCalledWith(expect.anything(), "project", PROJECT_ID, "en");
+    expect(dispatchPublishSideEffects).not.toHaveBeenCalled();
+  });
+
+  it("tells followers about a clean published project", async () => {
+    setMock(authUser, okResolver);
+    const body = await (await POST(req())).json();
+    expect(body).toMatchObject({ autoRemoved: false, moderationReason: null });
+    expect(dispatchPublishSideEffects).toHaveBeenCalledWith(expect.objectContaining({ contentId: PROJECT_ID }));
+    expect(readAutoModerationReason).not.toHaveBeenCalled();
   });
 
   it("holds as a draft and invites co-authors when provided", async () => {

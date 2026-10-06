@@ -1,9 +1,4 @@
 import { NextResponse } from "next/server";
-import {
-  collectVacancyModerationText,
-  screenContentForModeration,
-} from "@/lib/auto-moderation";
-import { holdVacancyForReview } from "@/lib/db/vacancies";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 import {
   VACANCY_LIMITS,
@@ -41,17 +36,4 @@ export function sanitizeVacancyDescription(
 ): { ok: true; html: string } | { ok: false } {
   const clean = html.trim() ? sanitizeRichTextHtml(html) : "";
   return clean.length <= VACANCY_LIMITS.descriptionMax ? { ok: true, html: clean } : { ok: false };
-}
-
-/**
- * Screens the text of a vacancy that is out (or going out). Flagged text keeps
- * the vacancy for a moderator; the team still sees it. Returns whether it was
- * held.
- */
-export async function screenVacancy(
-  vacancyId: string,
-  text: { title: string; description: string; city: string | null },
-): Promise<boolean> {
-  const screen = screenContentForModeration(collectVacancyModerationText(text), { scam: true });
-  return screen.flagged ? holdVacancyForReview(vacancyId, screen.note) : false;
 }

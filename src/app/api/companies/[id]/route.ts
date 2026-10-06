@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
-import { screenContentForModeration } from "@/lib/auto-moderation";
 import { canDeleteCompany, canEditCompany } from "@/lib/companies";
-import {
-  companyPayloadToRow,
-  companyWriteErrorCode,
-  getCompanyRole,
-  holdCompanyForReview,
-} from "@/lib/db/companies";
+import { companyPayloadToRow, companyWriteErrorCode, getCompanyRole } from "@/lib/db/companies";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { companyPayloadSchema, routeCompanyIdSchema } from "@/lib/validation/companies";
 import { parseJsonRequest } from "@/lib/validation/request";
@@ -56,7 +50,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const { data: before } = await context.supabase
     .from("companies")
-    .select("id, verified_at")
+    .select("id, verified_at, moderation_status")
     .eq("id", id)
     .maybeSingle();
 
@@ -68,7 +62,7 @@ export async function PATCH(request: Request, { params }: Params) {
     .from("companies")
     .update(companyPayloadToRow(payload))
     .eq("id", id)
-    .select("id, slug, verified_at")
+    .select("id, slug, verified_at, moderation_status")
     .maybeSingle();
 
   if (error) {
@@ -83,8 +77,10 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Company not found" }, { status: 404 });
   }
 
-  const screen = screenContentForModeration([payload.name, payload.description, payload.city]);
-  const heldForReview = screen.flagged ? await holdCompanyForReview(id, screen.note) : false;
+  // The database screens the new text: a flagged edit puts an approved page
+  // on review.
+  const heldForReview =
+    before.moderation_status === "approved" && data.moderation_status === "under_review";
 
   return NextResponse.json({
     company: { id: data.id, slug: data.slug },

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { startTransition, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import CommentDeleteButton from "@/components/comment-delete-button";
+import ContentReportButton from "@/components/content-report-button";
 import DiscussionPreviewLink from "@/components/discussion-preview-link";
 import CommentGif from "@/components/ui/comment-gif";
 import GifPicker from "@/components/ui/gif-picker";
@@ -16,6 +17,8 @@ import {
   commentRepliesClass,
 } from "@/components/ui/comment-thread-layout";
 import { apiFetch } from "@/lib/api-client";
+import type { Locale } from "@/lib/i18n/config";
+import { getModerationCopy } from "@/lib/moderation-copy";
 import type { ReactionSummary } from "@/lib/constants/reactions";
 import { isDiscussionOpen } from "@/lib/discussions";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
@@ -217,6 +220,16 @@ function CommentItem({
               endpoint={`/api/projects/${projectId}/comments/${comment.id}`}
               locale={locale}
               onDeleted={onDeleted}
+            />
+          )}
+
+          {isAuthenticated && viewerUserId && comment.author_user_id && comment.author_user_id !== viewerUserId && (
+            <ContentReportButton
+              copy={getModerationCopy(locale as Locale)}
+              targetType="project_comment"
+              targetId={comment.id}
+              isAuthenticated
+              asLink
             />
           )}
         </div>

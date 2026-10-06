@@ -20,13 +20,9 @@ vi.mock("@/lib/db/co-authors", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/db/co-authors")>()),
   notifyCoAuthorInvites: vi.fn(async () => undefined),
 }));
-vi.mock("@/lib/auto-moderation", () => ({
-  CLEAN_MODERATION_RESULT: { flagged: false, note: "" },
-  collectPollModerationText: () => "",
-  screenContentForModeration: () => ({ flagged: false, note: "" }),
-  describeModerationResult: () => "",
+vi.mock("@/lib/db/moderation-actions", () => ({
+  readAutoModerationReason: vi.fn(async () => "flagged reason"),
 }));
-vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 
 import { PUT, DELETE } from "@/app/api/polls/[id]/route";

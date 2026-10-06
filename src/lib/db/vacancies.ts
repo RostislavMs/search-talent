@@ -437,7 +437,14 @@ export async function countVacancyViews(ids: string[]): Promise<Map<string, numb
 
 // --- Writing ----------------------------------------------------------------------------
 
-export type SavedVacancy = { id: string; slug: string; status: string; moderation_status: string };
+export type SavedVacancy = {
+  id: string;
+  slug: string;
+  status: string;
+  moderation_status: string;
+  /** "[авто] …" when auto-moderation held the text (isAutoModerationNote). */
+  moderation_note?: string | null;
+};
 
 /**
  * Creates (`id` null) or updates a vacancy together with its skills in one
@@ -467,41 +474,6 @@ export async function saveVacancy(
   }
 
   return { vacancy, error: null };
-}
-
-/**
- * Auto-moderation flagged the text, or a report came in: only the team sees
- * the vacancy until an admin looks at it. Needs the service key, since the
- * team cannot touch moderation. A vacancy already waiting (an unverified
- * company's) gets the note, so the admin sees why; a stricter decision an
- * admin already made is never lifted. True when a row was held.
- */
-export async function holdVacancyForReview(vacancyId: string, note: string | null): Promise<boolean> {
-  const admin = createAdminClient();
-
-  if (!admin) {
-    console.warn(`[vacancies] SUPABASE_SERVICE_ROLE_KEY missing — could not hold ${vacancyId}`);
-    return false;
-  }
-
-  const { data, error } = await admin
-    .from("vacancies")
-    .update({
-      moderation_status: "under_review",
-      moderation_note: note,
-      moderated_at: new Date().toISOString(),
-      moderated_by: null,
-    })
-    .eq("id", vacancyId)
-    .in("moderation_status", ["approved", "under_review"])
-    .select("id");
-
-  if (error) {
-    console.error(`[vacancies] could not hold ${vacancyId}: ${error.message}`);
-    return false;
-  }
-
-  return Boolean(data && data.length > 0);
 }
 
 // --- Notifications ----------------------------------------------------------------------
@@ -602,38 +574,6 @@ async function notifyAboutVacancy(
       metadata,
     })),
   );
-}
-
-/** A moderator let a held vacancy out. */
-export async function notifyVacancyApproved(vacancyId: string): Promise<void> {
-  const admin = createAdminClient();
-  if (!admin) return;
-
-  const vacancy = await loadVacancyForNotification(admin, vacancyId);
-  if (!vacancy) return;
-
-  await notifyAboutVacancy(admin, vacancy, "vacancy_approved");
-}
-
-/** A moderation decision that hides the vacancy. */
-export async function notifyVacancyModeration({
-  vacancyId,
-  status,
-}: {
-  vacancyId: string;
-  status: "removed" | "restricted";
-}): Promise<void> {
-  const admin = createAdminClient();
-  if (!admin) return;
-
-  const vacancy = await loadVacancyForNotification(admin, vacancyId);
-  if (!vacancy) return;
-
-  await notifyAboutVacancy(admin, vacancy, "moderation_decision", {
-    moderationStatus: status,
-    contentKind: "vacancy",
-    contentTitle: vacancy.title,
-  });
 }
 
 /**

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  getModerationActionType,
-  getReportPriority,
+  isCommentReportTarget,
   isPublicModerationStatus,
   normalizeModerationStatus,
+  reportTargetTypes,
 } from "@/lib/moderation";
 
 describe("normalizeModerationStatus", () => {
@@ -38,47 +38,16 @@ describe("isPublicModerationStatus", () => {
   });
 });
 
-describe("getReportPriority", () => {
-  it("flags safety reports as urgent", () => {
-    expect(getReportPriority("sexual_content")).toBe("urgent");
-    expect(getReportPriority("harmful_or_dangerous")).toBe("urgent");
-    expect(getReportPriority("harassment_or_hate")).toBe("urgent");
-  });
+// Report priority, holds and the action names in the log are the database's
+// now (prepare_content_report, hold_reported_content, moderation_action_type in
+// database/2026-10-06-moderation-in-db.sql), checked by its own test run.
 
-  it("flags legal/identity reports as high", () => {
-    expect(getReportPriority("copyright_infringement")).toBe("high");
-    expect(getReportPriority("impersonation")).toBe("high");
-    expect(getReportPriority("spam_or_scam")).toBe("high");
-  });
-
-  it("falls back to normal priority for the catch-all reasons", () => {
-    expect(getReportPriority("inappropriate_content")).toBe("normal");
-    expect(getReportPriority("other")).toBe("normal");
-  });
-});
-
-describe("getModerationActionType", () => {
-  it("returns confirm_approved when re-approving an already approved item", () => {
-    expect(getModerationActionType("approved", "approved")).toBe("confirm_approved");
-  });
-
-  it("returns update_status when re-applying the same non-approved status", () => {
-    expect(getModerationActionType("removed", "removed")).toBe("update_status");
-  });
-
-  it("returns restore when approving content previously removed or restricted", () => {
-    expect(getModerationActionType("removed", "approved")).toBe("restore");
-    expect(getModerationActionType("restricted", "approved")).toBe("restore");
-  });
-
-  it("returns approve when approving content with no prior moderation action", () => {
-    expect(getModerationActionType(null, "approved")).toBe("approve");
-    expect(getModerationActionType("under_review", "approved")).toBe("approve");
-  });
-
-  it("returns the matching action for each non-approved target status", () => {
-    expect(getModerationActionType("approved", "under_review")).toBe("send_to_review");
-    expect(getModerationActionType("approved", "restricted")).toBe("restrict");
-    expect(getModerationActionType("approved", "removed")).toBe("remove");
+describe("isCommentReportTarget", () => {
+  it("is true for the three comment targets only", () => {
+    expect(reportTargetTypes.filter(isCommentReportTarget)).toEqual([
+      "project_comment",
+      "article_comment",
+      "poll_comment",
+    ]);
   });
 });

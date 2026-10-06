@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { emailModerationDecisions, moderateContent } from "@/lib/db/moderation-actions";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import {
   articleModerationPayloadSchema,
@@ -32,33 +33,25 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const { id } = routeParams.data;
-  const { data: article } = await context.supabase
-    .from("articles")
-    .select("id")
-    .eq("id", id)
-    .maybeSingle();
+  // The database stamps who and when, logs the decision and notifies the
+  // author; a hidden article is also e-mailed to them from here.
+  const note = parsed.data.moderation_note;
+  const result = await moderateContent(context.supabase, {
+    targetType: "article",
+    targetIds: [routeParams.data.id],
+    status: parsed.data.moderation_status,
+    note,
+  });
 
-  if (!article) {
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  if (result.items.length === 0) {
     return NextResponse.json({ error: "Article not found" }, { status: 404 });
   }
 
-  const { error } = await context.supabase
-    .from("articles")
-    .update({
-      moderation_status: parsed.data.moderation_status,
-      moderation_note: parsed.data.moderation_note,
-      moderated_at: new Date().toISOString(),
-      moderated_by: context.user.id,
-    })
-    .eq("id", id);
-
-  if (error) {
-    return NextResponse.json(
-      { error: error.message || "Could not update article moderation" },
-      { status: 400 },
-    );
-  }
+  await emailModerationDecisions({ targetType: "article", items: result.items, note });
 
   return NextResponse.json({ success: true });
 }

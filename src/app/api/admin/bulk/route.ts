@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { moderateContent } from "@/lib/db/moderation-actions";
 import {
   REPORT_TARGETS,
   bulkModerationTargetTypes,
-  getModerationActionType,
   moderationStatuses,
-  normalizeModerationStatus,
-  reportTargetColumns,
 } from "@/lib/moderation";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 
@@ -45,7 +43,7 @@ export async function POST(request: Request) {
   }
 
   const { targetType, ids, action, moderationStatus, note } = parsed.data;
-  const { supabase, user } = context;
+  const { supabase } = context;
   const table = REPORT_TARGETS[targetType].table;
 
   if (action === "delete") {
@@ -72,56 +70,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: existing, error: existingError } = await supabase
-    .from(table)
-    .select("id, moderation_status")
-    .in("id", ids);
-
-  if (existingError) {
-    return NextResponse.json(
-      { error: existingError.message || "Bulk fetch failed" },
-      { status: 400 },
-    );
-  }
-
-  const rows = (existing || []) as { id: string; moderation_status: string | null }[];
-  const now = new Date().toISOString();
-
-  const { error: updateError } = await supabase
-    .from(table)
-    .update({
-      moderation_status: moderationStatus,
-      moderation_note: note || null,
-      moderated_at: now,
-      moderated_by: user.id,
-    })
-    .in("id", ids);
-
-  if (updateError) {
-    return NextResponse.json(
-      { error: updateError.message || "Bulk update failed" },
-      { status: 400 },
-    );
-  }
-
-  const actionRows = rows.map((row) => {
-    const previous = normalizeModerationStatus(row.moderation_status);
-    return {
-      actor_user_id: user.id,
-      report_id: null,
-      target_type: targetType,
-      ...reportTargetColumns(targetType, row.id),
-      previous_status: previous,
-      next_status: moderationStatus,
-      report_status: null,
-      action_type: getModerationActionType(previous, moderationStatus),
-      note: note || null,
-    };
+  // One call: the database moves every row, logs each decision and notifies
+  // the owners in the app. No e-mails from a bulk action: up to 100 of them
+  // would not fit in one request.
+  const result = await moderateContent(supabase, {
+    targetType,
+    targetIds: ids,
+    status: moderationStatus,
+    note: note || null,
   });
 
-  if (actionRows.length > 0) {
-    await supabase.from("moderation_actions").insert(actionRows);
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.error || "Bulk update failed" },
+      { status: result.status },
+    );
   }
 
-  return NextResponse.json({ success: true, affected: rows.length });
+  return NextResponse.json({ success: true, affected: result.items.length });
 }
