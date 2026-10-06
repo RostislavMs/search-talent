@@ -58,6 +58,13 @@ export type SavedProject = {
   id: string;
   slug: string;
   status: string;
+  /** The project's moderation status after the save. */
+  moderationStatus: string;
+  /**
+   * Auto-moderation took the project down in this save (the database screens
+   * the text); it then invited no new co-authors and asked no company.
+   */
+  autoRemoved: boolean;
   /** Co-authors invited by this save. */
   invited: NewCoAuthorInvite[];
   /** Company pages that now wait for the company to accept the project. */
@@ -69,6 +76,8 @@ export function parseSavedProject(value: unknown): SavedProject | null {
     id?: unknown;
     slug?: unknown;
     status?: unknown;
+    moderation_status?: unknown;
+    auto_removed?: unknown;
     invited?: unknown;
     companyRequests?: unknown;
   } | null;
@@ -81,6 +90,8 @@ export function parseSavedProject(value: unknown): SavedProject | null {
     id: row.id,
     slug: row.slug,
     status: row.status,
+    moderationStatus: typeof row.moderation_status === "string" ? row.moderation_status : "approved",
+    autoRemoved: row.auto_removed === true,
     invited: parseNewCoAuthorInvites(row.invited),
     companyRequests: Array.isArray(row.companyRequests)
       ? row.companyRequests.filter((item): item is string => typeof item === "string")

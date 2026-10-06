@@ -12,13 +12,7 @@ import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildSavePollPayload } from "@/lib/db/save-poll-payload";
 import { notifyCoAuthorInvites, parseNewCoAuthorInvites } from "@/lib/db/co-authors";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
-import {
-  CLEAN_MODERATION_RESULT,
-  collectPollModerationText,
-  describeModerationResult,
-  screenContentForModeration,
-} from "@/lib/auto-moderation";
-import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { readAutoModerationReason } from "@/lib/db/moderation-actions";
 import { getRequestLocale } from "@/lib/i18n/server";
 
 const pinSchema = z.object({
@@ -79,15 +73,6 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Auto-moderation runs only on publish, and only auto-removes a currently
-  // approved item — it never touches content an admin already
-  // restricted/removed or that is awaiting review.
-  const screen =
-    payload.status === "published"
-      ? screenContentForModeration(collectPollModerationText(payload))
-      : CLEAN_MODERATION_RESULT;
-  const willRemove = screen.flagged && existing.moderation_status === "approved";
-
   // Keep the slug — and therefore the public URL — stable once a poll has been
   // published. Regenerating it from an edited title would 404 every shared /
   // indexed link. Drafts have no public URL yet, so they still pick up a fresh
@@ -121,8 +106,12 @@ export async function PUT(
     );
   }
 
-  const saved = data as { id: string; slug: string; invited?: unknown };
+  const saved = data as { id: string; slug: string; invited?: unknown; auto_removed?: unknown };
   const result = { id: saved.id, slug: saved.slug };
+  // The database screens a published poll (questions and options too): a
+  // flagged edit takes an approved poll down; an admin's stricter decision
+  // stays.
+  const willRemove = saved.auto_removed === true;
 
   // Editing an already-published poll stamps a dedicated "edited" date. save_poll
   // already preserves the original published_at (coalesce), so we only add the
@@ -132,10 +121,6 @@ export async function PUT(
       .from("polls")
       .update({ edited_at: new Date().toISOString() })
       .eq("id", id);
-  }
-
-  if (willRemove) {
-    await autoRemoveContent({ table: "polls", id, note: screen.note });
   }
 
   await notifyCoAuthorInvites({
@@ -168,7 +153,7 @@ export async function PUT(
     poll: result,
     autoRemoved: willRemove,
     moderationReason: willRemove
-      ? describeModerationResult(screen, await getRequestLocale())
+      ? await readAutoModerationReason(context.supabase, "poll", id, await getRequestLocale())
       : null,
   });
 }

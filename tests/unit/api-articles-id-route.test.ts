@@ -18,13 +18,9 @@ vi.mock("@/lib/rich-text", () => ({ sanitizeRichTextHtml: (s: string) => s }));
 vi.mock("@/lib/article-translations", () => ({ buildSanitizedTranslations: () => ({}) }));
 vi.mock("@/lib/db/articles", () => ({ ensureUniqueArticleSlug: vi.fn(async () => "generated") }));
 vi.mock("@/lib/db/publish-events", () => ({ dispatchPublishSideEffects: vi.fn() }));
-vi.mock("@/lib/auto-moderation", () => ({
-  CLEAN_MODERATION_RESULT: { flagged: false, note: "" },
-  collectArticleModerationText: () => "",
-  screenContentForModeration: () => ({ flagged: false, note: "" }),
-  describeModerationResult: () => "",
+vi.mock("@/lib/db/moderation-actions", () => ({
+  readAutoModerationReason: vi.fn(async () => "flagged reason"),
 }));
-vi.mock("@/lib/auto-moderation-apply", () => ({ autoRemoveContent: vi.fn() }));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 vi.mock("@/lib/db/co-authors", () => ({ syncCoAuthors: vi.fn() }));
 vi.mock("@/lib/storage/provider", () => ({ deleteStorageObject: vi.fn(async () => ({ error: null })) }));

@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { screenContentForModeration } from "@/lib/auto-moderation";
-import {
-  companyPayloadToRow,
-  companyWriteErrorCode,
-  holdCompanyForReview,
-} from "@/lib/db/companies";
+import { companyPayloadToRow, companyWriteErrorCode } from "@/lib/db/companies";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { companyPayloadSchema } from "@/lib/validation/companies";
@@ -71,10 +66,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const screen = screenContentForModeration([payload.name, payload.description, payload.city]);
-  const heldForReview = screen.flagged
-    ? await holdCompanyForReview(data.id as string, screen.note)
-    : false;
+  // The database screens a new page right after the insert, once its creator
+  // is in the team (the insert's own answer is from before that).
+  const { data: saved } = await context.supabase
+    .from("companies")
+    .select("moderation_status")
+    .eq("id", data.id)
+    .maybeSingle();
+  const heldForReview = saved?.moderation_status === "under_review";
 
   return NextResponse.json({ company: data, heldForReview }, { status: 201 });
 }

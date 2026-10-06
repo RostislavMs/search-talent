@@ -174,8 +174,10 @@ search-talent/
 
 ### Moderation & admin
 
-- User-submitted reports with reasons (copyright, abuse, spam, harassment, …) and auto-priority (normal / high / urgent).
-- Statuses: `approved`, `under_review`, `restricted`, `removed`.
+- User-submitted reports with reasons (copyright, abuse, spam, harassment, …) on profiles, projects, articles, polls, comments, company pages and vacancies, through `submit_report()`: the database sets the owner and the priority (normal / high / urgent), refuses one's own content, hidden targets, duplicates and more than 5 reports a minute, and an urgent report puts the target on review at once.
+- Statuses: `approved`, `under_review`, `restricted`, `removed`. Every change of status — from the review queue, the admin tables, bulk actions, auto-moderation or a report — is logged in `moderation_actions` and the owner is notified, by a trigger; `moderate_content()` takes an admin's decision together with the report. The log is written only by the database.
+- Auto-moderation runs in the database: the blocklist is the `moderation_terms` table, `moderation_screen()` folds look-alike letters, leet and spaced-out words, counts links and capitals and, for vacancies, catches "pay first" scams. A flagged project, article or poll that goes out is removed, a company page or vacancy waits for a moderator, a comment is refused.
+- Admin roles change only through `set_platform_admin()` (not one's own, never the last admin), and every change is in the audit log.
 - Single admin console at `/admin` (overview, content tables, moderation queue, users, audit log, feedback inbox). Article moderation lives under `/admin/content/articles`.
 - Trash: anything deleted (by its author, an admin, or with an account) waits 60 days in a database archive before it is erased for good, files included. A trigger captures every deleted row — a direct delete through the API is caught too — and whatever an FK cascade removed with it joins the same group, so a project comes back with its media, votes and comments. `/admin/trash` lists, restores and erases; the daily cron erases what is due.
 - Account deletion moves everything the person owns into the trash in one transaction ("erase" removes articles and comments too; "anonymize" unlinks them and remembers which) and blocks sign-in; the auth user is deleted on day 60. Until then an admin can restore the account on request.

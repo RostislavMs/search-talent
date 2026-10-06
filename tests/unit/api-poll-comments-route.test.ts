@@ -19,10 +19,6 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn(() => null) })
 vi.mock("@/lib/db/notifications", () => ({ createNotifications: vi.fn() }));
 vi.mock("@/lib/db/comment-moderation", () => ({ deleteCommentAuthorized: vi.fn() }));
 vi.mock("@/lib/gif/provider", () => ({ isAllowedGifUrl: vi.fn(() => true) }));
-vi.mock("@/lib/auto-moderation", () => ({
-  screenContentForModeration: vi.fn(() => ({ flagged: false, note: "" })),
-  describeModerationResult: () => "blocked",
-}));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 
 import { POST } from "@/app/api/polls/[id]/comments/route";
@@ -32,7 +28,6 @@ import { dbRateLimit } from "@/lib/rate-limit";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { deleteCommentAuthorized } from "@/lib/db/comment-moderation";
 import { isAllowedGifUrl } from "@/lib/gif/provider";
-import { screenContentForModeration } from "@/lib/auto-moderation";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const POLL_ID = "22222222-2222-4222-8222-222222222222";
@@ -63,7 +58,6 @@ afterEach(() => {
   holder.mock = null;
   vi.clearAllMocks();
   vi.mocked(isAllowedGifUrl).mockReturnValue(true);
-  vi.mocked(screenContentForModeration).mockReturnValue({ flagged: false, note: "" } as never);
 });
 
 describe("POST /api/polls/[id]/comments — rate limiting", () => {
@@ -88,9 +82,18 @@ describe("POST /api/polls/[id]/comments", () => {
     expect((await POST(postReq({ body: "", media_url: "https://evil/x.gif" }), params())).status).toBe(400);
   });
 
-  it("400 (moderation_blocked) when flagged", async () => {
-    setMock(authUser, publicResolver);
-    vi.mocked(screenContentForModeration).mockReturnValue({ flagged: true, note: "bad" } as never);
+  it("400 (moderation_blocked) when the database refuses the text", async () => {
+    setMock(authUser, (table, verb) =>
+      table === "poll_comments" && verb === "insert"
+        ? {
+            data: null,
+            error: {
+              message: "moderation_blocked",
+              details: JSON.stringify({ flagged: true, categories: ["profanity"], matches: [{ category: "profanity" }] }),
+            },
+          }
+        : publicResolver(table, verb),
+    );
     expect((await POST(postReq({ body: "spam" }), params())).status).toBe(400);
   });
 

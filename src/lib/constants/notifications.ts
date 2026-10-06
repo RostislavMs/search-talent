@@ -69,7 +69,7 @@ export type NotificationMetadata = {
   /** Moderation notifications: the decision applied to the recipient's content. */
   moderationStatus?: "removed" | "restricted";
   /** Moderation notifications: which kind of content was actioned. */
-  contentKind?: "article" | "project" | "profile" | "poll" | "company" | "vacancy";
+  contentKind?: "article" | "project" | "profile" | "poll" | "comment" | "company" | "vacancy";
   /** Moderation notifications: human-readable title of the actioned content. */
   contentTitle?: string;
   /** Co-author and company invitations: the invitation row id to accept/decline. */

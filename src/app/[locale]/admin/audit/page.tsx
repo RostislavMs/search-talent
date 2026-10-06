@@ -63,6 +63,11 @@ const ACTION_VALUES = [
   "remove",
   "update_status",
   "confirm_approved",
+  "auto_remove",
+  "auto_hold",
+  "report_hold",
+  "grant_admin",
+  "revoke_admin",
 ] as const;
 
 export default async function AdminAuditPage({
@@ -178,7 +183,7 @@ export default async function AdminAuditPage({
                       </td>
                       <td className="px-3 py-3">
                         <span className="font-medium text-[color:var(--foreground)]">
-                          {entry.actorLabel}
+                          {entry.actorLabel ?? copy.sourceLabels[entry.source]}
                         </span>
                       </td>
                       <td className="px-3 py-3">
@@ -250,7 +255,7 @@ export default async function AdminAuditPage({
                   </div>
                   <div className="space-y-1">
                     <AdminCardMeta label={copy.columns.actor}>
-                      {entry.actorLabel}
+                      {entry.actorLabel ?? copy.sourceLabels[entry.source]}
                     </AdminCardMeta>
                     <AdminCardMeta
                       label={moderationCopy.targetLabels[entry.targetType]}

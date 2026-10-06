@@ -13,7 +13,7 @@ import {
   type ExampleProject,
   type HeroExamplePortfolio,
 } from "@/lib/home-example";
-import { isLeaderboardSafeText } from "@/lib/leaderboard-display";
+import { loadBlocklistedProjectIds } from "@/lib/db/moderation-actions";
 import { slugifySegment } from "@/lib/marketing-content";
 import { normalizeProfileSettings } from "@/lib/profile-presentation";
 import { createAdminClient, createPublicReadOnlyClient } from "@/lib/supabase/admin";
@@ -163,20 +163,24 @@ async function loadHeroExample(): Promise<HeroExamplePortfolio | null> {
     return null;
   }
 
-  const projects: ExampleProject[] = (
-    (projectsResponse.data || []) as Array<{
-      id: string;
-      owner_id: string;
-      title: string;
-      slug: string | null;
-      description: string | null;
-      cover_url: string | null;
-      kind: string | null;
-    }>
-  )
-    // Same text check as the leaderboards: the hero never shows a project the
-    // blocklist would catch.
-    .filter((row) => isLeaderboardSafeText([row.title, row.description]))
+  const projectRows = (projectsResponse.data || []) as Array<{
+    id: string;
+    owner_id: string;
+    title: string;
+    slug: string | null;
+    description: string | null;
+    cover_url: string | null;
+    kind: string | null;
+  }>;
+  // Same text check as the leaderboards: the hero never shows a project the
+  // blocklist would catch.
+  const blocklisted = await loadBlocklistedProjectIds(
+    supabase,
+    projectRows.map((row) => row.id),
+  );
+
+  const projects: ExampleProject[] = projectRows
+    .filter((row) => !blocklisted.has(row.id))
     .map((row) => ({
       id: row.id,
       ownerId: row.owner_id,

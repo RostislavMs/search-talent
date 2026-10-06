@@ -6,7 +6,9 @@ import {
   type SupabaseMock,
 } from "./helpers/supabase-mock";
 
+vi.mock("server-only", () => ({}));
 vi.mock("@/lib/moderation-server", () => ({ getCurrentViewerRole: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn(() => null) }));
 
 import { POST } from "@/app/api/admin/bulk/route";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
@@ -16,8 +18,13 @@ const ID_A = "22222222-2222-4222-8222-222222222222";
 const ID_B = "33333333-3333-4333-8333-333333333333";
 const adminUser: MockUser = { id: ADMIN_ID, email_confirmed_at: "2026-01-01T00:00:00Z" };
 
-function viewer(user: MockUser, isAdmin: boolean, resolve: (t: string, v: string) => QueryResult): SupabaseMock {
-  const mock = createSupabaseMock({ user, resolve: (c) => resolve(c.table, c.verb) });
+function viewer(
+  user: MockUser,
+  isAdmin: boolean,
+  resolve: (t: string, v: string) => QueryResult,
+  rpc?: (fn: string, args?: unknown) => QueryResult,
+): SupabaseMock {
+  const mock = createSupabaseMock({ user, resolve: (c) => resolve(c.table, c.verb), rpc });
   vi.mocked(getCurrentViewerRole).mockResolvedValue({ user: user as never, isAdmin, supabase: mock.client as never } as never);
   return mock;
 }
@@ -29,8 +36,6 @@ function req(body: unknown, raw = false): Request {
     body: raw ? (body as string) : JSON.stringify(body),
   });
 }
-
-const statusRows: QueryResult = { data: [{ id: ID_A, moderation_status: "approved" }, { id: ID_B, moderation_status: "under_review" }] };
 
 afterEach(() => vi.clearAllMocks());
 
@@ -78,16 +83,38 @@ describe("POST /api/admin/bulk — actions", () => {
     expect(res.status).toBe(400);
   });
 
-  it("bulk status_update writes the update and logs actions", async () => {
-    const mock = viewer(adminUser, true, (table, verb) => {
-      if (table === "projects" && verb === "select") return statusRows;
-      return { error: null };
-    });
-    const res = await POST(req({ targetType: "project", ids: [ID_A, ID_B], action: "status_update", moderationStatus: "restricted" }));
+  it("bulk status_update is one moderate_content call (the database logs and notifies)", async () => {
+    const rpc = vi.fn<(fn: string, args?: unknown) => QueryResult>(() => ({
+      data: {
+        items: [
+          { id: ID_A, previousStatus: "approved", status: "restricted", changed: true },
+          { id: ID_B, previousStatus: "restricted", status: "restricted", changed: false },
+        ],
+      },
+    }));
+    const mock = viewer(adminUser, true, () => ({ error: null }), rpc);
+    const res = await POST(
+      req({ targetType: "project", ids: [ID_A, ID_B], action: "status_update", moderationStatus: "restricted", note: "spam" }),
+    );
     expect(res.status).toBe(200);
     expect((await res.json()).affected).toBe(2);
-    const update = mock.calls.find((c) => c.table === "projects" && c.verb === "update");
-    expect((update?.payload as { moderation_status: string }).moderation_status).toBe("restricted");
-    expect(mock.calls.some((c) => c.table === "moderation_actions" && c.verb === "insert")).toBe(true);
+    expect(rpc).toHaveBeenCalledWith("moderate_content", {
+      p_target_type: "project",
+      p_target_ids: [ID_A, ID_B],
+      p_status: "restricted",
+      p_note: "spam",
+      p_report_id: null,
+      p_report_status: null,
+    });
+    expect(mock.calls.some((c) => c.verb === "update" || c.table === "moderation_actions")).toBe(false);
+  });
+
+  it("passes the database's refusal on", async () => {
+    viewer(adminUser, true, () => ({}), () => ({
+      data: null,
+      error: { code: "42501", message: "only platform admins moderate content" },
+    }));
+    const res = await POST(req({ targetType: "project", ids: [ID_A], action: "status_update", moderationStatus: "removed" }));
+    expect(res.status).toBe(403);
   });
 });

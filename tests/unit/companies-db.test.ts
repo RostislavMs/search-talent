@@ -21,7 +21,6 @@ vi.mock("@/lib/db/notifications", () => ({
 import {
   companyWriteErrorCode,
   deleteCompanyLogo,
-  holdCompanyForReview,
   isCompanyLogoUrl,
   listCompanyTeam,
   listAttachableProjects,
@@ -33,7 +32,6 @@ import {
   listMyCompanies,
   listPendingCompanyInvitations,
   notifyCompanyInvite,
-  notifyCompanyModeration,
   notifyCompanyVerified,
 } from "@/lib/db/companies";
 import { createNotifications } from "@/lib/db/notifications";
@@ -79,22 +77,6 @@ describe("companyWriteErrorCode", () => {
     expect(companyWriteErrorCode({ code: "P0001", message: "company_limit_reached" })).toBe("limit");
     expect(companyWriteErrorCode({ code: "42501" })).toBe("email_unconfirmed");
     expect(companyWriteErrorCode({ code: "23514" })).toBe("invalid");
-  });
-});
-
-describe("holdCompanyForReview", () => {
-  it("is a no-op without the service key", async () => {
-    expect(await holdCompanyForReview(COMPANY_ID, "note")).toBe(false);
-  });
-
-  it("only moves an approved page to review", async () => {
-    holder.admin = client(() => ({}));
-    expect(await holdCompanyForReview(COMPANY_ID, "[авто] spam")).toBe(true);
-    const update = holder.admin.calls[0];
-    expect(update.payload).toMatchObject({ moderation_status: "under_review", moderation_note: "[авто] spam" });
-    expect(update.filters).toEqual(
-      expect.arrayContaining([{ method: "eq", args: ["moderation_status", "approved"] }]),
-    );
   });
 });
 
@@ -324,22 +306,10 @@ describe("notifications", () => {
     ]);
   });
 
-  it("sends a moderation decision about the company to its managers", async () => {
-    adminWith({ slug: "acme", name: "Acme" }, ["u1"]);
-    await notifyCompanyModeration({ companyId: COMPANY_ID, status: "removed" });
-    const [, list] = vi.mocked(createNotifications).mock.calls[0];
-    expect(list).toEqual([
-      expect.objectContaining({
-        type: "moderation_decision",
-        metadata: expect.objectContaining({ contentKind: "company", moderationStatus: "removed", contentTitle: "Acme" }),
-      }),
-    ]);
-  });
-
   it("stays quiet without the service key or the company", async () => {
     await notifyCompanyVerified({ companyId: COMPANY_ID });
     adminWith(null, ["u1"]);
-    await notifyCompanyModeration({ companyId: COMPANY_ID, status: "restricted" });
+    await notifyCompanyVerified({ companyId: COMPANY_ID });
     expect(createNotifications).not.toHaveBeenCalled();
   });
 });

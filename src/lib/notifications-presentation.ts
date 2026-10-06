@@ -277,10 +277,12 @@ export function buildNotificationHref(
   // Moderation removals delete the underlying content, so deep-linking to it
   // would 404. Send the owner to their space where the decision (and any
   // appeal path) is visible. Restrictions keep the content, so they fall
-  // through to the normal target resolution below.
+  // through to the normal target resolution below — and so does a removed
+  // comment: the page it was on is still there.
   if (
     item.type === "moderation_decision" &&
-    item.metadata.moderationStatus === "removed"
+    item.metadata.moderationStatus === "removed" &&
+    item.metadata.contentKind !== "comment"
   ) {
     return item.metadata.contentKind === "company"
       ? `${base}/my-space/companies`

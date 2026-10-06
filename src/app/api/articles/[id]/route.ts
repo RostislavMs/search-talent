@@ -8,13 +8,7 @@ import { ensureUniqueArticleSlug } from "@/lib/db/articles";
 import { parseJsonRequest } from "@/lib/validation/request";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
-import {
-  CLEAN_MODERATION_RESULT,
-  collectArticleModerationText,
-  describeModerationResult,
-  screenContentForModeration,
-} from "@/lib/auto-moderation";
-import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { readAutoModerationReason } from "@/lib/db/moderation-actions";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { syncCoAuthors } from "@/lib/db/co-authors";
 import { z } from "zod";
@@ -77,15 +71,6 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Auto-moderation runs only on publish, and only auto-removes a currently
-  // approved item — it never touches content an admin already
-  // restricted/removed or that is awaiting review.
-  const screen =
-    payload.status === "published"
-      ? screenContentForModeration(collectArticleModerationText(payload))
-      : CLEAN_MODERATION_RESULT;
-  const willRemove = screen.flagged && existing.moderation_status === "approved";
-
   // Keep the slug — and therefore the public URL — stable once an article has
   // been published. Regenerating it from an edited title (or honouring a new
   // custom slug) would 404 every shared / indexed / RSS link. Drafts have no
@@ -127,16 +112,17 @@ export async function PUT(
       edited_at: wasPublished ? now : null,
     })
     .eq("id", id)
-    .select("id, slug")
+    .select("id, slug, moderation_status")
     .maybeSingle();
 
   if (error || !data) {
     return NextResponse.json({ error: error?.message || "Could not update article" }, { status: 400 });
   }
 
-  if (willRemove) {
-    await autoRemoveContent({ table: "articles", id, note: screen.note });
-  }
+  // The database screens a published article's text: a flagged edit takes an
+  // approved article down (an admin's stricter decision stays).
+  const willRemove =
+    existing.moderation_status === "approved" && data.moderation_status === "removed";
 
   // Reconcile co-authors: add newly invited (pending + notify), drop removed.
   await syncCoAuthors({
@@ -169,10 +155,10 @@ export async function PUT(
   }
 
   return NextResponse.json({
-    article: data,
+    article: { id: data.id, slug: data.slug },
     autoRemoved: willRemove,
     moderationReason: willRemove
-      ? describeModerationResult(screen, await getRequestLocale())
+      ? await readAutoModerationReason(context.supabase, "article", id, await getRequestLocale())
       : null,
   });
 }

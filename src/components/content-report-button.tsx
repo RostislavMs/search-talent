@@ -27,6 +27,12 @@ type ContentReportButtonProps = {
    * unchanged.
    */
   iconOnly?: boolean;
+  /**
+   * A small text link instead of a button — for the action row under a
+   * comment, next to "Reply". Shows nothing to guests (they cannot reply
+   * either).
+   */
+  asLink?: boolean;
 };
 
 function FlagIcon() {
@@ -53,6 +59,7 @@ export default function ContentReportButton({
   targetId,
   isAuthenticated,
   iconOnly = false,
+  asLink = false,
 }: ContentReportButtonProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -70,10 +77,17 @@ export default function ContentReportButton({
     company: { triggerLabel: reportCopy.buttonCompany, dialogTitle: reportCopy.titleCompany },
     vacancy: { triggerLabel: reportCopy.buttonVacancy, dialogTitle: reportCopy.titleVacancy },
     profile: { triggerLabel: reportCopy.buttonProfile, dialogTitle: reportCopy.titleProfile },
-    article: { triggerLabel: reportCopy.buttonProfile, dialogTitle: reportCopy.titleProfile },
+    article: { triggerLabel: reportCopy.buttonArticle, dialogTitle: reportCopy.titleArticle },
+    poll: { triggerLabel: reportCopy.buttonPoll, dialogTitle: reportCopy.titlePoll },
+    project_comment: { triggerLabel: reportCopy.buttonComment, dialogTitle: reportCopy.titleComment },
+    article_comment: { triggerLabel: reportCopy.buttonComment, dialogTitle: reportCopy.titleComment },
+    poll_comment: { triggerLabel: reportCopy.buttonComment, dialogTitle: reportCopy.titleComment },
   }[targetType];
 
   if (!isAuthenticated) {
+    if (asLink) {
+      return null;
+    }
     if (iconOnly) {
       return (
         <LocalizedLink
@@ -110,7 +124,13 @@ export default function ContentReportButton({
     setIsSubmitting(false);
 
     if (!result.ok) {
-      setError(result.error || reportCopy.errorFallback);
+      setError(
+        result.status === 409
+          ? reportCopy.duplicate
+          : result.status === 429
+            ? reportCopy.rateLimited
+            : result.error || reportCopy.errorFallback,
+      );
       return;
     }
 
@@ -122,7 +142,15 @@ export default function ContentReportButton({
 
   return (
     <>
-      {iconOnly ? (
+      {asLink ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="cursor-pointer text-xs font-medium app-soft transition-colors hover:text-[color:var(--foreground)]"
+        >
+          {triggerLabel}
+        </button>
+      ) : iconOnly ? (
         <Button
           variant="ghost"
           size="sm"

@@ -1,4 +1,3 @@
-import { screenContentForModeration } from "@/lib/auto-moderation";
 import {
   LEADERBOARD_DISPLAY_SIZE,
   TOP_CREATOR_MIN_COMPLETENESS_PERCENT,
@@ -26,19 +25,6 @@ type DisplayProject = {
   ownerUsername: string | null;
 };
 
-/**
- * Leaderboards are the most visible surface on the site, so they re-check text
- * against the current blocklist: content published before a term was added
- * would otherwise keep its place until someone moderates it by hand. Spam
- * heuristics are ignored — a long title is not a reason to hide a project.
- */
-export function isLeaderboardSafeText(
-  parts: Array<string | null | undefined>,
-): boolean {
-  const { categories } = screenContentForModeration(parts);
-  return categories.every((category) => category === "spam");
-}
-
 export function isTopCreatorEligible(creator: EligibleCreator): boolean {
   return (
     creator.projectCount >= TOP_CREATOR_MIN_PUBLISHED_PROJECTS &&
@@ -55,8 +41,9 @@ export function selectTopCreators<T extends EligibleCreator>(
 }
 
 /**
- * Ranked projects without blocklisted text, capped per author first so the top
- * of the board shows different people. When there are too few authors to fill
+ * Ranked projects, capped per author first so the top of the board shows
+ * different people (blocklisted ones are taken out before the ranking is
+ * stored: blocklisted_project_ids in loadLeaderboardData). When there are too few authors to fill
  * the board that way, the free places go to their next-best projects in rank
  * order: a full list of two authors reads better than "top 10" with four rows.
  * Projects without an owner username are capped on their own id, so a missing
@@ -73,7 +60,6 @@ export function selectTopProjects<T extends DisplayProject>(
 
   for (const project of ranked) {
     if (selected.length >= size) break;
-    if (!isLeaderboardSafeText([project.title, project.description])) continue;
 
     const ownerKey = project.ownerUsername ?? `project:${project.id}`;
     const taken = perOwner.get(ownerKey) ?? 0;

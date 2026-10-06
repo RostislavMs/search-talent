@@ -106,7 +106,7 @@ function ctaButton(label: string, url: string) {
 
 type ModerationDecisionEmailInput = {
   recipientName: string;
-  contentKind: "article" | "project" | "profile";
+  contentKind: "article" | "project" | "profile" | "poll";
   contentTitle: string;
   status: "removed" | "restricted";
   note: string | null;

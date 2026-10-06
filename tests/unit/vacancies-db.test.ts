@@ -15,15 +15,12 @@ import {
   expireVacancies,
   getJobsFilterOptions,
   getVacancyBySlug,
-  holdVacancyForReview,
   listCompanyOpenVacancies,
   listOpenVacancies,
   listTeamVacancies,
   listVacanciesForAdmin,
   mapVacancyDetails,
   mapVacancySummary,
-  notifyVacancyApproved,
-  notifyVacancyModeration,
   saveVacancy,
   vacancyPayloadToRow,
   type VacancyDetailRow,
@@ -459,152 +456,6 @@ describe("saveVacancy", () => {
     const error = { message: "vacancy_skills_limit_reached", code: "P0001" };
     const rpc = vi.fn(async () => ({ data: null, error }));
     expect(await saveVacancy({ rpc } as never, VACANCY_ID, {}, [1])).toEqual({ vacancy: null, error });
-  });
-});
-
-describe("holdVacancyForReview", () => {
-  it("is a no-op without the service key", async () => {
-    const spy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    expect(await holdVacancyForReview(VACANCY_ID, "note")).toBe(false);
-    spy.mockRestore();
-  });
-
-  it("holds an approved vacancy, or notes why on one already waiting", async () => {
-    holder.admin = client(() => ({ data: [{ id: VACANCY_ID }] }));
-    expect(await holdVacancyForReview(VACANCY_ID, "[авто] scam")).toBe(true);
-    const update = holder.admin.calls[0];
-    expect(update).toMatchObject({ table: "vacancies", verb: "update" });
-    expect(update.payload).toMatchObject({
-      moderation_status: "under_review",
-      moderation_note: "[авто] scam",
-      moderated_by: null,
-    });
-    expect(typeof (update.payload as { moderated_at: unknown }).moderated_at).toBe("string");
-    // Restricted and removed are an admin's decision and stay.
-    expect(update.filters).toEqual([
-      { method: "eq", args: ["id", VACANCY_ID] },
-      { method: "in", args: ["moderation_status", ["approved", "under_review"]] },
-    ]);
-  });
-
-  it("says no when nothing was held (a stricter decision, or gone)", async () => {
-    holder.admin = client(() => ({ data: [] }));
-    expect(await holdVacancyForReview(VACANCY_ID, "[авто] scam")).toBe(false);
-  });
-
-  it("reports a failed update", async () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    holder.admin = client(() => ({ error: { message: "denied" } }));
-    expect(await holdVacancyForReview(VACANCY_ID, null)).toBe(false);
-    spy.mockRestore();
-  });
-});
-
-describe("vacancy notifications", () => {
-  type Members = Array<{ user_id: string; role: string }>;
-
-  const stored = {
-    id: VACANCY_ID,
-    slug: "junior-designer-abc123",
-    title: "Junior designer",
-    company_id: COMPANY_ID,
-    author_user_id: "u-author",
-  };
-
-  function adminWith({
-    vacancies = [stored],
-    members = [] as Members,
-    company = { slug: "acme", name: "Acme" } as { slug: string; name: string } | null,
-    expireError = null as unknown,
-  } = {}) {
-    holder.admin = client((call) => {
-      if (call.table === "vacancies" && call.verb === "update") {
-        return expireError ? { error: expireError } : { data: vacancies };
-      }
-      if (call.table === "vacancies") return { data: vacancies[0] ?? null };
-      if (call.table === "company_members") return { data: members };
-      if (call.table === "companies") return { data: company };
-      return {};
-    });
-    return holder.admin;
-  }
-
-  const metadata = {
-    vacancyId: VACANCY_ID,
-    vacancySlug: "junior-designer-abc123",
-    vacancyTitle: "Junior designer",
-    companyId: COMPANY_ID,
-    companySlug: "acme",
-    companyName: "Acme",
-  };
-
-  it("tells the author, while still in the team, that a held vacancy is out", async () => {
-    const admin = adminWith({
-      members: [
-        { user_id: "u-owner", role: "owner" },
-        { user_id: "u-author", role: "recruiter" },
-      ],
-    });
-    await notifyVacancyApproved(VACANCY_ID);
-
-    expect(createNotifications).toHaveBeenCalledWith(admin.client, [
-      {
-        recipientUserId: "u-author",
-        actorUserId: null,
-        type: "vacancy_approved",
-        targetType: "vacancy",
-        targetId: VACANCY_ID,
-        metadata,
-      },
-    ]);
-    const members = admin.calls.find((call) => call.table === "company_members");
-    expect(members?.filters).toEqual([
-      { method: "eq", args: ["company_id", COMPANY_ID] },
-      { method: "eq", args: ["status", "accepted"] },
-    ]);
-  });
-
-  it("tells the owners and admins once the author has left", async () => {
-    adminWith({
-      members: [
-        { user_id: "u-owner", role: "owner" },
-        { user_id: "u-admin", role: "admin" },
-        { user_id: "u-recruiter", role: "recruiter" },
-      ],
-    });
-    await notifyVacancyModeration({ vacancyId: VACANCY_ID, status: "removed" });
-
-    const [, list] = vi.mocked(createNotifications).mock.calls[0];
-    expect(list).toEqual([
-      expect.objectContaining({ recipientUserId: "u-owner", type: "moderation_decision" }),
-      expect.objectContaining({ recipientUserId: "u-admin", type: "moderation_decision" }),
-    ]);
-    expect((list as Array<{ metadata: unknown }>)[0].metadata).toEqual({
-      ...metadata,
-      moderationStatus: "removed",
-      contentKind: "vacancy",
-      contentTitle: "Junior designer",
-    });
-  });
-
-  it("stays quiet without the service key, the vacancy or anyone to tell", async () => {
-    await notifyVacancyApproved(VACANCY_ID);
-    adminWith({ vacancies: [] });
-    await notifyVacancyModeration({ vacancyId: VACANCY_ID, status: "restricted" });
-    adminWith({ members: [{ user_id: "u-recruiter", role: "recruiter" }] });
-    await notifyVacancyApproved(VACANCY_ID);
-    expect(createNotifications).not.toHaveBeenCalled();
-  });
-
-  it("keeps going without the company row", async () => {
-    adminWith({ members: [{ user_id: "u-author", role: "recruiter" }], company: null });
-    await notifyVacancyApproved(VACANCY_ID);
-    const [, list] = vi.mocked(createNotifications).mock.calls[0];
-    expect((list as Array<{ metadata: Record<string, unknown> }>)[0].metadata).toMatchObject({
-      vacancySlug: "junior-designer-abc123",
-      companySlug: undefined,
-      companyName: undefined,
-    });
   });
 });
 

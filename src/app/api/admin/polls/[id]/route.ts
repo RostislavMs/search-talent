@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { emailModerationDecisions, moderateContent } from "@/lib/db/moderation-actions";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import {
   pollModerationPayloadSchema,
@@ -35,33 +36,25 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const { id } = routeParams.data;
-  const { data: poll } = await context.supabase
-    .from("polls")
-    .select("id")
-    .eq("id", id)
-    .maybeSingle();
+  // The database stamps who and when, logs the decision and notifies the
+  // author; a hidden poll is also e-mailed to them from here.
+  const note = parsed.data.moderation_note;
+  const result = await moderateContent(context.supabase, {
+    targetType: "poll",
+    targetIds: [routeParams.data.id],
+    status: parsed.data.moderation_status,
+    note,
+  });
 
-  if (!poll) {
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  if (result.items.length === 0) {
     return NextResponse.json({ error: "Poll not found" }, { status: 404 });
   }
 
-  const { error } = await context.supabase
-    .from("polls")
-    .update({
-      moderation_status: parsed.data.moderation_status,
-      moderation_note: parsed.data.moderation_note,
-      moderated_at: new Date().toISOString(),
-      moderated_by: context.user.id,
-    })
-    .eq("id", id);
-
-  if (error) {
-    return NextResponse.json(
-      { error: error.message || "Could not update poll moderation" },
-      { status: 400 },
-    );
-  }
+  await emailModerationDecisions({ targetType: "poll", items: result.items, note });
 
   return NextResponse.json({ success: true });
 }

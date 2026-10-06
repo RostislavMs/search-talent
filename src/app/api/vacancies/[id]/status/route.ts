@@ -13,7 +13,8 @@ import {
   vacancyStatusActionSchema,
 } from "@/lib/validation/vacancies";
 import { parseJsonRequest } from "@/lib/validation/request";
-import { screenVacancy, vacancyWriteErrorResponse } from "../../shared";
+import { isAutoModerationNote } from "@/lib/auto-moderation";
+import { vacancyWriteErrorResponse } from "../../shared";
 
 type StoredVacancy = {
   id: string;
@@ -120,7 +121,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .from("vacancies")
     .update(patch)
     .eq("id", id)
-    .select("id, status, expires_at, moderation_status")
+    .select("id, status, expires_at, moderation_status, moderation_note")
     .maybeSingle();
 
   if (error) {
@@ -131,25 +132,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Vacancy not found" }, { status: 404 });
   }
 
-  const saved = data as { id: string; status: string; expires_at: string | null; moderation_status: string };
+  const saved = data as {
+    id: string;
+    status: string;
+    expires_at: string | null;
+    moderation_status: string;
+    moderation_note: string | null;
+  };
 
-  // Drafts are not screened while they are written; this is the moment.
+  // Drafts are not screened while they are written; going out is the moment
+  // (the database does it).
   const heldForReview =
     action === "publish" &&
-    (saved.moderation_status === "approved" || saved.moderation_status === "under_review")
-      ? await screenVacancy(id, {
-          title: stored.title,
-          description: stored.description ?? "",
-          city: stored.city,
-        })
-      : false;
+    saved.moderation_status === "under_review" &&
+    isAutoModerationNote(saved.moderation_note);
 
   return NextResponse.json({
     vacancy: {
       id: saved.id,
       status: saved.status,
       expiresAt: saved.expires_at,
-      moderationStatus: heldForReview ? "under_review" : saved.moderation_status,
+      moderationStatus: saved.moderation_status,
     },
     heldForReview,
   });

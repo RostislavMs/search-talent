@@ -7,13 +7,7 @@ import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildProjectSourceColumns } from "@/lib/db/provider-sync";
 import { normalizeProjectSourceLink } from "@/lib/constants/provider-integrations";
-import {
-  CLEAN_MODERATION_RESULT,
-  collectProjectModerationText,
-  describeModerationResult,
-  screenContentForModeration,
-} from "@/lib/auto-moderation";
-import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { readAutoModerationReason } from "@/lib/db/moderation-actions";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
 import { buildProjectRow, notifyProjectSaved, saveProject } from "@/lib/db/save-project";
@@ -59,15 +53,6 @@ export async function PATCH(
 
   const payload = parsed.data;
 
-  // Auto-moderation runs only on publish, and only auto-removes a currently
-  // approved item — it never touches content an admin already
-  // restricted/removed or that is awaiting review.
-  const screen =
-    payload.status === "published"
-      ? screenContentForModeration(collectProjectModerationText(payload))
-      : CLEAN_MODERATION_RESULT;
-  const willRemove = screen.flagged && project.moderation_status === "approved";
-
   const nextSlug =
     payload.slug === project.slug
       ? project.slug
@@ -102,8 +87,10 @@ export async function PATCH(
   }
 
   // Row, skills, co-authors, budget (removed when the form sends none) and
-  // company pages in one transaction. Company pages wait while an
-  // auto-removed edit has nothing to show.
+  // company pages in one transaction. The database screens the text of a
+  // published project: a flagged edit takes an approved project down (an
+  // admin's stricter decision stays), and company pages wait while it has
+  // nothing to show.
   const { project: updatedProject, error: projectError } = await saveProject(supabase, {
     id: project.id,
     row: {
@@ -115,20 +102,14 @@ export async function PATCH(
     skillIds: payload.skillIds,
     budget: payload.budget,
     coAuthorIds: sanitizeCoAuthorIds(payload.coAuthorUserIds, user.id),
-    companyIds: willRemove ? null : payload.companyIds,
+    companyIds: payload.companyIds,
   });
 
   if (!updatedProject) {
     return NextResponse.json({ error: projectError.message }, { status: 400 });
   }
 
-  if (willRemove) {
-    await autoRemoveContent({
-      table: "projects",
-      id: project.id,
-      note: screen.note,
-    });
-  }
+  const willRemove = updatedProject.autoRemoved;
 
   await notifyProjectSaved({ project: updatedProject, title: payload.title, creatorUserId: user.id });
 
@@ -156,7 +137,7 @@ export async function PATCH(
     status: updatedProject.status,
     autoRemoved: willRemove,
     moderationReason: willRemove
-      ? describeModerationResult(screen, await getRequestLocale())
+      ? await readAutoModerationReason(supabase, "project", project.id, await getRequestLocale())
       : null,
   });
 }

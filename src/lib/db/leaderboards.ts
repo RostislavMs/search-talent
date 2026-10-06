@@ -23,8 +23,8 @@ import {
 } from "@/lib/leaderboards";
 import { getBadgeBonusPoints } from "@/lib/db/badges";
 import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
+import { loadBlocklistedProjectIds } from "@/lib/db/moderation-actions";
 import {
-  isLeaderboardSafeText,
   selectFreshCreators,
   selectTopCreators,
   selectTopProjects,
@@ -275,6 +275,14 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
     profileStats.map((p) => p.user_id),
   );
 
+  // Display-only: projects whose text the current blocklist catches (the
+  // database checks them in one go) never surface on the boards. The ratings
+  // still count every published project.
+  const blocklisted = await loadBlocklistedProjectIds(
+    supabase,
+    projectStats.map((p) => p.id),
+  );
+
   // track completeness per profile so we can award `complete_profile` after
   // ranking finishes (without recomputing inside the award loop).
   const completenessByProfileId = new Map<string, number>();
@@ -508,9 +516,7 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
       // work the blocklist would hide, so a flagged title never surfaces on
       // the home page through its author's card. The rating above still
       // counts every published project.
-      const displayableOwned = owned.filter((p) =>
-        isLeaderboardSafeText([p.title, p.description]),
-      );
+      const displayableOwned = owned.filter((p) => !blocklisted.has(p.id));
       const latestDisplayableProjectAt = displayableOwned.reduce<string | null>(
         (best, p) => {
           if (!p.created_at) return best;
@@ -669,8 +675,8 @@ async function loadLeaderboardData(): Promise<LeaderboardData> {
         month: selectTopCreators(rankedCreators.month),
       },
       projects: {
-        all: selectTopProjects(rankedProjects.all),
-        month: selectTopProjects(rankedProjects.month),
+        all: selectTopProjects(rankedProjects.all.filter((p) => !blocklisted.has(p.id))),
+        month: selectTopProjects(rankedProjects.month.filter((p) => !blocklisted.has(p.id))),
       },
       freshCreators: selectFreshCreators(rankedCreators.all),
     },

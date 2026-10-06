@@ -19,10 +19,6 @@ vi.mock("@/lib/db/comment-events", () => ({ dispatchCommentSideEffects: vi.fn() 
 vi.mock("@/lib/db/comment-moderation", () => ({ deleteCommentAuthorized: vi.fn() }));
 vi.mock("@/lib/db/reactions", () => ({ getReactionsForTargets: vi.fn(async () => ({})) }));
 vi.mock("@/lib/gif/provider", () => ({ isAllowedGifUrl: vi.fn(() => true) }));
-vi.mock("@/lib/auto-moderation", () => ({
-  screenContentForModeration: vi.fn(() => ({ flagged: false, note: "" })),
-  describeModerationResult: () => "blocked",
-}));
 vi.mock("@/lib/i18n/server", () => ({ getRequestLocale: vi.fn(async () => "en") }));
 
 import { POST } from "@/app/api/projects/[id]/comments/route";
@@ -33,7 +29,6 @@ import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { dispatchCommentSideEffects } from "@/lib/db/comment-events";
 import { deleteCommentAuthorized } from "@/lib/db/comment-moderation";
 import { isAllowedGifUrl } from "@/lib/gif/provider";
-import { screenContentForModeration } from "@/lib/auto-moderation";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const PROJECT_ID = "22222222-2222-4222-8222-222222222222";
@@ -64,7 +59,6 @@ afterEach(() => {
   holder.mock = null;
   vi.clearAllMocks();
   vi.mocked(isAllowedGifUrl).mockReturnValue(true);
-  vi.mocked(screenContentForModeration).mockReturnValue({ flagged: false, note: "" } as never);
 });
 
 describe("POST /api/projects/[id]/comments — rate limiting", () => {
@@ -89,11 +83,22 @@ describe("POST /api/projects/[id]/comments", () => {
     expect((await POST(postReq({ body: "", media_url: "https://evil/x.gif" }), params())).status).toBe(400);
   });
 
-  it("400 (moderation_blocked) when flagged", async () => {
-    setMock(authUser, publicResolver);
-    vi.mocked(screenContentForModeration).mockReturnValue({ flagged: true, note: "bad" } as never);
+  it("400 (moderation_blocked) when the database refuses the text", async () => {
+    setMock(authUser, (table, verb) =>
+      table === "project_comments" && verb === "insert"
+        ? {
+            data: null,
+            error: {
+              message: "moderation_blocked",
+              details: JSON.stringify({ flagged: true, categories: ["profanity"], matches: [{ category: "profanity" }] }),
+            },
+          }
+        : publicResolver(table, verb),
+    );
     const res = await POST(postReq({ body: "spam" }), params());
-    expect((await res.json()).code).toBe("moderation_blocked");
+    const blocked = await res.json();
+    expect(blocked.code).toBe("moderation_blocked");
+    expect(blocked.error).toContain("profanity");
   });
 
   it("404 when the project is not public", async () => {

@@ -229,41 +229,6 @@ export function companyWriteErrorCode(
   return "invalid";
 }
 
-/**
- * Auto-moderation flagged the text: only the team sees the page until an admin
- * looks at it. Needs the service key, since members cannot touch moderation.
- * Never lifts a stricter decision an admin already made.
- */
-export async function holdCompanyForReview(
-  companyId: string,
-  note: string | null,
-): Promise<boolean> {
-  const admin = createAdminClient();
-
-  if (!admin) {
-    console.warn(`[companies] SUPABASE_SERVICE_ROLE_KEY missing — could not hold ${companyId}`);
-    return false;
-  }
-
-  const { error } = await admin
-    .from("companies")
-    .update({
-      moderation_status: "under_review",
-      moderation_note: note,
-      moderated_at: new Date().toISOString(),
-      moderated_by: null,
-    })
-    .eq("id", companyId)
-    .eq("moderation_status", "approved");
-
-  if (error) {
-    console.error(`[companies] could not hold ${companyId}: ${error.message}`);
-    return false;
-  }
-
-  return true;
-}
-
 async function loadCountryName(
   supabase: SupabaseClient,
   countryId: number | null,
@@ -987,40 +952,6 @@ export async function notifyCompanyProjectDecision({
       projectSlug: project.slug ?? undefined,
     }),
   });
-}
-
-/** A moderation decision that hides the page, sent to its owners and admins. */
-export async function notifyCompanyModeration({
-  companyId,
-  status,
-}: {
-  companyId: string;
-  status: "removed" | "restricted";
-}): Promise<void> {
-  const admin = createAdminClient();
-  if (!admin) return;
-
-  const [company, managers] = await Promise.all([
-    loadCompanyForNotification(admin, companyId),
-    loadCompanyManagers(admin, companyId),
-  ]);
-  if (!company || managers.length === 0) return;
-
-  await createNotifications(
-    admin,
-    managers.map((recipientUserId) => ({
-      recipientUserId,
-      actorUserId: null,
-      type: "moderation_decision" as const,
-      targetType: "company" as const,
-      targetId: companyId,
-      metadata: companyMetadata(companyId, company, {
-        moderationStatus: status,
-        contentKind: "company",
-        contentTitle: company.name,
-      }),
-    })),
-  );
 }
 
 // --- Admin -------------------------------------------------------------------------

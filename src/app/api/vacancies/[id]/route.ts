@@ -8,11 +8,8 @@ import {
   vacancyReadinessIssues,
 } from "@/lib/validation/vacancies";
 import { parseJsonRequest } from "@/lib/validation/request";
-import {
-  sanitizeVacancyDescription,
-  screenVacancy,
-  vacancyWriteErrorResponse,
-} from "../shared";
+import { isAutoModerationNote } from "@/lib/auto-moderation";
+import { sanitizeVacancyDescription, vacancyWriteErrorResponse } from "../shared";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -107,22 +104,15 @@ export async function PATCH(request: Request, { params }: Params) {
     return vacancyWriteErrorResponse(error, "Could not save the vacancy");
   }
 
-  // A vacancy waiting for a moderator is screened too: the note tells the
-  // moderator what tripped. A stricter decision is left alone.
+  // The database screened the text: a vacancy out (or waiting for a
+  // moderator) with a flagged text waits, with a note that says why.
   const heldForReview =
-    saved.status !== "draft" &&
-    (saved.moderation_status === "approved" || saved.moderation_status === "under_review")
-      ? await screenVacancy(id, {
-          title: payload.title,
-          description: description.html,
-          city: payload.city,
-        })
-      : false;
+    saved.moderation_status === "under_review" && isAutoModerationNote(saved.moderation_note);
 
   return NextResponse.json({
     vacancy: { id: saved.id, slug: saved.slug, status: saved.status },
     heldForReview,
-    moderationStatus: heldForReview ? "under_review" : saved.moderation_status,
+    moderationStatus: saved.moderation_status,
   });
 }
 

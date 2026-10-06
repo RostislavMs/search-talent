@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AuthorList from "@/components/author-list";
 import DeletePollButton from "@/components/delete-poll-button";
+import ContentReportButton from "@/components/content-report-button";
+import { getModerationCopy } from "@/lib/moderation-copy";
 import PollInteractions from "@/components/poll-interactions";
 import { isGifSearchConfigured } from "@/lib/gif/provider";
 import PollPinButton from "@/components/poll-pin-button";
@@ -265,6 +267,17 @@ export default async function PollDetailPage({
             resultsVisible={poll.resultsVisible}
             isAuthenticated={Boolean(viewerUserId)}
           />
+
+          {viewerUserId && !isOwner ? (
+            <div className="flex justify-end">
+              <ContentReportButton
+                copy={getModerationCopy(safeLocale)}
+                targetType="poll"
+                targetId={poll.id}
+                isAuthenticated
+              />
+            </div>
+          ) : null}
 
           <PollInteractions
             locale={safeLocale}

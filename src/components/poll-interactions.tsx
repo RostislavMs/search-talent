@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import CommentDeleteButton from "@/components/comment-delete-button";
+import ContentReportButton from "@/components/content-report-button";
 import DiscussionPreviewLink from "@/components/discussion-preview-link";
 import CommentGif from "@/components/ui/comment-gif";
 import FormTextarea from "@/components/ui/form-textarea";
@@ -21,6 +22,8 @@ import {
   StatChip,
 } from "@/components/ui/content-stats";
 import { apiFetch } from "@/lib/api-client";
+import type { Locale } from "@/lib/i18n/config";
+import { getModerationCopy } from "@/lib/moderation-copy";
 import { isDiscussionOpen } from "@/lib/discussions";
 import type { PollComment } from "@/lib/polls";
 import { useLoginHref } from "@/lib/auth/use-login-href";
@@ -169,6 +172,15 @@ function CommentNode({
                 endpoint={`/api/polls/${pollId}/comments/${comment.id}`}
                 locale={locale}
                 onDeleted={onDeleted}
+              />
+            ) : null}
+            {canComment && viewerUserId && comment.authorUserId && comment.authorUserId !== viewerUserId ? (
+              <ContentReportButton
+                copy={getModerationCopy(locale as Locale)}
+                targetType="poll_comment"
+                targetId={comment.id}
+                isAuthenticated
+                asLink
               />
             ) : null}
           </div>

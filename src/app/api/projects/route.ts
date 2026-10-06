@@ -9,13 +9,7 @@ import { fetchRepoFullDetail } from "@/lib/integrations/github";
 import { mapRepoToProjectColumns } from "@/lib/db/github-sync";
 import { buildProjectSourceColumns } from "@/lib/db/provider-sync";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
-import {
-  CLEAN_MODERATION_RESULT,
-  collectProjectModerationText,
-  describeModerationResult,
-  screenContentForModeration,
-} from "@/lib/auto-moderation";
-import { autoRemoveContent } from "@/lib/auto-moderation-apply";
+import { readAutoModerationReason } from "@/lib/db/moderation-actions";
 import { getRequestLocale } from "@/lib/i18n/server";
 import { sanitizeCoAuthorIds } from "@/lib/co-authors";
 import { buildProjectRow, notifyProjectSaved, saveProject } from "@/lib/db/save-project";
@@ -56,14 +50,6 @@ export async function POST(request: Request) {
   const holdForCoAuthors = payload.status === "published" && coAuthorIds.length > 0;
 
   const uniqueSlug = await generateUniqueProjectSlug(supabase, payload.slug);
-
-  // Auto-moderation runs only on publish. A flagged project is auto-removed
-  // (hidden by RLS) right after insert and the author is notified; clean
-  // content keeps the previous auto-approve behaviour.
-  const screen =
-    payload.status === "published"
-      ? screenContentForModeration(collectProjectModerationText(payload))
-      : CLEAN_MODERATION_RESULT;
 
   // If the form supplied a GitHub repo, snapshot it server-side so the
   // denormalized columns (stats, languages, sync timestamp) are filled
@@ -107,8 +93,9 @@ export async function POST(request: Request) {
   }
 
   // The project, its skills, budget, co-authors and company pages in one
-  // transaction: a failure leaves nothing half-made behind. A flagged project
-  // gets no co-authors or company pages — there is nothing to share yet.
+  // transaction: a failure leaves nothing half-made behind. The database
+  // screens the text of a project that goes out (or waits for co-authors): a
+  // flagged one is removed, its author told, and it shares nothing yet.
   const { project, error } = await saveProject(supabase, {
     id: null,
     row: {
@@ -121,23 +108,19 @@ export async function POST(request: Request) {
     },
     skillIds: payload.skillIds,
     budget: payload.budget,
-    coAuthorIds: screen.flagged ? [] : coAuthorIds,
-    companyIds: screen.flagged ? [] : payload.companyIds,
+    coAuthorIds,
+    companyIds: payload.companyIds,
   });
 
   if (!project) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  if (screen.flagged) {
-    await autoRemoveContent({ table: "projects", id: project.id, note: screen.note });
-  }
-
   await notifyProjectSaved({ project, title: payload.title, creatorUserId: user.id });
 
   // Notify followers only when the project is actually public (published AND
   // not auto-removed). A draft held for co-authors notifies on auto-publish.
-  if (project.status === "published" && !screen.flagged) {
+  if (project.status === "published" && !project.autoRemoved) {
     void dispatchPublishSideEffects({
       contentType: "project",
       contentId: project.id,
@@ -151,9 +134,9 @@ export async function POST(request: Request) {
     projectId: project.id,
     slug: project.slug,
     status: project.status,
-    autoRemoved: screen.flagged,
-    moderationReason: screen.flagged
-      ? describeModerationResult(screen, await getRequestLocale())
+    autoRemoved: project.autoRemoved,
+    moderationReason: project.autoRemoved
+      ? await readAutoModerationReason(supabase, "project", project.id, await getRequestLocale())
       : null,
     awaitingCoAuthors: holdForCoAuthors,
   });

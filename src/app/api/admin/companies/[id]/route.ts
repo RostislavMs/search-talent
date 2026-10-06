@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { notifyCompanyModeration, notifyCompanyVerified } from "@/lib/db/companies";
+import { notifyCompanyVerified } from "@/lib/db/companies";
+import { moderateContent } from "@/lib/db/moderation-actions";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import {
   adminCompanyUpdateSchema,
@@ -10,7 +11,9 @@ import { parseJsonRequest } from "@/lib/validation/request";
 /**
  * PATCH /api/admin/companies/:id — a platform admin confirms or takes back the
  * check mark and sets the moderation status. Runs with the admin's own session:
- * RLS and guard_company_columns let admins through.
+ * RLS and guard_company_columns let admins through. The moderation decision
+ * goes through moderate_content(), which logs it and tells the page's owners
+ * and admins.
  */
 export async function PATCH(
   request: Request,
@@ -41,7 +44,7 @@ export async function PATCH(
   const { id } = route.data;
   const { data: before } = await context.supabase
     .from("companies")
-    .select("id, verified_at, moderation_status")
+    .select("id, verified_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -62,33 +65,32 @@ export async function PATCH(
     patch.verified_by = null;
   }
 
+  if (Object.keys(patch).length > 0) {
+    const { error } = await context.supabase.from("companies").update(patch).eq("id", id);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message || "Could not update the company" },
+        { status: 400 },
+      );
+    }
+
+    if (patch.verified_at) {
+      await notifyCompanyVerified({ companyId: id });
+    }
+  }
+
   if (parsed.data.moderation_status) {
-    patch.moderation_status = parsed.data.moderation_status;
-    patch.moderation_note = parsed.data.moderation_note;
-    patch.moderated_at = now;
-    patch.moderated_by = context.user.id;
-  }
+    const result = await moderateContent(context.supabase, {
+      targetType: "company",
+      targetIds: [id],
+      status: parsed.data.moderation_status,
+      note: parsed.data.moderation_note,
+    });
 
-  if (Object.keys(patch).length === 0) {
-    return NextResponse.json({ success: true });
-  }
-
-  const { error } = await context.supabase.from("companies").update(patch).eq("id", id);
-
-  if (error) {
-    return NextResponse.json(
-      { error: error.message || "Could not update the company" },
-      { status: 400 },
-    );
-  }
-
-  if (patch.verified_at) {
-    await notifyCompanyVerified({ companyId: id });
-  }
-
-  const status = parsed.data.moderation_status;
-  if ((status === "removed" || status === "restricted") && status !== before.moderation_status) {
-    await notifyCompanyModeration({ companyId: id, status });
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
   }
 
   return NextResponse.json({ success: true });

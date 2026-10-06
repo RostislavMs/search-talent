@@ -3,6 +3,7 @@ import { buildProjectPath } from "@/lib/projects";
 import { buildVacancyPath } from "@/lib/vacancies";
 import { createClient } from "@/lib/supabase/server";
 import {
+  isCommentReportTarget,
   normalizeModerationStatus,
   type ModerationPriority,
   type ModerationStatus,
@@ -20,6 +21,8 @@ type QueueReportRow = {
   target_article_id: string | null;
   target_company_id: string | null;
   target_vacancy_id: string | null;
+  target_poll_id: string | null;
+  target_comment_id: string | null;
   target_owner_user_id: string | null;
   reporter_user_id: string;
   reason: ReportReason;
@@ -62,6 +65,13 @@ type NamedTargetRow = {
   moderation_status: string | null;
 };
 
+type CommentTargetRow = {
+  id: string;
+  body: string | null;
+  parent_id: string;
+  parent_slug: string | null;
+};
+
 type IdentityProfileRow = {
   user_id: string;
   username: string | null;
@@ -85,6 +95,42 @@ export type ModerationQueueItem = {
   resolutionNote: string | null;
 };
 
+/** The reported comments, each with the page it is on. */
+async function loadCommentTargets(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ids: Record<"project_comment" | "article_comment" | "poll_comment", string[]>,
+): Promise<Map<string, CommentTargetRow>> {
+  const [projectComments, articleComments, pollComments] = await Promise.all([
+    ids.project_comment.length > 0
+      ? supabase.from("project_comments").select("id, body, project_id").in("id", ids.project_comment)
+      : Promise.resolve({ data: [] }),
+    ids.article_comment.length > 0
+      ? supabase.from("article_comments").select("id, body, articles(slug)").in("id", ids.article_comment)
+      : Promise.resolve({ data: [] }),
+    ids.poll_comment.length > 0
+      ? supabase.from("poll_comments").select("id, body, polls(slug)").in("id", ids.poll_comment)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const map = new Map<string, CommentTargetRow>();
+  const slugOf = (value: unknown) => {
+    const row = Array.isArray(value) ? value[0] : value;
+    return (row as { slug?: string } | null)?.slug ?? null;
+  };
+
+  for (const row of (projectComments.data || []) as Array<{ id: string; body: string | null; project_id: string }>) {
+    map.set(row.id, { id: row.id, body: row.body, parent_id: row.project_id, parent_slug: null });
+  }
+  for (const row of (articleComments.data || []) as Array<{ id: string; body: string | null; articles: unknown }>) {
+    map.set(row.id, { id: row.id, body: row.body, parent_id: "", parent_slug: slugOf(row.articles) });
+  }
+  for (const row of (pollComments.data || []) as Array<{ id: string; body: string | null; polls: unknown }>) {
+    map.set(row.id, { id: row.id, body: row.body, parent_id: "", parent_slug: slugOf(row.polls) });
+  }
+
+  return map;
+}
+
 export async function getModerationQueue() {
   const { user, isAdmin } = await getCurrentViewerRole();
 
@@ -96,7 +142,7 @@ export async function getModerationQueue() {
   const { data: reports } = await supabase
     .from("content_reports")
     .select(
-      "id, target_type, target_profile_id, target_project_id, target_article_id, target_company_id, target_vacancy_id, target_owner_user_id, reporter_user_id, reason, details, priority, status, created_at, resolution_note",
+      "id, target_type, target_profile_id, target_project_id, target_article_id, target_poll_id, target_company_id, target_vacancy_id, target_comment_id, target_owner_user_id, reporter_user_id, reason, details, priority, status, created_at, resolution_note",
     )
     .in("status", ["open", "triaged"])
     .order("status", { ascending: true })
@@ -120,6 +166,13 @@ export async function getModerationQueue() {
   const vacancyIds = queueRows
     .map((item) => item.target_vacancy_id)
     .filter((item): item is string => Boolean(item));
+  const pollIds = queueRows
+    .map((item) => item.target_poll_id)
+    .filter((item): item is string => Boolean(item));
+  const commentIds = (type: ReportTargetType) =>
+    queueRows
+      .filter((item) => item.target_type === type && item.target_comment_id)
+      .map((item) => item.target_comment_id as string);
   const identityIds = [...new Set(
     queueRows
       .flatMap((item) => [item.reporter_user_id, item.target_owner_user_id])
@@ -133,6 +186,8 @@ export async function getModerationQueue() {
     identityProfilesResponse,
     companyTargetsResponse,
     vacancyTargetsResponse,
+    pollTargetsResponse,
+    commentTargets,
   ] =
     await Promise.all([
       profileIds.length > 0
@@ -171,6 +226,17 @@ export async function getModerationQueue() {
             .select("id, slug, title, moderation_status")
             .in("id", vacancyIds)
         : Promise.resolve({ data: [] }),
+      pollIds.length > 0
+        ? supabase
+            .from("polls")
+            .select("id, slug, title, moderation_status")
+            .in("id", pollIds)
+        : Promise.resolve({ data: [] }),
+      loadCommentTargets(supabase, {
+        project_comment: commentIds("project_comment"),
+        article_comment: commentIds("article_comment"),
+        poll_comment: commentIds("poll_comment"),
+      }),
     ]);
 
   const profileTargets = new Map(
@@ -193,6 +259,9 @@ export async function getModerationQueue() {
   );
   const vacancyTargets = new Map(
     ((vacancyTargetsResponse.data || []) as NamedTargetRow[]).map((item) => [item.id, item]),
+  );
+  const pollTargets = new Map(
+    ((pollTargetsResponse.data || []) as NamedTargetRow[]).map((item) => [item.id, item]),
   );
 
   const priorityRank: Record<ModerationPriority, number> = {
@@ -264,6 +333,53 @@ export async function getModerationQueue() {
             : buildVacancyPath(target.slug)
           : null,
         targetStatus: normalizeModerationStatus(target?.moderation_status),
+        reportReason: report.reason,
+        reportStatus: report.status,
+        priority: report.priority,
+        details: report.details,
+        createdAt: report.created_at,
+        reporterLabel,
+        ownerLabel,
+        resolutionNote: report.resolution_note,
+      };
+    }
+
+    if (report.target_type === "poll") {
+      const target = report.target_poll_id ? pollTargets.get(report.target_poll_id) : null;
+
+      return {
+        id: report.id,
+        targetType: report.target_type,
+        targetId: target?.id || report.target_poll_id || "",
+        targetLabel: target?.title || report.target_poll_id || "Poll",
+        targetHref: target?.slug ? `/polls/${target.slug}` : null,
+        targetStatus: normalizeModerationStatus(target?.moderation_status),
+        reportReason: report.reason,
+        reportStatus: report.status,
+        priority: report.priority,
+        details: report.details,
+        createdAt: report.created_at,
+        reporterLabel,
+        ownerLabel,
+        resolutionNote: report.resolution_note,
+      };
+    }
+
+    if (isCommentReportTarget(report.target_type)) {
+      const target = report.target_comment_id ? commentTargets.get(report.target_comment_id) : null;
+      const parentPath =
+        report.target_type === "project_comment" ? "/projects" : report.target_type === "article_comment" ? "/articles" : "/polls";
+      const parentKey = report.target_type === "project_comment" ? target?.parent_id : target?.parent_slug;
+      const body = target?.body?.replace(/s+/g, " ").trim() || "";
+
+      return {
+        id: report.id,
+        targetType: report.target_type,
+        targetId: report.target_comment_id || "",
+        targetLabel: body ? (body.length > 120 ? `${body.slice(0, 117)}…` : body) : "GIF",
+        targetHref: parentKey ? `${parentPath}/${parentKey}#comment-${target?.id}` : null,
+        // A comment has no review status: it is there (or already gone).
+        targetStatus: null,
         reportReason: report.reason,
         reportStatus: report.status,
         priority: report.priority,
