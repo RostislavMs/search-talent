@@ -20,6 +20,12 @@ import { createClient } from "@/lib/supabase/server";
  * onboarding the first time and to their space after that. When the session
  * cannot be created, a new account is told its email is confirmed and asked to
  * log in (the email itself is confirmed by then), others go back to login.
+ *
+ * A password-reset link (`flow=recovery`, the older email template) is not
+ * signed in here: its code goes on to the new-password form as
+ * `?recovery_code=` and is exchanged only when the new password is saved. (It
+ * cannot be named `code` there, or the browser client would exchange it on
+ * page load.)
  */
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -28,6 +34,7 @@ export async function GET(request: Request) {
   const fallbackLocale: Locale =
     localeParam && isLocale(localeParam) ? localeParam : await getRequestLocale();
   const isSignup = params.get("flow") === "signup";
+  const isRecovery = params.get("flow") === "recovery";
   // A new account always starts with the onboarding, even before the
   // onboarding table exists to tell new and old accounts apart.
   const next =
@@ -36,6 +43,15 @@ export async function GET(request: Request) {
   const locale = getLocaleOfPath(next, fallbackLocale);
 
   const code = params.get("code");
+
+  if (isRecovery) {
+    const resetPath = createLocalePath(locale, "/reset-password");
+    const target =
+      code && !params.get("error")
+        ? `${resetPath}?recovery_code=${encodeURIComponent(code)}`
+        : `${resetPath}?status=expired`;
+    return NextResponse.redirect(new URL(target, requestUrl.origin));
+  }
 
   const supabase = await createClient();
   let userId: string | null = null;

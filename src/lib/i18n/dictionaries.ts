@@ -2915,7 +2915,8 @@ export const dictionaries = {
         loading: "Saving...",
         verifyingLink: "Checking the reset link...",
         doneTitle: "Password updated",
-        doneDescription: "You can sign in now with your new password.",
+        doneDescription: "Your new password is saved and you are signed in.",
+        continue: "Continue",
         backToLogin: "Go to login",
         invalidSession:
           "This recovery link has expired or is invalid. Please request a new one.",
@@ -2955,6 +2956,7 @@ export const dictionaries = {
         resetRequestFailed:
           "Could not send the reset link right now. Please try again in a moment.",
         resetUpdateFailed: "Could not update the password. Please try again.",
+        samePassword: "This is your current password. Choose a different one.",
       },
     },
     creatorProfile: {
@@ -6887,7 +6889,8 @@ export const dictionaries = {
         loading: "Збереження...",
         verifyingLink: "Перевіряємо посилання...",
         doneTitle: "Пароль оновлено",
-        doneDescription: "Тепер ви можете увійти з новим паролем.",
+        doneDescription: "Новий пароль збережено, ви вже в акаунті.",
+        continue: "Продовжити",
         backToLogin: "До сторінки входу",
         invalidSession:
           "Це посилання для відновлення вже недійсне або протерміноване. Спробуйте запросити нове.",
@@ -6927,6 +6930,7 @@ export const dictionaries = {
         resetRequestFailed:
           "Зараз не вдалося надіслати посилання для скидання. Спробуйте ще раз пізніше.",
         resetUpdateFailed: "Не вдалося оновити пароль. Спробуйте ще раз.",
+        samePassword: "Це ваш поточний пароль. Оберіть інший.",
       },
     },
     creatorProfile: {
