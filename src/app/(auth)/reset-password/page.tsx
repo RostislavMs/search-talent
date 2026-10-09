@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { buildContinueHref } from "@/lib/auth/redirect";
+import { useSearchParam } from "@/lib/auth/use-search-param";
 import {
   AUTH_LIMITS,
   getAuthErrorMessage,
@@ -8,17 +10,40 @@ import {
   resetPasswordSchema,
   type AuthFieldErrors,
 } from "@/lib/auth/validation";
-import { useDictionary, useLocalizedHref } from "@/lib/i18n/client";
+import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { createClient } from "@/lib/supabase/client";
 import PasswordInput from "@/components/ui/password-input";
 import { Button, ButtonLink } from "@/components/ui/Button";
 
-type SessionState = "loading" | "ready" | "invalid";
+type LinkState = "loading" | "ready" | "invalid";
 
+function noSubscription() {
+  return () => {};
+}
+
+/** False in the server HTML and while hydrating, so the link is not judged yet. */
+function useUrlReadable() {
+  return useSyncExternalStore(noSubscription, () => true, () => false);
+}
+
+/**
+ * The new-password form behind the reset email.
+ *
+ * The form shows only for a link from that email: `?token_hash=` from the
+ * current template, or `?recovery_code=` passed on by /api/auth/callback from
+ * the older one. Either is checked only when the new password is saved, so
+ * opening the link signs no one in, and being signed in is not enough to set
+ * a password without the current one (that is the Security section). The
+ * token also works on any device, and a mail scanner that opens links ahead of
+ * the person cannot use it up.
+ */
 export default function ResetPasswordPage() {
   const supabase = createClient();
   const dictionary = useDictionary();
-  const loginHref = useLocalizedHref("/login");
+  const router = useLocalizedRouter();
+  const tokenHash = useSearchParam("token_hash");
+  const recoveryCode = useSearchParam("recovery_code");
+  const urlReadable = useUrlReadable();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -26,74 +51,16 @@ export default function ResetPasswordPage() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
-  const [sessionState, setSessionState] = useState<SessionState>("loading");
+  // The link works only once; after that the session it opened carries any
+  // retry.
+  const [linkUsed, setLinkUsed] = useState(false);
+  const [linkFailed, setLinkFailed] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const hydrateSession = async () => {
-      try {
-        if (typeof window === "undefined") return;
-
-        const hashParams = new URLSearchParams(window.location.hash.slice(1));
-        const queryParams = new URLSearchParams(window.location.search);
-
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-        const tokenType = hashParams.get("type") || queryParams.get("type");
-        const code = queryParams.get("code");
-
-        if (accessToken && refreshToken && tokenType === "recovery") {
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (cancelled) return;
-          if (sessionError) {
-            setSessionState("invalid");
-            return;
-          }
-
-          window.history.replaceState(null, "", window.location.pathname);
-          setSessionState("ready");
-          return;
-        }
-
-        if (code) {
-          const { error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
-
-          if (cancelled) return;
-          if (exchangeError) {
-            setSessionState("invalid");
-            return;
-          }
-
-          window.history.replaceState(null, "", window.location.pathname);
-          setSessionState("ready");
-          return;
-        }
-
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (cancelled) return;
-        setSessionState(session ? "ready" : "invalid");
-      } catch {
-        if (!cancelled) {
-          setSessionState("invalid");
-        }
-      }
-    };
-
-    hydrateSession();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase]);
+  const linkState: LinkState = !urlReadable
+    ? "loading"
+    : linkFailed || !(tokenHash || recoveryCode)
+      ? "invalid"
+      : "ready";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +85,20 @@ export default function ResetPasswordPage() {
       return;
     }
 
+    if (!linkUsed) {
+      const { error: linkError } = tokenHash
+        ? await supabase.auth.verifyOtp({ type: "recovery", token_hash: tokenHash })
+        : await supabase.auth.exchangeCodeForSession(recoveryCode ?? "");
+
+      if (linkError) {
+        setLoading(false);
+        setLinkFailed(true);
+        return;
+      }
+
+      setLinkUsed(true);
+    }
+
     const { error: updateError } = await supabase.auth.updateUser({
       password: parsed.data.password,
     });
@@ -125,7 +106,11 @@ export default function ResetPasswordPage() {
     setLoading(false);
 
     if (updateError) {
-      setError(dictionary.auth.errors.resetUpdateFailed);
+      setError(
+        updateError.code === "same_password"
+          ? dictionary.auth.errors.samePassword
+          : dictionary.auth.errors.resetUpdateFailed,
+      );
       return;
     }
 
@@ -139,13 +124,13 @@ export default function ResetPasswordPage() {
           {dictionary.auth.resetPassword.eyebrow}
         </p>
 
-        {sessionState === "loading" && (
+        {linkState === "loading" && (
           <p className="mt-6 app-muted">
             {dictionary.auth.resetPassword.verifyingLink}
           </p>
         )}
 
-        {sessionState === "invalid" && (
+        {linkState === "invalid" && (
           <>
             <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.auth.resetPassword.title}
@@ -164,7 +149,7 @@ export default function ResetPasswordPage() {
           </>
         )}
 
-        {sessionState === "ready" && !done && (
+        {linkState === "ready" && !done && (
           <>
             <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.auth.resetPassword.title}
@@ -270,11 +255,13 @@ export default function ResetPasswordPage() {
               {dictionary.auth.resetPassword.doneDescription}
             </p>
             <div className="mt-6">
+              {/* The person is signed in by now; the route picks the
+                  onboarding or "My Space". */}
               <a
-                href={loginHref}
+                href={buildContinueHref(router.locale)}
                 className="inline-block rounded-2xl bg-[color:var(--foreground)] px-4 py-2 text-sm font-medium text-[color:var(--background)]"
               >
-                {dictionary.auth.resetPassword.backToLogin}
+                {dictionary.auth.resetPassword.continue}
               </a>
             </div>
           </>

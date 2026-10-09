@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { buildAuthCallbackUrl } from "@/lib/auth/redirect";
 import {
   AUTH_LIMITS,
   forgotPasswordSchema,
@@ -47,13 +48,12 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (typeof window !== "undefined" ? window.location.origin : "");
-    const resetPagePath = `/${router.locale}/reset-password`;
-    const redirectTo = baseUrl
-      ? `${baseUrl.replace(/\/$/, "")}/api/auth/callback?next=${encodeURIComponent(resetPagePath)}`
-      : `/api/auth/callback?next=${encodeURIComponent(resetPagePath)}`;
+    // Only the old email template uses this address: the current one links
+    // straight to the new-password form (see supabase/email-templates).
+    const redirectTo = buildAuthCallbackUrl(
+      process.env.NEXT_PUBLIC_APP_URL || window.location.origin,
+      { flow: "recovery", locale: router.locale },
+    );
 
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       parsed.data.email,

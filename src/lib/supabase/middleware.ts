@@ -66,8 +66,7 @@ export async function updateSession(request: NextRequest) {
 
   // Already authenticated — keep users out of the login/signup pages, sending
   // them where the link meant to take them. (reset-password is intentionally
-  // excluded: the recovery flow signs the user in to let them set a new
-  // password.)
+  // excluded: someone signed in may still follow a reset link from the email.)
   if (user && locale && (section === "login" || section === "signup")) {
     const next = sanitizeNextPath(request.nextUrl.searchParams.get("next"), locale);
     const url = new URL(next ?? createLocalePath(locale, "/my-space"), request.url);

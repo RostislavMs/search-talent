@@ -132,6 +132,33 @@ describe("GET /api/auth/callback", () => {
     expect(await location(response)).toBe("/uk/verify?status=expired");
   });
 
+  it("passes a reset link on to the new-password form without signing in", async () => {
+    setClient({ exchange: signedIn });
+    const response = await callback(
+      new Request(
+        "https://searchtalent.dev/api/auth/callback?code=abc&flow=recovery&locale=en&next=%2Fen%2Fmy-space",
+      ),
+    );
+    expect(holder.exchange).not.toHaveBeenCalled();
+    expect(await location(response)).toBe("/en/reset-password?recovery_code=abc");
+  });
+
+  it("shows the expired reset link screen for a link without a code", async () => {
+    setClient({});
+    const missing = await callback(
+      new Request("https://searchtalent.dev/api/auth/callback?flow=recovery"),
+    );
+    expect(await location(missing)).toBe("/uk/reset-password?status=expired");
+
+    setClient({});
+    const expired = await callback(
+      new Request(
+        "https://searchtalent.dev/api/auth/callback?error=access_denied&error_code=otp_expired&flow=recovery&locale=en",
+      ),
+    );
+    expect(await location(expired)).toBe("/en/reset-password?status=expired");
+  });
+
   it("sends a failed OAuth back to login with the error and next", async () => {
     setClient({});
     const withoutNext = await callback(

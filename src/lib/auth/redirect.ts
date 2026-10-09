@@ -125,7 +125,7 @@ export function buildContinueHref(locale: Locale, next?: string | null) {
   return `/api/auth/continue?${params.toString()}`;
 }
 
-export type AuthCallbackFlow = "signup";
+export type AuthCallbackFlow = "signup" | "recovery";
 
 /**
  * The URL Supabase sends people back to after OAuth or the confirmation email.
