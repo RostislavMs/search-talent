@@ -40,13 +40,13 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "These Terms describe the rules for using SearchTalent. They form a living document and may expand as the product grows.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "October 5, 2026",
+      lastUpdatedValue: "October 10, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
           title: "Using the platform",
           paragraphs: [
-            "SearchTalent lets people create accounts, publish profiles and projects, write articles, run and answer polls, comment, react, vote, follow others, create pages for companies and their teams, post vacancies and apply to them, follow new vacancies, and explore public work across the community.",
+            "SearchTalent lets people create accounts, publish profiles and projects, write articles, run and answer polls, comment, react, vote, follow others, write to each other in messages, create pages for companies and their teams, post vacancies and apply to them, follow new vacancies, and explore public work across the community.",
             "By using the service, you agree to use it lawfully, respectfully, and in a way that does not harm the platform or other users.",
           ],
           bullets: [
@@ -111,6 +111,20 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           ],
         },
         {
+          title: "Messages",
+          paragraphs: [
+            "Signed-in people with a confirmed email can write to each other on SearchTalent, and a company's team can write to people on behalf of the company. A company page that is not verified can write only to people who applied to its vacancies. A conversation is seen only by the people in it; on a company's side, by its whole team, and each message shows who in the team wrote it.",
+            "The first message to someone you have not talked to is a request: one message, without links outside SearchTalent, until they reply or accept it; you may try again after 30 days. In the message settings you choose who may write to you. You can block anyone; the person you block is not told.",
+            "Messages are checked automatically when sent: hate, sexual content, and link spam are not sent, and a message that asks for payment or to move to a messenger reaches the recipient with a warning. You report the other person once, from the conversation's menu. Moderators read a conversation only when someone reports it, and then only its last 20 messages.",
+          ],
+          bullets: [
+            "No spam, mass mailing, or unsolicited advertising.",
+            "Do not ask anyone for payment, passwords, or codes.",
+            "No harassment, threats, or hate.",
+            "A violation means the messages are removed, and messaging may be limited or the account blocked. When several people block or report someone within a week, that person's new conversations are turned off until a moderator looks.",
+          ],
+        },
+        {
           title: "AI features",
           paragraphs: [
             "Some optional features use AI to help you draft or summarize content. The content you provide is processed by a third-party AI provider, as described in the Privacy Policy.",
@@ -155,7 +169,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "This Privacy Policy explains what data SearchTalent handles, why it is needed, who processes it, and the rights you have over your information.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "October 5, 2026",
+      lastUpdatedValue: "October 10, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -181,6 +195,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Vacancies: what a company's team publishes about a vacancy (title, description, type, format, place, level, skills, pay, language), who on the team posted it, and when it was published, closed, or ended.",
             "Applications to vacancies: which vacancy you applied to and when, the projects you chose, your message, the moment you agreed to share your contacts, and where the application stands (viewed, shortlisted, rejected, hired, or withdrawn), with who on the company's team changed it and when.",
             "Job alerts: the vacancy searches you follow (their filters and name) or that you follow vacancies fitting your profile, whether they come by email, and which vacancies each alert has already sent you, when, and whether by email.",
+            "Messages: the conversations you take part in — who wrote what and when, on whose behalf (yourself or a company), and whether a message was removed or carries a scam warning; when you last read each conversation and whether you archived, muted, or deleted it for yourself; the people and companies you blocked; your message settings (who may write to you, emails, read receipts); and which emails about unread messages were scheduled. A report about someone in a conversation keeps the conversation's last 20 messages.",
             "Feedback you send: the name, email, and message you submit through the feedback form.",
             "Technical and usage data: information needed for security, reliability, and performance, and aggregate view counts on content.",
             "Page view statistics for profiles, projects, articles, vacancies, and company pages: which page was viewed, whether the visitor came from another SearchTalent page, from another site (its domain only), or directly, and whether they were signed in. We do not store IP addresses or full referring links. A repeat view on the same day is recognized by a code computed from the IP address and browser details together with a random key that we delete the next day; after that, the code cannot be linked to anyone.",
@@ -198,6 +213,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Records of who opened whose contacts are used for two things only: to show the owner how many people opened their contacts, and to limit how many profiles one account can open, so addresses cannot be harvested. The owner sees the number, never who — except when a member of a verified company opens them on the company's behalf: then the owner sees which company, but not who in its team.",
             "When you verify a company page, we check that the address you use — the one you sign in with, or a work address you enter — is on the company website's domain. For a work address we send a one-time code to it. That address is not shown to anyone and not stored: we keep only its domain and a hash of the code until the code is used or expires 15 minutes later. The page records that it was verified, when, and by whom.",
             "When you apply to a vacancy, we hand the company's team your public profile, the projects you chose, your message, and your contacts: the contact email from your profile (or, if there is none, the email you sign in with) and your phone, if you added one. The form shows which ones before you agree. The team gets an email about the new application, and you get notifications — and for a decision, an email — when the company answers.",
+            "Messages go to the other side of the conversation — the other person, or the whole current team of the company. While a messages page is open, they arrive at once through our database provider's live connection, which carries only which message is new, not its text. If a message stays unread for 10 minutes, we email the recipient that someone wrote, without the text: one email per conversation until it is opened, at most 10 a day, and none if the emails are off or the conversation is muted. Read receipts show the other side that you read their message, only while both of you keep them on.",
             "For job alerts, every morning we check new vacancies against the searches you follow and, for “Vacancies that fit me”, against what you are open to, your skills, and your work format. What matches comes as one notification and, if email is on, one email. Every email has a link that turns them off without signing in.",
           ],
         },
@@ -207,9 +223,9 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Where data protection law such as the GDPR applies to you, we process your data on the following bases.",
           ],
           bullets: [
-            "Performance of a contract — creating and running your account, publishing the profile, content and company pages you choose to share, providing the community features described in the Terms of Service, and sending the job alerts you follow.",
+            "Performance of a contract — creating and running your account, publishing the profile, content and company pages you choose to share, providing the community features described in the Terms of Service, delivering the messages you send and receive, and sending the job alerts you follow.",
             "Your consent — optional analytics and the cookie categories you allow, the optional AI features, and handing an application with your contacts to the company you apply to. You can withdraw consent at any time, which does not affect processing that already happened; withdrawing an application takes your message, projects, and contacts away from the company.",
-            "Our legitimate interests — keeping the platform secure and reliable, preventing spam, abuse, rating manipulation, fake company pages, and the harvesting of contact details, moderating content for the safety of users, and measuring in aggregate how the platform is used (view statistics, last-visit times, and the number of people who opened your contacts). The sign-up source is recorded only with your consent.",
+            "Our legitimate interests — keeping the platform secure and reliable, preventing spam, abuse, rating manipulation, fake company pages, the harvesting of contact details, and scam messages, limiting messaging for people who misuse it, moderating content for the safety of users, and measuring in aggregate how the platform is used (view statistics, last-visit times, and the number of people who opened your contacts). The sign-up source is recorded only with your consent.",
             "Legal obligations — where we are required to keep, provide, or remove data to comply with the law.",
           ],
         },
@@ -222,6 +238,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "If you join a company's team, your profile appears on the company page. An invitation nobody has answered yet is seen only by the person invited and by the company's team. A published vacancy is public, also after it closes; a draft, and a vacancy waiting for a moderator, are seen only by the company's team. How many people viewed a vacancy is seen by the team only.",
             "An application is seen only by you and by the team of the company you applied to. The team gets your contacts only while the vacancy and the company page are not hidden by moderation. After you withdraw an application, the team sees only that you applied and withdrew.",
             "The searches you follow and what they sent you are seen only by you.",
+            "Your messages are seen only by the people in the conversation — on a company's side, by its current team; someone who leaves the team no longer sees them. Platform administrators cannot read conversations; a moderator sees only the snapshot a report takes. Messages are not end-to-end encrypted: they are encrypted in transit and stored encrypted by our database provider.",
             "Who a project was made for and the client's name are shown on the project page; with the NDA note, only “Client under NDA” is shown. The budget is visible only to you until you turn on showing it. A project you add to a page of a company you are not in is seen only by you and that company's team until the company accepts it.",
           ],
         },
@@ -231,10 +248,10 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "SearchTalent relies on trusted third-party providers to run the platform. Your data may be stored and processed by them, which can include servers located outside your country.",
           ],
           bullets: [
-            "Supabase — database, authentication, and file storage.",
+            "Supabase — database, authentication, file storage, and the live delivery of new messages.",
             "Vercel — application hosting and, only after you allow analytics, usage and performance measurement.",
             "Cloudflare R2 — storage and delivery of uploaded media and documents.",
-            "Email delivery — sending messages such as the code that confirms account deletion, the emails about applications, and job alerts, handled through our authentication and email infrastructure.",
+            "Email delivery — sending messages such as the code that confirms account deletion, the emails about applications and unread messages, and job alerts, handled through our authentication and email infrastructure.",
             "GitHub — optional sign-in and repository import, if you choose to use it.",
             "Google (Gemini) — optional AI features, as described below.",
             "Google Analytics, Ahrefs Web Analytics, and Plerdy — measurement of usage, traffic, and which parts of a page people interact with. These load only after you allow analytics cookies and are listed in the Cookie Policy.",
@@ -275,6 +292,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Restriction and objection — ask us to pause certain processing, or object to processing we base on our legitimate interests.",
             "Withdrawing consent — turn off analytics cookies, stop using the optional AI features, or withdraw an application in “My applications” at any time.",
             "Job alert emails — turn them off with the link in any of them or on the job alerts page; the alerts themselves you can remove there at any time.",
+            "Messages — choose who may write to you, turn off the emails and read receipts in the message settings, block anyone, and delete a conversation for yourself at any time.",
           ],
         },
         {
@@ -295,13 +313,14 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           title: "Data retention",
           paragraphs: [
             "We keep your data while your account is active and remove or anonymize it when you delete your account as described above.",
-            "Anything you delete — a project, an article, a poll, a comment, a company page, a vacancy, a job alert — leaves the site at once and is kept in the same closed archive for 60 days, then erased for good, files included. Administrators see what was deleted and when, but not the contents of contact details or application messages.",
+            "Anything you delete — a project, an article, a poll, a comment, a company page, a vacancy, a job alert — leaves the site at once and is kept in the same closed archive for 60 days, then erased for good, files included. Administrators see what was deleted and when, but not the contents of contact details, application messages, or private messages.",
             "Limited records may persist for a short time where needed for security, backups, or legal obligations.",
             "View statistics keep no data that identifies a visitor once the day's key is deleted. Statistics about views of your pages are deleted together with your account.",
             "A record that one account opened another's contacts is deleted when either account is deleted. A record that a company opened your contacts is deleted with your account or the company page; if the team member who opened them deletes their account, the record stays without them.",
             "A job alert is deleted when you remove it or delete your account. The record of which vacancies an alert sent is kept for 90 days.",
             "Your place in a company's team is deleted when you leave the team or delete your account. A company page is deleted by its owner, or when the last person in its team deletes their account.",
             "Projects you added stay on the company page after you leave the team; you or the company can take them off at any time. A project's budget and its links to company pages are deleted together with the project.",
+            "A conversation is deleted 24 months after its last message. Deleting it for yourself hides it only from you; when both people in a conversation delete it, it is deleted. When you delete your account, your messages are deleted with it; the other side keeps their own. Removed and deleted messages are kept in the closed archive for 60 days. A report's snapshot of a conversation is deleted 12 months after the report was answered, and records of scheduled message emails after 30 days.",
             "Applications are deleted 12 months after their vacancy closes or its term ends, or earlier together with the vacancy, the company page, or your account. Until then a withdrawn application keeps only which vacancy you applied to and when. A deleted application is kept in the closed archive for another 60 days.",
           ],
         },
@@ -395,13 +414,13 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ці Умови описують правила користування SearchTalent. Документ є робочим і може розширюватися разом із розвитком продукту.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "5 жовтня 2026",
+      lastUpdatedValue: "10 жовтня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
           title: "Користування платформою",
           paragraphs: [
-            "SearchTalent дає змогу створювати акаунти, публікувати профілі та проєкти, писати статті, створювати опитування й відповідати на них, коментувати, ставити реакції, голосувати, підписуватися на інших, створювати сторінки компаній та їхніх команд, розміщувати вакансії й відгукуватися на них, стежити за новими вакансіями і переглядати відкриті роботи спільноти.",
+            "SearchTalent дає змогу створювати акаунти, публікувати профілі та проєкти, писати статті, створювати опитування й відповідати на них, коментувати, ставити реакції, голосувати, підписуватися на інших, листуватися в повідомленнях, створювати сторінки компаній та їхніх команд, розміщувати вакансії й відгукуватися на них, стежити за новими вакансіями і переглядати відкриті роботи спільноти.",
             "Користуючись сервісом, ви погоджуєтеся використовувати його законно, добросовісно та без шкоди для платформи й інших користувачів.",
           ],
           bullets: [
@@ -466,6 +485,20 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           ],
         },
         {
+          title: "Повідомлення",
+          paragraphs: [
+            "Люди в системі з підтвердженою поштою можуть писати одне одному на SearchTalent, а команда компанії — писати людям від імені компанії. Неперевірена сторінка компанії може писати лише тим, хто відгукнувся на її вакансії. Розмову бачать лише її учасники; з боку компанії — уся її команда, і під кожним повідомленням видно, хто з команди його написав.",
+            "Перше повідомлення людині, з якою ви ще не листувалися, — це запит: одне повідомлення без посилань поза SearchTalent, доки вона не відповість або не прийме запит; повторити можна через 30 днів. У налаштуваннях повідомлень ви обираєте, хто може вам писати. Заблокувати можна будь-кого; заблокована людина про це не дізнається.",
+            "Повідомлення перевіряються автоматично під час надсилання: ворожнеча, сексуальний вміст і спам посиланнями не надсилаються, а повідомлення з вимогою заплатити чи перейти в месенджер приходить одержувачу з попередженням. Поскаржитися на співрозмовника можна один раз, у меню розмови. Модератори читають розмову лише тоді, коли на неї поскаржилися, і лише останні 20 повідомлень.",
+          ],
+          bullets: [
+            "Без спаму, масових розсилок і непрошеної реклами.",
+            "Не вимагайте ні від кого оплати, паролів чи кодів.",
+            "Без цькування, погроз і ворожнечі.",
+            "За порушення повідомлення видаляють, а писати можуть обмежити чи заблокувати акаунт. Якщо за тиждень людину заблокували чи на неї поскаржилися кілька людей, нові розмови їй вимикаються, доки модератор не перевірить.",
+          ],
+        },
+        {
           title: "AI-функції",
           paragraphs: [
             "Деякі необов'язкові функції використовують AI, щоб допомогти створити чернетку або стислий виклад контенту. Наданий вами контент обробляється стороннім AI-провайдером, як описано в Політиці конфіденційності.",
@@ -510,7 +543,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ця Політика конфіденційності пояснює, які дані обробляє SearchTalent, навіщо вони потрібні, хто їх обробляє та які права ви маєте щодо своєї інформації.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "5 жовтня 2026",
+      lastUpdatedValue: "10 жовтня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -536,6 +569,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Вакансії: що команда компанії публікує про вакансію (назва, опис, тип, формат, місце, рівень, навички, оплата, мова), хто з команди її розмістив і коли її опублікували, закрили чи коли минув її термін.",
             "Відгуки на вакансії: на яку вакансію і коли ви відгукнулися, які проєкти обрали, ваше повідомлення, момент, коли ви погодилися передати контакти, і що з відгуком зараз (переглянуто, в обраних, відмова, найнято чи відкликано), а також хто з команди компанії це змінив і коли.",
             "Підписки на вакансії: пошуки вакансій, за якими ви стежите (їхні фільтри й назва), або те, що ви стежите за вакансіями, які вам підходять, чи приходять вони листом, а також які вакансії кожна підписка вже надіслала, коли і чи листом.",
+            "Повідомлення: розмови, у яких ви берете участь, — хто що й коли написав, від чийого імені (від себе чи від компанії), а також чи повідомлення видалено чи воно має попередження про шахрайство; коли ви востаннє читали кожну розмову і чи перенесли її в архів, вимкнули листи про неї чи видалили у себе; люди й компанії, яких ви заблокували; налаштування повідомлень (хто може писати, листи, позначка «Прочитано»); і які листи про непрочитані повідомлення було заплановано. Скарга на співрозмовника зберігає останні 20 повідомлень розмови.",
             "Звернення через форму зворотного зв'язку: ім'я, email і повідомлення, які ви надсилаєте.",
             "Технічні дані та дані використання: інформація, потрібна для безпеки, стабільності й продуктивності, та агреговані лічильники переглядів контенту.",
             "Статистика переглядів профілів, проєктів, статей, вакансій і сторінок компаній: яку сторінку переглянули, чи прийшов відвідувач з іншої сторінки SearchTalent, з іншого сайту (лише його домен) чи напряму, і чи був він у системі. IP-адреси й повні посилання, з яких прийшли, ми не зберігаємо. Повторний перегляд того ж дня розпізнається за кодом, обчисленим з IP-адреси й даних браузера разом із випадковим ключем, який ми видаляємо наступного дня; після цього код неможливо пов'язати ні з ким.",
@@ -553,6 +587,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Записи про те, хто відкрив чиї контакти, потрібні лише для двох речей: показати власникові, скільки людей відкрили його контакти, і обмежити, скільки профілів може відкрити один акаунт, щоб адреси не можна було зібрати. Власник бачить лише число, а не те, хто це був, — крім випадку, коли учасник перевіреної компанії відкриває їх від імені компанії: тоді власник бачить, яка це компанія, але не те, хто саме з її команди.",
             "Коли ви перевіряєте сторінку компанії, ми звіряємо, що адреса, якою ви користуєтеся, — та, з якою ви входите, або робоча, яку ви вводите, — на домені сайту компанії. На робочу адресу ми надсилаємо одноразовий код. Цю адресу нікому не показуємо й не зберігаємо: лишаємо тільки її домен і хеш коду, доки код не використають або доки він не спливе через 15 хвилин. Сторінка запам'ятовує, що її перевірено, коли і ким.",
             "Коли ви відгукуєтеся на вакансію, ми передаємо команді компанії ваш публічний профіль, обрані проєкти, повідомлення й контакти: контактну пошту з профілю (а якщо її немає — пошту, з якою ви входите) і телефон, якщо ви його додали. Форма показує, що саме піде, перш ніж ви погодитеся. Команда отримує лист про новий відгук, а ви — сповіщення, а про рішення ще й лист, коли компанія відповідає.",
+            "Повідомлення отримує інша сторона розмови — інша людина або вся теперішня команда компанії. Поки сторінка повідомлень відкрита, вони приходять одразу через живе з'єднання нашого постачальника бази даних, яке передає лише те, яке повідомлення нове, а не його текст. Якщо повідомлення 10 хвилин лишається непрочитаним, ми пишемо одержувачу листа, що йому написали, — без тексту: один лист на розмову, доки її не відкриють, не більше 10 на добу, і жодного, якщо листи вимкнено чи для розмови вимкнено листи. Позначка «Прочитано» показує іншій стороні, що ви прочитали її повідомлення, лише поки ви обоє її не вимкнули.",
             "Для підписок на вакансії щоранку ми звіряємо нові вакансії з пошуками, за якими ви стежите, а для «Вакансій, що мені підходять» — з тим, до чого ви відкриті, вашими навичками й форматом роботи. Те, що збіглося, приходить одним сповіщенням і, якщо листи ввімкнені, одним листом. У кожному листі є посилання, яке вимикає листи без входу в акаунт.",
           ],
         },
@@ -562,9 +597,9 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Якщо до вас застосовується законодавство про захист даних, зокрема GDPR, ми обробляємо ваші дані на таких підставах.",
           ],
           bullets: [
-            "Виконання договору — створення й робота акаунта, публікація профілю, контенту та сторінок компаній, які ви обираєте показувати, надання функцій спільноти, описаних в Умовах користування, і надсилання підписок на вакансії, за якими ви стежите.",
+            "Виконання договору — створення й робота акаунта, публікація профілю, контенту та сторінок компаній, які ви обираєте показувати, надання функцій спільноти, описаних в Умовах користування, доставка повідомлень, які ви надсилаєте й отримуєте, і надсилання підписок на вакансії, за якими ви стежите.",
             "Ваша згода — необов'язкова аналітика та категорії cookies, які ви дозволяєте, необов'язкові AI-функції, а також передавання відгуку з вашими контактами компанії, на вакансію якої ви відгукуєтеся. Згоду можна відкликати будь-коли, це не впливає на обробку, що вже відбулася; коли ви відкликаєте відгук, компанія більше не бачить ваше повідомлення, проєкти й контакти.",
-            "Наші законні інтереси — безпека й стабільність платформи, запобігання спаму, зловживанням, маніпуляціям рейтингом, фейковим сторінкам компаній і збиранню контактів, модерація контенту заради безпеки користувачів, а також агреговане вимірювання того, як користуються платформою (статистика переглядів, час останнього візиту й кількість людей, які відкрили ваші контакти). Джерело реєстрації записується лише з вашої згоди.",
+            "Наші законні інтереси — безпека й стабільність платформи, запобігання спаму, зловживанням, маніпуляціям рейтингом, фейковим сторінкам компаній, збиранню контактів і шахрайським повідомленням, обмеження повідомлень для тих, хто ними зловживає, модерація контенту заради безпеки користувачів, а також агреговане вимірювання того, як користуються платформою (статистика переглядів, час останнього візиту й кількість людей, які відкрили ваші контакти). Джерело реєстрації записується лише з вашої згоди.",
             "Правові зобов'язання — коли ми зобов'язані зберігати, надавати або видаляти дані на вимогу закону.",
           ],
         },
@@ -577,6 +612,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Якщо ви приєднуєтеся до команди компанії, ваш профіль з'являється на сторінці компанії. Запрошення, на яке ще не відповіли, бачать лише запрошена людина й команда компанії. Опублікована вакансія публічна, зокрема й після закриття; чернетку й вакансію, що чекає на модератора, бачить лише команда компанії. Скільки людей переглянули вакансію, бачить лише команда.",
             "Відгук бачите лише ви й команда компанії, на вакансію якої ви відгукнулися. Ваші контакти команда отримує, лише поки вакансію й сторінку компанії не приховала модерація. Після того як ви відкличете відгук, команда бачить лише, що ви відгукувалися й відкликали.",
             "Пошуки, за якими ви стежите, і те, що вони вам надіслали, бачите лише ви.",
+            "Ваші повідомлення бачать лише учасники розмови — з боку компанії її теперішня команда; хто виходить із команди, більше їх не бачить. Адміністратори платформи не можуть читати розмови; модератор бачить лише знімок, який робить скарга. Наскрізного шифрування повідомлень немає: вони шифруються під час передавання й зберігаються зашифрованими в нашого постачальника бази даних.",
             "Для кого зроблено проєкт і назву замовника видно на сторінці проєкту; з позначкою NDA там буде лише «Замовник під NDA». Бюджет бачите тільки ви, доки не ввімкнете його показ. Проєкт, який ви додали на сторінку компанії, де ви не в команді, бачите лише ви й команда цієї компанії, доки компанія його не прийме.",
           ],
         },
@@ -586,10 +622,10 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Для роботи платформи SearchTalent користується надійними сторонніми сервісами. Ваші дані можуть зберігатися й оброблятися ними, зокрема на серверах за межами вашої країни.",
           ],
           bullets: [
-            "Supabase — база даних, авторизація та зберігання файлів.",
+            "Supabase — база даних, авторизація, зберігання файлів і доставка нових повідомлень наживо.",
             "Vercel — хостинг застосунку та, лише після вашого дозволу на аналітику, вимірювання використання й продуктивності.",
             "Cloudflare R2 — зберігання й доставка завантажених медіа та документів.",
-            "Доставка email — надсилання повідомлень, як-от коду підтвердження видалення акаунта, листів про відгуки й підписок на вакансії, через нашу інфраструктуру авторизації та email.",
+            "Доставка email — надсилання повідомлень, як-от коду підтвердження видалення акаунта, листів про відгуки й непрочитані повідомлення та підписок на вакансії, через нашу інфраструктуру авторизації та email.",
             "GitHub — необов'язковий вхід та імпорт репозиторіїв, якщо ви ним користуєтеся.",
             "Google (Gemini) — необов'язкові AI-функції, як описано нижче.",
             "Google Analytics, Ahrefs Web Analytics і Plerdy — вимірювання використання, трафіку та того, з якими частинами сторінки взаємодіють користувачі. Вони завантажуються лише після вашого дозволу на аналітичні cookies й перелічені в Політиці cookies.",
@@ -630,6 +666,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Обмеження та заперечення — попросити припинити певну обробку або заперечити проти обробки, яку ми здійснюємо на підставі законних інтересів.",
             "Відкликання згоди — будь-коли вимкнути аналітичні cookies, перестати користуватися необов'язковими AI-функціями або відкликати відгук у «Моїх відгуках».",
             "Листи з вакансіями — вимкнути їх посиланням у будь-якому з них або на сторінці підписок на вакансії; там же можна будь-коли прибрати самі підписки.",
+            "Повідомлення — обрати, хто може вам писати, вимкнути листи й позначку «Прочитано» в налаштуваннях повідомлень, заблокувати будь-кого й будь-коли видалити розмову у себе.",
           ],
         },
         {
@@ -650,13 +687,14 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           title: "Зберігання даних",
           paragraphs: [
             "Ми зберігаємо ваші дані, поки акаунт активний, і видаляємо або анонімізуємо їх, коли ви видаляєте акаунт у спосіб, описаний вище.",
-            "Усе, що ви видаляєте — проєкт, статтю, опитування, коментар, сторінку компанії, вакансію, підписку на вакансії, — одразу зникає із сайту й 60 днів зберігається в тому самому закритому архіві, а потім стирається остаточно, разом із файлами. Адміністратори бачать, що й коли видалено, але не бачать вмісту контактів і повідомлень у відгуках.",
+            "Усе, що ви видаляєте — проєкт, статтю, опитування, коментар, сторінку компанії, вакансію, підписку на вакансії, — одразу зникає із сайту й 60 днів зберігається в тому самому закритому архіві, а потім стирається остаточно, разом із файлами. Адміністратори бачать, що й коли видалено, але не бачать вмісту контактів, повідомлень у відгуках і особистих повідомлень.",
             "Окремі записи можуть зберігатися нетривалий час, якщо це потрібно для безпеки, резервних копій або виконання правових зобов'язань.",
             "Після видалення добового ключа статистика переглядів не містить даних, за якими можна впізнати відвідувача. Статистика переглядів ваших сторінок видаляється разом з акаунтом.",
             "Запис про те, що один акаунт відкрив контакти іншого, видаляється, коли видаляють будь-який із цих акаунтів. Запис про те, що компанія відкрила ваші контакти, видаляється разом із вашим акаунтом або сторінкою компанії; якщо учасник команди, який їх відкрив, видаляє акаунт, запис лишається вже без нього.",
             "Підписка на вакансії видаляється, коли ви її прибираєте або видаляєте акаунт. Запис про те, які вакансії надіслала підписка, зберігається 90 днів.",
             "Ваше місце в команді компанії видаляється, коли ви виходите з команди або видаляєте акаунт. Сторінку компанії видаляє її власник; вона також видаляється, коли останній учасник команди видаляє свій акаунт.",
             "Проєкти, які ви додали, лишаються на сторінці компанії й після того, як ви вийдете з команди; прибрати їх можете ви або компанія будь-коли. Бюджет проєкту та його зв'язки зі сторінками компаній видаляються разом із проєктом.",
+            "Розмова видаляється через 24 місяці після останнього повідомлення. Видалення розмови у себе ховає її лише від вас; коли її видаляють обидва учасники, вона видаляється. Коли ви видаляєте акаунт, разом із ним видаляються ваші повідомлення; у співрозмовника лишаються його власні. Видалені повідомлення ще 60 днів зберігаються в закритому архіві. Знімок розмови в скарзі видаляється через 12 місяців після рішення за скаргою, а записи про заплановані листи — через 30 днів.",
             "Відгуки видаляються через 12 місяців після того, як вакансію закрили або минув її термін, а раніше — разом із вакансією, сторінкою компанії чи вашим акаунтом. До того відкликаний відгук зберігає лише те, на яку вакансію і коли ви відгукувалися. Видалений відгук ще 60 днів зберігається в закритому архіві.",
           ],
         },

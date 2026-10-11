@@ -247,6 +247,7 @@ export async function hasVacancyApplications(
 
 type MyApplicationRow = {
   id: string;
+  company_id: string;
   status: string;
   project_ids: string[] | null;
   created_at: string;
@@ -270,7 +271,7 @@ export async function listMyApplications(
   const { data, error } = await supabase
     .from("vacancy_applications")
     .select(
-      "id, status, project_ids, created_at, status_changed_at, vacancy:vacancy_id ( id, slug, title, status, expires_at, company:company_id ( slug, name, logo_url ) )",
+      "id, company_id, status, project_ids, created_at, status_changed_at, vacancy:vacancy_id ( id, slug, title, status, expires_at, company:company_id ( slug, name, logo_url ) )",
     )
     .eq("applicant_user_id", userId)
     .order("created_at", { ascending: false })
@@ -292,6 +293,7 @@ export async function listMyApplications(
 
     return {
       id: row.id,
+      companyId: row.company_id,
       status: normalizeApplicationStatus(row.status),
       createdAt: row.created_at,
       statusChangedAt: row.status_changed_at,

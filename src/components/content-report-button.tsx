@@ -33,6 +33,12 @@ type ContentReportButtonProps = {
    * either).
    */
   asLink?: boolean;
+  /**
+   * Opened from elsewhere (a menu item): no trigger of its own, the dialog
+   * shows while `open` is true and `onClose` hides it.
+   */
+  open?: boolean;
+  onClose?: () => void;
 };
 
 function FlagIcon() {
@@ -60,9 +66,20 @@ export default function ContentReportButton({
   isAuthenticated,
   iconOnly = false,
   asLink = false,
+  open,
+  onClose,
 }: ContentReportButtonProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const controlled = open !== undefined;
+  const isOpen = controlled ? open : ownOpen;
+  const setIsOpen = (next: boolean) => {
+    if (controlled) {
+      if (!next) onClose?.();
+      return;
+    }
+    setOwnOpen(next);
+  };
   const [reason, setReason] = useState<ReportReason>("inappropriate_content");
   const [details, setDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,7 +89,7 @@ export default function ContentReportButton({
   const reportCopy = copy.report;
   const loginHref = useLoginHref();
 
-  const { triggerLabel, dialogTitle } = {
+  const { triggerLabel, dialogTitle, description = reportCopy.description } = {
     project: { triggerLabel: reportCopy.buttonProject, dialogTitle: reportCopy.titleProject },
     company: { triggerLabel: reportCopy.buttonCompany, dialogTitle: reportCopy.titleCompany },
     vacancy: { triggerLabel: reportCopy.buttonVacancy, dialogTitle: reportCopy.titleVacancy },
@@ -82,7 +99,12 @@ export default function ContentReportButton({
     project_comment: { triggerLabel: reportCopy.buttonComment, dialogTitle: reportCopy.titleComment },
     article_comment: { triggerLabel: reportCopy.buttonComment, dialogTitle: reportCopy.titleComment },
     poll_comment: { triggerLabel: reportCopy.buttonComment, dialogTitle: reportCopy.titleComment },
-  }[targetType];
+    conversation: {
+      triggerLabel: reportCopy.buttonConversation,
+      dialogTitle: reportCopy.titleConversation,
+      description: reportCopy.descriptionConversation,
+    },
+  }[targetType] as { triggerLabel: string; dialogTitle: string; description?: string };
 
   if (!isAuthenticated) {
     if (asLink) {
@@ -142,7 +164,7 @@ export default function ContentReportButton({
 
   return (
     <>
-      {asLink ? (
+      {controlled ? null : asLink ? (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
@@ -168,14 +190,19 @@ export default function ContentReportButton({
 
       {isOpen && (
         <div className="fixed inset-0 z-[70] flex items-end bg-black/45 px-4 py-4 sm:items-center sm:px-6">
-          <div className="mx-auto w-full max-w-2xl rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={dialogTitle}
+            className="mx-auto w-full max-w-2xl rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl sm:p-8"
+          >
             <div className="flex items-start justify-between gap-4">
               <div className="max-w-xl">
                 <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
                   {dialogTitle}
                 </h2>
                 <p className="mt-3 text-sm leading-7 app-muted">
-                  {reportCopy.description}
+                  {description}
                 </p>
               </div>
 

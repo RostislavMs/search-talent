@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   moderationStatuses,
+  moderationTargetTypes,
   reportReasons,
   reportStatuses,
   reportTargetTypes,
@@ -16,7 +17,7 @@ export const reportPayloadSchema = z.object({
 });
 
 export const moderationUpdateSchema = z.object({
-  targetType: z.enum(reportTargetTypes),
+  targetType: z.enum(moderationTargetTypes),
   targetId: z.string().uuid(uuidMessage),
   moderationStatus: z.enum(moderationStatuses),
   reportId: z.string().uuid(uuidMessage).optional(),

@@ -23,6 +23,8 @@ type QueueReportRow = {
   target_vacancy_id: string | null;
   target_poll_id: string | null;
   target_comment_id: string | null;
+  target_conversation_id?: string | null;
+  snapshot?: unknown;
   target_owner_user_id: string | null;
   reporter_user_id: string;
   reason: ReportReason;
@@ -92,8 +94,56 @@ export type ModerationQueueItem = {
   createdAt: string;
   reporterLabel: string;
   ownerLabel: string;
+  /** The person reported: a conversation report can limit their messaging. */
+  ownerUserId: string | null;
   resolutionNote: string | null;
+  /** A conversation report: its last 20 messages, as the report saw them. */
+  snapshot?: ReportSnapshot | null;
 };
+
+export type ReportSnapshotMessage = {
+  id: string;
+  kind: "text" | "event";
+  asCompany: boolean;
+  authorName: string | null;
+  body: string;
+  deleted: boolean;
+  /** From the side the report is about. */
+  byReported: boolean;
+  createdAt: string;
+};
+
+export type ReportSnapshot = {
+  companyName: string | null;
+  messages: ReportSnapshotMessage[];
+};
+
+/** The snapshot a conversation report took (content_reports.snapshot). */
+export function parseReportSnapshot(value: unknown): ReportSnapshot | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as { company?: { name?: unknown } | null; messages?: unknown };
+  const messages = Array.isArray(row.messages) ? row.messages : [];
+
+  return {
+    companyName: typeof row.company?.name === "string" ? row.company.name : null,
+    messages: messages.flatMap((item): ReportSnapshotMessage[] => {
+      const message = item as Record<string, unknown>;
+      if (typeof message.id !== "string") return [];
+      return [
+        {
+          id: message.id,
+          kind: message.kind === "event" ? "event" : "text",
+          asCompany: message.asCompany === true,
+          authorName: typeof message.authorName === "string" ? message.authorName : null,
+          body: typeof message.body === "string" ? message.body : "",
+          deleted: message.deleted === true,
+          byReported: message.byReported === true,
+          createdAt: typeof message.createdAt === "string" ? message.createdAt : "",
+        },
+      ];
+    }),
+  };
+}
 
 /** The reported comments, each with the page it is on. */
 async function loadCommentTargets(
@@ -142,7 +192,7 @@ export async function getModerationQueue() {
   const { data: reports } = await supabase
     .from("content_reports")
     .select(
-      "id, target_type, target_profile_id, target_project_id, target_article_id, target_poll_id, target_company_id, target_vacancy_id, target_comment_id, target_owner_user_id, reporter_user_id, reason, details, priority, status, created_at, resolution_note",
+      "id, target_type, target_profile_id, target_project_id, target_article_id, target_poll_id, target_company_id, target_vacancy_id, target_comment_id, target_conversation_id, snapshot, target_owner_user_id, reporter_user_id, reason, details, priority, status, created_at, resolution_note",
     )
     .in("status", ["open", "triaged"])
     .order("status", { ascending: true })
@@ -290,6 +340,31 @@ export async function getModerationQueue() {
         ? `@${ownerIdentity.username}`
         : report.target_owner_user_id || "Unknown");
 
+    if (report.target_type === "conversation") {
+      const snapshot = parseReportSnapshot(report.snapshot);
+
+      return {
+        id: report.id,
+        targetType: report.target_type,
+        targetId: report.target_conversation_id || "",
+        // The person the report is about; the snapshot shows what they wrote.
+        targetLabel: ownerLabel,
+        // Private: there is no page to open, only the snapshot.
+        targetHref: null,
+        targetStatus: null,
+        reportReason: report.reason,
+        reportStatus: report.status,
+        priority: report.priority,
+        details: report.details,
+        createdAt: report.created_at,
+        reporterLabel,
+        ownerLabel,
+        ownerUserId: report.target_owner_user_id,
+        resolutionNote: report.resolution_note,
+        snapshot,
+      };
+    }
+
     if (report.target_type === "profile") {
       const target = report.target_profile_id
         ? profileTargets.get(report.target_profile_id)
@@ -311,6 +386,7 @@ export async function getModerationQueue() {
         createdAt: report.created_at,
         reporterLabel,
         ownerLabel,
+        ownerUserId: report.target_owner_user_id,
         resolutionNote: report.resolution_note,
       };
     }
@@ -340,6 +416,7 @@ export async function getModerationQueue() {
         createdAt: report.created_at,
         reporterLabel,
         ownerLabel,
+        ownerUserId: report.target_owner_user_id,
         resolutionNote: report.resolution_note,
       };
     }
@@ -361,6 +438,7 @@ export async function getModerationQueue() {
         createdAt: report.created_at,
         reporterLabel,
         ownerLabel,
+        ownerUserId: report.target_owner_user_id,
         resolutionNote: report.resolution_note,
       };
     }
@@ -387,6 +465,7 @@ export async function getModerationQueue() {
         createdAt: report.created_at,
         reporterLabel,
         ownerLabel,
+        ownerUserId: report.target_owner_user_id,
         resolutionNote: report.resolution_note,
       };
     }
@@ -410,6 +489,7 @@ export async function getModerationQueue() {
         createdAt: report.created_at,
         reporterLabel,
         ownerLabel,
+        ownerUserId: report.target_owner_user_id,
         resolutionNote: report.resolution_note,
       };
     }
@@ -432,6 +512,7 @@ export async function getModerationQueue() {
       createdAt: report.created_at,
       reporterLabel,
       ownerLabel,
+      ownerUserId: report.target_owner_user_id,
       resolutionNote: report.resolution_note,
     };
   });

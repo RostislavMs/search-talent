@@ -4,7 +4,7 @@ import type {
   ModerationStatus,
   ReportReason,
   ReportStatus,
-  ReportTargetType,
+  ModerationTargetType,
 } from "@/lib/moderation";
 
 export function getModerationCopy(locale: Locale) {
@@ -32,6 +32,21 @@ export function getModerationCopy(locale: Locale) {
         resolutionNote: "Нотатка модератора",
         openTarget: "Відкрити сторінку",
         reviewActions: "Дії модерації",
+        snapshotTitle: "Останні повідомлення розмови",
+        snapshotNote:
+          "Знімок останніх 20 повідомлень на момент скарги. Решту розмови модератори не бачать.",
+        snapshotByReported: "від того, на кого скаржаться",
+        snapshotDeleted: "видалено",
+        restrictionsTitle: "Обмеження повідомлень",
+        restrictionsEmpty: "Зараз нікому не обмежено повідомлення.",
+        restrictionScopes: {
+          new_conversations: "Без нових розмов",
+          all: "Без жодних повідомлень",
+        },
+        restrictionUntil: "до {date}",
+        restrictionForever: "доки не знімуть",
+        restrictionSystem: "Автоматично: кілька людей заблокували чи поскаржилися",
+        liftRestriction: "Зняти",
       },
       report: {
         buttonProject: "Поскаржитися на проєкт",
@@ -41,6 +56,10 @@ export function getModerationCopy(locale: Locale) {
         buttonArticle: "Поскаржитися на статтю",
         buttonPoll: "Поскаржитися на опитування",
         buttonComment: "Поскаржитися",
+        buttonConversation: "Поскаржитися",
+        titleConversation: "Скарга на співрозмовника",
+        descriptionConversation:
+          "Модератор побачить останні 20 повідомлень цієї розмови — більше нічого. Якщо не хочете отримувати повідомлення від цієї людини, ще й заблокуйте її в меню розмови.",
         titleProject: "Скарга на проєкт",
         titleProfile: "Скарга на профіль",
         titleCompany: "Скарга на сторінку компанії",
@@ -74,6 +93,12 @@ export function getModerationCopy(locale: Locale) {
         saveRemove: "Прибрати з публічного доступу",
         removeComment: "Видалити коментар",
         keepComment: "Залишити коментар",
+        removeMessage: "Видалити це повідомлення",
+        restrictTitle: "Обмежити автору повідомлення",
+        restrictNew7: "Без нових розмов на 7 днів",
+        restrictNew30: "Без нових розмов на 30 днів",
+        restrictAll30: "Без жодних повідомлень на 30 днів",
+        restrictAllForever: "Без повідомлень, доки не знімуть",
         dismissReport: "Відхилити скаргу",
         resolveReport: "Закрити скаргу",
         saving: "Збереження...",
@@ -117,7 +142,9 @@ export function getModerationCopy(locale: Locale) {
         project_comment: "Коментар до проєкту",
         article_comment: "Коментар до статті",
         poll_comment: "Коментар до опитування",
-      } satisfies Record<ReportTargetType, string>,
+        conversation: "Учасник розмови",
+        message: "Повідомлення",
+      } satisfies Record<ModerationTargetType, string>,
     };
   }
 
@@ -144,6 +171,21 @@ export function getModerationCopy(locale: Locale) {
       resolutionNote: "Moderator note",
       openTarget: "Open page",
       reviewActions: "Moderation actions",
+      snapshotTitle: "The conversation's last messages",
+      snapshotNote:
+        "A snapshot of the last 20 messages when the report was made. Moderators never see the rest of the conversation.",
+      snapshotByReported: "from the person reported",
+      snapshotDeleted: "deleted",
+      restrictionsTitle: "Message limits",
+      restrictionsEmpty: "Nobody's messages are limited right now.",
+      restrictionScopes: {
+        new_conversations: "No new conversations",
+        all: "No messages at all",
+      },
+      restrictionUntil: "until {date}",
+      restrictionForever: "until lifted",
+      restrictionSystem: "Automatic: several people blocked or reported them",
+      liftRestriction: "Lift",
     },
     report: {
       buttonProject: "Report project",
@@ -153,6 +195,10 @@ export function getModerationCopy(locale: Locale) {
       buttonArticle: "Report article",
       buttonPoll: "Report poll",
       buttonComment: "Report",
+      buttonConversation: "Report",
+      titleConversation: "Report this person",
+      descriptionConversation:
+        "A moderator will see the last 20 messages of this conversation and nothing else. If you don't want messages from this person, block them in the conversation menu too.",
       titleProject: "Report project",
       titleProfile: "Report profile",
       titleCompany: "Report company page",
@@ -186,6 +232,12 @@ export function getModerationCopy(locale: Locale) {
       saveRemove: "Remove from public access",
       removeComment: "Delete the comment",
       keepComment: "Keep the comment",
+      removeMessage: "Delete this message",
+      restrictTitle: "Limit the author's messages",
+      restrictNew7: "No new conversations for 7 days",
+      restrictNew30: "No new conversations for 30 days",
+      restrictAll30: "No messages at all for 30 days",
+      restrictAllForever: "No messages until lifted",
       dismissReport: "Dismiss report",
       resolveReport: "Resolve report",
       saving: "Saving...",
@@ -229,7 +281,9 @@ export function getModerationCopy(locale: Locale) {
       project_comment: "Project comment",
       article_comment: "Article comment",
       poll_comment: "Poll comment",
-    } satisfies Record<ReportTargetType, string>,
+      conversation: "Chat participant",
+      message: "Message",
+    } satisfies Record<ModerationTargetType, string>,
   };
 }
 

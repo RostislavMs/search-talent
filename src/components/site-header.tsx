@@ -10,6 +10,7 @@ import HeaderScrollProgress from "@/components/header-scroll-progress";
 import NavLink from "@/components/nav-link";
 import LogoutButton from "@/components/logout-button";
 import LanguageSwitcher from "@/components/language-switcher";
+import MessagesNavLink from "@/components/messages-nav-link";
 import NotificationsBell from "@/components/notifications-bell";
 import ThemeToggle from "@/components/theme-toggle";
 import { buttonStyles } from "@/components/ui/button-styles";
@@ -28,6 +29,7 @@ type Viewer = {
   isAdmin: boolean;
   hasCompanies?: boolean;
   hasApplications?: boolean;
+  messages?: { show: boolean; unread: number };
 } | null;
 
 type SiteHeaderProps = {
@@ -145,7 +147,12 @@ export default function SiteHeader({
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return;
-    const update = () => setHeaderHeight(el.getBoundingClientRect().height);
+    const update = () => {
+      const height = el.getBoundingClientRect().height;
+      setHeaderHeight(height);
+      // Full-height screens (the messages) size themselves against it.
+      document.documentElement.style.setProperty("--site-header-height", `${height}px`);
+    };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
@@ -218,6 +225,7 @@ export default function SiteHeader({
           : []),
         { href: "/profile/edit", label: dictionary.mySpace.editProfile },
         { href: "/my-space", label: dictionary.nav.mySpace },
+        ...(viewer.messages?.show ? [{ href: "/messages", label: dictionary.nav.messages }] : []),
         // Only for people already in a company team; everyone else finds
         // company pages through My space and /for-companies.
         ...(viewer.hasCompanies
@@ -422,7 +430,8 @@ export default function SiteHeader({
         </div>
 
         {viewer ? (
-          <div className="hidden lg:flex">
+          <div className="hidden items-center gap-2 lg:flex">
+            {viewer.messages?.show ? <MessagesNavLink initialCount={viewer.messages.unread} /> : null}
             <NotificationsBell />
           </div>
         ) : null}
@@ -542,6 +551,7 @@ export default function SiteHeader({
             full-height right-side drawer. Below 640px both triggers drop their
             label and show only the icon. */}
         <div className="ml-auto flex items-center gap-2 lg:hidden">
+          {viewer?.messages?.show ? <MessagesNavLink initialCount={viewer.messages.unread} /> : null}
           {viewer ? <NotificationsBell mode="link" /> : null}
 
           {viewer ? (

@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import MessageComposeForm from "@/components/message-compose-form";
 import { Button } from "@/components/ui/Button";
 import { buttonStyles, type ButtonVariant } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import { apiFetch } from "@/lib/api-client";
 import { useLoginHref } from "@/lib/auth/use-login-href";
 import { useDictionary } from "@/lib/i18n/client";
+import { buildConversationPath, messagingIsOffered, type ProfileMessaging } from "@/lib/messages";
 import type { PreferredContactMethod } from "@/lib/profile-sections";
 
 type ContactChannel = PreferredContactMethod;
@@ -67,6 +69,9 @@ export type ProfileContactInfo = {
   workFormatsLine: string | null;
 };
 
+const UNAVAILABLE_REASONS = ["not_accepting", "blocked", "no_profile", "email_unconfirmed", "restricted"] as const;
+type UnavailableReason = (typeof UNAVAILABLE_REASONS)[number];
+
 /** Channels in the order shown: the preferred one first. */
 export function orderContactChannels(
   available: readonly ContactChannel[],
@@ -101,14 +106,18 @@ export default function ProfileContactButton({
   isAuthenticated,
   label,
   variant = "primary",
+  messaging = null,
 }: {
   contact: ProfileContactInfo;
   isAuthenticated: boolean;
   label?: string;
   variant?: ButtonVariant;
+  messaging?: ProfileMessaging | null;
 }) {
   const dictionary = useDictionary();
   const t = dictionary.openTo;
+  const m = dictionary.messages;
+  const [writing, setWriting] = useState(false);
   const loginHref = useLoginHref();
   const titleId = useId();
   const [open, setOpen] = useState(false);
@@ -286,6 +295,54 @@ export default function ProfileContactButton({
     </li>
   );
 
+  // Writing here first: the conversation stays on the site and nobody has to
+  // hand out an email or a phone. The sender is the "contact as" choice below.
+  const unavailableReason = UNAVAILABLE_REASONS.find((reason) => reason === messaging?.status) as
+    | UnavailableReason
+    | undefined;
+  const messagingBlock = !messaging ? null : messaging.status === "signin" ? (
+    <div className="rounded-xl border app-border p-4">
+      <p className="text-sm font-semibold">{m.contact.title}</p>
+      <p className="mt-1 text-sm leading-6 app-muted">{m.contact.text}</p>
+      <LocalizedLink href={loginHref} className={buttonStyles({ size: "sm", className: "mt-3" })}>
+        {m.contact.signIn}
+      </LocalizedLink>
+    </div>
+  ) : messaging.status === "exists" && messaging.conversationId ? (
+    <div className="rounded-xl border app-border p-4">
+      <p className="text-sm font-semibold">{m.contact.title}</p>
+      <LocalizedLink
+        href={buildConversationPath(messaging.conversationId)}
+        className={buttonStyles({ size: "sm", className: "mt-3" })}
+      >
+        {m.contact.open}
+      </LocalizedLink>
+    </div>
+  ) : messaging.status === "ok" ? (
+    <div className="rounded-xl border app-border p-4">
+      <p className="text-sm font-semibold">{m.contact.title}</p>
+      {writing ? (
+        <div className="mt-3">
+          <MessageComposeForm
+            recipientUserId={messaging.recipientUserId}
+            companyId={asCompanyId}
+            autoFocus
+            onCancel={() => setWriting(false)}
+          />
+        </div>
+      ) : (
+        <>
+          <p className="mt-1 text-sm leading-6 app-muted">{m.contact.text}</p>
+          <Button size="sm" className="mt-3" onClick={() => setWriting(true)}>
+            {m.contact.write}
+          </Button>
+        </>
+      )}
+    </div>
+  ) : unavailableReason ? (
+    <p className="text-sm app-muted">{m.contact.unavailable[unavailableReason]}</p>
+  ) : null;
+
   const dialog = open ? (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(2,6,23,0.55)] px-3 py-6 sm:items-center sm:px-4"
@@ -331,7 +388,11 @@ export default function ProfileContactButton({
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
-          {channels.length === 0 ? <p className="text-sm app-muted">{t.noChannels}</p> : null}
+          {messagingBlock}
+
+          {channels.length === 0 && !messagingIsOffered(messaging) ? (
+            <p className="text-sm app-muted">{t.noChannels}</p>
+          ) : null}
 
           {visibleChannels.length > 0 ? (
             <ul className="space-y-2">{visibleChannels.map(renderRow)}</ul>
@@ -340,9 +401,12 @@ export default function ProfileContactButton({
           {!isAuthenticated && privateChannels.length > 0 ? (
             <div className="rounded-xl bg-[color:var(--surface-muted)] p-4">
               <p className="text-sm leading-6">{t.privateSignIn}</p>
-              <LocalizedLink href={loginHref} className={buttonStyles({ size: "sm", className: "mt-3" })}>
-                {t.signIn}
-              </LocalizedLink>
+              {/* One sign-in button is enough: the messages block above has it. */}
+              {messaging?.status === "signin" ? null : (
+                <LocalizedLink href={loginHref} className={buttonStyles({ size: "sm", className: "mt-3" })}>
+                  {t.signIn}
+                </LocalizedLink>
+              )}
             </div>
           ) : null}
 

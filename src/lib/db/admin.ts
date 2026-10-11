@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   ModerationStatus,
   ReportStatus,
-  ReportTargetType,
+  ModerationTargetType,
 } from "@/lib/moderation";
 
 export type AdminOverviewStats = {
@@ -200,7 +200,7 @@ export type AuditLogEntry = {
   previousStatus: ModerationStatus | null;
   nextStatus: ModerationStatus | null;
   reportStatus: ReportStatus | null;
-  targetType: ReportTargetType;
+  targetType: ModerationTargetType;
   targetId: string | null;
   targetLabel: string;
   targetHref: string | null;
@@ -213,7 +213,7 @@ export type AuditLogEntry = {
 
 export type AuditLogParams = {
   action?: string | "all";
-  target?: ReportTargetType | "all";
+  target?: ModerationTargetType | "all";
   limit?: number;
   before?: string | null;
 };
@@ -228,7 +228,7 @@ export async function getAdminAuditLog(
   let query = supabase
     .from("moderation_actions")
     .select(
-      "id, created_at, action_type, previous_status, next_status, report_status, target_type, target_profile_id, target_project_id, target_article_id, target_poll_id, target_company_id, target_vacancy_id, target_comment_id, actor_user_id, source, note",
+      "id, created_at, action_type, previous_status, next_status, report_status, target_type, target_profile_id, target_project_id, target_article_id, target_poll_id, target_company_id, target_vacancy_id, target_comment_id, target_conversation_id, target_message_id, actor_user_id, source, note",
     )
     .order("created_at", { ascending: false })
     .limit(limit + 1);
@@ -258,7 +258,7 @@ export async function getAdminAuditLog(
     previous_status: string | null;
     next_status: string | null;
     report_status: string | null;
-    target_type: ReportTargetType;
+    target_type: ModerationTargetType;
     target_profile_id: string | null;
     target_project_id: string | null;
     target_article_id: string | null;
@@ -266,6 +266,8 @@ export async function getAdminAuditLog(
     target_vacancy_id?: string | null;
     target_poll_id?: string | null;
     target_comment_id?: string | null;
+    target_conversation_id?: string | null;
+    target_message_id?: string | null;
     actor_user_id: string | null;
     source?: string | null;
     note: string | null;
@@ -468,6 +470,14 @@ export async function getAdminAuditLog(
       // A removed comment is gone (it waits in the trash); its id is what is left.
       targetId = row.target_comment_id;
       targetLabel = `#${row.target_comment_id.slice(0, 8)}`;
+    } else if (row.target_conversation_id) {
+      // A private conversation: no page to open; the report has the snapshot.
+      targetId = row.target_conversation_id;
+      targetLabel = `#${row.target_conversation_id.slice(0, 8)}`;
+    } else if (row.target_message_id) {
+      // A private message: no page to open; the report has the snapshot.
+      targetId = row.target_message_id;
+      targetLabel = `#${row.target_message_id.slice(0, 8)}`;
     }
 
     return {

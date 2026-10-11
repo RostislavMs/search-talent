@@ -10,6 +10,7 @@ import {
   type ModerationStatus,
   type ReportReason,
   type ReportStatus,
+  type ModerationTargetType,
   type ReportTargetType,
 } from "@/lib/moderation";
 import { getSiteUrl } from "@/lib/seo";
@@ -44,7 +45,7 @@ export type ModerationDecisionItem = {
 };
 
 export type ModerateContentInput = {
-  targetType: ReportTargetType;
+  targetType: ModerationTargetType;
   targetIds: string[];
   status: ModerationStatus;
   note?: string | null;
@@ -110,7 +111,7 @@ const EMAIL_TARGETS = {
 
 type EmailTarget = keyof typeof EMAIL_TARGETS;
 
-function isEmailTarget(type: ReportTargetType): type is EmailTarget {
+function isEmailTarget(type: ModerationTargetType): type is EmailTarget {
   return type in EMAIL_TARGETS;
 }
 
@@ -125,7 +126,7 @@ export async function emailModerationDecisions({
   items,
   note,
 }: {
-  targetType: ReportTargetType;
+  targetType: ModerationTargetType;
   items: ModerationDecisionItem[];
   note: string | null;
 }): Promise<void> {

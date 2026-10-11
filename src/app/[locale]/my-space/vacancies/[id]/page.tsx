@@ -4,6 +4,7 @@ import { cache } from "react";
 import ApplicationStatusPill from "@/components/application-status-pill";
 import ApplicationTeamActions from "@/components/application-team-actions";
 import ApplicationsViewedBeacon from "@/components/applications-viewed-beacon";
+import MessageComposeDialog from "@/components/message-compose-dialog";
 import { ButtonLink } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
@@ -19,6 +20,7 @@ import {
 import { buildLoginHref } from "@/lib/auth/redirect";
 import { listTeamApplications } from "@/lib/db/applications";
 import { getCompanyRole } from "@/lib/db/companies";
+import { getTeamConversationIds } from "@/lib/db/messages";
 import { getVacancyById } from "@/lib/db/vacancies";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
@@ -119,11 +121,18 @@ function ApplicationCard({
   dictionary,
   locale,
   vacancyHidden,
+  companyId,
+  vacancyTitle,
+  conversationId,
 }: {
   application: TeamApplication;
   dictionary: Dictionary;
   locale: Locale;
   vacancyHidden: boolean;
+  companyId: string;
+  vacancyTitle: string;
+  /** The company's conversation with this candidate, if there is one. */
+  conversationId: string | null;
 }) {
   const copy = dictionary.applications.team;
   const applied = formatVacancyDate(application.createdAt, locale);
@@ -229,8 +238,19 @@ function ApplicationCard({
             )}
           </div>
 
-          <div className="mt-6 border-t app-border pt-5">
+          <div className="mt-6 flex flex-wrap items-center gap-2 border-t app-border pt-5">
             <ApplicationTeamActions applicationId={application.id} status={application.status} />
+            {/* Writing stays on the site; the candidate's contacts above are the other way. */}
+            {application.applicant && !vacancyHidden ? (
+              <MessageComposeDialog
+                recipientUserId={application.applicantUserId}
+                recipientName={application.applicant.name || `@${application.applicant.username}`}
+                companyId={companyId}
+                applicationId={application.id}
+                vacancyTitle={vacancyTitle}
+                conversationId={conversationId}
+              />
+            ) : null}
           </div>
         </>
       )}
@@ -268,6 +288,11 @@ export default async function VacancyApplicationsPage({
   const copy = dictionary.applications.team;
   const filter = parseApplicationTeamFilter((await searchParams).status);
   const applications = await listTeamApplications(supabase, vacancy.id);
+  const conversations = await getTeamConversationIds(
+    supabase,
+    vacancy.company.id,
+    applications.map((application) => application.applicantUserId),
+  );
   const counts = countApplicationsByFilter(applications.map((application) => application.status));
   const shown = applications.filter((application) => applicationMatchesTeamFilter(application.status, filter));
   const unseenIds = shown.filter((application) => application.status === "new").map((application) => application.id);
@@ -357,6 +382,9 @@ export default async function VacancyApplicationsPage({
                   dictionary={dictionary}
                   locale={locale}
                   vacancyHidden={vacancyHidden}
+                  companyId={vacancy.company.id}
+                  vacancyTitle={vacancy.title}
+                  conversationId={conversations.get(application.applicantUserId) ?? null}
                 />
               ))}
             </ul>

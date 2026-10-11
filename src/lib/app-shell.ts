@@ -6,6 +6,8 @@ import {
 } from "@/lib/cookie-consent";
 import { hasVacancyApplications } from "@/lib/db/applications";
 import { hasCompanyMembership } from "@/lib/db/companies";
+import { getMessagingSummary } from "@/lib/db/messages";
+import { summaryBadgeCount } from "@/lib/messages";
 import { getActivePopup, type ActivePopup } from "@/lib/db/popups";
 import { ensureProfileForUser } from "@/lib/db/profile";
 import { getSectionVisibility } from "@/lib/db/section-visibility";
@@ -25,6 +27,12 @@ export type AppViewer = {
   hasCompanies: boolean;
   /** Applied to a vacancy at least once: the menu then links to /my-space/applications. */
   hasApplications: boolean;
+  /**
+   * The "Messages" icon: shown once the person has a conversation or is in a
+   * company team (an empty inbox is not shown to everyone); `unread` for the
+   * badge before the first poll.
+   */
+  messages: { show: boolean; unread: number };
 } | null;
 
 /**
@@ -95,7 +103,7 @@ export async function getAppShellData(locale: Locale): Promise<{
   let viewer: AppViewer = null;
 
   if (user) {
-    const [profile, { data: adminRecord }, hasCompanies, hasApplications] = await Promise.all([
+    const [profile, { data: adminRecord }, hasCompanies, hasApplications, messaging] = await Promise.all([
       ensureProfileForUser(supabase, user),
       supabase
         .from("platform_admins")
@@ -106,6 +114,8 @@ export async function getAppShellData(locale: Locale): Promise<{
       hasCompanyMembership(supabase, user.id),
       // False on any error, including before the applications migration runs.
       hasVacancyApplications(supabase, user.id),
+      // Empty on any error, including before the messages migration runs.
+      getMessagingSummary(supabase),
       // Product metrics: last activity, for retention. The database only writes
       // when the stored value is over an hour old, and a failure (e.g. before the
       // migration) must not cost the page anything, so the result is ignored.
@@ -123,6 +133,10 @@ export async function getAppShellData(locale: Locale): Promise<{
       isAdmin: Boolean(adminRecord),
       hasCompanies,
       hasApplications,
+      messages: {
+        show: messaging.hasConversations || hasCompanies,
+        unread: summaryBadgeCount(messaging),
+      },
     };
   }
 

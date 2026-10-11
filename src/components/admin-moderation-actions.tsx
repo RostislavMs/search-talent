@@ -18,7 +18,16 @@ type AdminModerationActionsProps = {
   targetId: string;
   currentStatus: ModerationStatus | null;
   reportId?: string;
+  /** The person a conversation report is about: their messaging can be limited. */
+  ownerUserId?: string | null;
 };
+
+const RESTRICTIONS = [
+  { key: "restrictNew7", scope: "new_conversations", days: 7 },
+  { key: "restrictNew30", scope: "new_conversations", days: 30 },
+  { key: "restrictAll30", scope: "all", days: 30 },
+  { key: "restrictAllForever", scope: "all", days: null },
+] as const;
 
 export default function AdminModerationActions({
   copy,
@@ -26,6 +35,7 @@ export default function AdminModerationActions({
   targetId,
   currentStatus,
   reportId,
+  ownerUserId = null,
 }: AdminModerationActionsProps) {
   const router = useRouter();
   const [note, setNote] = useState("");
@@ -66,6 +76,29 @@ export default function AdminModerationActions({
     router.refresh();
   }
 
+  async function restrict(item: (typeof RESTRICTIONS)[number]) {
+    if (!ownerUserId) return;
+    setPendingAction(item.key);
+    setFeedback("");
+    setError("");
+
+    const result = await apiFetch("/api/admin/messaging-restrictions", {
+      method: "POST",
+      body: { userId: ownerUserId, scope: item.scope, days: item.days, note, reportId },
+    });
+
+    setPendingAction("");
+
+    if (!result.ok) {
+      setError(result.error || copy.actions.errorFallback);
+      return;
+    }
+
+    setFeedback(copy.actions.success);
+    setNote("");
+    router.refresh();
+  }
+
   const fallbackStatus = currentStatus || "approved";
 
   return (
@@ -79,7 +112,52 @@ export default function AdminModerationActions({
         className="w-full bg-[color:var(--surface-muted)] px-4 py-3 text-sm leading-7 text-[color:var(--foreground)]"
       />
 
-      {isCommentReportTarget(targetType) ? (
+      {targetType === "conversation" ? (
+        // A report about someone in a conversation: nothing on the
+        // conversation itself changes. A single message is removed from the
+        // snapshot above; the person's messaging can be limited here.
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              disabled={Boolean(pendingAction)}
+              onClick={() =>
+                applyAction({ key: "resolve", moderationStatus: "approved", reportStatus: "resolved" })
+              }
+            >
+              {pendingAction === "resolve" ? copy.actions.saving : copy.actions.resolveReport}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={Boolean(pendingAction)}
+              onClick={() =>
+                applyAction({ key: "dismiss", moderationStatus: "approved", reportStatus: "dismissed" })
+              }
+            >
+              {pendingAction === "dismiss" ? copy.actions.saving : copy.actions.dismissReport}
+            </Button>
+          </div>
+          {ownerUserId ? (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-eyebrow app-soft">{copy.actions.restrictTitle}</p>
+              <div className="flex flex-wrap gap-2">
+                {RESTRICTIONS.map((item) => (
+                  <Button
+                    key={item.key}
+                    variant="secondary"
+                    size="sm"
+                    disabled={Boolean(pendingAction)}
+                    onClick={() => void restrict(item)}
+                  >
+                    {pendingAction === item.key ? copy.actions.saving : copy.actions[item.key]}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : isCommentReportTarget(targetType) ? (
         // A comment has no review: it stays, or it is deleted (into the
         // trash for 60 days) and its author is told.
         <div className="flex flex-wrap gap-2">
