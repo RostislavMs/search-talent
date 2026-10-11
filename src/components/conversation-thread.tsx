@@ -23,6 +23,7 @@ import {
   messageDayKey,
   newClientId,
   personLabel,
+  safeMessageUrl,
   splitMessageText,
   toRefusalCode,
   type ChatMessage,
@@ -46,13 +47,15 @@ function MessageText({ text, onDark }: { text: string; onDark: boolean }) {
 
   return (
     <p className="whitespace-pre-wrap break-words text-sm leading-6">
-      {splitMessageText(text).map((part, index) =>
-        part.type === "text" ? (
-          <Fragment key={index}>{part.value}</Fragment>
+      {splitMessageText(text).map((part, index) => {
+        const url = part.type === "link" ? safeMessageUrl(part.href) : null;
+
+        return !url || part.type === "text" ? (
+          <Fragment key={index}>{part.type === "text" ? part.value : part.label}</Fragment>
         ) : (
           <a
             key={index}
-            href={part.href}
+            href={url.href}
             target={part.external ? "_blank" : undefined}
             rel={part.external ? "nofollow ugc noopener noreferrer" : undefined}
             title={part.external ? copy.thread.externalLink.replace("{host}", part.host) : undefined}
@@ -60,8 +63,8 @@ function MessageText({ text, onDark }: { text: string; onDark: boolean }) {
           >
             {part.label}
           </a>
-        ),
-      )}
+        );
+      })}
     </p>
   );
 }

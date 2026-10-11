@@ -27,6 +27,7 @@ import {
   parseConversationBox,
   personLabel,
   refusalHttpStatus,
+  safeMessageUrl,
   splitMessageText,
   summaryBadgeCount,
   toRefusalCode,
@@ -330,6 +331,20 @@ describe("links in text", () => {
   it("keeps plain text whole", () => {
     expect(splitMessageText("no links here")).toEqual([{ type: "text", value: "no links here" }]);
     expect(splitMessageText("")).toEqual([]);
+  });
+
+  it("never turns other schemes into links", () => {
+    expect(splitMessageText("javascript:alert(1)")).toEqual([{ type: "text", value: "javascript:alert(1)" }]);
+    expect(splitMessageText("data:text/html,<b>x</b>").every((part) => part.type === "text")).toBe(true);
+    expect(safeMessageUrl("javascript:alert(1)")).toBeNull();
+    expect(safeMessageUrl("data:text/html,x")).toBeNull();
+    expect(safeMessageUrl("not a url")).toBeNull();
+    expect(safeMessageUrl("https://example.com/a")?.href).toBe("https://example.com/a");
+  });
+
+  it("renders the parsed href, not the typed text", () => {
+    const parts = splitMessageText("x https://Example.com");
+    expect(parts[1]).toMatchObject({ href: "https://example.com/", label: "https://Example.com" });
   });
 
   it("mirrors the request rule on outside links", () => {
