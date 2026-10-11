@@ -19,7 +19,16 @@ export const reportTargetTypes = [
   "company",
   "vacancy",
   ...commentReportTargetTypes,
+  // Someone in a private conversation: one report per conversation, not per
+  // message. Moderators see only the snapshot the report takes.
+  "conversation",
 ] as const;
+
+/**
+ * What a moderator decides on: everything that can be reported, plus a
+ * single message picked from a conversation report's snapshot.
+ */
+export const moderationTargetTypes = [...reportTargetTypes, "message"] as const;
 
 /**
  * Where each target lives: its table and its column in content_reports and
@@ -36,6 +45,7 @@ export const REPORT_TARGETS = {
   project_comment: { table: "project_comments", column: "target_comment_id" },
   article_comment: { table: "article_comments", column: "target_comment_id" },
   poll_comment: { table: "poll_comments", column: "target_comment_id" },
+  conversation: { table: "conversations", column: "target_conversation_id" },
 } as const satisfies Record<string, { table: string; column: string }>;
 
 /** The admin content tables work with these only (bulk status and delete). */
@@ -57,13 +67,14 @@ export const moderationPriorities = ["normal", "high", "urgent"] as const;
 
 export type ModerationStatus = (typeof moderationStatuses)[number];
 export type ReportTargetType = (typeof reportTargetTypes)[number];
+export type ModerationTargetType = (typeof moderationTargetTypes)[number];
 export type CommentReportTargetType = (typeof commentReportTargetTypes)[number];
 export type ReportReason = (typeof reportReasons)[number];
 export type ReportStatus = (typeof reportStatuses)[number];
 export type ModerationPriority = (typeof moderationPriorities)[number];
 
 /** A comment has no review status: a moderator keeps it or removes it. */
-export function isCommentReportTarget(type: ReportTargetType): type is CommentReportTargetType {
+export function isCommentReportTarget(type: ModerationTargetType): type is CommentReportTargetType {
   return (commentReportTargetTypes as readonly string[]).includes(type);
 }
 

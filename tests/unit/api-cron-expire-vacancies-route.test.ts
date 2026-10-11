@@ -8,10 +8,14 @@ vi.mock("@/lib/db/job-alerts", () => ({
 vi.mock("@/lib/db/trash", () => ({
   runTrashCleanup: vi.fn(async () => ({ accounts: 1, groups: 2, files: 3, fileFailures: 0 })),
 }));
+vi.mock("@/lib/db/messages", () => ({
+  runMessagesHousekeeping: vi.fn(async () => ({ conversations: 1, emailJobs: 2, restrictions: 0, snapshots: 0 })),
+}));
 
 import { GET, POST, dynamic } from "@/app/api/cron/expire-vacancies/route";
 import { purgeOldApplications } from "@/lib/db/applications";
 import { runJobAlerts } from "@/lib/db/job-alerts";
+import { runMessagesHousekeeping } from "@/lib/db/messages";
 import { runTrashCleanup } from "@/lib/db/trash";
 import { expireVacancies } from "@/lib/db/vacancies";
 
@@ -47,15 +51,28 @@ describe("/api/cron/expire-vacancies", () => {
 
   const ALERTS = { vacancies: 4, alerts: 6, people: 2, emails: 1, failedEmails: 0 };
   const TRASH = { accounts: 1, groups: 2, files: 3, fileFailures: 0 };
+  const MESSAGES = { conversations: 1, emailJobs: 2, restrictions: 0, snapshots: 0 };
 
   it("expires vacancies, deletes old applications, sends job alerts and empties the trash, saying how many", async () => {
     const res = await GET(req("GET", "Bearer s3cret"));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, expired: 3, purgedApplications: 2, jobAlerts: ALERTS, trash: TRASH });
+    expect(await res.json()).toEqual({ ok: true, expired: 3, purgedApplications: 2, jobAlerts: ALERTS, trash: TRASH, messages: MESSAGES });
     expect(expireVacancies).toHaveBeenCalledOnce();
     expect(purgeOldApplications).toHaveBeenCalledOnce();
     expect(runJobAlerts).toHaveBeenCalledOnce();
     expect(runTrashCleanup).toHaveBeenCalledOnce();
+    expect(runMessagesHousekeeping).toHaveBeenCalledOnce();
+  });
+
+  it("still answers 200 when only the messages housekeeping fails", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.mocked(runMessagesHousekeeping).mockRejectedValueOnce(new Error("no function"));
+    const res = await GET(req("GET", "Bearer s3cret"));
+    expect(res.status).toBe(200);
+    expect((await res.json()).messages).toEqual({ error: "no function" });
+    vi.mocked(runMessagesHousekeeping).mockRejectedValueOnce("weird");
+    expect((await (await GET(req("GET", "Bearer s3cret"))).json()).messages).toEqual({ error: "failed" });
+    spy.mockRestore();
   });
 
   it("still answers 200 when only the trash cleanup fails", async () => {
@@ -80,6 +97,7 @@ describe("/api/cron/expire-vacancies", () => {
       purgedApplications: 2,
       jobAlerts: { error: "no column notify_email" },
       trash: TRASH,
+      messages: MESSAGES,
     });
     vi.mocked(runJobAlerts).mockRejectedValueOnce("weird");
     expect((await (await GET(req("GET", "Bearer s3cret"))).json()).jobAlerts).toEqual({ error: "failed" });
@@ -90,7 +108,7 @@ describe("/api/cron/expire-vacancies", () => {
     expect((await POST(req("POST"))).status).toBe(401);
     const res = await POST(req("POST", "Bearer s3cret"));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, expired: 3, purgedApplications: 2, jobAlerts: ALERTS, trash: TRASH });
+    expect(await res.json()).toEqual({ ok: true, expired: 3, purgedApplications: 2, jobAlerts: ALERTS, trash: TRASH, messages: MESSAGES });
   });
 
   it("is open without a secret (local development)", async () => {

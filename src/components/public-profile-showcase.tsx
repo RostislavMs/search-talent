@@ -11,6 +11,7 @@ import ProfileAiSummaryPublic from "@/components/profile-ai-summary-public";
 import ProfileContactButton, {
   type ProfileContactInfo,
 } from "@/components/profile-contact-button";
+import { messagingIsOffered, type ProfileMessaging } from "@/lib/messages";
 import ProfileShareDialog from "@/components/profile-share-dialog";
 import ProfileVoteButtons from "@/components/profile-vote-buttons";
 
@@ -231,11 +232,14 @@ export default function PublicProfileShowcase({
   dictionary,
   data,
   isAdmin = false,
+  messaging = null,
 }: {
   locale: string;
   dictionary: Dictionary;
   data: PublicProfilePageData;
   isAdmin?: boolean;
+  /** Whether the visitor may write to this person on the site (see message_permission()). */
+  messaging?: ProfileMessaging | null;
 }) {
   const {
     profile,
@@ -309,11 +313,14 @@ export default function PublicProfileShowcase({
       : experienceLabel;
   const ratingChip =
     typeof profileRating === "number" ? formatScore(profileRating, dictionary.common) : null;
-  // Hiding the contacts block (Visibility → Contacts) hides the button too.
+  // Hiding the contacts block (Visibility → Contacts) hides the channels, but
+  // not writing on the site: the button stays while a message can go.
   const canContact =
     !isOwner &&
-    profile.visibility.links &&
-    Boolean(hasPrivateContact || profile.telegram_username || profile.linkedin || profile.website);
+    ((profile.visibility.links &&
+      Boolean(hasPrivateContact || profile.telegram_username || profile.linkedin || profile.website)) ||
+      messagingIsOffered(messaging));
+  const contactChannelsShown = profile.visibility.links;
   const sectionMap = new Map<ProfileSectionId, { title: string; content: ReactNode; visible: boolean }>([
     // The headline already sits under the name in the hero, so "About" carries
     // only the bio instead of repeating it in a "Position" box.
@@ -583,7 +590,15 @@ export default function PublicProfileShowcase({
                     </ButtonLink>
                   )}
                   {canContact && (
-                    <ProfileContactButton contact={contactInfo} isAuthenticated={isAuthenticated} />
+                    <ProfileContactButton
+                      contact={
+                        contactChannelsShown
+                          ? contactInfo
+                          : { ...contactInfo, telegram: null, linkedin: null, website: null, hasEmail: false, hasPhone: false }
+                      }
+                      isAuthenticated={isAuthenticated}
+                      messaging={messaging}
+                    />
                   )}
                   {!isOwner && (
                     <FollowButton followingUserId={profile.user_id} initialFollowing={isFollowing} isAuthenticated={isAuthenticated} />

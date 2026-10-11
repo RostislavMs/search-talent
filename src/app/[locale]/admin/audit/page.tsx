@@ -12,7 +12,7 @@ import { getAdminAuditLog } from "@/lib/db/admin";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getModerationCopy } from "@/lib/moderation-copy";
-import { reportTargetTypes, type ReportTargetType } from "@/lib/moderation";
+import { moderationTargetTypes, type ModerationTargetType } from "@/lib/moderation";
 import { buildMetadata } from "@/lib/seo";
 
 type SearchParamValue = string | string[] | undefined;
@@ -68,6 +68,8 @@ const ACTION_VALUES = [
   "report_hold",
   "grant_admin",
   "revoke_admin",
+  "messaging_restricted",
+  "messaging_unrestricted",
 ] as const;
 
 export default async function AdminAuditPage({
@@ -93,8 +95,8 @@ export default async function AdminAuditPage({
       ? actionParam
       : "all";
   const target =
-    targetParam && (reportTargetTypes as readonly string[]).includes(targetParam)
-      ? (targetParam as ReportTargetType)
+    targetParam && (moderationTargetTypes as readonly string[]).includes(targetParam)
+      ? (targetParam as ModerationTargetType)
       : "all";
 
   const result = await getAdminAuditLog({
@@ -117,7 +119,7 @@ export default async function AdminAuditPage({
     label:
       (copy.actionLabels as Record<string, string>)[value] || value,
   }));
-  const targetOptions = reportTargetTypes.map((value) => ({
+  const targetOptions = moderationTargetTypes.map((value) => ({
     value,
     label: moderationCopy.targetLabels[value],
   }));

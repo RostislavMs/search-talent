@@ -19,6 +19,7 @@ describe("REPORT_TARGETS", () => {
       project_comment: { table: "project_comments", column: "target_comment_id" },
       article_comment: { table: "article_comments", column: "target_comment_id" },
       poll_comment: { table: "poll_comments", column: "target_comment_id" },
+      conversation: { table: "conversations", column: "target_conversation_id" },
     });
   });
 

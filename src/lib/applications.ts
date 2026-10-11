@@ -245,6 +245,8 @@ export type TeamApplication = {
 
 export type MyApplication = {
   id: string;
+  /** The vacancy's company, even when the vacancy is hidden: its messages live there. */
+  companyId: string;
   status: ApplicationStatus;
   createdAt: string;
   statusChangedAt: string | null;

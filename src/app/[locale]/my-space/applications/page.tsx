@@ -9,8 +9,10 @@ import { MY_APPLICATIONS_PATH, type MyApplication } from "@/lib/applications";
 import { buildLoginHref } from "@/lib/auth/redirect";
 import { buildCompanyPath } from "@/lib/companies";
 import { listMyApplications } from "@/lib/db/applications";
+import { getMyCompanyConversationIds } from "@/lib/db/messages";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
+import { buildConversationPath } from "@/lib/messages";
 import { buildProjectPath } from "@/lib/projects";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -47,10 +49,13 @@ function ApplicationItem({
   application,
   dictionary,
   locale,
+  conversationId,
 }: {
   application: MyApplication;
   dictionary: Dictionary;
   locale: Locale;
+  /** The company's conversation with the candidate, once the team wrote. */
+  conversationId: string | null;
 }) {
   const copy = dictionary.applications;
   const vacancy = application.vacancy;
@@ -125,12 +130,19 @@ function ApplicationItem({
         </div>
       ) : null}
 
-      {application.status !== "withdrawn" ? (
-        <div className="mt-4 flex justify-end">
-          <ApplicationWithdrawButton
-            applicationId={application.id}
-            vacancyTitle={vacancy?.title ?? ""}
-          />
+      {application.status !== "withdrawn" || conversationId ? (
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+          {conversationId ? (
+            <ButtonLink href={buildConversationPath(conversationId)} variant="secondary" size="sm">
+              {dictionary.messages.myApplication.open}
+            </ButtonLink>
+          ) : null}
+          {application.status !== "withdrawn" ? (
+            <ApplicationWithdrawButton
+              applicationId={application.id}
+              vacancyTitle={vacancy?.title ?? ""}
+            />
+          ) : null}
         </div>
       ) : null}
     </li>
@@ -155,6 +167,10 @@ export default async function MyApplicationsPage({
   const dictionary = getDictionary(locale);
   const copy = dictionary.applications.mine;
   const applications = await listMyApplications(supabase, user.id);
+  const conversations = await getMyCompanyConversationIds(
+    supabase,
+    applications.map((application) => application.companyId),
+  );
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
@@ -190,6 +206,7 @@ export default async function MyApplicationsPage({
               application={application}
               dictionary={dictionary}
               locale={locale}
+              conversationId={conversations.get(application.companyId) ?? null}
             />
           ))}
         </ul>

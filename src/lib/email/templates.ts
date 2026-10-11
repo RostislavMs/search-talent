@@ -393,3 +393,51 @@ export function buildJobAlertDigestEmail(input: JobAlertDigestEmailInput) {
 
   return { subject, html: renderEmailShell(input.locale, bodyHtml), text };
 }
+
+type NewMessageEmailInput = {
+  recipientName: string;
+  /** The person's name, or the company's when it wrote as a company. */
+  senderName: string;
+  asCompany: boolean;
+  /** The first message from someone the recipient has not talked to. */
+  isRequest: boolean;
+  url: string;
+  settingsUrl: string;
+  locale: Locale;
+};
+
+/**
+ * Someone wrote and the message is still unread after a few minutes. Who
+ * wrote, never what: the text stays on the site, behind the sign-in (the
+ * same rule as the application emails).
+ */
+export function buildNewMessageEmail(input: NewMessageEmailInput) {
+  const email = getDictionary(input.locale).emails.newMessage;
+  const greeting = input.recipientName ? email.greeting : email.greetingNoName;
+  const sender = input.senderName || email.someone;
+  const fill = (template: string, escape: boolean) => {
+    const value = (text: string) => (escape ? escapeHtml(text) : text);
+    return template.replace("{name}", value(input.recipientName || "")).replace("{sender}", value(sender));
+  };
+  const intro = input.isRequest ? email.introRequest : input.asCompany ? email.introCompany : email.intro;
+
+  const bodyHtml = `
+    <h1 style="margin: 0 0 12px 0; font-size: 22px; line-height: 1.3; color: #0f172a;">${fill(greeting, true)}</h1>
+    <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.6; color: #334155;">${fill(intro, true)}</p>
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #334155;">${escapeHtml(email.body)}</p>
+    ${ctaButton(email.cta, input.url)}
+    <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #94a3b8;">${escapeHtml(email.footer)}<br /><a href="${escapeHtml(input.settingsUrl)}" style="color: #94a3b8;">${escapeHtml(email.settings)}</a></p>`;
+
+  const text = [
+    fill(greeting, false),
+    fill(intro, false),
+    email.body,
+    "",
+    `${email.cta}: ${input.url}`,
+    "",
+    email.footer,
+    `${email.settings}: ${input.settingsUrl}`,
+  ].join("\n");
+
+  return { subject: fill(email.subject, false), html: renderEmailShell(input.locale, bodyHtml), text };
+}

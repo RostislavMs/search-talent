@@ -20,6 +20,12 @@ export type SendEmailInput = {
   replyTo?: string;
   /** Extra headers, e.g. List-Unsubscribe for recurring emails. */
   headers?: Record<string, string>;
+  /**
+   * Send later (ISO 8601). Resend holds the email until then, and
+   * cancelScheduledEmail() can still stop it — how message emails wait to see
+   * whether the person reads the message on the site first.
+   */
+  scheduledAt?: string;
 };
 
 export type SendEmailResult = {
@@ -42,6 +48,7 @@ function toResendPayload(from: string, input: SendEmailInput) {
     text: input.text,
     reply_to: input.replyTo,
     headers: input.headers,
+    scheduled_at: input.scheduledAt,
   };
 }
 
@@ -149,6 +156,39 @@ export async function sendEmailBatch(inputs: SendEmailInput[]): Promise<SendEmai
   }
 
   return results;
+}
+
+/**
+ * Stops an email scheduled with `scheduledAt` that has not gone out yet.
+ * True when Resend cancelled it; false otherwise (already sent, unknown id,
+ * not configured). Never throws.
+ */
+export async function cancelScheduledEmail(id: string): Promise<boolean> {
+  const config = resendConfig();
+
+  if (!config || !id) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${RESEND_ENDPOINT}/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${config.apiKey}` },
+    });
+
+    if (!response.ok) {
+      // 404 / 422: already sent or never scheduled — nothing to stop.
+      if (response.status >= 500) {
+        console.error("[email] Resend cancel failed", response.status);
+      }
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[email] Resend cancel threw", error);
+    return false;
+  }
 }
 
 /**

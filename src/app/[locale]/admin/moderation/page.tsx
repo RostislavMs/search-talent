@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import AdminMessagingRestrictions from "@/components/admin-messaging-restrictions";
 import AdminModerationActions from "@/components/admin-moderation-actions";
+import AdminSnapshotMessageRemove from "@/components/admin-snapshot-message-remove";
+import { listMessagingRestrictions } from "@/lib/db/messages";
 import { getModerationQueue } from "@/lib/db/moderation";
+import { createClient } from "@/lib/supabase/server";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getModerationCopy } from "@/lib/moderation-copy";
@@ -56,6 +60,8 @@ export default async function AdminModerationPage({
   if (!queue) {
     return null;
   }
+
+  const restrictions = await listMessagingRestrictions(await createClient());
 
   return (
     <div className="space-y-6">
@@ -142,6 +148,50 @@ export default async function AdminModerationPage({
                     </span>
                   </div>
 
+                  {item.snapshot && item.snapshot.messages.length > 0 ? (
+                    <div className="mt-4 rounded-3xl app-panel p-4">
+                      <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
+                        {copy.dashboard.snapshotTitle}
+                      </p>
+                      <p className="mt-1 text-xs app-muted">{copy.dashboard.snapshotNote}</p>
+                      <ol className="mt-3 space-y-2">
+                        {item.snapshot.messages.map((message) => (
+                          <li
+                            key={message.id}
+                            className={`rounded-2xl px-3 py-2 text-sm ${
+                              message.byReported
+                                ? "border border-rose-500/50 bg-rose-500/5"
+                                : "bg-[color:var(--surface)]"
+                            }`}
+                          >
+                            <p className="text-xs app-soft">
+                              {[
+                                message.kind === "event"
+                                  ? null
+                                  : message.asCompany && item.snapshot?.companyName
+                                    ? `${message.authorName ?? "—"} · ${item.snapshot.companyName}`
+                                    : (message.authorName ?? "—"),
+                                message.createdAt ? formatDate(message.createdAt, locale) : null,
+                                message.deleted ? copy.dashboard.snapshotDeleted : null,
+                                message.byReported ? copy.dashboard.snapshotByReported : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                            <p className="mt-1 whitespace-pre-wrap break-words leading-6 text-[color:var(--foreground)]">
+                              {message.kind === "event" ? "·" : message.body}
+                            </p>
+                            {message.kind === "text" && !message.deleted ? (
+                              <div className="mt-1">
+                                <AdminSnapshotMessageRemove messageId={message.id} copy={copy} />
+                              </div>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : null}
+
                   {item.targetHref && (
                     <div className="mt-4">
                       <Link
@@ -164,6 +214,7 @@ export default async function AdminModerationPage({
                     targetId={item.targetId}
                     currentStatus={item.targetStatus}
                     reportId={item.id}
+                    ownerUserId={item.ownerUserId}
                   />
                 </div>
               </div>
@@ -172,6 +223,7 @@ export default async function AdminModerationPage({
         </section>
       )}
 
+      <AdminMessagingRestrictions copy={copy} locale={locale} restrictions={restrictions} />
     </div>
   );
 }

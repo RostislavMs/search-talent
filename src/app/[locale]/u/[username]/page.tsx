@@ -6,7 +6,9 @@ import PublicProfileShowcase from "@/components/public-profile-showcase";
 import RelatedCreators from "@/components/related-creators";
 import ViewBeacon from "@/components/view-beacon";
 import { CreatorCardGridSkeleton } from "@/components/skeletons/card-skeletons";
+import { getMessagePermission } from "@/lib/db/messages";
 import { getPublicProfilePageData } from "@/lib/db/public";
+import type { ProfileMessaging } from "@/lib/messages";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -109,6 +111,21 @@ export default async function PublicProfilePage({
     ownerData.isOwner && isProfileVisitorViewRequested(query[PROFILE_VISITOR_VIEW_PARAM]);
   const data = visitorView ? toProfileVisitorView(ownerData) : ownerData;
 
+  // Writing on the site from «Зв'язатися»: a guest is asked to sign in; a
+  // signed-in visitor gets the database's answer (may write, already talking,
+  // or why not). Nothing for the owner or in "view as visitor".
+  let messaging: ProfileMessaging | null = null;
+  if (!visitorView && !data.isOwner && data.profile.user_id) {
+    if (!viewer.user) {
+      messaging = { recipientUserId: data.profile.user_id, status: "signin", conversationId: null };
+    } else {
+      const permission = await getMessagePermission(viewer.supabase, data.profile.user_id);
+      messaging = permission
+        ? { recipientUserId: data.profile.user_id, status: permission.status, conversationId: permission.conversationId }
+        : null;
+    }
+  }
+
   const siteUrl = getMetadataBase().toString().replace(/\/$/, "");
   const profileUrl = `${siteUrl}/${locale}/u/${username}`;
 
@@ -187,6 +204,7 @@ export default async function PublicProfilePage({
         dictionary={dictionary}
         data={data}
         isAdmin={visitorView ? false : viewer.isAdmin}
+        messaging={messaging}
       />
       <Suspense
         fallback={

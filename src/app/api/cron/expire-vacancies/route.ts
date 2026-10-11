@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { purgeOldApplications } from "@/lib/db/applications";
 import { runJobAlerts } from "@/lib/db/job-alerts";
+import { runMessagesHousekeeping } from "@/lib/db/messages";
 import { runTrashCleanup } from "@/lib/db/trash";
 import { expireVacancies } from "@/lib/db/vacancies";
 
@@ -44,7 +45,14 @@ async function handle(request: Request) {
       console.error("trash cleanup failed:", error);
       return { error: error instanceof Error ? error.message : "failed" };
     });
-    return NextResponse.json({ ok: true, expired, purgedApplications, jobAlerts, trash });
+    // Messages: conversations 24 months quiet go (into the trash), ended
+    // limits and old email records too, report snapshots a year after the
+    // decision (the Privacy Policy promises all of it).
+    const messages = await runMessagesHousekeeping().catch((error: unknown) => {
+      console.error("messages housekeeping failed:", error);
+      return { error: error instanceof Error ? error.message : "failed" };
+    });
+    return NextResponse.json({ ok: true, expired, purgedApplications, jobAlerts, trash, messages });
   } catch (error) {
     console.error("expire-vacancies cron failed:", error);
     return NextResponse.json(

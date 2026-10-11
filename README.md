@@ -119,6 +119,16 @@ search-talent/
 - Every email has a one-click unsubscribe (`List-Unsubscribe` + `List-Unsubscribe-Post`, an HMAC token, no sign-in) that turns the emails off and leaves the alerts in notifications. `/my-space/job-alerts` lists the alerts, the latest vacancies each sent, the email switches and "Remove".
 - `/admin/metrics` has a hiring section: open vacancies and companies, applications per week, the share viewed within 7 days (the health number), the share of vacancies with an application within 14 days, the median time to the first application, job alerts and contacts opened by companies.
 
+### Messages (part 13)
+
+- One-to-one conversations: two people, or a company page (its whole accepted team, each message signed by who wrote it) and a person. One conversation per pair; what it is about shows as events inside it (an application, a decision on it). Pages: `/messages` and `/messages/[id]` (full width and height under the header, no footer; the list and the open conversation side by side, one at a time on a phone), `/messages/settings`.
+- Everything goes through SECURITY DEFINER functions (`start_conversation`, `send_message`, `mark_conversation_read`, `my_conversations`, `conversation_view`, …); the tables have no client grants and platform admins have no way in. A person reports the other side once, from the conversation's menu (not message by message); the report takes a snapshot of the last 20 messages — the only part of a conversation a moderator sees, who can remove a single message from it or limit the person's messaging.
+- A first message to a stranger is a request: one message, no outside links, until they reply or accept (another try after 30 days). It is skipped when the person applied to the company's vacancy or follows the sender. An unverified company writes only to its applicants. Each person chooses who may write (everyone, verified companies, nobody new) and can block people and companies.
+- Every message is screened by `moderation_screen()`: hate, sexual content and link spam are refused; "pay first" / "move to Telegram" phrases go through with a warning for the recipient. Three different people blocking or reporting someone within a week turns off their new conversations until a moderator looks (`/admin/moderation` also lists and lifts these limits).
+- Live delivery: a trigger broadcasts `{conversation_id, message_id}` on the private Realtime topic `user:<id>` of everyone involved (ids only; the page reads the text through the API). The header badge polls like the bell; only the messages pages hold a live connection, with polling as the fallback.
+- Emails: a message still unread after 10 minutes sends one email per conversation (who wrote, never the text) — scheduled at Resend and cancelled if the conversation is read first; at most 10 a day, with a one-click unsubscribe.
+- Conversations go 24 months after their last message (the daily cron); a deleted account takes its messages with it.
+
 ### Projects
 
 - Title, description, technologies, links (repo + live), media gallery (images & video), pinning.
@@ -236,6 +246,8 @@ search-talent/
 | `/jobs/new`, `/jobs/edit/[id]` | Vacancy form (company team) |
 | `/analytics` | Platform-wide analytics |
 | `/notifications` | Inbox |
+| `/messages`, `/messages/[id]` | Conversations with people and companies |
+| `/messages/settings` | Who may write, emails, read receipts, blocked people |
 | `/profile/edit` | Profile editor (sections, presentation, GitHub link, account) |
 | `/projects/new`, `/projects/edit/[id]` | Project composer |
 | `/articles/new`, `/articles/edit/[id]` | Article composer |
