@@ -597,9 +597,15 @@ export type MessageTextPart =
 const URL_PATTERN = /((?:https?:\/\/|www\.)[^\s<>"')\]]+)/gi;
 const TRAILING_PUNCTUATION = /[.,;:!?)\]]+$/;
 
-function hostOf(href: string): string | null {
+/**
+ * Parses a link found in a message and keeps it only when it is http(s).
+ * The href a message renders is always the parser's own `url.href`, never
+ * the text the user typed, so no `javascript:` or other scheme gets through.
+ */
+export function safeMessageUrl(candidate: string): URL | null {
   try {
-    return new URL(href).hostname.toLowerCase();
+    const url = new URL(candidate);
+    return url.protocol === "http:" || url.protocol === "https:" ? url : null;
   } catch {
     return null;
   }
@@ -623,10 +629,10 @@ export function splitMessageText(text: string, siteHosts: string[] = []): Messag
     const raw = match[0];
     const start = match.index ?? 0;
     const trimmed = raw.replace(TRAILING_PUNCTUATION, "");
-    const href = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-    const host = hostOf(href);
+    const url = safeMessageUrl(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+    const host = url?.hostname.toLowerCase();
 
-    if (!host || trimmed.length === 0) {
+    if (!url || !host || trimmed.length === 0) {
       continue;
     }
 
@@ -636,7 +642,7 @@ export function splitMessageText(text: string, siteHosts: string[] = []): Messag
 
     parts.push({
       type: "link",
-      href,
+      href: url.href,
       label: trimmed,
       host: host.replace(/^www\./, ""),
       external: !isSiteHost(host, siteHosts),
