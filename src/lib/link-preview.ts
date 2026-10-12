@@ -23,13 +23,15 @@ export const linkPreviewKinds = [
   "project",
   "article",
   "poll",
+  "vacancy",
+  "company",
 ] as const;
 
 export type LinkPreviewKind = (typeof linkPreviewKinds)[number];
 
 export type LinkPreviewTarget = {
   kind: LinkPreviewKind;
-  /** Username for profiles, slug (or legacy uuid) for content. */
+  /** Username for profiles, slug (or legacy uuid) for content, vacancies and companies. */
   key: string;
   /**
    * Locale taken from the href itself. `null` for locale-less hrefs — the
@@ -48,7 +50,7 @@ export type LinkPreview = {
   /** Localized kind label shown as the card eyebrow. */
   eyebrow: string;
   title: string;
-  /** `@username` for profiles, "By Author" for content. */
+  /** `@username` for profiles, "By Author" for content, the company for a vacancy. */
   subtitle: string | null;
   description: string | null;
   imageUrl: string | null;
@@ -99,6 +101,10 @@ function toKind(prefix: string): LinkPreviewKind | null {
       return "article";
     case "polls":
       return "poll";
+    case "jobs":
+      return "vacancy";
+    case "companies":
+      return "company";
     default:
       return null;
   }

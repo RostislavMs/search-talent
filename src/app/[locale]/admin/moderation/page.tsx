@@ -172,7 +172,12 @@ export default async function AdminModerationPage({
                                     ? `${message.authorName ?? "—"} · ${item.snapshot.companyName}`
                                     : (message.authorName ?? "—"),
                                 message.createdAt ? formatDate(message.createdAt, locale) : null,
-                                message.deleted ? copy.dashboard.snapshotDeleted : null,
+                                message.edited ? copy.dashboard.snapshotEdited : null,
+                                message.deletedBy === "author"
+                                  ? copy.dashboard.snapshotDeletedByAuthor
+                                  : message.deleted
+                                    ? copy.dashboard.snapshotDeleted
+                                    : null,
                                 message.byReported ? copy.dashboard.snapshotByReported : null,
                               ]
                                 .filter(Boolean)
@@ -181,6 +186,11 @@ export default async function AdminModerationPage({
                             <p className="mt-1 whitespace-pre-wrap break-words leading-6 text-[color:var(--foreground)]">
                               {message.kind === "event" ? "·" : message.body}
                             </p>
+                            {message.originalBody ? (
+                              <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 app-muted">
+                                {copy.dashboard.snapshotOriginal.replace("{text}", message.originalBody)}
+                              </p>
+                            ) : null}
                             {message.kind === "text" && !message.deleted ? (
                               <div className="mt-1">
                                 <AdminSnapshotMessageRemove messageId={message.id} copy={copy} />

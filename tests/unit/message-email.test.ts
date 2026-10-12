@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cancelScheduledEmail, sendEmail } from "@/lib/email/resend";
-import { buildNewMessageEmail } from "@/lib/email/templates";
+import { buildMessageDigestEmail, buildNewMessageEmail } from "@/lib/email/templates";
 import {
   buildMessageEmailOneClickUrl,
   isValidMessageEmailUnsubscribeToken,
@@ -67,7 +67,8 @@ describe("the unsubscribe token", () => {
     expect(isValidMessageEmailUnsubscribeToken(ID, jobAlertUnsubscribeToken(ID))).toBe(false);
     expect(isValidMessageEmailUnsubscribeToken(ID, "zz")).toBe(false);
     expect(messageEmailUnsubscribeToken("nope")).toBeNull();
-    expect(buildMessageEmailOneClickUrl(ID)).toContain(`/api/messages/email-unsubscribe?u=${ID}&t=${token}`);
+    // New emails go to the shared endpoint; the token is the same, so older links still work.
+    expect(buildMessageEmailOneClickUrl(ID)).toContain(`/api/email-unsubscribe?k=messages&u=${ID}&t=${token}`);
   });
 });
 
@@ -112,5 +113,44 @@ describe("Resend scheduling", () => {
     vi.stubEnv("RESEND_API_KEY", "key");
     vi.stubEnv("RESEND_FROM_EMAIL", "x");
     expect(await cancelScheduledEmail("")).toBe(false);
+  });
+});
+
+describe("the daily message email (13.3)", () => {
+  const base = {
+    recipientName: "Olena",
+    messages: 5,
+    conversations: 4,
+    requests: 2,
+    senders: ["Bob <b>", "Acme"],
+    url: "https://searchtalent.dev/uk/messages",
+    settingsUrl: "https://searchtalent.dev/uk/messages/settings",
+    locale: "uk" as const,
+  };
+
+  it("counts and names, never the text, escaped", () => {
+    const email = buildMessageDigestEmail(base);
+    expect(email.subject).toBe("5 нових повідомлень на Search Talent");
+    expect(email.text).toContain("У вас 5 непрочитаних повідомлень.");
+    expect(email.text).toContain("Від: Bob <b>, Acme та ще 2 розмови.");
+    expect(email.text).toContain("Запитів від людей, з якими ви ще не листувалися: 2.");
+    expect(email.html).toContain("Bob &lt;b&gt;");
+    expect(email.html).not.toContain("<b>,");
+    expect(email.html).toContain(base.url);
+    expect(email.html).toContain(base.settingsUrl);
+  });
+
+  it("speaks of one message, one sender, no requests", () => {
+    const email = buildMessageDigestEmail({ ...base, messages: 1, conversations: 1, requests: 0, senders: ["Bob"], locale: "en" });
+    expect(email.subject).toBe("1 new message on Search Talent");
+    expect(email.text).toContain("You have 1 unread message.");
+    expect(email.text).toContain("From Bob.");
+    expect(email.text).not.toContain("Requests");
+  });
+
+  it("greets without a name and says nothing of senders it does not know", () => {
+    const email = buildMessageDigestEmail({ ...base, recipientName: "", senders: [], requests: 0, locale: "en" });
+    expect(email.text.startsWith("Hi!")).toBe(true);
+    expect(email.text).not.toContain("From");
   });
 });

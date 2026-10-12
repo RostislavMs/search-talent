@@ -7,6 +7,8 @@
  * in the dictionary (`messages`).
  */
 
+import { parseLinkPreviewHref } from "@/lib/link-preview";
+
 export const MESSAGES_PATH = "/messages";
 export const MESSAGES_SETTINGS_PATH = "/messages/settings";
 export const MESSAGE_MAX_LENGTH = 4000;
@@ -37,13 +39,25 @@ export function isMessagesScreen(pathname: string | null): boolean {
 export const conversationBoxes = ["inbox", "unread", "requests", "archived"] as const;
 export type ConversationBox = (typeof conversationBoxes)[number];
 
-/** The query a list keeps in its links, so a conversation opens next to the same list. */
-export function buildMessagesQuery(box: ConversationBox, companyId: string | null): string {
+/**
+ * The query a list keeps in its links, so a conversation opens next to the
+ * same list — and the same search, when it came from one.
+ */
+export function buildMessagesQuery(box: ConversationBox, companyId: string | null, search: string | null = null): string {
   const params = new URLSearchParams();
   if (box !== "inbox") params.set("box", box);
   if (companyId) params.set("company", companyId);
+  if (search) params.set("q", search);
   const query = params.toString();
   return query ? `?${query}` : "";
+}
+
+/** ?q= on the messages pages: the search the list shows, when there is one. */
+export function parseSearchParam(value: unknown): string | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== "string") return null;
+  const query = normalizeSearchQuery(raw);
+  return query.length >= MESSAGE_SEARCH_MIN_LENGTH && query.length <= MESSAGE_SEARCH_MAX_LENGTH ? query : null;
 }
 
 export function parseConversationBox(value: unknown): ConversationBox {
@@ -116,9 +130,15 @@ export type ChatMessage = {
   scamFlag: boolean;
   held: boolean;
   removed: boolean;
+  /** Who removed it: whoever wrote it, or a moderator. Null while it is there. */
+  removedBy: MessageRemovedBy | null;
   editedAt: string | null;
+  /** Until when the caller may still edit their own message; null when they cannot. */
+  editableUntil: string | null;
   createdAt: string;
 };
+
+export type MessageRemovedBy = "author" | "moderator";
 
 export type LastMessagePreview = {
   id: string;
@@ -129,6 +149,7 @@ export type LastMessagePreview = {
   body: string | null;
   held: boolean;
   removed: boolean;
+  removedBy: MessageRemovedBy | null;
   fromMySide: boolean;
   mine: boolean;
   createdAt: string;
@@ -184,17 +205,40 @@ export type ConversationView = {
   applications: ConversationApplication[];
 };
 
+/**
+ * Message emails: 10 minutes after a message stays unread ("instant"), one
+ * morning email about what came in ("daily"), or none.
+ */
+export const messageEmailModes = ["instant", "daily", "off"] as const;
+export type MessageEmailMode = (typeof messageEmailModes)[number];
+
 export type MessagingSettings = {
   whoCanMessage: WhoCanMessage;
+  /** Any message emails at all; the choice itself is `messageEmails`. */
   emailNotifications: boolean;
+  messageEmails: MessageEmailMode;
   readReceipts: boolean;
 };
 
 export const DEFAULT_MESSAGING_SETTINGS: MessagingSettings = {
   whoCanMessage: "everyone",
   emailNotifications: true,
+  messageEmails: "instant",
   readReceipts: true,
 };
+
+/** The email choices, kept in one place for every kind of email that has one. */
+export type NotificationPreferences = {
+  messageEmails: MessageEmailMode;
+  followerEmails: boolean;
+};
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  messageEmails: "instant",
+  followerEmails: true,
+};
+
+export const NOTIFICATION_SETTINGS_PATH = "/notifications/settings";
 
 export type MessagingSummary = {
   hasConversations: boolean;
@@ -266,6 +310,10 @@ export const messageRefusalCodes = [
   "too_long",
   "links_in_request",
   "moderation_blocked",
+  // Editing one's own message.
+  "not_editable",
+  "edit_window_passed",
+  "too_many_edits",
   "failed",
 ] as const;
 
@@ -285,6 +333,8 @@ export function refusalHttpStatus(code: MessageRefusalCode): number {
     case "rate_limited":
     case "company_rate_limited":
       return 429;
+    case "not_editable":
+      return 409;
     case "failed":
       return 500;
     case "empty":
@@ -379,6 +429,10 @@ function normalizeBody(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }
 
+function normalizeRemovedBy(value: unknown): MessageRemovedBy | null {
+  return value === "author" || value === "moderator" ? value : null;
+}
+
 export function normalizeMessageRow(value: unknown): ChatMessage | null {
   const row = asRecord(value);
   const id = str(row?.id);
@@ -400,7 +454,9 @@ export function normalizeMessageRow(value: unknown): ChatMessage | null {
     scamFlag: bool(row.scam_flag),
     held: bool(row.held),
     removed: bool(row.removed),
+    removedBy: bool(row.removed) ? (normalizeRemovedBy(row.removed_by) ?? "moderator") : null,
     editedAt: str(row.edited_at),
+    editableUntil: str(row.editable_until),
     createdAt: str(row.created_at) ?? new Date(0).toISOString(),
   };
 }
@@ -421,6 +477,7 @@ function normalizeLastMessage(value: unknown): LastMessagePreview | null {
     body: normalizeBody(row.body),
     held: bool(row.held),
     removed: bool(row.removed),
+    removedBy: bool(row.removed) ? (normalizeRemovedBy(row.removedBy) ?? "moderator") : null,
     fromMySide: bool(row.fromMySide),
     mine: bool(row.mine),
     createdAt: str(row.createdAt) ?? new Date(0).toISOString(),
@@ -494,16 +551,33 @@ export function normalizeConversationView(value: unknown): ConversationView | nu
   };
 }
 
+function normalizeMessageEmailMode(value: unknown, fallback: MessageEmailMode): MessageEmailMode {
+  return messageEmailModes.includes(value as MessageEmailMode) ? (value as MessageEmailMode) : fallback;
+}
+
 export function normalizeMessagingSettings(value: unknown): MessagingSettings {
   const row = asRecord(value);
   if (!row) return DEFAULT_MESSAGING_SETTINGS;
+
+  const emailNotifications = row.emailNotifications !== false;
 
   return {
     whoCanMessage: whoCanMessageOptions.includes(row.whoCanMessage as WhoCanMessage)
       ? (row.whoCanMessage as WhoCanMessage)
       : "everyone",
-    emailNotifications: row.emailNotifications !== false,
+    emailNotifications,
+    messageEmails: normalizeMessageEmailMode(row.messageEmails, emailNotifications ? "instant" : "off"),
     readReceipts: row.readReceipts !== false,
+  };
+}
+
+export function normalizeNotificationPreferences(value: unknown): NotificationPreferences {
+  const row = asRecord(value);
+  if (!row) return DEFAULT_NOTIFICATION_PREFERENCES;
+
+  return {
+    messageEmails: normalizeMessageEmailMode(row.messageEmails, "instant"),
+    followerEmails: row.followerEmails !== false,
   };
 }
 
@@ -706,6 +780,136 @@ export function lastReadOwnMessageId(messages: ChatMessage[], theirLastReadSeq: 
   }
 
   return null;
+}
+
+// --- Editing ---------------------------------------------------------------------------------
+
+/**
+ * Whether the caller may still edit this message of theirs. The database sets
+ * the window (15 minutes, at most 10 edits) and says until when; this only
+ * hides the action once that moment has passed on the open page.
+ */
+export function canEditMessage(message: Pick<ChatMessage, "editableUntil">, now: number = Date.now()): boolean {
+  if (!message.editableUntil) return false;
+  const until = Date.parse(message.editableUntil);
+  return Number.isFinite(until) && until > now;
+}
+
+// --- Search ----------------------------------------------------------------------------------
+
+export const MESSAGE_SEARCH_MIN_LENGTH = 2;
+export const MESSAGE_SEARCH_MAX_LENGTH = 100;
+
+/**
+ * One search hit: a message (with a snippet around the match), or a
+ * conversation whose name matched (messageId null). search_messages() puts
+ * the name matches first.
+ */
+export type MessageSearchResult = {
+  conversationId: string;
+  kind: ConversationKind;
+  side: ConversationSide;
+  counterpart: MessagingPerson | null;
+  company: MessagingCompany | null;
+  messageId: string | null;
+  seq: number | null;
+  snippet: string | null;
+  fromMySide: boolean;
+  createdAt: string;
+};
+
+export function normalizeSearchResult(value: unknown): MessageSearchResult | null {
+  const row = asRecord(value);
+  const conversationId = str(row?.conversation_id);
+  if (!row || !conversationId) return null;
+
+  const messageId = str(row.message_id);
+
+  return {
+    conversationId,
+    kind: row.kind === "company" ? "company" : "direct",
+    side: normalizeSide(row.side),
+    counterpart: normalizePerson(row.counterpart),
+    company: normalizeCompany(row.company),
+    messageId,
+    seq: messageId && row.seq !== null && row.seq !== undefined ? num(row.seq) : null,
+    snippet: messageId ? (typeof row.snippet === "string" ? row.snippet : "") : null,
+    fromMySide: bool(row.from_my_side),
+    createdAt: str(row.created_at) ?? new Date(0).toISOString(),
+  };
+}
+
+/** The query as the search uses it: spaces squeezed, trimmed. */
+export function normalizeSearchQuery(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Splits text around every case-insensitive occurrence of the query, for
+ * <mark>: plain parts and matched parts, never markup.
+ */
+export function splitHighlight(text: string, query: string): Array<{ text: string; match: boolean }> {
+  const needle = normalizeSearchQuery(query).toLowerCase();
+  if (!needle) return text ? [{ text, match: false }] : [];
+
+  const haystack = text.toLowerCase();
+  const parts: Array<{ text: string; match: boolean }> = [];
+  let last = 0;
+  let at = haystack.indexOf(needle);
+
+  while (at >= 0) {
+    if (at > last) parts.push({ text: text.slice(last, at), match: false });
+    parts.push({ text: text.slice(at, at + needle.length), match: true });
+    last = at + needle.length;
+    at = haystack.indexOf(needle, last);
+  }
+
+  if (last < text.length) parts.push({ text: text.slice(last), match: false });
+  return parts;
+}
+
+/** ?m= on a conversation: the message a search result opens at. */
+export function parseFocusSeq(value: unknown): number | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== "string" || !/^\d{1,15}$/.test(raw)) return null;
+  const seq = Number(raw);
+  return seq > 0 ? seq : null;
+}
+
+/** A conversation's address next to its list, opened at a message when `seq` is given. */
+export function buildConversationHref(id: string, listQuery: string, seq: number | null = null): string {
+  const params = new URLSearchParams(listQuery.replace(/^\?/, ""));
+  if (seq !== null) params.set("m", String(seq));
+  const query = params.toString();
+  return `${buildConversationPath(id)}${query ? `?${query}` : ""}`;
+}
+
+// --- Link cards --------------------------------------------------------------------------------
+
+/** At most this many cards under one message: a list of links stays a list. */
+export const MESSAGE_LINK_CARDS_LIMIT = 2;
+
+/**
+ * The links in a message to this site's pages that have a card (a profile, a
+ * project, an article, a poll, a vacancy, a company), as site paths, each
+ * once, at most `limit`.
+ */
+export function messageLinkTargets(text: string, siteHosts: string[] = [], limit: number = MESSAGE_LINK_CARDS_LIMIT): string[] {
+  const paths: string[] = [];
+
+  for (const part of splitMessageText(text, siteHosts)) {
+    if (paths.length >= limit) break;
+    if (part.type !== "link" || part.external) continue;
+
+    const url = safeMessageUrl(part.href);
+    const path = url ? url.pathname.replace(/\/+$/, "") || "/" : null;
+
+    if (path && !paths.includes(path) && parseLinkPreviewHref(path)) {
+      paths.push(path);
+    }
+  }
+
+  return paths;
 }
 
 /** A random id for one send attempt: a retry with the same id is not a second message. */

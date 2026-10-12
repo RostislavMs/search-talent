@@ -441,3 +441,66 @@ export function buildNewMessageEmail(input: NewMessageEmailInput) {
 
   return { subject: fill(email.subject, false), html: renderEmailShell(input.locale, bodyHtml), text };
 }
+
+type MessageDigestEmailInput = {
+  recipientName: string;
+  /** Unread messages that came in since the last daily email. */
+  messages: number;
+  conversations: number;
+  /** Of those conversations, requests from people the recipient has not talked to yet. */
+  requests: number;
+  /** Up to five names: people, or companies that wrote as a company. */
+  senders: string[];
+  url: string;
+  settingsUrl: string;
+  locale: Locale;
+};
+
+/**
+ * The morning email for those who chose "once a day": how many unread
+ * messages and from whom, never what — the same rule as the instant email.
+ */
+export function buildMessageDigestEmail(input: MessageDigestEmailInput) {
+  const email = getDictionary(input.locale).emails.messageDigest;
+  const greeting = input.recipientName ? email.greeting.replace("{name}", input.recipientName) : email.greetingNoName;
+  const subject = formatCount(input.messages, email.subject, input.locale);
+  const summary = formatCount(input.messages, email.summary, input.locale);
+  const more = Math.max(0, input.conversations - input.senders.length);
+  const names = input.senders.join(", ");
+  const from =
+    names === ""
+      ? null
+      : more > 0
+        ? email.fromMore.replace("{names}", names).replace("{more}", formatCount(more, email.moreConversations, input.locale))
+        : email.from.replace("{names}", names);
+  const requests = input.requests > 0 ? email.requests.replace("{count}", String(input.requests)) : null;
+
+  const paragraph = (text: string) =>
+    `<p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.6; color: #334155;">${escapeHtml(text)}</p>`;
+
+  const bodyHtml = `
+    <h1 style="margin: 0 0 12px 0; font-size: 22px; line-height: 1.3; color: #0f172a;">${escapeHtml(greeting)}</h1>
+    ${paragraph(summary)}
+    ${from ? paragraph(from) : ""}
+    ${requests ? paragraph(requests) : ""}
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #334155;">${escapeHtml(email.body)}</p>
+    ${ctaButton(email.cta, input.url)}
+    <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #94a3b8;">${escapeHtml(email.footer)}<br /><a href="${escapeHtml(input.settingsUrl)}" style="color: #94a3b8;">${escapeHtml(email.settings)}</a></p>`;
+
+  const text = [
+    greeting,
+    summary,
+    from,
+    requests,
+    email.body,
+    "",
+    `${email.cta}: ${input.url}`,
+    "",
+    email.footer,
+    `${email.settings}: ${input.settingsUrl}`,
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+
+  return { subject, html: renderEmailShell(input.locale, bodyHtml), text };
+}

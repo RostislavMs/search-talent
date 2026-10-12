@@ -27,6 +27,10 @@ import { loadEmailRecipient } from "@/lib/db/email-recipients";
 import {
   applyConversationAction,
   cancelMessageEmails,
+  deleteMessage,
+  editMessage,
+  runMessageDigests,
+  searchMessages,
   getConversationMessage,
   getConversationView,
   getMessagePermission,
@@ -239,8 +243,15 @@ describe("writing", () => {
 
 describe("settings and blocks", () => {
   it("reads and saves the settings", async () => {
-    const read = client(() => ({ data: { whoCanMessage: "nobody", emailNotifications: false, readReceipts: true } }));
-    expect(await getMessagingSettings(read.supabase)).toEqual({ whoCanMessage: "nobody", emailNotifications: false, readReceipts: true });
+    const read = client(() => ({
+      data: { whoCanMessage: "nobody", emailNotifications: true, messageEmails: "daily", readReceipts: true },
+    }));
+    expect(await getMessagingSettings(read.supabase)).toEqual({
+      whoCanMessage: "nobody",
+      emailNotifications: true,
+      messageEmails: "daily",
+      readReceipts: true,
+    });
 
     const save = client(() => ({ data: { status: "ok", settings: { whoCanMessage: "verified_companies" } } }));
     expect((await saveMessagingSettings(save.supabase, { whoCanMessage: "verified_companies" }))?.whoCanMessage).toBe("verified_companies");
@@ -369,5 +380,115 @@ describe("cron and moderation", () => {
     expect(await listMessagingRestrictions(supabase)).toEqual([
       { userId: ID, person: expect.objectContaining({ username: "spam" }), scope: "all", until: null, reason: "x", source: "system", createdAt: "t" },
     ]);
+  });
+});
+
+describe("editing, deleting and search (13.3)", () => {
+  it("edits one's own message and says why not", async () => {
+    const ok = client(() => ({ data: { status: "ok", changed: true, message_id: "m1" } }));
+    expect(await editMessage(ok.supabase, "m1", "New text")).toEqual({ ok: true, changed: true });
+    expect(ok.calls[0]).toEqual({ fn: "edit_message", args: { p_message_id: "m1", p_body: "New text" } });
+
+    const late = client(() => ({ data: { status: "edit_window_passed" } }));
+    expect(await editMessage(late.supabase, "m1", "x")).toEqual({ ok: false, code: "edit_window_passed", categories: [] });
+
+    const blocked = client(() => ({ data: { status: "moderation_blocked", categories: ["hate", 3] } }));
+    expect(await editMessage(blocked.supabase, "m1", "x")).toEqual({ ok: false, code: "moderation_blocked", categories: ["hate"] });
+
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const broken = client(() => ({ error: { message: "no function" } }));
+    expect(await editMessage(broken.supabase, "m1", "x")).toEqual({ ok: false, code: "failed", categories: [] });
+    spy.mockRestore();
+  });
+
+  it("deletes one's own message and hands back the emails to cancel", async () => {
+    const ok = client(() => ({ data: { status: "ok", changed: true, cancel_email_ids: ["re_1", "", 4] } }));
+    expect(await deleteMessage(ok.supabase, "m1")).toEqual({ ok: true, changed: true, cancelEmailIds: ["re_1"] });
+    expect(ok.calls[0]).toEqual({ fn: "delete_message", args: { p_message_id: "m1" } });
+
+    expect(await deleteMessage(client(() => ({ data: { status: "not_found" } })).supabase, "m1")).toEqual({ ok: false, code: "not_found" });
+    expect(await deleteMessage(client(() => ({ data: { status: "unauthorized" } })).supabase, "m1")).toEqual({
+      ok: false,
+      code: "unauthorized",
+    });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(await deleteMessage(client(() => ({ error: { message: "x" } })).supabase, "m1")).toEqual({ ok: false, code: "failed" });
+    spy.mockRestore();
+  });
+
+  it("searches the caller's messages or a team inbox", async () => {
+    const { supabase, calls } = client(() => ({
+      data: [
+        { conversation_id: ID, kind: "direct", side: "self", message_id: null, created_at: "t" },
+        { conversation_id: ID, kind: "direct", side: "self", message_id: "m3", seq: 3, snippet: "needle", from_my_side: false, created_at: "t" },
+        { nope: true },
+      ],
+    }));
+    const results = await searchMessages(supabase, "needle", COMPANY);
+    expect(calls[0]).toEqual({ fn: "search_messages", args: { p_query: "needle", p_company_id: COMPANY, p_limit: 30 } });
+    expect(results.map((result) => result.messageId)).toEqual([null, "m3"]);
+
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(await searchMessages(client(() => ({ error: { message: "x" } })).supabase, "needle")).toEqual([]);
+    spy.mockRestore();
+  });
+});
+
+describe("the daily message email (13.3)", () => {
+  function adminWith(rpc: Rpc) {
+    const created = client(rpc);
+    holder.admin = created.mock;
+    return created;
+  }
+
+  const row = (userId: string, patch: Record<string, unknown> = {}) => ({
+    user_id: userId,
+    conversations: 3,
+    messages: 5,
+    requests: 1,
+    senders: ["Olena", "Acme", ""],
+    ...patch,
+  });
+
+  it("emails each person once, with counts and names, and marks only those sent", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-key");
+    vi.mocked(sendEmail).mockResolvedValueOnce({ sent: true, id: "re_1" }).mockResolvedValueOnce({ sent: false, error: "status_500" });
+    const { calls } = adminWith((fn) => (fn === "message_digest_candidates" ? { data: [row(ID), row(OTHER)] } : { data: 1 }));
+
+    expect(await runMessageDigests()).toEqual({ candidates: 2, sent: 1, failed: 1 });
+
+    expect(sendEmail).toHaveBeenCalledTimes(2);
+    const first = vi.mocked(sendEmail).mock.calls[0][0];
+    expect(first.to).toBe("olena@example.com");
+    expect(first.subject).toBe("5 нових повідомлень на Search Talent");
+    expect(first.text).toContain("Olena, Acme");
+    expect(first.html).toContain("/uk/messages");
+    expect(first.headers?.["List-Unsubscribe"]).toContain("/api/email-unsubscribe?k=messages");
+    expect(calls.at(-1)).toEqual({ fn: "mark_message_digests_sent", args: { p_user_ids: [ID] } });
+    vi.unstubAllEnvs();
+  });
+
+  it("skips an unconfirmed address but moves its mark, and survives a failure", async () => {
+    vi.mocked(loadEmailRecipient).mockResolvedValueOnce({ email: "x@y.z", locale: "en", name: "", emailConfirmed: false });
+    const { calls } = adminWith((fn) => (fn === "message_digest_candidates" ? { data: [row(ID)] } : { data: 1 }));
+    expect(await runMessageDigests()).toEqual({ candidates: 1, sent: 0, failed: 0 });
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(calls.at(-1)).toEqual({ fn: "mark_message_digests_sent", args: { p_user_ids: [ID] } });
+
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.mocked(loadEmailRecipient).mockRejectedValueOnce(new Error("auth down"));
+    const second = adminWith((fn) => (fn === "message_digest_candidates" ? { data: [row(ID)] } : { data: 1 }));
+    expect(await runMessageDigests()).toEqual({ candidates: 1, sent: 0, failed: 1 });
+    expect(second.calls.some((call) => call.fn === "mark_message_digests_sent")).toBe(false);
+    spy.mockRestore();
+  });
+
+  it("does nothing without the service key and throws when the database fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    holder.admin = null;
+    expect(await runMessageDigests()).toEqual({ candidates: 0, sent: 0, failed: 0 });
+    warn.mockRestore();
+    adminWith(() => ({ error: { message: "no function" } }));
+    await expect(runMessageDigests()).rejects.toThrow("no function");
   });
 });

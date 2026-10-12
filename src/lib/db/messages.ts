@@ -1,16 +1,18 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { turnOffEmails } from "@/lib/db/email-preferences";
 import { loadEmailRecipient } from "@/lib/db/email-recipients";
+import { oneClickUnsubscribeHeaders } from "@/lib/email-unsubscribe-token";
 import { cancelScheduledEmail, sendEmail } from "@/lib/email/resend";
-import { buildNewMessageEmail } from "@/lib/email/templates";
+import { buildMessageDigestEmail, buildNewMessageEmail } from "@/lib/email/templates";
 import type { Locale } from "@/lib/i18n/config";
-import { buildMessageEmailOneClickUrl } from "@/lib/message-email-token";
 import {
   buildConversationPath,
   CONVERSATIONS_PAGE_SIZE,
   EMPTY_MESSAGING_SUMMARY,
   MESSAGES_PAGE_SIZE,
+  MESSAGES_PATH,
   MESSAGES_SETTINGS_PATH,
   normalizeBlockRow,
   normalizeConversationRow,
@@ -19,6 +21,7 @@ import {
   normalizeMessagingSettings,
   normalizeMessagingSummary,
   normalizePerson,
+  normalizeSearchResult,
   toRefusalCode,
   type ChatMessage,
   type ConversationBox,
@@ -26,6 +29,7 @@ import {
   type ConversationView,
   type MessageBlock,
   type MessageRefusalCode,
+  type MessageSearchResult,
   type MessagingPerson,
   type MessagingSettings,
   type MessagingSummary,
@@ -312,6 +316,93 @@ export async function sendMessage(
   return toSendOutcome(data, error);
 }
 
+export type EditOutcome =
+  | { ok: true; changed: boolean }
+  | { ok: false; code: MessageRefusalCode; categories: string[] };
+
+/**
+ * A new text for the caller's own message. edit_message() allows it within
+ * 15 minutes of sending, at most 10 times, through the same text checks as a
+ * new message; it keeps the first text for a report's snapshot.
+ */
+export async function editMessage(supabase: SupabaseClient, messageId: string, body: string): Promise<EditOutcome> {
+  const { data, error } = await supabase.rpc("edit_message", { p_message_id: messageId, p_body: body });
+
+  if (error || !data || typeof data !== "object") {
+    if (error) {
+      console.error("[messages] edit failed:", error.message);
+    }
+    return { ok: false, code: "failed", categories: [] };
+  }
+
+  const row = data as Record<string, unknown>;
+
+  if (row.status !== "ok") {
+    return {
+      ok: false,
+      code: toRefusalCode(row.status),
+      categories: Array.isArray(row.categories) ? row.categories.filter((item): item is string => typeof item === "string") : [],
+    };
+  }
+
+  return { ok: true, changed: row.changed === true };
+}
+
+/**
+ * Deletes the caller's own message (both sides see "Message deleted"; the
+ * text stays 60 days for a report). Returns the Resend ids of emails that
+ * were only about it, for cancelMessageEmails().
+ */
+export async function deleteMessage(
+  supabase: SupabaseClient,
+  messageId: string,
+): Promise<{ ok: true; changed: boolean; cancelEmailIds: string[] } | { ok: false; code: "not_found" | "unauthorized" | "failed" }> {
+  const { data, error } = await supabase.rpc("delete_message", { p_message_id: messageId });
+
+  if (error || !data || typeof data !== "object") {
+    if (error) {
+      console.error("[messages] delete failed:", error.message);
+    }
+    return { ok: false, code: "failed" };
+  }
+
+  const row = data as { status?: unknown; changed?: unknown; cancel_email_ids?: unknown };
+
+  if (row.status !== "ok") {
+    return { ok: false, code: row.status === "unauthorized" ? "unauthorized" : "not_found" };
+  }
+
+  return {
+    ok: true,
+    changed: row.changed === true,
+    cancelEmailIds: Array.isArray(row.cancel_email_ids)
+      ? row.cancel_email_ids.filter((id): id is string => typeof id === "string" && id !== "")
+      : [],
+  };
+}
+
+/** Search in the caller's messages (or a company's team inbox). Empty on any error. */
+export async function searchMessages(
+  supabase: SupabaseClient,
+  query: string,
+  companyId: string | null = null,
+): Promise<MessageSearchResult[]> {
+  const { data, error } = await supabase.rpc("search_messages", {
+    p_query: query,
+    p_company_id: companyId,
+    p_limit: 30,
+  });
+
+  if (error || !Array.isArray(data)) {
+    if (error) {
+      console.error("[messages] search failed:", error.message);
+    }
+    return [];
+  }
+
+  return data.map(normalizeSearchResult).filter((row): row is MessageSearchResult => Boolean(row));
+}
+
 /**
  * The caller read up to `seq` (everything when omitted). Returns the Resend
  * ids of the scheduled emails this made pointless, for cancelMessageEmails().
@@ -470,14 +561,11 @@ export async function scheduleMessageEmails(messageId: string, now: number = Dat
             settingsUrl: absoluteUrl(recipient.locale, MESSAGES_SETTINGS_PATH),
             locale: recipient.locale,
           });
-          const oneClick = buildMessageEmailOneClickUrl(job.recipient_user_id);
           const result = await sendEmail({
             to: recipient.email,
             ...message,
             scheduledAt,
-            headers: oneClick
-              ? { "List-Unsubscribe": `<${oneClick}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
-              : undefined,
+            headers: oneClickUnsubscribeHeaders("messages", job.recipient_user_id),
           });
           resendId = result.sent && result.id ? result.id : null;
         }
@@ -499,16 +587,92 @@ export async function cancelMessageEmails(ids: string[]): Promise<void> {
 }
 
 /** The one-click "stop these emails" link. False without the service key or on an error. */
-export async function turnOffMessageEmails(userId: string): Promise<boolean> {
-  const admin = createAdminClient();
-  if (!admin) return false;
+export function turnOffMessageEmails(userId: string): Promise<boolean> {
+  return turnOffEmails("messages", userId);
+}
 
-  const { error } = await admin.rpc("turn_off_message_emails", { p_user_id: userId });
-  if (error) {
-    console.error("[messages] turning emails off failed:", error.message);
-    return false;
+type DigestRow = {
+  user_id: string;
+  conversations: number;
+  messages: number;
+  requests: number;
+  senders: string[] | null;
+};
+
+export type MessageDigestRun = { candidates: number; sent: number; failed: number };
+
+/**
+ * The morning email for people who chose "once a day" (part of the daily
+ * cron). The database says who has unread messages since their last one, as
+ * counts and names only; each gets one email without any text. Only the
+ * people whose email went out (or who have no address to write to) are
+ * marked: a failed email tries again the next morning.
+ */
+export async function runMessageDigests(): Promise<MessageDigestRun> {
+  const admin = createAdminClient();
+
+  if (!admin) {
+    console.warn("[messages] SUPABASE_SERVICE_ROLE_KEY missing — no daily emails");
+    return { candidates: 0, sent: 0, failed: 0 };
   }
-  return true;
+
+  const { data, error } = await admin.rpc("message_digest_candidates");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const rows = (data ?? []) as DigestRow[];
+  const done: string[] = [];
+  let sent = 0;
+  let failed = 0;
+
+  for (const row of rows) {
+    try {
+      const recipient = await loadEmailRecipient(admin, row.user_id);
+
+      // Never to an address nobody confirmed: it may not be theirs.
+      if (!recipient?.emailConfirmed) {
+        done.push(row.user_id);
+        continue;
+      }
+
+      const message = buildMessageDigestEmail({
+        recipientName: recipient.name,
+        conversations: Number(row.conversations) || 0,
+        messages: Number(row.messages) || 0,
+        requests: Number(row.requests) || 0,
+        senders: Array.isArray(row.senders) ? row.senders.filter((name) => typeof name === "string" && name !== "") : [],
+        url: absoluteUrl(recipient.locale, MESSAGES_PATH),
+        settingsUrl: absoluteUrl(recipient.locale, MESSAGES_SETTINGS_PATH),
+        locale: recipient.locale,
+      });
+      const result = await sendEmail({
+        to: recipient.email,
+        ...message,
+        headers: oneClickUnsubscribeHeaders("messages", row.user_id),
+      });
+
+      if (result.sent) {
+        sent += 1;
+        done.push(row.user_id);
+      } else {
+        failed += 1;
+      }
+    } catch (jobError) {
+      failed += 1;
+      console.error("[messages] daily email failed", { userId: row.user_id, error: jobError });
+    }
+  }
+
+  if (done.length > 0) {
+    const { error: markError } = await admin.rpc("mark_message_digests_sent", { p_user_ids: done });
+    if (markError) {
+      console.error("[messages] could not mark the daily emails:", markError.message);
+    }
+  }
+
+  return { candidates: rows.length, sent, failed };
 }
 
 /**

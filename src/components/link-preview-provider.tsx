@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import LinkPreviewCard, {
   LinkPreviewSkeleton,
 } from "@/components/link-preview-card";
-import { apiFetch } from "@/lib/api-client";
 import {
   getLocaleFromPathname,
   stripLocaleFromPathname,
@@ -16,6 +15,7 @@ import {
   parseLinkPreviewHref,
   type LinkPreview,
 } from "@/lib/link-preview";
+import { getCachedLinkPreview, loadLinkPreview } from "@/lib/link-preview-client";
 
 /**
  * Hover previews for internal links.
@@ -69,21 +69,6 @@ const CLOSE_DELAY_MS = 140;
 /** Keyboard users asked for the card explicitly by focusing the link. */
 const FOCUS_OPEN_DELAY_MS = 120;
 
-/**
- * Resolved previews live for the whole session: they are public, cheap, and
- * re-hovering the same @mention in a comment thread is the common case. `null`
- * (a miss) is cached too, so a broken link is not re-requested on every hover.
- */
-const previewCache = new Map<string, LinkPreview | null>();
-const inflightRequests = new Map<string, Promise<LinkPreview | null>>();
-
-/**
- * Ceiling on the session cache. Reaching it takes hundreds of distinct links in
- * one session, so dropping everything is simpler than tracking recency and
- * costs at most one refetch per link afterwards.
- */
-const CACHE_LIMIT = 250;
-
 type PanelState = {
   cacheKey: string;
   status: "loading" | "ready";
@@ -96,36 +81,6 @@ type PanelPosition = {
   top?: number;
   bottom?: number;
 };
-
-function loadPreview(
-  href: string,
-  locale: Locale,
-  cacheKey: string,
-): Promise<LinkPreview | null> {
-  const inflight = inflightRequests.get(cacheKey);
-  if (inflight) {
-    return inflight;
-  }
-
-  const request = apiFetch<{ preview: LinkPreview | null }>(
-    `/api/link-preview?href=${encodeURIComponent(href)}&locale=${locale}`,
-  )
-    .then((result) => (result.ok ? result.data.preview ?? null : null))
-    .catch(() => null)
-    .then((preview) => {
-      if (previewCache.size >= CACHE_LIMIT) {
-        previewCache.clear();
-      }
-      previewCache.set(cacheKey, preview);
-      return preview;
-    })
-    .finally(() => {
-      inflightRequests.delete(cacheKey);
-    });
-
-  inflightRequests.set(cacheKey, request);
-  return request;
-}
 
 /**
  * Walks up from the event target to the nearest anchor and decides whether it
@@ -359,9 +314,9 @@ export default function LinkPreviewProvider({
         target.locale ?? getLocaleFromPathname(currentPath);
       const cacheKey = linkPreviewCacheKey(target, locale);
 
-      if (previewCache.has(cacheKey)) {
-        const cached = previewCache.get(cacheKey) ?? null;
+      const cached = getCachedLinkPreview(cacheKey);
 
+      if (cached !== undefined) {
         // A cached miss stays silent: no card, no flash of a skeleton.
         if (!cached) {
           close();
@@ -381,7 +336,7 @@ export default function LinkPreviewProvider({
       setPanel({ cacheKey, status: "loading", preview: null });
       setPosition(computePosition(anchorRect(anchor, pointerY)));
 
-      void loadPreview(href, locale, cacheKey).then((preview) => {
+      void loadLinkPreview(href, locale, cacheKey).then((preview) => {
         // The reader may have moved on to another link while we waited.
         if (anchorElementRef.current !== anchor) {
           return;

@@ -31,6 +31,15 @@ describe("parseLinkPreviewHref", () => {
     // News posts are articles with an admin-only category.
     expect(parseLinkPreviewHref("/en/news/release-2")?.kind).toBe("article");
     expect(parseLinkPreviewHref("/en/polls/best-stack")?.kind).toBe("poll");
+    expect(parseLinkPreviewHref("/uk/jobs/junior-designer")).toEqual({ kind: "vacancy", key: "junior-designer", locale: "uk" });
+    expect(parseLinkPreviewHref("/companies/acme")).toEqual({ kind: "company", key: "acme", locale: null });
+  });
+
+  it("keeps the vacancy and company editors out", () => {
+    expect(parseLinkPreviewHref("/uk/jobs/new")).toBeNull();
+    expect(parseLinkPreviewHref("/uk/companies/new")).toBeNull();
+    expect(parseLinkPreviewHref("/uk/companies/edit/1")).toBeNull();
+    expect(parseLinkPreviewHref("/uk/jobs")).toBeNull();
   });
 
   it("strips a query string and a fragment", () => {

@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ContentReportButton from "@/components/content-report-button";
+import MessageLinkCards from "@/components/message-link-cards";
 import MessagingAvatar from "@/components/messaging-avatar";
 import { useMessagingEvents } from "@/components/messaging-realtime-provider";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +14,7 @@ import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import {
+  canEditMessage,
   conversationPartner,
   hasExternalLink,
   lastReadOwnMessageId,
@@ -28,6 +30,7 @@ import {
   toRefusalCode,
   type ChatMessage,
   type ConversationView,
+  type MessageRefusalCode,
 } from "@/lib/messages";
 import {
   describeMessageEvent,
@@ -38,9 +41,15 @@ import { getModerationCopy } from "@/lib/moderation-copy";
 
 type Pending = { clientId: string; body: string; status: "sending" | "failed"; error: string | null };
 
+type Editing = { id: string; body: string; saving: boolean; error: string | null };
+
 type ConversationResponse = { conversation: ConversationView; messages: ChatMessage[] };
 
+type MessageResponse = { changed: boolean; message: ChatMessage | null };
+
 const NEAR_BOTTOM_PX = 140;
+/** How long a message a search opened stays marked. */
+const FOCUS_HIGHLIGHT_MS = 2500;
 
 function MessageText({ text, onDark }: { text: string; onDark: boolean }) {
   const copy = useDictionary().messages;
@@ -73,7 +82,9 @@ function MessageText({ text, onDark }: { text: string; onDark: boolean }) {
  * One conversation: the header (who, the applications it is about, the
  * menu), the messages by day, a request's choices, and the box to write in.
  * New messages arrive over the live connection (or every few seconds without
- * it); the conversation is marked read only while the tab is visible.
+ * it); the conversation is marked read only while the tab is visible. One's
+ * own messages can be edited for 15 minutes and deleted at any time; links to
+ * this site's pages get a card.
  */
 export default function ConversationThread({
   initialView,
@@ -81,13 +92,19 @@ export default function ConversationThread({
   locale,
   listQuery,
   isAuthenticated,
+  focusSeq = null,
+  initialHasOlder,
 }: {
   initialView: ConversationView;
   initialMessages: ChatMessage[];
+  /** Whether earlier messages exist; by default, whether the first page was full. */
+  initialHasOlder?: boolean;
   locale: string;
-  /** The list's ?box=&company=, for "All conversations". */
+  /** The list's ?box=&company=&q=, for "All conversations". */
   listQuery: string;
   isAuthenticated: boolean;
+  /** A search result opened the conversation at this message. */
+  focusSeq?: number | null;
 }) {
   const dictionary = useDictionary();
   const copy = dictionary.messages;
@@ -95,12 +112,14 @@ export default function ConversationThread({
   const router = useLocalizedRouter();
   const toast = useToast();
   const composerId = useId();
+  const editorId = useId();
   const menuId = useId();
+  const focusMessage = focusSeq === null ? null : (initialMessages.find((message) => message.seq === focusSeq) ?? null);
 
   const [view, setView] = useState(initialView);
   const [messages, setMessages] = useState(initialMessages);
   const [pending, setPending] = useState<Pending[]>([]);
-  const [hasOlder, setHasOlder] = useState(initialMessages.length >= 50);
+  const [hasOlder, setHasOlder] = useState(initialHasOlder ?? initialMessages.length >= 50);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [body, setBody] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -109,10 +128,17 @@ export default function ConversationThread({
   const [confirm, setConfirm] = useState<"clear" | "block" | null>(null);
   const [reporting, setReporting] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  // One's own message: its actions row, the one being edited, the one to delete.
+  const [actionsFor, setActionsFor] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ChatMessage | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(focusMessage?.id ?? null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const logRef = useRef<HTMLOListElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const stickToBottom = useRef(true);
+  // Opened at a found message: stay there instead of jumping to the end.
+  const stickToBottom = useRef(focusMessage === null);
   const restoreFrom = useRef<number | null>(null);
   const readTimer = useRef<number | null>(null);
   const lastMarked = useRef(initialView.myLastReadSeq);
@@ -249,6 +275,30 @@ export default function ConversationThread({
     stickToBottom.current = node.scrollHeight - node.scrollTop - node.clientHeight < NEAR_BOTTOM_PX;
   };
 
+  // A link card or an edit can grow a message after it rendered: stay at the
+  // end when the reader was there.
+  useEffect(() => {
+    const list = logRef.current;
+    const node = scrollRef.current;
+    if (!list || !node || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (stickToBottom.current) node.scrollTop = node.scrollHeight;
+    });
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, []);
+
+  // Opened from a search: bring the found message into view and mark it for
+  // a moment.
+  useEffect(() => {
+    if (!focusMessage) return;
+    document.getElementById(`message-${focusMessage.id}`)?.scrollIntoView({ block: "center" });
+    const timer = window.setTimeout(() => setHighlightId(null), FOCUS_HIGHLIGHT_MS);
+    return () => window.clearTimeout(timer);
+    // Only once, for the message the page was opened at.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // --- Sending -------------------------------------------------------------------
 
   async function deliver(item: Pending) {
@@ -362,6 +412,93 @@ export default function ConversationThread({
       document.removeEventListener("keydown", onKey);
     };
   }, [menuOpen, menuId]);
+
+  // --- One's own messages: edit and delete ------------------------------------------
+
+  // The actions row closes on an outside click and Escape.
+  useEffect(() => {
+    if (!actionsFor) return;
+    const onPointer = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Element | null;
+      if (!target?.closest?.(`[data-message-actions="${actionsFor}"]`)) setActionsFor(null);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActionsFor(null);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("touchstart", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("touchstart", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [actionsFor]);
+
+  const editRefusal = (code: MessageRefusalCode) => (code === "failed" ? copy.toasts.failed : copy.errors[code]);
+
+  function startEditing(message: ChatMessage) {
+    setActionsFor(null);
+    setEditing({ id: message.id, body: message.body ?? "", saving: false, error: null });
+  }
+
+  async function saveEditing() {
+    if (!editing || editing.saving) return;
+    const text = editing.body.replace(/\r/g, "").trim();
+    if (!text || text.length > MESSAGE_MAX_LENGTH) return;
+
+    const id = editing.id;
+    setEditing({ ...editing, saving: true, error: null });
+    const result = await apiFetch<MessageResponse>(`/api/messages/message/${id}`, { method: "PATCH", body: { body: text } });
+
+    if (!result.ok) {
+      const error = editRefusal(toRefusalCode(result.code));
+      setEditing((current) => (current && current.id === id ? { ...current, saving: false, error } : current));
+      return;
+    }
+
+    const updated = result.data.message;
+    if (updated) setMessages((current) => mergeMessages(current, [updated]));
+    setEditing((current) => (current && current.id === id ? null : current));
+  }
+
+  function onEditorKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setEditing(null);
+      return;
+    }
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+    event.preventDefault();
+    void saveEditing();
+  }
+
+  async function deleteOwnMessage() {
+    const target = deleteTarget;
+    if (!target) return;
+
+    setBusy("delete-message");
+    const result = await apiFetch<MessageResponse>(`/api/messages/message/${target.id}`, { method: "DELETE" });
+    setBusy(null);
+    setDeleteTarget(null);
+
+    if (!result.ok) {
+      toast.error(copy.toasts.failed);
+      return;
+    }
+
+    const updated: ChatMessage = result.data.message ?? {
+      ...target,
+      body: "",
+      removed: true,
+      removedBy: "author",
+      editableUntil: null,
+    };
+    setMessages((current) => mergeMessages(current, [updated]));
+    if (editing?.id === target.id) setEditing(null);
+    toast.success(copy.toasts.messageDeleted);
+  }
 
   const blockedByMe = view.blocked === "by_me";
 
@@ -528,7 +665,7 @@ export default function ConversationThread({
           </div>
         ) : null}
 
-        <ol role="log" aria-live="polite" aria-label={copy.thread.live} className="space-y-1">
+        <ol ref={logRef} role="log" aria-live="polite" aria-label={copy.thread.live} className="space-y-1">
           {rows.map(({ message, showDay, showAuthor }) => {
             if (message.kind === "event") {
               return (
@@ -544,11 +681,17 @@ export default function ConversationThread({
             const bubble = onDark
               ? "bg-[color:var(--foreground)] text-[color:var(--background)]"
               : "bg-[color:var(--surface-muted)] text-[color:var(--foreground)]";
+            // Only one's own text, while it is there; editing only in its window.
+            const ownLive = message.mine && !message.removed && message.body !== null;
+            const editable = ownLive && canEditMessage(message);
+            const editState = editing?.id === message.id ? editing : null;
+            const isEditing = editState !== null;
+            const editText = editState ? editState.body.replace(/\r/g, "").trim() : "";
 
             return (
-              <li key={message.id}>
+              <li key={message.id} id={`message-${message.id}`}>
                 {showDay ? <DaySeparator label={formatMessageDay(message.createdAt, locale, copy)} /> : null}
-                <div className={`flex flex-col ${message.fromMySide ? "items-end" : "items-start"}`}>
+                <div className={`group/message flex flex-col ${message.fromMySide ? "items-end" : "items-start"}`}>
                   {showAuthor ? (
                     <p className="mt-2 mb-1 px-1 text-xs app-soft">
                       {view.side === "company"
@@ -564,18 +707,117 @@ export default function ConversationThread({
                       {copy.thread.scamWarning}
                     </p>
                   ) : null}
-                  <div className={`max-w-[min(32rem,85%)] rounded-2xl px-3.5 py-2 ${bubble}`}>
-                    {message.removed ? (
-                      <p className="text-sm italic opacity-70">{copy.thread.removed}</p>
-                    ) : message.body === null ? (
-                      <p className="text-sm italic opacity-70">{copy.thread.held}</p>
-                    ) : (
-                      <MessageText text={message.body} onDark={onDark} />
-                    )}
-                    {message.held && message.mine && message.body !== null ? (
-                      <p className="mt-1 text-xs opacity-70">{copy.thread.heldOwn}</p>
-                    ) : null}
-                  </div>
+                  {editState ? (
+                    <form
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void saveEditing();
+                      }}
+                      className="w-full max-w-[min(32rem,85%)] space-y-2"
+                    >
+                      <label htmlFor={editorId} className="sr-only">
+                        {copy.thread.editLabel}
+                      </label>
+                      <FormTextarea
+                        id={editorId}
+                        value={editState.body}
+                        onChange={(event) => setEditing({ ...editState, body: event.target.value, error: null })}
+                        onKeyDown={onEditorKeyDown}
+                        rows={1}
+                        maxAutoHeight={220}
+                        maxLength={MESSAGE_MAX_LENGTH + 200}
+                        autoFocus
+                        aria-invalid={editText.length > MESSAGE_MAX_LENGTH || undefined}
+                        className="w-full resize-none rounded-2xl bg-[color:var(--surface-muted)] px-3.5 py-2 text-sm leading-6 text-[color:var(--foreground)]"
+                      />
+                      {view.state === "request" && hasExternalLink(editText) ? (
+                        <p className="text-xs text-amber-700 dark:text-amber-400">{copy.composer.linkWarning}</p>
+                      ) : null}
+                      {editState.error ? (
+                        <p role="alert" className="text-xs text-rose-600 dark:text-rose-400">
+                          {editState.error}
+                        </p>
+                      ) : null}
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="mr-auto hidden text-[11px] app-soft sm:block">{copy.thread.editHint}</span>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>
+                          {copy.thread.cancelEdit}
+                        </Button>
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={editState.saving || !editText || editText.length > MESSAGE_MAX_LENGTH}
+                        >
+                          {editState.saving ? copy.thread.saving : copy.thread.save}
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div
+                      data-message-actions={ownLive ? message.id : undefined}
+                      className={`flex max-w-[min(32rem,85%)] items-center gap-1 ${message.fromMySide ? "flex-row-reverse" : ""}`}
+                    >
+                      <div
+                        className={`min-w-0 rounded-2xl px-3.5 py-2 transition-shadow ${bubble} ${
+                          highlightId === message.id ? "ring-2 ring-[color:var(--brand)] ring-offset-2 ring-offset-[color:var(--surface)]" : ""
+                        }`}
+                      >
+                        {message.removed ? (
+                          <p className="text-sm italic opacity-70">
+                            {message.removedBy === "author" ? copy.thread.deleted : copy.thread.removed}
+                          </p>
+                        ) : message.body === null ? (
+                          <p className="text-sm italic opacity-70">{copy.thread.held}</p>
+                        ) : (
+                          <MessageText text={message.body} onDark={onDark} />
+                        )}
+                        {message.held && message.mine && message.body !== null ? (
+                          <p className="mt-1 text-xs opacity-70">{copy.thread.heldOwn}</p>
+                        ) : null}
+                      </div>
+                      {ownLive ? (
+                        <button
+                          type="button"
+                          aria-label={copy.thread.messageActions}
+                          aria-expanded={actionsFor === message.id}
+                          onClick={() => setActionsFor((current) => (current === message.id ? null : message.id))}
+                          className={`inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full app-soft transition hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)] focus-visible:opacity-100 group-hover/message:opacity-100 [@media(hover:none)]:opacity-100 ${
+                            actionsFor === message.id ? "opacity-100" : "opacity-0"
+                          }`}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <circle cx="5" cy="12" r="1.7" />
+                            <circle cx="12" cy="12" r="1.7" />
+                            <circle cx="19" cy="12" r="1.7" />
+                          </svg>
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                  {actionsFor === message.id && ownLive && !isEditing ? (
+                    <div data-message-actions={message.id} className="mt-1 flex items-center gap-1 px-1">
+                      {editable ? (
+                        <button
+                          type="button"
+                          onClick={() => startEditing(message)}
+                          className="cursor-pointer rounded-full px-2.5 py-1 text-xs font-medium text-[color:var(--foreground)] transition-colors hover:bg-[color:var(--surface-muted)]"
+                        >
+                          {copy.thread.edit}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActionsFor(null);
+                          setDeleteTarget(message);
+                        }}
+                        className="cursor-pointer rounded-full px-2.5 py-1 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-500/10 dark:text-rose-400"
+                      >
+                        {copy.thread.delete}
+                      </button>
+                    </div>
+                  ) : null}
+                  {!message.removed && message.body && !isEditing ? <MessageLinkCards text={message.body} /> : null}
                   <p className="mt-0.5 mb-1.5 flex flex-wrap items-center gap-x-2 px-1 text-[11px] app-soft">
                     <time dateTime={message.createdAt}>{formatMessageTime(message.createdAt, locale)}</time>
                     {message.editedAt ? <span>{copy.thread.edited}</span> : null}
@@ -705,6 +947,17 @@ export default function ConversationThread({
         pendingLabel={copy.confirm.working}
         onConfirm={() => void act("block", true)}
         onCancel={() => setConfirm(null)}
+      />
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title={copy.confirm.deleteMessageTitle}
+        description={copy.confirm.deleteMessageText}
+        confirmLabel={copy.confirm.deleteMessageConfirm}
+        cancelLabel={copy.confirm.cancel}
+        pending={busy === "delete-message"}
+        pendingLabel={copy.confirm.working}
+        onConfirm={() => void deleteOwnMessage()}
+        onCancel={() => setDeleteTarget(null)}
       />
       <ContentReportButton
         copy={moderationCopy}

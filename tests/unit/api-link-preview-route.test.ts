@@ -369,6 +369,113 @@ describe("GET /api/link-preview", () => {
     });
   });
 
+  const vacancyRow = (patch: Record<string, unknown> = {}) => ({
+    id: "v1",
+    slug: "junior-designer",
+    title: "Junior designer",
+    kind: "job",
+    hours: null,
+    work_formats: ["remote"],
+    city: null,
+    experience_level: null,
+    pay_min: 20000,
+    pay_max: 30000,
+    pay_currency: "uah",
+    pay_period: "month",
+    locale: "uk",
+    status: "published",
+    published_at: "2026-10-01T00:00:00Z",
+    expires_at: "2099-01-01T00:00:00Z",
+    moderation_status: "approved",
+    company_id: "c1",
+    company: { id: "c1", slug: "acme", name: "Acme", logo_url: "https://cdn.test/acme.png", verified_at: null, moderation_status: "approved" },
+    country: null,
+    category: null,
+    ...patch,
+  });
+
+  it("builds a vacancy card: the company, the facts, the pay", async () => {
+    setMock((call) => (call.table === "vacancies" ? { data: vacancyRow() } : {}));
+
+    const preview = (await (await GET(req("/en/jobs/junior-designer"))).json()).preview;
+
+    expect(preview).toMatchObject({
+      kind: "vacancy",
+      eyebrow: "Vacancy",
+      title: "Junior designer",
+      subtitle: "Acme",
+      imageUrl: "https://cdn.test/acme.png",
+      imageShape: "avatar",
+      chips: [],
+    });
+    expect(preview.badge).toContain("UAH");
+    expect(preview.description).toContain("Remote");
+  });
+
+  it("says when a vacancy no longer hires, and shows none from a hidden company", async () => {
+    setMock((call) => (call.table === "vacancies" ? { data: vacancyRow({ status: "closed" }) } : {}));
+    expect((await (await GET(req("/uk/jobs/junior-designer"))).json()).preview.chips).toEqual(["Набір закрито"]);
+
+    setMock((call) =>
+      call.table === "vacancies"
+        ? { data: vacancyRow({ company: { ...vacancyRow().company, moderation_status: "removed" } }) }
+        : {},
+    );
+    expect((await (await GET(req("/uk/jobs/junior-designer"))).json()).preview).toBeNull();
+
+    setMock((call) => (call.table === "vacancies" ? { data: vacancyRow({ status: "draft" }) } : {}));
+    expect((await (await GET(req("/uk/jobs/junior-designer"))).json()).preview).toBeNull();
+  });
+
+  it("builds a company card with its open vacancies", async () => {
+    const mock = setMock((call) => {
+      if (call.table === "companies") {
+        return {
+          data: {
+            id: "c1",
+            slug: "acme",
+            name: "Acme",
+            description: "<p>We build tools.</p>",
+            city: "Lviv",
+            logo_url: null,
+            verified_at: "2026-10-01T00:00:00Z",
+            moderation_status: "approved",
+          },
+        };
+      }
+      if (call.table === "vacancies") return { count: 2 };
+      return {};
+    });
+
+    const preview = (await (await GET(req("/uk/companies/acme"))).json()).preview;
+
+    expect(preview).toMatchObject({
+      kind: "company",
+      eyebrow: "Компанія",
+      title: "Acme",
+      subtitle: "Lviv",
+      description: "We build tools.",
+      chips: ["Перевірена", "Відкритих вакансій: 2"],
+    });
+    const vacancies = mock.calls.find((call) => call.table === "vacancies");
+    expect(vacancies?.filters).toEqual(
+      expect.arrayContaining([
+        { method: "eq", args: ["company_id", "c1"] },
+        { method: "eq", args: ["status", "published"] },
+        { method: "eq", args: ["moderation_status", "approved"] },
+      ]),
+    );
+  });
+
+  it("shows no card for a hidden company", async () => {
+    setMock((call) =>
+      call.table === "companies"
+        ? { data: { id: "c1", slug: "acme", name: "Acme", moderation_status: "under_review" } }
+        : {},
+    );
+    expect((await (await GET(req("/uk/companies/acme"))).json()).preview).toBeNull();
+  });
+
   it("degrades to no card when a query fails", async () => {
     setMock(() => ({ error: { message: "boom" } }));
 

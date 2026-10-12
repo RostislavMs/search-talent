@@ -126,7 +126,10 @@ search-talent/
 - A first message to a stranger is a request: one message, no outside links, until they reply or accept (another try after 30 days). It is skipped when the person applied to the company's vacancy or follows the sender. An unverified company writes only to its applicants. Each person chooses who may write (everyone, verified companies, nobody new) and can block people and companies.
 - Every message is screened by `moderation_screen()`: hate, sexual content and link spam are refused; "pay first" / "move to Telegram" phrases go through with a warning for the recipient. Three different people blocking or reporting someone within a week turns off their new conversations until a moderator looks (`/admin/moderation` also lists and lifts these limits).
 - Live delivery: a trigger broadcasts `{conversation_id, message_id}` on the private Realtime topic `user:<id>` of everyone involved (ids only; the page reads the text through the API). The header badge polls like the bell; only the messages pages hold a live connection, with polling as the fallback.
-- Emails: a message still unread after 10 minutes sends one email per conversation (who wrote, never the text) — scheduled at Resend and cancelled if the conversation is read first; at most 10 a day, with a one-click unsubscribe.
+- Emails (`notification_preferences`): by default a message still unread after 10 minutes sends one email per conversation (who wrote, never the text) — scheduled at Resend and cancelled if the conversation is read first; at most 10 a day. A person can choose one morning email instead (the daily cron, `message_digest_candidates()`: counts and names only) or none; every email has a one-click unsubscribe.
+- Your own message can be edited for 15 minutes (up to 10 times, same checks as a new one; both sides see "edited") and deleted at any time ("Message deleted"). The text it was sent with, and the text of a deleted message, stay 60 days for a report's snapshot only, then the daily cron erases them; a request whose message was deleted leaves the recipient's requests.
+- Search (`search_messages()`): the texts you can see and the names of who you talk to, in your own conversations or a company's team inbox; a result opens the conversation at that message.
+- Links to profiles, projects, articles, polls, vacancies and companies on the site get a card under the message (the same `/api/link-preview` as the hover previews).
 - Conversations go 24 months after their last message (the daily cron); a deleted account takes its messages with it.
 
 ### Projects
@@ -164,7 +167,7 @@ search-talent/
 
 ### Social graph
 
-- Follow / unfollow with email digest (Resend, optional).
+- Follow / unfollow; the followed person gets an email (Resend) unless they turned it off on `/notifications/settings` — one per follower a month, at most 3 a day, decided by `claim_follower_email()`.
 - `/my-space/following` — personal feed of new articles & projects from followed authors.
 - `/my-space/followers` — list of people who follow you.
 - Bookmarks for both profiles and projects in `/my-space/saved`.
@@ -246,8 +249,9 @@ search-talent/
 | `/jobs/new`, `/jobs/edit/[id]` | Vacancy form (company team) |
 | `/analytics` | Platform-wide analytics |
 | `/notifications` | Inbox |
-| `/messages`, `/messages/[id]` | Conversations with people and companies |
-| `/messages/settings` | Who may write, emails, read receipts, blocked people |
+| `/notifications/settings` | Email settings: message emails (at once, once a day, never), follower emails, a way to the job alerts |
+| `/messages`, `/messages/[id]` | Conversations with people and companies; search; `?m=` opens at a message |
+| `/messages/settings` | Who may write, message emails, read receipts, blocked people |
 | `/profile/edit` | Profile editor (sections, presentation, GitHub link, account) |
 | `/projects/new`, `/projects/edit/[id]` | Project composer |
 | `/articles/new`, `/articles/edit/[id]` | Article composer |
@@ -332,7 +336,7 @@ search-talent/
 | POST | `/api/job-alerts` | Follow the `/jobs` filters, or switch on "Vacancies that fit me" (30/hour) |
 | PATCH/DELETE | `/api/job-alerts/[id]` | Switch an alert's email / stop following |
 | POST | `/api/job-alerts/unsubscribe` | Turn job alert emails off by the token from an email (RFC 8058 one-click) |
-| GET | `/api/cron/expire-vacancies` | Daily cron: mark ended vacancies, notify authors, delete applications 12 months after their vacancy closed, send the morning job alerts (`CRON_SECRET`) |
+| GET | `/api/cron/expire-vacancies` | Daily cron: mark ended vacancies, notify authors, delete applications 12 months after their vacancy closed, send the morning job alerts, empty the trash, tidy the messages and send the daily message emails (`CRON_SECRET`) |
 
 ### Projects
 
@@ -385,6 +389,10 @@ search-talent/
 | GET/POST | `/api/reactions` | Emoji reactions |
 | GET | `/api/mentions/suggest` | Mention autocomplete |
 | GET | `/api/notifications` | Inbox (+ `mark-read`, `unread-count`) |
+| GET/PATCH | `/api/email-preferences` | Message emails (`instant` / `daily` / `off`) and follower emails |
+| POST | `/api/email-unsubscribe` | One kind of email off by the token from an email (`k=messages` or `followers`, RFC 8058 one-click) |
+| GET | `/api/messages/search` | Search the caller's messages or a team inbox (`q`, `company`) |
+| PATCH/DELETE | `/api/messages/message/[id]` | Edit one's own message (15 minutes) / delete it |
 | POST | `/api/reports` | Report content |
 | POST | `/api/feedback` | Contact-form messages |
 | GET | `/api/meta` | Site-wide metadata (categories, etc.) |
@@ -523,6 +531,7 @@ pnpm dev                         # http://localhost:3000
 | `GEMINI_API_KEY` | optional | Enables AI summaries and GitHub drafts |
 | `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` | optional | Enables GitHub project sync |
 | `GITLAB_OAUTH_CLIENT_ID` / `GITLAB_OAUTH_CLIENT_SECRET` | optional | Import a GitLab repo as a project + sync |
+| `FOLLOWER_EMAILS_ENABLED` | optional | `false` stops the "new follower" emails for everyone (a kill switch; each person also has their own switch) |
 
 ### Useful scripts
 

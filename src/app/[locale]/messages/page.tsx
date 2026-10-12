@@ -6,7 +6,7 @@ import { buildLoginHref } from "@/lib/auth/redirect";
 import { getMessagingSummary, listConversations, listMessagingScopes } from "@/lib/db/messages";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { MESSAGES_PATH, parseCompanyParam, parseConversationBox } from "@/lib/messages";
+import { MESSAGES_PATH, parseCompanyParam, parseConversationBox, parseSearchParam } from "@/lib/messages";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 
@@ -54,6 +54,7 @@ export default async function MessagesPage({
   const query = await searchParams;
   const box = parseConversationBox(query.box);
   const companyId = parseCompanyParam(query.company);
+  const search = parseSearchParam(query.q);
   const dictionary = getDictionary(locale);
   const copy = dictionary.messages;
 
@@ -76,6 +77,7 @@ export default async function MessagesPage({
           scopes={scopes}
           requestsCount={summary.requests}
           locale={locale}
+          initialQuery={search}
         />
       }
       thread={

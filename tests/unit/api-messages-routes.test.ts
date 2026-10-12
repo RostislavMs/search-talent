@@ -40,7 +40,8 @@ import { GET as VIEW, PATCH } from "@/app/api/messages/conversations/[id]/route"
 import { GET as PAGE, POST as SEND } from "@/app/api/messages/conversations/[id]/messages/route";
 import { POST as READ } from "@/app/api/messages/conversations/[id]/read/route";
 import { POST as UNSUBSCRIBE } from "@/app/api/messages/email-unsubscribe/route";
-import { GET as ONE } from "@/app/api/messages/message/[id]/route";
+import { DELETE as DELETE_MESSAGE, GET as ONE, PATCH as EDIT } from "@/app/api/messages/message/[id]/route";
+import { GET as SEARCH } from "@/app/api/messages/search/route";
 import { GET as GET_SETTINGS, PATCH as SAVE_SETTINGS } from "@/app/api/messages/settings/route";
 import { GET as SUMMARY } from "@/app/api/messages/summary/route";
 import { cancelMessageEmails, scheduleMessageEmails, turnOffMessageEmails } from "@/lib/db/messages";
@@ -351,5 +352,92 @@ describe("POST /api/admin/messaging-restrictions", () => {
     expect((await restrict({ userId: OTHER, scope: "forever" })).status).toBe(400);
     setMock(signedIn, () => ({ error: { code: "22023", message: "invalid duration" } }));
     expect((await restrict({ userId: OTHER, scope: "all", days: 30 })).status).toBe(400);
+  });
+});
+
+describe("editing and deleting one's own message (13.3)", () => {
+  const row = { id: "m1", seq: 1, conversation_id: CONV, body: "New text", edited_at: "t", created_at: "x" };
+
+  it("edits and answers with the message as it now reads", async () => {
+    setMock(signedIn, (fn) => (fn === "edit_message" ? { data: { status: "ok", changed: true } } : { data: [row] }));
+    const res = await EDIT(json(`/api/messages/message/${OTHER}`, "PATCH", { body: "  New text " }), params(OTHER));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.changed).toBe(true);
+    expect(body.message.body).toBe("New text");
+    expect(holder.rpcCalls[0]).toEqual({ fn: "edit_message", args: { p_message_id: OTHER, p_body: "New text" } });
+  });
+
+  it("maps the refusals", async () => {
+    setMock(signedIn, () => ({ data: { status: "edit_window_passed" } }));
+    const late = await EDIT(json("/x", "PATCH", { body: "x" }), params(OTHER));
+    expect(late.status).toBe(403);
+    expect((await late.json()).code).toBe("edit_window_passed");
+    setMock(signedIn, () => ({ data: { status: "not_editable" } }));
+    expect((await EDIT(json("/x", "PATCH", { body: "x" }), params(OTHER))).status).toBe(409);
+    setMock(signedIn, () => ({ data: { status: "links_in_request" } }));
+    expect((await EDIT(json("/x", "PATCH", { body: "x" }), params(OTHER))).status).toBe(400);
+  });
+
+  it("guards the input", async () => {
+    setMock(null);
+    expect((await EDIT(json("/x", "PATCH", { body: "x" }), params(OTHER))).status).toBe(401);
+    setMock(signedIn);
+    expect((await EDIT(json("/x", "PATCH", { body: "x" }), params("nope"))).status).toBe(400);
+    expect((await EDIT(json("/x", "PATCH", { body: "   " }), params(OTHER))).status).toBe(400);
+    expect((await EDIT(json("/x", "PATCH", { body: "x", extra: 1 }), params(OTHER))).status).toBe(400);
+    vi.mocked(rateLimit).mockReturnValueOnce(new Response(null, { status: 429 }) as never);
+    expect((await EDIT(json("/x", "PATCH", { body: "x" }), params(OTHER))).status).toBe(429);
+  });
+
+  it("deletes and cancels the emails that were only about it", async () => {
+    setMock(signedIn, (fn) =>
+      fn === "delete_message"
+        ? { data: { status: "ok", changed: true, cancel_email_ids: ["re_1"] } }
+        : { data: [{ ...row, body: "", removed: true, removed_by: "author" }] },
+    );
+    const res = await DELETE_MESSAGE(new Request("http://test", { method: "DELETE" }), params(OTHER));
+    expect(res.status).toBe(200);
+    expect((await res.json()).message.removedBy).toBe("author");
+    expect(cancelMessageEmails).toHaveBeenCalledWith(["re_1"]);
+
+    setMock(signedIn, () => ({ data: { status: "ok", changed: false, cancel_email_ids: [] } }));
+    await DELETE_MESSAGE(new Request("http://test", { method: "DELETE" }), params(OTHER));
+    expect(cancelMessageEmails).toHaveBeenCalledTimes(1);
+  });
+
+  it("404 for someone else's message, 401 for a guest, 400 for a bad id", async () => {
+    setMock(signedIn, () => ({ data: { status: "not_found" } }));
+    expect((await DELETE_MESSAGE(new Request("http://test"), params(OTHER))).status).toBe(404);
+    expect((await DELETE_MESSAGE(new Request("http://test"), params("nope"))).status).toBe(400);
+    setMock(signedIn, () => ({ error: { message: "x" } }));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect((await DELETE_MESSAGE(new Request("http://test"), params(OTHER))).status).toBe(500);
+    spy.mockRestore();
+    setMock(null);
+    expect((await DELETE_MESSAGE(new Request("http://test"), params(OTHER))).status).toBe(401);
+  });
+});
+
+describe("GET /api/messages/search (13.3)", () => {
+  it("searches the caller's messages or a team inbox", async () => {
+    setMock(signedIn, () => ({
+      data: [{ conversation_id: CONV, kind: "direct", side: "self", message_id: "m1", seq: 1, snippet: "needle", created_at: "t" }],
+    }));
+    const res = await SEARCH(new Request(`http://test/api/messages/search?q=%20needle%20&company=${OTHER}`));
+    expect(res.status).toBe(200);
+    expect((await res.json()).results).toHaveLength(1);
+    expect(holder.rpcCalls[0]).toEqual({ fn: "search_messages", args: { p_query: "needle", p_company_id: OTHER, p_limit: 30 } });
+  });
+
+  it("guards the query", async () => {
+    setMock(null);
+    expect((await SEARCH(new Request("http://test/x?q=needle"))).status).toBe(401);
+    setMock(signedIn);
+    expect((await SEARCH(new Request("http://test/x?q=a"))).status).toBe(400);
+    expect((await SEARCH(new Request(`http://test/x?q=${"x".repeat(101)}`))).status).toBe(400);
+    expect((await SEARCH(new Request("http://test/x?q=needle&company=nope"))).status).toBe(400);
+    vi.mocked(rateLimit).mockReturnValueOnce(new Response(null, { status: 429 }) as never);
+    expect((await SEARCH(new Request("http://test/x?q=needle"))).status).toBe(429);
   });
 });

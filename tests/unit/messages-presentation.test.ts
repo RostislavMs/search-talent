@@ -22,6 +22,7 @@ function last(patch: Partial<LastMessagePreview> = {}): LastMessagePreview {
     body: "Привіт",
     held: false,
     removed: false,
+    removedBy: null,
     fromMySide: false,
     mine: false,
     createdAt: "2026-10-10T10:00:00Z",
@@ -86,5 +87,13 @@ describe("times", () => {
     expect(formatConversationTime(new Date(2026, 9, 1, 9, 5).toISOString(), "en", now)).toMatch(/Oct/);
     expect(formatConversationTime("nope", "en", now)).toBe("");
     expect(formatMessageTime("nope", "en")).toBe("");
+  });
+});
+
+describe("who removed the last message (13.3)", () => {
+  it("says deleted for its author, removed for a moderator", () => {
+    expect(describeLastMessage(last({ removed: true, removedBy: "author", body: "" }), uk)).toBe(uk.preview.deleted);
+    expect(describeLastMessage(last({ removed: true, removedBy: "moderator", body: "" }), uk)).toBe(uk.preview.removed);
+    expect(describeLastMessage(last({ removed: true, removedBy: null, body: "" }), en)).toBe(en.preview.removed);
   });
 });
