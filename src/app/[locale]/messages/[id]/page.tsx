@@ -14,7 +14,16 @@ import {
 } from "@/lib/db/messages";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { buildConversationPath, buildMessagesQuery, isUuid, parseConversationBox } from "@/lib/messages";
+import {
+  buildConversationPath,
+  buildMessagesQuery,
+  isUuid,
+  MESSAGES_PAGE_SIZE,
+  parseConversationBox,
+  parseFocusSeq,
+  parseSearchParam,
+  type ChatMessage,
+} from "@/lib/messages";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +45,42 @@ const loadView = cache(async (id: string) => {
   const supabase = await createClient();
   return getConversationView(supabase, id);
 });
+
+/** A few messages above a found one, so it is read in its place. */
+const CONTEXT_BEFORE_FOCUS = 10;
+/** Everything from a found message to the newest, when it is not further back than this. */
+const MAX_FROM_FOCUS = 200;
+
+/**
+ * The messages to open with: the latest page, or — when a search opened the
+ * conversation at an older message — from a little above that message to the
+ * newest one, in one unbroken run (new messages keep arriving below it).
+ */
+async function loadOpeningMessages(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  id: string,
+  focusSeq: number | null,
+): Promise<{ messages: ChatMessage[]; hasOlder: boolean; focusSeq: number | null }> {
+  const latest = await listConversationMessages(supabase, id);
+  const loaded = { messages: latest, hasOlder: latest.length >= MESSAGES_PAGE_SIZE };
+
+  if (focusSeq === null || latest.length === 0) {
+    return { ...loaded, focusSeq: null };
+  }
+
+  if (focusSeq >= latest[0].seq) {
+    return { ...loaded, focusSeq: latest.some((message) => message.seq === focusSeq) ? focusSeq : null };
+  }
+
+  const fromFocus = await listConversationMessages(supabase, id, { after: focusSeq - 1, limit: MAX_FROM_FOCUS });
+
+  if (fromFocus.length >= MAX_FROM_FOCUS || fromFocus[0]?.seq !== focusSeq) {
+    return { ...loaded, focusSeq: null };
+  }
+
+  const before = await listConversationMessages(supabase, id, { before: focusSeq, limit: CONTEXT_BEFORE_FOCUS });
+  return { messages: [...before, ...fromFocus], hasOlder: before.length >= CONTEXT_BEFORE_FOCUS, focusSeq };
+}
 
 export async function generateMetadata({ params }: { params: RouteParams }): Promise<Metadata> {
   const { locale, id } = await resolveParams(params);
@@ -76,12 +121,13 @@ export default async function ConversationPage({
 
   const query = await searchParams;
   const box = parseConversationBox(query.box);
+  const search = parseSearchParam(query.q);
   // The list next to it is the inbox the conversation belongs to.
   const companyId = view.side === "company" ? (view.company?.id ?? null) : null;
   const copy = getDictionary(locale).messages;
 
-  const [messages, conversations, summary] = await Promise.all([
-    listConversationMessages(supabase, id),
+  const [opening, conversations, summary] = await Promise.all([
+    loadOpeningMessages(supabase, id, parseFocusSeq(query.m)),
     listConversations(supabase, { box, companyId }),
     getMessagingSummary(supabase),
   ]);
@@ -101,15 +147,18 @@ export default async function ConversationPage({
           scopes={scopes}
           requestsCount={summary.requests}
           locale={locale}
+          initialQuery={search}
         />
       }
       thread={
         <ConversationThread
-          key={id}
+          key={`${id}:${opening.focusSeq ?? ""}`}
           initialView={view}
-          initialMessages={messages}
+          initialMessages={opening.messages}
+          initialHasOlder={opening.hasOlder}
+          focusSeq={opening.focusSeq}
           locale={locale}
-          listQuery={buildMessagesQuery(box, companyId)}
+          listQuery={buildMessagesQuery(box, companyId, search)}
           isAuthenticated
         />
       }

@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildConversationHref,
   buildConversationPath,
   buildMessagesQuery,
+  canEditMessage,
   conversationPartner,
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  messageLinkTargets,
+  normalizeNotificationPreferences,
+  normalizeSearchQuery,
+  normalizeSearchResult,
+  parseFocusSeq,
+  parseSearchParam,
+  splitHighlight,
   EMPTY_MESSAGING_SUMMARY,
   hasExternalLink,
   initialOf,
@@ -52,7 +62,9 @@ function message(seq: number, patch: Partial<ChatMessage> = {}): ChatMessage {
     scamFlag: false,
     held: false,
     removed: false,
+    removedBy: null,
     editedAt: null,
+    editableUntil: null,
     createdAt: "2026-10-10T10:00:00Z",
     ...patch,
   };
@@ -114,8 +126,11 @@ describe("refusals", () => {
     expect(refusalHttpStatus("too_long")).toBe(400);
     expect(refusalHttpStatus("links_in_request")).toBe(400);
     expect(refusalHttpStatus("blocked")).toBe(403);
+    expect(refusalHttpStatus("not_editable")).toBe(409);
+    expect(refusalHttpStatus("edit_window_passed")).toBe(403);
+    expect(refusalHttpStatus("too_many_edits")).toBe(403);
     for (const code of messageRefusalCodes) {
-      expect([400, 401, 403, 404, 429, 500]).toContain(refusalHttpStatus(code));
+      expect([400, 401, 403, 404, 409, 429, 500]).toContain(refusalHttpStatus(code));
     }
   });
 });
@@ -236,10 +251,17 @@ describe("normalizing", () => {
   });
 
   it("normalizes settings with the defaults", () => {
-    expect(normalizeMessagingSettings(null)).toEqual({ whoCanMessage: "everyone", emailNotifications: true, readReceipts: true });
+    expect(normalizeMessagingSettings(null)).toEqual({
+      whoCanMessage: "everyone",
+      emailNotifications: true,
+      messageEmails: "instant",
+      readReceipts: true,
+    });
     expect(
       normalizeMessagingSettings({ whoCanMessage: "nobody", emailNotifications: false, readReceipts: false }),
-    ).toEqual({ whoCanMessage: "nobody", emailNotifications: false, readReceipts: false });
+    ).toEqual({ whoCanMessage: "nobody", emailNotifications: false, messageEmails: "off", readReceipts: false });
+    expect(normalizeMessagingSettings({ messageEmails: "daily", emailNotifications: true }).messageEmails).toBe("daily");
+    expect(normalizeMessagingSettings({ messageEmails: "weekly" }).messageEmails).toBe("instant");
     expect(normalizeMessagingSettings({ whoCanMessage: "friends" }).whoCanMessage).toBe("everyone");
   });
 
@@ -388,5 +410,137 @@ describe("order and read receipts", () => {
     expect(isUuid(first)).toBe(true);
     expect(first.charAt(14)).toBe("4");
     expect(newClientId()).not.toBe(first);
+  });
+});
+
+describe("editing and deleting (13.3)", () => {
+  it("reads who removed a message and until when it can be edited", () => {
+    const own = normalizeMessageRow({ id: "m1", seq: 1, body: "hi", mine: true, editable_until: "2026-10-11T10:15:00Z" });
+    expect(own?.editableUntil).toBe("2026-10-11T10:15:00Z");
+    expect(own?.removedBy).toBeNull();
+    expect(normalizeMessageRow({ id: "m2", seq: 2, body: "", removed: true, removed_by: "author" })?.removedBy).toBe("author");
+    expect(normalizeMessageRow({ id: "m3", seq: 3, body: "", removed: true, removed_by: "moderator" })?.removedBy).toBe("moderator");
+    // An older database that does not say: a moderator's removal, the stricter wording.
+    expect(normalizeMessageRow({ id: "m4", seq: 4, body: "", removed: true })?.removedBy).toBe("moderator");
+    const row = normalizeConversationRow({
+      id: ID,
+      last_message: { id: "m2", seq: 2, kind: "text", body: "", removed: true, removedBy: "author" },
+    });
+    expect(row?.lastMessage?.removedBy).toBe("author");
+  });
+
+  it("offers editing only before the moment the database gave", () => {
+    const now = Date.parse("2026-10-11T10:10:00Z");
+    expect(canEditMessage({ editableUntil: "2026-10-11T10:15:00Z" }, now)).toBe(true);
+    expect(canEditMessage({ editableUntil: "2026-10-11T10:05:00Z" }, now)).toBe(false);
+    expect(canEditMessage({ editableUntil: null }, now)).toBe(false);
+    expect(canEditMessage({ editableUntil: "nonsense" }, now)).toBe(false);
+  });
+});
+
+describe("search (13.3)", () => {
+  it("normalizes a message hit and a name hit", () => {
+    const hit = normalizeSearchResult({
+      conversation_id: ID,
+      kind: "direct",
+      side: "self",
+      counterpart: { userId: OTHER, username: "bob", available: true },
+      company: null,
+      message_id: "m9",
+      seq: "42",
+      snippet: "…the needle here",
+      from_my_side: true,
+      created_at: "2026-10-11T09:00:00Z",
+    });
+    expect(hit).toMatchObject({ conversationId: ID, messageId: "m9", seq: 42, snippet: "…the needle here", fromMySide: true });
+    expect(hit?.counterpart?.username).toBe("bob");
+
+    const name = normalizeSearchResult({ conversation_id: ID, kind: "company", side: "person", message_id: null, seq: null, snippet: null });
+    expect(name).toMatchObject({ messageId: null, seq: null, snippet: null, kind: "company", side: "person" });
+    expect(normalizeSearchResult({ message_id: "m1" })).toBeNull();
+    expect(normalizeSearchResult(null)).toBeNull();
+  });
+
+  it("highlights every match, whatever the case, without markup", () => {
+    expect(splitHighlight("Hello hello HELLO", "hello")).toEqual([
+      { text: "Hello", match: true },
+      { text: " ", match: false },
+      { text: "hello", match: true },
+      { text: " ", match: false },
+      { text: "HELLO", match: true },
+    ]);
+    expect(splitHighlight("Привіт, Олено", "олен")).toEqual([
+      { text: "Привіт, ", match: false },
+      { text: "Олен", match: true },
+      { text: "о", match: false },
+    ]);
+    expect(splitHighlight("<b>x</b>", "b")).toEqual([
+      { text: "<", match: false },
+      { text: "b", match: true },
+      { text: ">x</", match: false },
+      { text: "b", match: true },
+      { text: ">", match: false },
+    ]);
+    expect(splitHighlight("text", "  ")).toEqual([{ text: "text", match: false }]);
+    expect(splitHighlight("", "")).toEqual([]);
+  });
+
+  it("squeezes the query and reads it from the address", () => {
+    expect(normalizeSearchQuery("  two   words ")).toBe("two words");
+    expect(parseSearchParam(" hi ")).toBe("hi");
+    expect(parseSearchParam("a")).toBeNull();
+    expect(parseSearchParam("x".repeat(101))).toBeNull();
+    expect(parseSearchParam(["first", "second"])).toBe("first");
+    expect(parseSearchParam(undefined)).toBeNull();
+  });
+
+  it("opens a conversation at a message, next to the same list and search", () => {
+    expect(parseFocusSeq("42")).toBe(42);
+    expect(parseFocusSeq(["7"])).toBe(7);
+    expect(parseFocusSeq("0")).toBeNull();
+    expect(parseFocusSeq("-3")).toBeNull();
+    expect(parseFocusSeq("4x")).toBeNull();
+    expect(parseFocusSeq("9".repeat(20))).toBeNull();
+    expect(buildMessagesQuery("archived", null, "needle")).toBe("?box=archived&q=needle");
+    expect(buildConversationHref(ID, "?q=needle", 42)).toBe(`/messages/${ID}?q=needle&m=42`);
+    expect(buildConversationHref(ID, "", null)).toBe(`/messages/${ID}`);
+    expect(buildConversationHref(ID, "?box=unread", null)).toBe(`/messages/${ID}?box=unread`);
+  });
+});
+
+describe("link cards (13.3)", () => {
+  it("finds this site's pages that have a card, each once, at most two", () => {
+    expect(
+      messageLinkTargets(
+        "Look https://searchtalent.dev/uk/projects/portfolio and https://searchtalent.dev/en/u/ada, also https://searchtalent.dev/uk/jobs/junior",
+      ),
+    ).toEqual(["/uk/projects/portfolio", "/en/u/ada"]);
+    expect(messageLinkTargets("https://searchtalent.dev/uk/companies/acme https://searchtalent.dev/uk/companies/acme")).toEqual([
+      "/uk/companies/acme",
+    ]);
+    expect(messageLinkTargets("www.searchtalent.dev/jobs/junior-designer/")).toEqual(["/jobs/junior-designer"]);
+  });
+
+  it("leaves other sites, lists and editors alone", () => {
+    expect(messageLinkTargets("https://example.com/u/ada")).toEqual([]);
+    expect(messageLinkTargets("https://searchtalent.dev/uk/jobs")).toEqual([]);
+    expect(messageLinkTargets("https://searchtalent.dev/uk/projects/new")).toEqual([]);
+    expect(messageLinkTargets("https://searchtalent.dev.evil.com/u/ada")).toEqual([]);
+    expect(messageLinkTargets("no links at all")).toEqual([]);
+  });
+
+  it("counts the deployment's own host as this site", () => {
+    expect(messageLinkTargets("http://localhost:3000/u/ada", ["localhost"])).toEqual(["/u/ada"]);
+  });
+});
+
+describe("email preferences (13.3)", () => {
+  it("normalizes with the defaults", () => {
+    expect(normalizeNotificationPreferences(null)).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
+    expect(normalizeNotificationPreferences({ messageEmails: "daily", followerEmails: false })).toEqual({
+      messageEmails: "daily",
+      followerEmails: false,
+    });
+    expect(normalizeNotificationPreferences({ messageEmails: "hourly" })).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
   });
 });

@@ -108,6 +108,11 @@ export type ReportSnapshotMessage = {
   authorName: string | null;
   body: string;
   deleted: boolean;
+  /** Who deleted it: its author, or a moderator; null while it is there. */
+  deletedBy: "author" | "moderator" | null;
+  edited: boolean;
+  /** The text it was sent with, when it was edited afterwards. */
+  originalBody: string | null;
   /** From the side the report is about. */
   byReported: boolean;
   createdAt: string;
@@ -137,6 +142,10 @@ export function parseReportSnapshot(value: unknown): ReportSnapshot | null {
           authorName: typeof message.authorName === "string" ? message.authorName : null,
           body: typeof message.body === "string" ? message.body : "",
           deleted: message.deleted === true,
+          deletedBy:
+            message.deleted === true ? (message.deletedBy === "author" ? "author" : "moderator") : null,
+          edited: message.edited === true,
+          originalBody: typeof message.originalBody === "string" ? message.originalBody : null,
           byReported: message.byReported === true,
           createdAt: typeof message.createdAt === "string" ? message.createdAt : "",
         },

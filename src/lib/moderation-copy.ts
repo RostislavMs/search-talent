@@ -37,6 +37,9 @@ export function getModerationCopy(locale: Locale) {
           "Знімок останніх 20 повідомлень на момент скарги. Решту розмови модератори не бачать.",
         snapshotByReported: "від того, на кого скаржаться",
         snapshotDeleted: "видалено",
+        snapshotDeletedByAuthor: "видалено автором",
+        snapshotEdited: "змінено",
+        snapshotOriginal: "Спершу було: {text}",
         restrictionsTitle: "Обмеження повідомлень",
         restrictionsEmpty: "Зараз нікому не обмежено повідомлення.",
         restrictionScopes: {
@@ -176,6 +179,9 @@ export function getModerationCopy(locale: Locale) {
         "A snapshot of the last 20 messages when the report was made. Moderators never see the rest of the conversation.",
       snapshotByReported: "from the person reported",
       snapshotDeleted: "deleted",
+      snapshotDeletedByAuthor: "deleted by its author",
+      snapshotEdited: "edited",
+      snapshotOriginal: "At first: {text}",
       restrictionsTitle: "Message limits",
       restrictionsEmpty: "Nobody's messages are limited right now.",
       restrictionScopes: {

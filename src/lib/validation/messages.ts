@@ -1,5 +1,13 @@
 import { z } from "zod";
-import { conversationBoxes, MESSAGE_MAX_LENGTH, whoCanMessageOptions } from "@/lib/messages";
+import {
+  conversationBoxes,
+  MESSAGE_MAX_LENGTH,
+  MESSAGE_SEARCH_MAX_LENGTH,
+  MESSAGE_SEARCH_MIN_LENGTH,
+  messageEmailModes,
+  normalizeSearchQuery,
+  whoCanMessageOptions,
+} from "@/lib/messages";
 
 const uuidMessage = "Invalid identifier";
 
@@ -31,6 +39,33 @@ export const sendMessageSchema = z
     clientId: z.string().uuid(uuidMessage).optional(),
   })
   .strict();
+
+/** A new text for one's own message; edit_message() checks the rest. */
+export const editMessageSchema = z
+  .object({
+    body: messageBody,
+  })
+  .strict();
+
+/** ?q=&company= — search in one's own messages or a company's team inbox. */
+export const messageSearchQuerySchema = z.object({
+  q: z
+    .string()
+    .transform(normalizeSearchQuery)
+    .refine((value) => value.length >= MESSAGE_SEARCH_MIN_LENGTH && value.length <= MESSAGE_SEARCH_MAX_LENGTH, {
+      message: "The search is too short or too long",
+    }),
+  company: z.string().uuid(uuidMessage).optional(),
+});
+
+/** The email choices: any of them; the rest stays. */
+export const notificationPreferencesSchema = z
+  .object({
+    messageEmails: z.enum(messageEmailModes).optional(),
+    followerEmails: z.boolean().optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, { message: "Nothing to change" });
 
 export const markConversationReadSchema = z
   .object({
@@ -81,6 +116,11 @@ export const conversationsQuerySchema = z.object({
 export const messageEmailUnsubscribeSchema = z.object({
   u: z.string().uuid(uuidMessage),
   t: z.string().regex(/^[0-9a-f]{64}$/),
+});
+
+/** The one-click "stop these emails" link: which emails (k), whose (u), and its HMAC (t). */
+export const emailUnsubscribeSchema = messageEmailUnsubscribeSchema.extend({
+  k: z.enum(["messages", "followers"]),
 });
 
 /** A moderator limits (scope) or frees (scope null) someone's messaging. */

@@ -15,6 +15,14 @@ import {
   parseProjectPath,
 } from "@/lib/projects";
 import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
+import {
+  COMPANY_JOIN,
+  mapVacancySummary,
+  NAME_JOINS,
+  SUMMARY_COLUMNS,
+  type VacancySummaryRow,
+} from "@/lib/db/vacancies";
+import { vacancyFactsLine, vacancyPayLabel } from "@/lib/vacancy-presentation";
 
 /**
  * Data source for internal-link hover previews.
@@ -409,6 +417,99 @@ async function getPollPreview(
   };
 }
 
+async function getVacancyPreview(
+  supabase: SupabaseClient,
+  slug: string,
+  locale: Locale,
+  dictionary: Dictionary,
+): Promise<LinkPreview | null> {
+  const { data } = await supabase
+    .from("vacancies")
+    .select(`${SUMMARY_COLUMNS}, ${COMPANY_JOIN}, ${NAME_JOINS}`)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!data) {
+    return null;
+  }
+
+  const vacancy = mapVacancySummary(data as unknown as VacancySummaryRow);
+
+  // RLS already hides drafts and hidden pages from the anonymous client; the
+  // explicit check keeps a card from ever outliving that rule.
+  if (
+    vacancy.status === "draft" ||
+    vacancy.moderationStatus !== "approved" ||
+    vacancy.company.moderationStatus !== "approved"
+  ) {
+    return null;
+  }
+
+  const copy = dictionary.vacancies;
+
+  return {
+    kind: "vacancy",
+    eyebrow: dictionary.linkPreview.vacancy,
+    title: vacancy.title,
+    subtitle: vacancy.company.name || null,
+    description: vacancyFactsLine(vacancy, copy) || null,
+    imageUrl: vacancy.company.logoUrl,
+    imageShape: "avatar",
+    badge: vacancyPayLabel(vacancy, copy, locale),
+    chips: vacancy.state === "open" ? [] : [dictionary.linkPreview.vacancyClosed],
+  };
+}
+
+async function getCompanyPreview(
+  supabase: SupabaseClient,
+  slug: string,
+  dictionary: Dictionary,
+): Promise<LinkPreview | null> {
+  const { data } = await supabase
+    .from("companies")
+    .select("id, slug, name, description, city, logo_url, verified_at, moderation_status")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  const company = data as {
+    id: string;
+    slug: string;
+    name: string;
+    description: string | null;
+    city: string | null;
+    logo_url: string | null;
+    verified_at: string | null;
+    moderation_status: string | null;
+  } | null;
+
+  if (!company || company.moderation_status !== "approved") {
+    return null;
+  }
+
+  const { count } = await supabase
+    .from("vacancies")
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", company.id)
+    .eq("status", "published")
+    .eq("moderation_status", "approved")
+    .gt("expires_at", new Date().toISOString());
+
+  return {
+    kind: "company",
+    eyebrow: dictionary.linkPreview.company,
+    title: company.name,
+    subtitle: company.city || null,
+    description: clampDescription(company.description),
+    imageUrl: company.logo_url,
+    imageShape: "avatar",
+    badge: null,
+    chips: [
+      company.verified_at ? dictionary.linkPreview.companyVerified : "",
+      count ? dictionary.linkPreview.openVacancies.replace("{count}", String(count)) : "",
+    ].filter(Boolean),
+  };
+}
+
 /**
  * Resolves a parsed target into a display-ready card, or `null` when the
  * target does not exist or is not publicly visible. Never throws: a preview
@@ -436,6 +537,10 @@ export async function getLinkPreview(
         return await getArticlePreview(supabase, target.key, locale, dictionary);
       case "poll":
         return await getPollPreview(supabase, target.key, locale, dictionary);
+      case "vacancy":
+        return await getVacancyPreview(supabase, target.key, locale, dictionary);
+      case "company":
+        return await getCompanyPreview(supabase, target.key, dictionary);
       default:
         return null;
     }

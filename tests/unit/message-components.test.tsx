@@ -23,6 +23,7 @@ import MessageComposeDialog from "@/components/message-compose-dialog";
 import MessageComposeForm from "@/components/message-compose-form";
 import MessagesNavLink from "@/components/messages-nav-link";
 import MessagingRealtimeProvider from "@/components/messaging-realtime-provider";
+import EmailSettingsForm from "@/components/email-settings-form";
 import MessagingSettingsForm from "@/components/messaging-settings-form";
 import ProfileContactButton, { type ProfileContactInfo } from "@/components/profile-contact-button";
 import SiteFooterSlot from "@/components/site-footer-slot";
@@ -33,6 +34,7 @@ import type { ChatMessage, ConversationPreview, ConversationView } from "@/lib/m
 import { getModerationCopy } from "@/lib/moderation-copy";
 
 const uk = dictionaries.uk.messages;
+const ukEmails = dictionaries.uk.emailSettings;
 const mockedFetch = vi.mocked(apiFetch);
 const ME = "11111111-1111-4111-8111-111111111111";
 const BOB = "22222222-2222-4222-8222-222222222222";
@@ -62,6 +64,7 @@ function preview(patch: Partial<ConversationPreview> = {}): ConversationPreview 
       body: "Привіт",
       held: false,
       removed: false,
+      removedBy: null,
       fromMySide: false,
       mine: false,
       createdAt: "2026-10-10T10:00:00Z",
@@ -114,7 +117,9 @@ function chat(seq: number, patch: Partial<ChatMessage> = {}): ChatMessage {
     scamFlag: false,
     held: false,
     removed: false,
+    removedBy: null,
     editedAt: null,
+    editableUntil: null,
     createdAt: "2026-10-10T10:00:00Z",
     ...patch,
   };
@@ -426,7 +431,7 @@ describe("<ConversationThread />", () => {
 });
 
 describe("<MessagingSettingsForm />", () => {
-  const settings = { whoCanMessage: "everyone" as const, emailNotifications: true, readReceipts: true };
+  const settings = { whoCanMessage: "everyone" as const, emailNotifications: true, messageEmails: "instant" as const, readReceipts: true };
   const blocks = [{ id: "b1", byCompany: null, person: bob, company: null, createdAt: "x" }];
 
   function renderForm() {
@@ -445,12 +450,34 @@ describe("<MessagingSettingsForm />", () => {
     await waitFor(() => expect(screen.getByRole("radio", { name: new RegExp(uk.settingsPage.who.nobody.label) })).toBeChecked());
   });
 
-  it("puts a switch back when saving fails", async () => {
+  it("chooses how message emails come, on the shared email settings", async () => {
+    mockedFetch.mockResolvedValueOnce({ ok: true, data: { preferences: { messageEmails: "daily", followerEmails: true } } });
+    renderForm();
+    const group = screen.getByRole("radiogroup", { name: uk.settingsPage.emailTitle });
+    await userEvent.click(within(group).getByRole("radio", { name: new RegExp(ukEmails.messageModes.daily.label) }));
+    expect(mockedFetch).toHaveBeenCalledWith("/api/email-preferences", { method: "PATCH", body: { messageEmails: "daily" } });
+    await waitFor(() =>
+      expect(within(group).getByRole("radio", { name: new RegExp(ukEmails.messageModes.daily.label) })).toBeChecked(),
+    );
+    expect(screen.getByRole("link", { name: uk.settingsPage.allEmails })).toHaveAttribute("href", "/uk/notifications/settings");
+  });
+
+  it("puts the email choice back when saving fails", async () => {
     mockedFetch.mockResolvedValueOnce({ ok: false, error: "x", status: 500 });
     renderForm();
-    const emails = screen.getByRole("switch", { name: uk.settingsPage.emailTitle });
-    await userEvent.click(emails);
-    await waitFor(() => expect(emails).toHaveAttribute("aria-checked", "true"));
+    const group = screen.getByRole("radiogroup", { name: uk.settingsPage.emailTitle });
+    await userEvent.click(within(group).getByRole("radio", { name: new RegExp(ukEmails.messageModes.off.label) }));
+    await waitFor(() =>
+      expect(within(group).getByRole("radio", { name: new RegExp(ukEmails.messageModes.instant.label) })).toBeChecked(),
+    );
+  });
+
+  it("puts the read receipts switch back when saving fails", async () => {
+    mockedFetch.mockResolvedValueOnce({ ok: false, error: "x", status: 500 });
+    renderForm();
+    const receipts = screen.getByRole("switch", { name: uk.settingsPage.receiptsTitle });
+    await userEvent.click(receipts);
+    await waitFor(() => expect(receipts).toHaveAttribute("aria-checked", "true"));
   });
 
   it("unblocks", async () => {
@@ -568,5 +595,235 @@ describe("<MessagesNavLink />", () => {
   it("has a plain label without anything new", () => {
     render(<MessagesNavLink />);
     expect(screen.getByRole("link", { name: uk.openLabel })).toBeInTheDocument();
+  });
+});
+
+describe("<ConversationThread /> own messages (13.3)", () => {
+  const inWindow = () => new Date(Date.now() + 10 * 60_000).toISOString();
+  const own = (seq: number, patch: Partial<ChatMessage> = {}) =>
+    chat(seq, { mine: true, fromMySide: true, author: null, editableUntil: inWindow(), body: `Моє ${seq}`, ...patch });
+
+  it("edits one's own message in its place", async () => {
+    mockedFetch.mockImplementation(async (_url: string, options?: { method?: string }) =>
+      options?.method === "PATCH"
+        ? { ok: true, data: { changed: true, message: own(1, { body: "Виправлене", editedAt: "2026-10-11T10:01:00Z" }) } }
+        : { ok: true, data: {} },
+    );
+    renderThread({}, [own(1)]);
+
+    await userEvent.click(screen.getByRole("button", { name: uk.thread.messageActions }));
+    await userEvent.click(screen.getByRole("button", { name: uk.thread.edit }));
+    const editor = screen.getByLabelText(uk.thread.editLabel);
+    expect(editor).toHaveValue("Моє 1");
+    await userEvent.clear(editor);
+    await userEvent.type(editor, "Виправлене");
+    await userEvent.click(screen.getByRole("button", { name: uk.thread.save }));
+
+    await waitFor(() => expect(screen.getByText("Виправлене")).toBeInTheDocument());
+    expect(screen.getByText(uk.thread.edited)).toBeInTheDocument();
+    expect(screen.queryByLabelText(uk.thread.editLabel)).not.toBeInTheDocument();
+    expect(mockedFetch).toHaveBeenCalledWith("/api/messages/message/m1", { method: "PATCH", body: { body: "Виправлене" } });
+  });
+
+  it("says why an edit did not go, and Escape leaves the text as it was", async () => {
+    mockedFetch.mockImplementation(async (_url: string, options?: { method?: string }) =>
+      options?.method === "PATCH" ? { ok: false, error: "x", status: 403, code: "edit_window_passed" } : { ok: true, data: {} },
+    );
+    renderThread({}, [own(1)]);
+    await userEvent.click(screen.getByRole("button", { name: uk.thread.messageActions }));
+    await userEvent.click(screen.getByRole("button", { name: uk.thread.edit }));
+    await userEvent.type(screen.getByLabelText(uk.thread.editLabel), " ще");
+    await userEvent.click(screen.getByRole("button", { name: uk.thread.save }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(uk.errors.edit_window_passed);
+
+    await userEvent.type(screen.getByLabelText(uk.thread.editLabel), "{Escape}");
+    expect(screen.queryByLabelText(uk.thread.editLabel)).not.toBeInTheDocument();
+    expect(screen.getByText("Моє 1")).toBeInTheDocument();
+  });
+
+  it("past the 15 minutes only deleting is offered; nothing on others' messages", async () => {
+    renderThread({}, [own(1, { editableUntil: "2026-01-01T00:00:00Z" }), chat(2)]);
+    expect(screen.getAllByRole("button", { name: uk.thread.messageActions })).toHaveLength(1);
+    await userEvent.click(screen.getByRole("button", { name: uk.thread.messageActions }));
+    expect(screen.queryByRole("button", { name: uk.thread.edit })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: uk.thread.delete })).toBeInTheDocument();
+  });
+
+  it("deletes one's own message after asking", async () => {
+    mockedFetch.mockImplementation(async (_url: string, options?: { method?: string }) =>
+      options?.method === "DELETE"
+        ? { ok: true, data: { changed: true, message: own(1, { body: "", removed: true, removedBy: "author", editableUntil: null }) } }
+        : { ok: true, data: {} },
+    );
+    renderThread({}, [own(1)]);
+    await userEvent.click(screen.getByRole("button", { name: uk.thread.messageActions }));
+    await userEvent.click(screen.getByRole("button", { name: uk.thread.delete }));
+    expect(screen.getByText(uk.confirm.deleteMessageTitle)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: uk.confirm.deleteMessageConfirm }));
+
+    await waitFor(() => expect(within(screen.getByRole("log")).getByText(uk.thread.deleted)).toBeInTheDocument());
+    expect(mockedFetch).toHaveBeenCalledWith("/api/messages/message/m1", { method: "DELETE" });
+    expect(screen.queryByRole("button", { name: uk.thread.messageActions })).not.toBeInTheDocument();
+  });
+
+  it("tells a deletion by its author from a moderator's removal", () => {
+    renderThread({}, [
+      chat(1, { removed: true, removedBy: "author", body: "" }),
+      chat(2, { removed: true, removedBy: "moderator", body: "" }),
+    ]);
+    expect(screen.getByText(uk.thread.deleted)).toBeInTheDocument();
+    expect(screen.getByText(uk.thread.removed)).toBeInTheDocument();
+  });
+
+  it("shows a card for a link to this site's page", async () => {
+    const card = {
+      kind: "project",
+      eyebrow: "Проєкт",
+      title: "Портфоліо Олени",
+      subtitle: "Олена",
+      description: null,
+      imageUrl: null,
+      imageShape: "cover",
+      badge: null,
+      chips: [],
+    };
+    mockedFetch.mockImplementation(async (url: string) =>
+      String(url).startsWith("/api/link-preview") ? { ok: true, data: { preview: card } } : { ok: true, data: {} },
+    );
+    renderThread({}, [chat(1, { body: "Гляньте https://searchtalent.dev/en/projects/olena-portfolio і https://example.com" })]);
+
+    const link = await screen.findByRole("link", { name: /Портфоліо Олени/ });
+    expect(link).toHaveAttribute("href", "/uk/projects/olena-portfolio");
+    const asked = mockedFetch.mock.calls.filter(([url]) => String(url).startsWith("/api/link-preview"));
+    expect(asked).toHaveLength(1);
+    expect(String(asked[0][0])).toContain(encodeURIComponent("/projects/olena-portfolio"));
+  });
+
+  it("opens at a found message and marks it", async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    render(
+      <ToastProvider>
+        <MessagingRealtimeProvider userId={ME}>
+          <ConversationThread
+            initialView={view()}
+            initialMessages={[chat(1), chat(2), chat(3)]}
+            initialHasOlder
+            focusSeq={2}
+            locale="uk"
+            listQuery="?q=needle"
+            isAuthenticated
+          />
+        </MessagingRealtimeProvider>
+      </ToastProvider>,
+    );
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" }));
+    expect(document.getElementById("message-m2")?.innerHTML).toContain("ring-2");
+    expect(screen.getByRole("button", { name: uk.thread.loadOlder })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: uk.thread.back })).toHaveAttribute("href", "/uk/messages?q=needle");
+  });
+});
+
+describe("<ConversationList /> search (13.3)", () => {
+  const scopes = [{ id: null, name: uk.scopePersonal, unread: 0 }];
+  const results = [
+    {
+      conversationId: CONV,
+      kind: "direct",
+      side: "self",
+      counterpart: bob,
+      company: null,
+      messageId: null,
+      seq: null,
+      snippet: null,
+      fromMySide: false,
+      createdAt: "2026-10-10T10:00:00Z",
+    },
+    {
+      conversationId: CONV,
+      kind: "direct",
+      side: "self",
+      counterpart: bob,
+      company: null,
+      messageId: "m7",
+      seq: 7,
+      snippet: "…знайшла Bob цю голку",
+      fromMySide: true,
+      createdAt: "2026-10-10T10:00:00Z",
+    },
+  ];
+
+  it("searches as you type and opens a result at its message", async () => {
+    mockedFetch.mockImplementation(async (url: string) =>
+      String(url).startsWith("/api/messages/search") ? { ok: true, data: { results } } : { ok: true, data: {} },
+    );
+    render(<ConversationList initialConversations={[preview()]} box="inbox" companyId={null} scopes={scopes} requestsCount={0} locale="uk" />);
+
+    await userEvent.type(screen.getByRole("searchbox", { name: uk.search.label }), "bob");
+    expect(await screen.findByRole("heading", { level: 2, name: uk.search.conversations })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: uk.search.messages })).toBeInTheDocument();
+    expect(String(mockedFetch.mock.calls.find(([url]) => String(url).startsWith("/api/messages/search"))?.[0])).toBe(
+      "/api/messages/search?q=bob",
+    );
+    const links = screen.getAllByRole("link").filter((link) => link.getAttribute("href")?.includes(CONV));
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      `/uk/messages/${CONV}?q=bob`,
+      `/uk/messages/${CONV}?q=bob&m=7`,
+    ]);
+    expect(document.querySelectorAll("mark").length).toBeGreaterThan(0);
+    expect(Array.from(document.querySelectorAll("mark")).every((mark) => /bob/i.test(mark.textContent ?? ""))).toBe(true);
+    expect(screen.getByText(new RegExp(uk.search.youPrefix))).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: uk.title })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: uk.search.clear }));
+    expect(screen.getByRole("navigation", { name: uk.title })).toBeInTheDocument();
+  });
+
+  it("says when nothing is found or the search failed, and keeps a short query out", async () => {
+    mockedFetch.mockResolvedValueOnce({ ok: true, data: { results: [] } });
+    render(
+      <ConversationList
+        initialConversations={[preview()]}
+        box="inbox"
+        companyId={ACME}
+        scopes={scopes}
+        requestsCount={0}
+        locale="uk"
+        initialQuery="голка"
+      />,
+    );
+    expect(await screen.findByText(uk.search.empty)).toBeInTheDocument();
+    expect(String(mockedFetch.mock.calls[0][0])).toBe(`/api/messages/search?q=${encodeURIComponent("голка")}&company=${ACME}`);
+
+    mockedFetch.mockResolvedValueOnce({ ok: false, error: "x", status: 500 });
+    const box = screen.getByRole("searchbox", { name: uk.search.label });
+    await userEvent.type(box, "x");
+    expect(await screen.findByText(uk.search.failed)).toBeInTheDocument();
+
+    await userEvent.clear(box);
+    await userEvent.type(box, "a");
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+});
+
+describe("email settings (13.3)", () => {
+  it("turns the follower emails off and puts the switch back on a failure", async () => {
+    mockedFetch.mockResolvedValueOnce({ ok: true, data: { preferences: { messageEmails: "instant", followerEmails: false } } });
+    render(
+      <ToastProvider>
+        <EmailSettingsForm initialPreferences={{ messageEmails: "instant", followerEmails: true }} />
+      </ToastProvider>,
+    );
+    const followers = screen.getByRole("switch", { name: ukEmails.followersTitle });
+    await userEvent.click(followers);
+    expect(mockedFetch).toHaveBeenCalledWith("/api/email-preferences", { method: "PATCH", body: { followerEmails: false } });
+    await waitFor(() => expect(followers).toHaveAttribute("aria-checked", "false"));
+
+    mockedFetch.mockResolvedValueOnce({ ok: false, error: "x", status: 500 });
+    await userEvent.click(followers);
+    await waitFor(() => expect(followers).toHaveAttribute("aria-checked", "false"));
+
+    expect(screen.getByRole("radiogroup", { name: ukEmails.messagesTitle })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: ukEmails.jobAlertsLink })).toHaveAttribute("href", "/uk/my-space/job-alerts");
   });
 });

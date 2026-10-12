@@ -29,7 +29,7 @@ export function describeLastMessage(message: LastMessagePreview | null, copy: Me
     return describeMessageEvent(message.event, message.eventData, copy);
   }
 
-  if (message.removed) return copy.preview.removed;
+  if (message.removed) return message.removedBy === "author" ? copy.preview.deleted : copy.preview.removed;
   if (message.body === null) return copy.preview.held;
 
   const text = message.body.replace(/\s+/g, " ").trim();

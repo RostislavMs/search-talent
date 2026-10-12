@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -9,6 +9,9 @@ import { buildNewFollowerEmail } from "@/lib/email/templates";
 import { defaultLocale, isLocale, type Locale } from "@/lib/i18n/config";
 import { getSiteUrl } from "@/lib/seo";
 import { createNotifications } from "@/lib/db/notifications";
+import { claimFollowerEmail } from "@/lib/db/email-preferences";
+import { oneClickUnsubscribeHeaders } from "@/lib/email-unsubscribe-token";
+import { NOTIFICATION_SETTINGS_PATH } from "@/lib/messages";
 
 const followPayloadSchema = z.object({
   followingUserId: z.string().uuid(),
@@ -69,14 +72,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // Fire-and-forget: notify the followed user by email. Never block the
-  // response or surface errors to the follower.
-  void notifyNewFollower({
-    followerUserId: user.id,
-    followingUserId,
-  }).catch((err) => {
-    console.error("[follows] notify failed", err);
-  });
+  // The email goes after the response (`after`, so the runtime waits for it):
+  // never block the follower or show them its errors.
+  after(() =>
+    notifyNewFollower({
+      followerUserId: user.id,
+      followingUserId,
+    }).catch((err) => {
+      console.error("[follows] notify failed", err);
+    }),
+  );
 
   // In-app notification (separate from the email channel).
   void (async () => {
@@ -103,16 +108,22 @@ async function notifyNewFollower({
   followerUserId: string;
   followingUserId: string;
 }) {
-  // Paused: follower emails need an email-preference toggle + unsubscribe link
-  // before they can be sent at scale. The in-app notification is created
-  // separately and is unaffected. Flip FOLLOWER_EMAILS_ENABLED=true to re-enable.
-  if (process.env.FOLLOWER_EMAILS_ENABLED !== "true") {
+  // A kill switch: FOLLOWER_EMAILS_ENABLED=false stops these emails for
+  // everyone. The in-app notification is created separately and is unaffected.
+  if (process.env.FOLLOWER_EMAILS_ENABLED === "false") {
     return;
   }
 
   const admin = createAdminClient();
   if (!admin) {
     // No service role configured — skip notifications silently.
+    return;
+  }
+
+  // The database decides: the person keeps these emails on (the email
+  // settings page), this follower was not emailed about in 30 days, fewer than
+  // 3 went out today, no block between them.
+  if (!(await claimFollowerEmail(admin, followerUserId, followingUserId))) {
     return;
   }
 
@@ -134,7 +145,8 @@ async function notifyNewFollower({
     await admin.auth.admin.getUserById(followingUserId);
 
   const recipientEmail = followingAuth?.user?.email;
-  if (!recipientEmail) {
+  // Never to an address nobody confirmed: it may not be theirs.
+  if (!recipientEmail || !followingAuth?.user?.email_confirmed_at) {
     return;
   }
 
@@ -162,8 +174,15 @@ async function notifyNewFollower({
     followerUsername: followerProfile?.username ?? null,
     followerHeadline: followerProfile?.headline ?? null,
     profileUrl,
+    unsubscribeUrl: `${siteUrl}/${locale}${NOTIFICATION_SETTINGS_PATH}`,
     locale,
   });
 
-  await sendEmail({ to: recipientEmail, subject, html, text });
+  await sendEmail({
+    to: recipientEmail,
+    subject,
+    html,
+    text,
+    headers: oneClickUnsubscribeHeaders("followers", followingUserId),
+  });
 }

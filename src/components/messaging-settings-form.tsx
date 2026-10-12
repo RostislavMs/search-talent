@@ -1,23 +1,27 @@
 "use client";
 
 import { useId, useState } from "react";
+import MessageEmailChoice from "@/components/message-email-choice";
 import MessagingAvatar from "@/components/messaging-avatar";
 import { Button } from "@/components/ui/Button";
+import LocalizedLink from "@/components/ui/localized-link";
+import RadioCards from "@/components/ui/radio-cards";
 import Switch from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
 import {
+  NOTIFICATION_SETTINGS_PATH,
   personLabel,
   whoCanMessageOptions,
   type MessageBlock,
   type MessagingSettings,
-  type WhoCanMessage,
 } from "@/lib/messages";
 
 /**
  * Who may write, the emails, read receipts, and the blocked list. Every
- * change saves at once; a failure puts the old value back.
+ * change saves at once; a failure puts the old value back. The email choice
+ * is the same one as on the email settings page.
  */
 export default function MessagingSettingsForm({
   initialSettings,
@@ -30,7 +34,6 @@ export default function MessagingSettingsForm({
   const page = copy.settingsPage;
   const toast = useToast();
   const groupId = useId();
-  const emailId = useId();
   const receiptsId = useId();
   const [settings, setSettings] = useState(initialSettings);
   const [blocks, setBlocks] = useState(initialBlocks);
@@ -77,53 +80,32 @@ export default function MessagingSettingsForm({
         <h2 id={groupId} className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
           {page.whoTitle}
         </h2>
-        <div role="radiogroup" aria-labelledby={groupId} className="mt-4 space-y-2">
-          {whoCanMessageOptions.map((option: WhoCanMessage) => {
-            const checked = settings.whoCanMessage === option;
-            return (
-              <label
-                key={option}
-                className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition-colors ${
-                  checked ? "border-[color:var(--foreground)]" : "app-border hover:bg-[color:var(--surface-muted)]"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="who-can-message"
-                  value={option}
-                  checked={checked}
-                  disabled={saving}
-                  onChange={() => void save({ whoCanMessage: option })}
-                  className="mt-1 accent-[color:var(--brand)]"
-                />
-                <span>
-                  <span className="block text-sm font-medium text-[color:var(--foreground)]">{page.who[option].label}</span>
-                  <span className="mt-0.5 block text-xs leading-5 app-muted">{page.who[option].hint}</span>
-                </span>
-              </label>
-            );
-          })}
+        <div className="mt-4">
+          <RadioCards
+            name="who-can-message"
+            value={settings.whoCanMessage}
+            labelledBy={groupId}
+            disabled={saving}
+            onChange={(option) => void save({ whoCanMessage: option })}
+            options={whoCanMessageOptions.map((option) => ({
+              value: option,
+              label: page.who[option].label,
+              hint: page.who[option].hint,
+            }))}
+          />
         </div>
       </section>
 
       <section className="space-y-5 rounded-hero app-card p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p id={emailId} className="text-sm font-medium text-[color:var(--foreground)]">
-              {page.emailTitle}
-            </p>
-            <p id={`${emailId}-hint`} className="mt-1 text-xs leading-5 app-muted">
-              {page.emailHint}
-            </p>
-          </div>
-          <Switch
-            checked={settings.emailNotifications}
-            disabled={saving}
-            labelledBy={emailId}
-            describedBy={`${emailId}-hint`}
-            onChange={(next) => void save({ emailNotifications: next })}
-          />
-        </div>
+        <MessageEmailChoice initialValue={settings.messageEmails} title={page.emailTitle} hint={page.emailHint} />
+        <p className="text-xs app-muted">
+          <LocalizedLink
+            href={NOTIFICATION_SETTINGS_PATH}
+            className="font-medium text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4 transition-colors hover:decoration-[color:var(--foreground)]"
+          >
+            {page.allEmails}
+          </LocalizedLink>
+        </p>
         <div className="flex items-start justify-between gap-4 border-t app-border pt-5">
           <div>
             <p id={receiptsId} className="text-sm font-medium text-[color:var(--foreground)]">

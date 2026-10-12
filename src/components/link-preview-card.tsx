@@ -2,17 +2,24 @@ import Skeleton from "@/components/ui/skeleton";
 import type { LinkPreview } from "@/lib/link-preview";
 
 /**
- * The hover card itself — one uniform layout for profiles, projects, articles
- * and polls. The route ships display-ready, already-localized strings (see
- * `db/link-preview`), so this component only lays them out; adding a new
- * preview kind needs no change here.
+ * The preview card — one uniform layout for profiles, projects, articles,
+ * polls, vacancies and companies. The route ships display-ready,
+ * already-localized strings (see `db/link-preview`), so this component only
+ * lays them out; adding a new preview kind needs no change here.
  *
- * Purely informational: the provider renders it with `pointer-events: none`,
- * so nothing in here is clickable and the underlying link keeps the click.
+ * Two places use it:
+ *   * "hover" — the floating card over a link. Purely informational: the
+ *     provider renders it with `pointer-events: none`, so nothing in here is
+ *     clickable and the underlying link keeps the click;
+ *   * "inline" — under a chat message (`message-link-cards`), inside the link
+ *     itself: flatter, and a cover shrinks to a thumbnail so a message with a
+ *     link does not turn into a poster.
  */
 
 /** Matches CARD_WIDTH in the provider — the positioner needs it up front. */
 const CARD_CLASS = "w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-3xl app-card shadow-xl";
+const INLINE_CARD_CLASS =
+  "w-full overflow-hidden rounded-2xl border app-border bg-[color:var(--surface)] transition-colors group-hover:bg-[color:var(--surface-muted)]";
 
 export function LinkPreviewSkeleton({ label }: { label: string }) {
   return (
@@ -29,13 +36,21 @@ export function LinkPreviewSkeleton({ label }: { label: string }) {
   );
 }
 
-export default function LinkPreviewCard({ preview }: { preview: LinkPreview }) {
-  const showCover = preview.imageShape === "cover" && Boolean(preview.imageUrl);
+export default function LinkPreviewCard({
+  preview,
+  variant = "hover",
+}: {
+  preview: LinkPreview;
+  variant?: "hover" | "inline";
+}) {
+  const inline = variant === "inline";
+  const showCover = !inline && preview.imageShape === "cover" && Boolean(preview.imageUrl);
+  const showThumb = inline && preview.imageShape === "cover" && Boolean(preview.imageUrl);
   const showAvatar = preview.imageShape === "avatar" && Boolean(preview.imageUrl);
   const initial = preview.title.trim().slice(0, 1).toUpperCase();
 
   return (
-    <div className={CARD_CLASS}>
+    <div className={inline ? INLINE_CARD_CLASS : CARD_CLASS}>
       {showCover ? (
         // 16:9 — the ratio most uploaded covers already are, so the crop takes
         // nothing off the top or bottom, and it keeps the card shorter than the
@@ -55,8 +70,19 @@ export default function LinkPreviewCard({ preview }: { preview: LinkPreview }) {
         </div>
       ) : null}
 
-      <div className="flex items-start gap-3 p-3.5">
-        {showAvatar ? (
+      <div className={`flex items-start gap-3 ${inline ? "p-3" : "p-3.5"}`}>
+        {showThumb ? (
+          <span className="relative h-12 w-18 shrink-0 overflow-hidden rounded-xl border app-border app-surface-muted">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={preview.imageUrl!}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
+          </span>
+        ) : showAvatar ? (
           <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-2xl border app-border app-surface-muted">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
