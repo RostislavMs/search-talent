@@ -88,7 +88,7 @@ function formatDate(value: string | null, locale: string) {
   }).format(date);
 }
 
-function formatModerationBadge(status: string | null, locale: string) {
+function formatModerationBadge(status: string | null, locale: string): string | null {
   switch (normalizeModerationStatus(status)) {
     case "under_review":
       return locale === "uk" ? "На перевірці" : "Under review";
@@ -97,7 +97,7 @@ function formatModerationBadge(status: string | null, locale: string) {
     case "removed":
       return locale === "uk" ? "Прибрано" : "Removed";
     default:
-      return locale === "uk" ? "Публічний" : "Public";
+      return null;
   }
 }
 
@@ -159,15 +159,9 @@ async function renderOwnerView({
       <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.dashboardProjects.eyebrow}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.dashboardProjects.title}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
-              {dictionary.dashboardProjects.description}
-            </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -184,10 +178,8 @@ async function renderOwnerView({
       <section className="mt-6 rounded-none sm:rounded-hero app-card p-5 sm:mt-8 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
-              {dictionary.dashboardProjects.yourProjects}
-            </h2>
-            <p className="mt-2 text-sm app-muted">
+            <h2 className="sr-only">{dictionary.dashboardProjects.yourProjects}</h2>
+            <p className="text-sm app-muted">
               {dictionary.dashboardProjects.showingResults} {result.projects.length} /{" "}
               {result.totalCount}
             </p>
@@ -244,9 +236,11 @@ async function renderOwnerView({
                             {dictionary.forms.draftBadge}
                           </span>
                         )}
-                        <span className="rounded-full border app-border px-3 py-1 text-xs font-medium app-soft">
-                          {formatModerationBadge(project.moderation_status, locale)}
-                        </span>
+                        {formatModerationBadge(project.moderation_status, locale) ? (
+                          <span className="rounded-full border app-border px-3 py-1 text-xs font-medium app-soft">
+                            {formatModerationBadge(project.moderation_status, locale)}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 

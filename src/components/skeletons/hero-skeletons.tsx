@@ -47,7 +47,6 @@ export function HeroExampleSkeleton() {
           </div>
         </div>
       </div>
-      <HeroBar className="mt-2.5 h-3 w-1/2 rounded-full" />
     </div>
   );
 }
@@ -87,15 +86,11 @@ export function DiscoveryHeroSkeleton() {
     <section className="bg-brand-hero rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:rounded-hero sm:p-8 md:p-10">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="w-full">
-          <HeroBar className="h-4 w-32 rounded-full" />
-          <div className="mt-3 space-y-2">
+          <div className="space-y-2">
             <HeroBar className="h-7 w-full max-w-3xl sm:h-9" />
             <HeroBar className="h-7 w-2/3 max-w-2xl sm:h-9" />
           </div>
-          <div className="mt-4 space-y-2">
-            <HeroBar className="h-4 w-full max-w-2xl" />
-            <HeroBar className="h-4 w-3/4 max-w-xl" />
-          </div>
+          <HeroBar className="mt-3 h-4 w-3/4 max-w-xl sm:mt-4" />
         </div>
         <HeroBar className="h-10 w-32 shrink-0 rounded-full" />
       </div>
@@ -107,21 +102,6 @@ export function DiscoveryHeroSkeleton() {
         </div>
         <HeroBar className="mt-3 h-12 w-full rounded-xl sm:mt-4 sm:h-14 sm:rounded-2xl" />
       </div>
-
-      <div className="mt-5 hidden gap-4 sm:mt-8 md:grid md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            key={index}
-            className="rounded-3xl border border-white/12 bg-white/10 p-5"
-          >
-            <HeroBar className="h-4 w-2/3" />
-            <div className="mt-3 space-y-2">
-              <HeroBar className="h-3 w-full" />
-              <HeroBar className="h-3 w-5/6" />
-            </div>
-          </div>
-        ))}
-      </div>
     </section>
   );
 }
@@ -130,19 +110,13 @@ export function DiscoveryHeroSkeleton() {
  * Skeleton for the compact, SEO-focused hero used by the facet landing pages
  * (`/talents/skill`, `/talents/role`, `/projects/tag`, `/projects/type`).
  * These render on the light `app-card` surface — not the gradient — so they
- * use the neutral `Skeleton` placeholders and always show the locked-facet
- * pill, which is always present on those pages.
+ * use the neutral `Skeleton` placeholders.
  */
 export function DiscoveryMinimalHeroSkeleton() {
   return (
     <section className="rounded-hero app-card p-5 sm:p-7">
-      <Skeleton className="h-4 w-24 rounded-full" />
-      <Skeleton className="mt-2 h-9 w-2/3 max-w-md rounded sm:h-10" />
-      <div className="mt-3 max-w-3xl space-y-2">
-        <Skeleton className="h-4 w-full rounded" />
-        <Skeleton className="h-4 w-4/5 rounded" />
-      </div>
-      <Skeleton className="mt-4 h-7 w-28 rounded-full" />
+      <Skeleton className="h-9 w-2/3 max-w-md rounded sm:h-10" />
+      <Skeleton className="mt-3 h-4 w-3/5 max-w-2xl rounded" />
       <Skeleton className="mt-5 h-12 w-full rounded-2xl" />
     </section>
   );

@@ -114,10 +114,7 @@ export default async function ArticlesPage({
         }}
       >
         <div className="p-4 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
-            {ui.eyebrow}
-          </p>
-          <h1 className="font-display mt-2 text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:mt-4 sm:text-5xl">
+          <h1 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-5xl">
             {ui.title}
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 app-muted sm:mt-5 sm:text-base sm:leading-8">

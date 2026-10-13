@@ -38,6 +38,10 @@ export default function VacancyFilters({
   const copy = useDictionary().vacancies;
   const ui = copy.list.filters;
   const [query, setQuery] = useState(filters.q);
+  // On phones the selects wait behind a "Filters" button so the list starts
+  // on the first screen; they open by themselves when one is already set.
+  const hasSelectFilters = hasVacancyFilters({ ...filters, q: "" });
+  const [filtersOpen, setFiltersOpen] = useState(hasSelectFilters);
 
   function apply(patch: Partial<Filters>) {
     router.push(buildJobsHref({ ...filters, ...patch, page: 1 }));
@@ -69,6 +73,17 @@ export default function VacancyFilters({
         <Button type="submit">{ui.apply}</Button>
       </form>
 
+      <button
+        type="button"
+        onClick={() => setFiltersOpen((open) => !open)}
+        aria-expanded={filtersOpen}
+        aria-controls="jobs-filters"
+        className="inline-flex cursor-pointer items-center gap-2 rounded-full border app-border bg-[color:var(--surface)] px-4 py-2 text-sm font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)] sm:hidden"
+      >
+        {ui.toggle}
+      </button>
+
+      <div id="jobs-filters" className={`space-y-4 ${filtersOpen ? "" : "hidden sm:block"}`}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div role="group" aria-label={ui.kind}>
           <FormSelect
@@ -157,6 +172,7 @@ export default function VacancyFilters({
             {ui.reset}
           </button>
         ) : null}
+      </div>
       </div>
     </div>
   );

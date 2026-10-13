@@ -56,7 +56,6 @@ export default async function MessagesSettingsPage({ params }: { params: Promise
       </LocalizedLink>
       <header className="mt-4 mb-8">
         <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">{copy.title}</h1>
-        <p className="mt-1 text-sm app-muted">{copy.description}</p>
       </header>
       <MessagingSettingsForm initialSettings={settings} initialBlocks={blocks} />
     </main>

@@ -92,10 +92,6 @@ export default function HomeTopRated({
         <h2 className="font-display text-3xl font-medium leading-[1.05] tracking-tight sm:text-4xl md:text-5xl">
           {dictionary.home.topRatedTitle}
         </h2>
-        <p className="mt-3 text-sm leading-7 text-white/78 sm:text-base sm:leading-7">
-          {dictionary.home.topRatedDescription}
-        </p>
-
         <div className="mt-5">
           <LocalizedLink
             href="/rating-guide"
@@ -203,9 +199,6 @@ export default function HomeTopRated({
                   )}
 
                   <div className="flex flex-wrap gap-2 text-xs app-soft">
-                    <span className="rounded-full app-panel px-3 py-1">
-                      {dictionary.home.profileCompletionLabel}: {creator.profileCompleteness}%
-                    </span>
                     <span className="rounded-full app-panel px-3 py-1">
                       {dictionary.home.projectsCountLabel}: {creator.projectCount}
                     </span>

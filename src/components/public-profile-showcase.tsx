@@ -126,22 +126,6 @@ function getLanguageLevelLabel(value: string | null, dictionary: Dictionary) {
   }
 }
 
-function getPreferredContactMethodLabel(value: string | null, dictionary: Dictionary) {
-  switch (value) {
-    case "email":
-      return dictionary.creatorProfile.contactMethodEmail;
-    case "telegram":
-      return dictionary.creatorProfile.contactMethodTelegram;
-    case "phone":
-      return dictionary.creatorProfile.contactMethodPhone;
-    case "linkedin":
-      return dictionary.creatorProfile.contactMethodLinkedin;
-    case "website":
-      return dictionary.creatorProfile.contactMethodWebsite;
-    default:
-      return value;
-  }
-}
 
 function getSectionSpan(size: ProfileSectionSize) {
   switch (size) {
@@ -313,6 +297,7 @@ export default function PublicProfileShowcase({
       : experienceLabel;
   const ratingChip =
     typeof profileRating === "number" ? formatScore(profileRating, dictionary.common) : null;
+  const heroBadges = isOwner ? badges : badges.filter((entry) => entry.earned);
   // Hiding the contacts block (Visibility → Contacts) hides the channels, but
   // not writing on the site: the button stays while a message can go.
   const canContact =
@@ -325,14 +310,14 @@ export default function PublicProfileShowcase({
     // The headline already sits under the name in the hero, so "About" carries
     // only the bio instead of repeating it in a "Position" box.
     ["about", { title: dictionary.creatorProfile.about, visible: profile.visibility.about && Boolean(profile.bio), content: <div style={{ fontSize: `${typeScale.body}rem` }}><ExpandableProfileBio content={profile.bio || ""} locale={locale} accentColor={presentation.accentColor} /></div> }],
-    ["professionalDetails", { title: dictionary.creatorProfile.professionalDetails, visible: profile.visibility.professionalDetails && Boolean(profile.experience_level || salary || hourlyRate || profile.open_to.length > 0 || (profile.work_formats?.length || 0) > 0 || profile.additional_info), content: <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2">{profile.experience_level && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.totalExperienceYears}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{getExperienceLabel(profile.experience_level, locale)}</p></div>}{salary && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.salaryExpectations}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{salary.amount}{salary.currency ? ` ${salary.currency.toUpperCase()}` : ""}</p></div>}{hourlyRateLine && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.openTo.hourlyRate}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{hourlyRateLine}</p></div>}</div>{profile.open_to.length > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.openTo.toggle}</p><div className="mt-2 flex flex-wrap gap-2">{profile.open_to.map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{dictionary.openTo.options[item]}</span>)}</div></div>}{(profile.work_formats?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.workFormats}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.work_formats || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getWorkFormatLabel(item, dictionary)}</span>)}</div></div>}{profile.additional_info && <p className="text-sm leading-8 app-muted" style={{ fontSize: `${typeScale.body}rem` }}>{profile.additional_info}</p>}</div> }],
+    ["professionalDetails", { title: dictionary.creatorProfile.professionalDetails, visible: profile.visibility.professionalDetails && Boolean(salary || hourlyRate || profile.open_to.length > 0 || (profile.work_formats?.length || 0) > 0 || profile.additional_info), content: <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2">{salary && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.creatorProfile.salaryExpectations}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{salary.amount}{salary.currency ? ` ${salary.currency.toUpperCase()}` : ""}</p></div>}{hourlyRateLine && <div className="rounded-2xl app-panel p-3 sm:p-4"><p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">{dictionary.openTo.hourlyRate}</p><p className="mt-2 text-sm text-[color:var(--foreground)]">{hourlyRateLine}</p></div>}</div>{profile.open_to.length > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.openTo.toggle}</p><div className="mt-2 flex flex-wrap gap-2">{profile.open_to.map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{dictionary.openTo.options[item]}</span>)}</div></div>}{(profile.work_formats?.length || 0) > 0 && <div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.workFormats}</p><div className="mt-2 flex flex-wrap gap-2">{(profile.work_formats || []).map((item) => <span key={item} className="rounded-full app-panel px-3 py-1 text-sm app-muted">{getWorkFormatLabel(item, dictionary)}</span>)}</div></div>}{profile.additional_info && <p className="text-sm leading-8 app-muted" style={{ fontSize: `${typeScale.body}rem` }}>{profile.additional_info}</p>}</div> }],
     ["workExperience", { title: dictionary.creatorProfile.workExperience, visible: profile.visibility.workExperience && workExperience.length > 0, content: <div className="space-y-4">{workExperience.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-[color:var(--foreground)]">{item.position || "—"}</h3><p className="mt-1 text-sm app-muted">{item.company_name || "—"}</p></div><span className="text-sm app-soft">{item.started_year || "—"} - {item.is_current ? dictionary.creatorProfile.present : item.ended_year || "—"}</span></div>{item.responsibilities && <p className="mt-3 text-sm leading-7 app-muted">{item.responsibilities}</p>}</article>)}</div> }],
     ["skills", { title: dictionary.creatorProfile.skills, visible: profile.visibility.skills && technologies.length > 0, content: <CollapsibleTags items={technologies} initialCount={12} showMoreLabel={dictionary.creatorProfile.skillsShowAll} showLessLabel={dictionary.creatorProfile.skillsShowLess} /> }],
     ["languages", { title: dictionary.creatorProfile.languages, visible: profile.visibility.languages && languages.length > 0, content: <div className="grid gap-3 md:grid-cols-2">{languages.map((item) => <div key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><p className="font-medium text-[color:var(--foreground)]">{item.name}</p><p className="mt-1 text-sm app-muted">{getLanguageLevelLabel(item.level, dictionary)}</p></div>)}</div> }],
     ["education", { title: dictionary.creatorProfile.education, visible: profile.visibility.education && education.length > 0, content: <div className="space-y-4">{education.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.institution || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.degree, item.field_of_study].filter(Boolean).join(" • ")}</p>{(item.started_on || item.completed_on) && <p className="mt-1 text-sm app-soft">{[item.started_on, item.completed_on].filter(Boolean).join(" - ")}</p>}{item.description && <p className="mt-3 text-sm leading-7 app-muted">{item.description}</p>}</article>)}</div> }],
     ["certificates", { title: dictionary.creatorProfile.certificates, visible: profile.visibility.certificates && certificates.length > 0, content: <div className="space-y-4">{certificates.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.title || "—"}</h3><p className="mt-1 text-sm app-muted">{[item.issuer, item.issued_on].filter(Boolean).join(" • ")}</p><div className="mt-3 flex flex-wrap gap-2">{item.credential_url && <a href={item.credential_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{dictionary.creatorProfile.openCertificateLink}</a>}{item.file_url && <a href={item.file_url} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">{item.file_name || dictionary.creatorProfile.openCertificateFile}</a>}</div></article>)}</div> }],
     ["qa", { title: dictionary.creatorProfile.qa, visible: profile.visibility.qa && qas.length > 0, content: <div className="space-y-4">{qas.map((item) => <article key={item.id} className="rounded-2xl app-panel p-3 sm:p-4"><h3 className="font-semibold text-[color:var(--foreground)]">{item.question || "—"}</h3><p className="mt-3 text-sm leading-7 app-muted">{item.answer || "—"}</p></article>)}</div> }],
-    ["contacts", { title: dictionary.creatorProfile.contacts, visible: profile.visibility.links && Boolean(hasPrivateContact || profile.telegram_username || profile.website || profile.github || profile.twitter || profile.linkedin || profile.behance || profile.dribbble || profile.artstation || profile.vimeo || profile.youtube || profile.instagram), content: <div className="space-y-6"><div className="space-y-3 text-sm">{contact.email && <a href={`mailto:${contact.email}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.contactEmail}: {contact.email}</a>}{profile.telegram_username && <a href={`https://t.me/${profile.telegram_username.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.telegram}: @{profile.telegram_username.replace(/^@/, "")}</a>}{contact.phone && <a href={`tel:${contact.phone}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.phone}: {contact.phone}</a>}{profile.preferred_contact_method && <p className="app-muted">{dictionary.creatorProfile.preferredContactMethod}: {getPreferredContactMethodLabel(profile.preferred_contact_method, dictionary)}</p>}{isOwner && hasPrivateContact && <p className="text-xs leading-5 app-soft">{dictionary.openTo.privateContactsHint}</p>}{!isOwner && hasPrivateContact && <ProfileContactButton contact={contactInfo} isAuthenticated={isAuthenticated} variant="secondary" label={dictionary.openTo.showPrivate} />}</div><div><p className="text-sm font-medium text-[color:var(--foreground)]">{dictionary.creatorProfile.links}</p><div className="mt-3 flex flex-wrap gap-2">{profile.website && <a href={profile.website} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Website</a>}{profile.github && <a href={profile.github} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">GitHub</a>}{profile.twitter && <a href={profile.twitter} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">X / Twitter</a>}{profile.linkedin && <a href={profile.linkedin} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">LinkedIn</a>}{profile.behance && <a href={profile.behance} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Behance</a>}{profile.dribbble && <a href={profile.dribbble} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Dribbble</a>}{profile.artstation && <a href={profile.artstation} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">ArtStation</a>}{profile.vimeo && <a href={profile.vimeo} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Vimeo</a>}{profile.youtube && <a href={profile.youtube} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">YouTube</a>}{profile.instagram && <a href={profile.instagram} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Instagram</a>}</div></div></div> }],
+    ["contacts", { title: dictionary.creatorProfile.contacts, visible: profile.visibility.links && Boolean(hasPrivateContact || profile.telegram_username || profile.website || profile.github || profile.twitter || profile.linkedin || profile.behance || profile.dribbble || profile.artstation || profile.vimeo || profile.youtube || profile.instagram), content: <div className="space-y-6"><div className="space-y-3 text-sm">{contact.email && <a href={`mailto:${contact.email}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.contactEmail}: {contact.email}</a>}{profile.telegram_username && <a href={`https://t.me/${profile.telegram_username.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.telegram}: @{profile.telegram_username.replace(/^@/, "")}</a>}{contact.phone && <a href={`tel:${contact.phone}`} className="block text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4">{dictionary.creatorProfile.phone}: {contact.phone}</a>}{profile.preferred_contact_method && <p className="app-muted">{dictionary.creatorProfile.preferredContactMethod}: {getPreferredContactMethodLabel(profile.preferred_contact_method, dictionary)}</p>}{isOwner && hasPrivateContact && <p className="text-xs leading-5 app-soft">{dictionary.openTo.privateContactsHint}</p>}</div><div><div className="flex flex-wrap gap-2">{profile.website && <a href={profile.website} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Website</a>}{profile.github && <a href={profile.github} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">GitHub</a>}{profile.twitter && <a href={profile.twitter} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">X / Twitter</a>}{profile.linkedin && <a href={profile.linkedin} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">LinkedIn</a>}{profile.behance && <a href={profile.behance} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Behance</a>}{profile.dribbble && <a href={profile.dribbble} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Dribbble</a>}{profile.artstation && <a href={profile.artstation} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">ArtStation</a>}{profile.vimeo && <a href={profile.vimeo} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Vimeo</a>}{profile.youtube && <a href={profile.youtube} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">YouTube</a>}{profile.instagram && <a href={profile.instagram} target="_blank" rel="noreferrer" className="rounded-full border app-border px-3 py-1 text-sm text-[color:var(--foreground)] transition hover:bg-[color:var(--surface-muted)]">Instagram</a>}</div></div></div> }],
     [
       "projects",
       {
@@ -340,7 +325,6 @@ export default function PublicProfileShowcase({
         visible: projects.length > 0,
         content: (
           <ProfileItemsBlock
-            description={dictionary.creatorProfile.publishedWork}
             viewAllLabel={dictionary.creatorProfile.viewAllProjects}
             viewAllHref={
               profile.username ? `/u/${profile.username}/projects` : null
@@ -389,7 +373,6 @@ export default function PublicProfileShowcase({
         visible: articles.length > 0,
         content: (
           <ProfileItemsBlock
-            description={dictionary.creatorProfile.publishedArticles}
             viewAllLabel={dictionary.creatorProfile.viewAllArticles}
             viewAllHref={
               profile.username ? `/u/${profile.username}/articles` : null
@@ -527,8 +510,8 @@ export default function PublicProfileShowcase({
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-eyebrow sm:text-xs" style={{ color: eyebrowColor }}>{profile.categoryName || dictionary.common.creator}</p>
-                    <h1 className="font-display mt-1 font-semibold tracking-tight sm:mt-1.5" style={{ fontSize: `clamp(1.4rem, 3.6vw, ${2.2 * typeScale.heading}rem)`, lineHeight: 1.1 }}>{displayName}</h1>
+                    {profile.categoryName ? <p className="mb-1 text-[11px] font-semibold uppercase tracking-eyebrow sm:mb-1.5 sm:text-xs" style={{ color: eyebrowColor }}>{profile.categoryName}</p> : null}
+                    <h1 className="font-display font-semibold tracking-tight" style={{ fontSize: `clamp(1.4rem, 3.6vw, ${2.2 * typeScale.heading}rem)`, lineHeight: 1.1 }}>{displayName}</h1>
                   </div>
                 </div>
 
@@ -567,9 +550,9 @@ export default function PublicProfileShowcase({
                     </span>
                   </p>
                 )}
-                {badges.length > 0 && (
+                {heroBadges.length > 0 && (
                   <div className={`mt-3 sm:mt-4 ${presentation.heroAlignment === "center" ? "flex justify-center" : ""}`}>
-                    <BadgeShelf badges={badges} locale={locale} maxVisible={HERO_BADGES_VISIBLE} maxVisibleMobile={HERO_BADGES_VISIBLE_MOBILE} />
+                    <BadgeShelf badges={heroBadges} locale={locale} maxVisible={HERO_BADGES_VISIBLE} maxVisibleMobile={HERO_BADGES_VISIBLE_MOBILE} />
                   </div>
                 )}
               </div>
@@ -650,11 +633,28 @@ export default function PublicProfileShowcase({
 
           {/* Rated after the work, not before it: the score itself is a chip
               next to the name, the votes come once the visitor has seen why. */}
-          <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} rating={profileRating} isAuthenticated={isAuthenticated} isOwner={isOwner} className="mt-4 rounded-panel bg-[color:var(--surface-muted)] p-4 sm:mt-6 sm:p-5" />
+          {isOwner ? null : <ProfileVoteButtons profileId={profile.id} initialVote={voteSummary.currentVote} initialLikes={voteSummary.likes} initialDislikes={voteSummary.dislikes} isAuthenticated={isAuthenticated} isOwner={isOwner} className="mt-4 rounded-panel bg-[color:var(--surface-muted)] p-4 sm:mt-6 sm:p-5" />}
         </div>
       </div>
     </main>
   );
+}
+
+function getPreferredContactMethodLabel(value: string | null, dictionary: Dictionary) {
+  switch (value) {
+    case "email":
+      return dictionary.creatorProfile.contactMethodEmail;
+    case "telegram":
+      return dictionary.creatorProfile.contactMethodTelegram;
+    case "phone":
+      return dictionary.creatorProfile.contactMethodPhone;
+    case "linkedin":
+      return dictionary.creatorProfile.contactMethodLinkedin;
+    case "website":
+      return dictionary.creatorProfile.contactMethodWebsite;
+    default:
+      return value;
+  }
 }
 
 const HERO_BADGES_VISIBLE = 5;
@@ -668,7 +668,6 @@ const HERO_BADGES_VISIBLE_MOBILE = 4;
 function ProfileItemsBlock({
   items,
   featured = null,
-  description,
   viewAllLabel,
   viewAllHref,
   totalCount,
@@ -677,7 +676,6 @@ function ProfileItemsBlock({
 }: {
   items: ReactNode[];
   featured?: ReactNode;
-  description: string;
   viewAllLabel: string;
   viewAllHref: string | null;
   totalCount: number;
@@ -689,12 +687,10 @@ function ProfileItemsBlock({
 
   return (
     <>
-      <p className="text-sm leading-7 app-muted">{description}</p>
-
-      {featured ? <div className="mt-5">{featured}</div> : null}
+      {featured ? <div>{featured}</div> : null}
 
       {items.length > 0 ? (
-        <div className={`mt-5 grid gap-4 ${getProfileItemsGridClass(size, layout)}`}>{items}</div>
+        <div className={`${featured ? "mt-5 " : ""}grid gap-4 ${getProfileItemsGridClass(size, layout)}`}>{items}</div>
       ) : null}
 
       {showViewAll && viewAllHref ? (

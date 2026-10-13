@@ -138,6 +138,7 @@ describe("<ProjectCard /> layouts", () => {
     const link = screen.getByRole("link");
     expect(link.className).toContain("@container");
     expect(link).toHaveTextContent(project.description);
-    expect(link).toHaveTextContent(en.common.viewProject);
+    // The whole card is the link — no second "View project" button inside it.
+    expect(link).not.toHaveTextContent(en.common.viewProject);
   });
 });

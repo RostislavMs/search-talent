@@ -149,7 +149,7 @@ export default function TopicComposer({
 
         {/* Scrolls on its own once taller than the viewport — a sticky column
             without a height cap pins in place and hides its own overflow. */}
-        <aside className="app-sticky-pane order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)] xl:order-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:self-start">
+        <aside className="app-sticky-pane order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 xl:order-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:self-start">
           <div className="space-y-5 p-5">
             <div>
               <label
@@ -199,9 +199,9 @@ export default function TopicComposer({
 
               {/* Says what is still missing while the buttons are dead, and what
                   pressing publish will do once they are live. */}
-              <p className="text-xs leading-5 app-soft">
-                {canSubmit ? ui.composerPublishNote : ui.composerRequirements}
-              </p>
+              {canSubmit ? null : (
+                <p className="text-xs leading-5 app-soft">{ui.composerRequirements}</p>
+              )}
             </div>
           </div>
         </aside>

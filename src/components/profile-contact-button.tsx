@@ -303,7 +303,6 @@ export default function ProfileContactButton({
   const messagingBlock = !messaging ? null : messaging.status === "signin" ? (
     <div className="rounded-xl border app-border p-4">
       <p className="text-sm font-semibold">{m.contact.title}</p>
-      <p className="mt-1 text-sm leading-6 app-muted">{m.contact.text}</p>
       <LocalizedLink href={loginHref} className={buttonStyles({ size: "sm", className: "mt-3" })}>
         {m.contact.signIn}
       </LocalizedLink>
@@ -332,7 +331,6 @@ export default function ProfileContactButton({
         </div>
       ) : (
         <>
-          <p className="mt-1 text-sm leading-6 app-muted">{m.contact.text}</p>
           <Button size="sm" className="mt-3" onClick={() => setWriting(true)}>
             {m.contact.write}
           </Button>

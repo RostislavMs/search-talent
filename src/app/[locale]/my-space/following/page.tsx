@@ -134,15 +134,9 @@ export default async function FollowingPage({
         <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-                {dictionary.follows.feedTitle}
-              </p>
-              <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+              <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
                 {dictionary.follows.feedTitle}
               </h1>
-              <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
-                {dictionary.follows.feedDescription}
-              </p>
             </div>
           </div>
         </section>
@@ -223,15 +217,9 @@ export default async function FollowingPage({
       <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.follows.feedTitle}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.follows.feedTitle}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
-              {dictionary.follows.feedDescription}
-            </p>
           </div>
         </div>
       </section>
@@ -307,12 +295,6 @@ export default async function FollowingPage({
                         )}
                       </div>
                     </LocalizedLink>
-
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="rounded-full app-panel px-3 py-1 text-xs app-muted">
-                        {dictionary.common.article}
-                      </span>
-                    </div>
                   </article>
                 );
               }
@@ -381,12 +363,6 @@ export default async function FollowingPage({
                       )}
                     </div>
                   </LocalizedLink>
-
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="rounded-full app-panel px-3 py-1 text-xs app-muted">
-                      {dictionary.common.project}
-                    </span>
-                  </div>
                 </article>
               );
             })}
@@ -410,9 +386,6 @@ export default async function FollowingPage({
             <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
               {dictionary.follows.manageFollowing}
             </h2>
-            <p className="mt-2 text-sm app-muted">
-              {dictionary.follows.manageFollowingDescription}
-            </p>
           </div>
           <div className="space-y-3">
             {followedProfiles.map((profile) => (

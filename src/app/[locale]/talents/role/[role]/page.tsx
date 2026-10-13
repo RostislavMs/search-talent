@@ -80,15 +80,14 @@ export default async function TalentsByRolePage({
   const initial = seed.results;
 
   const hero = {
-    eyebrow: locale === "uk" ? "Напрямок" : "Direction",
     title:
       locale === "uk"
         ? `${category.name} — фахівці`
         : `${category.name} talents`,
     subtitle:
       locale === "uk"
-        ? `Публічні профілі та портфоліо в напрямку «${category.name}». Фільтруйте за навичками, локацією та досвідом.`
-        : `Public profiles and portfolios in the ${category.name} direction. Filter by skills, location, and experience.`,
+        ? `Публічні профілі та портфоліо в напрямку «${category.name}».`
+        : `Public profiles and portfolios in the ${category.name} direction.`,
   };
 
   const siteUrl = getSiteUrl().replace(/\/$/, "");

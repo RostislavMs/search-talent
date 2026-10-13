@@ -7,7 +7,6 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { getModerationCopy } from "@/lib/moderation-copy";
-import { formatScore } from "@/lib/plural";
 import { getOptimisticVoteState, type VoteState, type VoteValue } from "@/lib/vote-state";
 
 type ProfileVoteButtonsProps = {
@@ -15,9 +14,6 @@ type ProfileVoteButtonsProps = {
   initialVote: VoteValue;
   initialLikes: number;
   initialDislikes: number;
-  // Composite creator rating (0-100), same as the talents/leaderboard value.
-  // Falls back to net votes in the badge when null (profile not ranked yet).
-  rating?: number | null;
   isAuthenticated: boolean;
   isOwner: boolean;
   className?: string;
@@ -28,7 +24,6 @@ export default function ProfileVoteButtons({
   initialVote,
   initialLikes,
   initialDislikes,
-  rating,
   isAuthenticated,
   isOwner,
   className,
@@ -125,20 +120,9 @@ export default function ProfileVoteButtons({
             </LocalizedLink>
           </div>
         </div>
-
-        <span className="font-display shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
-          {formatScore(
-            typeof rating === "number" ? rating : voteState.likes - voteState.dislikes,
-            dictionary.common,
-          )}
-        </span>
       </div>
 
-      {isOwner ? (
-        <p className="mt-3 text-sm app-muted">
-          {dictionary.creatorProfile.ownerRatingHint}
-        </p>
-      ) : (
+      {isOwner ? null : (
         <>
           <div className="mt-3 flex items-center gap-2">
             <Button

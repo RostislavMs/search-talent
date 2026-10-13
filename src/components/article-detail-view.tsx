@@ -63,7 +63,7 @@ export type ArticleDetailData = {
   isAdmin: boolean;
 };
 
-function getModerationLabel(status: string | null, locale: string) {
+function getModerationLabel(status: string | null, locale: string): string | null {
   switch (normalizeModerationStatus(status)) {
     case "under_review":
       return locale === "uk" ? "На перевірці" : "Under review";
@@ -72,7 +72,7 @@ function getModerationLabel(status: string | null, locale: string) {
     case "removed":
       return locale === "uk" ? "Прибрано" : "Removed";
     default:
-      return locale === "uk" ? "Схвалено" : "Approved";
+      return null;
   }
 }
 
@@ -98,6 +98,7 @@ export default function ArticleDetailView({
   // estimate. What matters there is how many replies it has.
   const isTopic = section === "discussions";
   const sectionHref = SECTION_HREF[section];
+  const moderationLabel = getModerationLabel(article.moderationStatus, locale);
 
   const author: ArticleAuthor | null = article.author;
   const deletedUserLabel = isUkrainian ? "Видалений користувач" : "Deleted user";
@@ -113,10 +114,7 @@ export default function ArticleDetailView({
         confirmDelete: "Видалити цю статтю?",
         deleteFailed: "Не вдалося видалити статтю.",
         by: "Автор",
-        published: "Опубліковано",
-        updated: "Оновлено",
         draft: "Чернетка",
-        category: "Категорія",
         noCategory: "Без категорії",
         tableOfContents: isNews ? "Зміст" : "Зміст статті",
         related: "Рекомендовані статті",
@@ -142,10 +140,7 @@ export default function ArticleDetailView({
         confirmDelete: "Delete this article?",
         deleteFailed: "Could not delete the article.",
         by: "Author",
-        published: "Published",
-        updated: "Updated",
         draft: "Draft",
-        category: "Category",
         noCategory: "No category",
         tableOfContents: isNews ? "Contents" : "In this article",
         related: "Recommended articles",
@@ -317,11 +312,11 @@ export default function ArticleDetailView({
                   {ui.draft}
                 </span>
               ) : null}
-              {(isOwner || isAdmin) && (
+              {(isOwner || isAdmin) && moderationLabel ? (
                 <span className="rounded-full border app-border px-4 py-2 text-sm app-muted">
-                  {getModerationLabel(article.moderationStatus, locale)}
+                  {moderationLabel}
                 </span>
-              )}
+              ) : null}
             </div>
 
             <h1 className="font-display mt-6 text-4xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-5xl">
@@ -391,26 +386,19 @@ export default function ArticleDetailView({
                 </>
               )}
               <span>
-                {ui.published}:{" "}
                 {formatArticleDate(
                   article.publishedAt || article.createdAt,
                   locale,
                 )}
               </span>
-              {article.editedAt ? (
-                <span>
-                  {ui.updated}: {formatArticleDate(article.editedAt, locale)}
-                </span>
-              ) : null}
               {/* No reply count here — the stat chips below already carry it. */}
               {!isTopic && (
-                <span>{getArticleReadingTime(article.content, locale)}</span>
+                <span className="hidden sm:inline">
+                  {getArticleReadingTime(article.content, locale)}
+                </span>
               )}
               {!isNews && !isTopic && (
-                <span>
-                  {ui.category}:{" "}
-                  {getCategoryDisplayName(article.category, locale)}
-                </span>
+                <span>{getCategoryDisplayName(article.category, locale)}</span>
               )}
             </div>
 

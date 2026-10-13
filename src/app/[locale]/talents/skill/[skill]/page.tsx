@@ -80,15 +80,14 @@ export default async function TalentsBySkillPage({
   const initial = seed.results;
 
   const hero = {
-    eyebrow: locale === "uk" ? "Навичка" : "Skill",
     title:
       locale === "uk"
         ? `Фахівці з ${technology.name}`
         : `${technology.name} specialists`,
     subtitle:
       locale === "uk"
-        ? `Публічні профілі та портфоліо фахівців, які працюють з ${technology.name}. Фільтруйте за локацією, досвідом і напрямком.`
-        : `Public profiles and portfolios of specialists working with ${technology.name}. Filter by location, experience, and direction.`,
+        ? `Публічні профілі та портфоліо фахівців, які працюють з ${technology.name}.`
+        : `Public profiles and portfolios of specialists working with ${technology.name}.`,
   };
 
   const siteUrl = getSiteUrl().replace(/\/$/, "");

@@ -152,13 +152,11 @@ export default function VoteButtons({
 
   return (
     <section className="rounded-panel app-panel p-4">
-      <h2 className="font-display text-sm font-semibold tracking-tight text-[color:var(--foreground)]">
-        {dictionary.projectPage.community}
-      </h2>
+      <h2 className="sr-only">{dictionary.projectPage.community}</h2>
 
       {isOwner ? (
         <>
-          <div className="mt-3 flex items-center gap-2 text-sm app-muted">
+          <div className="flex items-center gap-2 text-sm app-muted">
             <span className="inline-flex items-center gap-1.5 rounded-full border app-border bg-[color:var(--surface)] px-3 py-1.5">
               <ThumbUpIcon />
               <span className="tabular-nums">{voteState.likes}</span>
@@ -176,13 +174,10 @@ export default function VoteButtons({
               <span className="tabular-nums">{views}</span>
             </span>
           </div>
-          <p className="mt-2 text-xs app-muted">
-            {dictionary.projectPage.ownerVoteHint}
-          </p>
         </>
       ) : (
         <>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Button
               onClick={() => vote(1)}
               disabled={loading}

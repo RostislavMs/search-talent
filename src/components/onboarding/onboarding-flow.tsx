@@ -112,11 +112,13 @@ export default function OnboardingFlow({
             .replace("{total}", String(onboardingSteps.length))}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <ProfileCompletenessButton
-            completeness={completeness}
-            locale={router.locale}
-            editHref={`/${router.locale}/profile/edit`}
-          />
+          <div className="hidden sm:block">
+            <ProfileCompletenessButton
+              completeness={completeness}
+              locale={router.locale}
+              editHref={`/${router.locale}/profile/edit`}
+            />
+          </div>
           <button
             type="button"
             onClick={leave}

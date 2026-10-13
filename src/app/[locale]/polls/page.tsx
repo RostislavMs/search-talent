@@ -54,10 +54,9 @@ export default async function PollsPage({
 
   const ui = isUk
     ? {
-        eyebrow: "Голос спільноти",
         title: "Опитування та анкети",
         description:
-          "Інтерактивні опитування спільноти: голосуйте, переглядайте результати та діліться думкою. Створіть власне опитування з різними типами питань.",
+          "Голосуйте й дивіться, що думає спільнота.",
         createPoll: "Створити опитування",
         filterSearch: "Пошук",
         searchPlaceholder: "Пошук опитувань за словами",
@@ -75,10 +74,9 @@ export default async function PollsPage({
         emptyFeed: "Опитувань поки немає. Створіть перше — і спільнота зможе проголосувати.",
       }
     : {
-        eyebrow: "Community voice",
         title: "Polls & surveys",
         description:
-          "Interactive community polls: vote, see results, and share your opinion. Create your own poll with different question types.",
+          "Vote and see what the community thinks.",
         createPoll: "Create a poll",
         filterSearch: "Search",
         searchPlaceholder: "Search polls by keyword",
@@ -139,10 +137,7 @@ export default async function PollsPage({
         }}
       >
         <div className="p-4 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
-            {ui.eyebrow}
-          </p>
-          <h1 className="font-display mt-2 text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:mt-4 sm:text-5xl">
+          <h1 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-5xl">
             {ui.title}
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 app-muted sm:mt-5 sm:text-base sm:leading-8">

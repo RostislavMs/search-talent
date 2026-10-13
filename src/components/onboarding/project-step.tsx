@@ -70,10 +70,7 @@ export default function OnboardingProjectStep({
       ) : null}
 
       <div className="space-y-3">
-        <div className="space-y-1">
-          <h2 className="font-medium text-[color:var(--foreground)]">{copy.manualTitle}</h2>
-          <p className="text-sm app-muted">{copy.manualDescription}</p>
-        </div>
+        <h2 className="font-medium text-[color:var(--foreground)]">{copy.manualTitle}</h2>
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {ONBOARDING_PROJECT_KINDS.map((kind) => (
             <li key={kind}>

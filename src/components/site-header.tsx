@@ -302,13 +302,9 @@ export default function SiteHeader({
         best === null || link.href.length > best.length ? link.href : best,
       null,
     );
-  const viewerInitial = (
-    viewer?.displayName ||
-    viewer?.email ||
-    dictionary.nav.profile
-  )
-    .slice(0, 1)
-    .toUpperCase();
+  const viewerName =
+    viewer?.displayName || viewer?.email || dictionary.nav.profile;
+  const viewerInitial = viewerName.slice(0, 1).toUpperCase();
   // Active dropdown triggers use the same white/black (foreground) highlight as
   // every other selected state in the header (nav pills, language/theme
   // toggles, dropdown links) — orange stays reserved for the signup CTA only.
@@ -316,7 +312,7 @@ export default function SiteHeader({
   // bordered inactive state (no 1px shift on toggle).
   const menuTriggerClasses = (active: boolean) =>
     [
-      "inline-flex cursor-pointer list-none items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-colors duration-200 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
+      "inline-flex cursor-pointer list-none items-center justify-center rounded-full border p-1 transition-colors duration-200 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
       active
         ? "border-transparent bg-[color:var(--foreground)] text-[color:var(--background)]"
         : "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",
@@ -338,12 +334,11 @@ export default function SiteHeader({
         ? "text-[color:var(--background)]"
         : "text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]",
     ].join(" ");
-  // The two mobile triggers (navigation + profile) share one pill style so they
-  // line up with the notifications bell. Below 640px they collapse to a square
-  // icon-only button (no label); from 640px up the label appears alongside.
+  // The two mobile triggers (navigation + profile) share one round icon-only
+  // style so they line up with the notifications bell.
   const mobileTriggerClasses = (active: boolean) =>
     [
-      "inline-flex h-11 w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full border text-sm font-medium transition-colors duration-200 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)] sm:w-auto sm:px-3",
+      "inline-flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border transition-colors duration-200 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
       active
         ? "border-transparent bg-[color:var(--foreground)] text-[color:var(--background)]"
         : "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",
@@ -440,21 +435,23 @@ export default function SiteHeader({
           {viewer ? (
             <>
               <details ref={profileMenuRef} className="relative">
-                <summary className={menuTriggerClasses(profileActive)}>
-                  <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-[color:var(--surface-muted)] text-xs font-semibold text-[color:var(--foreground)]">
+                <summary
+                  className={menuTriggerClasses(profileActive)}
+                  aria-label={dictionary.nav.profile}
+                >
+                  <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-[color:var(--surface-muted)] text-xs font-semibold text-[color:var(--foreground)]">
                     {viewer.avatarUrl ? (
                       <OptimizedImage
                         src={viewer.avatarUrl}
-                        alt={dictionary.nav.profile}
+                        alt=""
                         fill
-                        sizes="28px"
+                        sizes="32px"
                         className="object-cover"
                       />
                     ) : (
                       <span>{viewerInitial}</span>
                     )}
                   </span>
-                  <span>{dictionary.nav.profile}</span>
                 </summary>
 
                 <div className="absolute right-0 mt-3 w-80 rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-3 shadow-2xl">
@@ -463,14 +460,12 @@ export default function SiteHeader({
                     onClick={closeProfileMenu}
                     className="block rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3 transition hover:ring-1 hover:ring-inset hover:ring-[color:var(--border)]"
                   >
-                    <p className="text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                      {dictionary.nav.signedInAs}
+                    <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
+                      {viewerName}
                     </p>
-                    <p className="mt-1 truncate text-sm font-medium text-[color:var(--foreground)]">
-                      {viewer.displayName ||
-                        viewer.email ||
-                        dictionary.nav.profile}
-                    </p>
+                    {viewer.username ? (
+                      <p className="truncate text-xs app-soft">@{viewer.username}</p>
+                    ) : null}
                   </LocalizedLink>
 
                   <div className="mt-3 space-y-1">
@@ -548,8 +543,7 @@ export default function SiteHeader({
 
         {/* Below lg the bar collapses to: logo · notifications · profile ·
             menu. Profile stays a compact dropdown; navigation opens as a
-            full-height right-side drawer. Below 640px both triggers drop their
-            label and show only the icon. */}
+            full-height right-side drawer. */}
         <div className="ml-auto flex items-center gap-2 lg:hidden">
           {viewer?.messages?.show ? <MessagesNavLink initialCount={viewer.messages.unread} /> : null}
           {viewer ? <NotificationsBell mode="link" /> : null}
@@ -573,9 +567,6 @@ export default function SiteHeader({
                     <span>{viewerInitial}</span>
                   )}
                 </span>
-                <span className="hidden sm:inline">
-                  {dictionary.nav.profile}
-                </span>
               </summary>
 
               <div className="absolute right-0 mt-3 w-[min(17rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-4.5rem)] overflow-y-auto overscroll-contain rounded-panel border border-[color:var(--border)] bg-[color:var(--surface)] p-2 shadow-2xl">
@@ -598,14 +589,12 @@ export default function SiteHeader({
                     )}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                      {dictionary.nav.signedInAs}
-                    </p>
                     <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
-                      {viewer.displayName ||
-                        viewer.email ||
-                        dictionary.nav.profile}
+                      {viewerName}
                     </p>
+                    {viewer.username ? (
+                      <p className="truncate text-xs app-soft">@{viewer.username}</p>
+                    ) : null}
                   </div>
                 </LocalizedLink>
 
@@ -689,7 +678,6 @@ export default function SiteHeader({
             >
               <path d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-            <span className="hidden sm:inline">{dictionary.nav.menu}</span>
           </button>
         </div>
 
@@ -744,23 +732,14 @@ export default function SiteHeader({
                   </div>
 
                   <div className="shrink-0 border-t border-[color:var(--border)] p-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="rounded-2xl border border-[color:var(--border)] p-3">
-                        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                          {dictionary.language.switchLabel}
-                        </p>
-                        <LanguageSwitcher />
-                      </div>
-
-                      <div className="rounded-2xl border border-[color:var(--border)] p-3">
-                        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-eyebrow app-soft">
-                          {dictionary.theme.toggleLabel}
-                        </p>
-                        <ThemeToggle
-                          initialTheme={initialTheme}
-                          initialCanPersist={initialCanPersistTheme}
-                        />
-                      </div>
+                    {/* UK/EN and the sun/moon switch explain themselves — no
+                        captions or boxes around them. */}
+                    <div className="flex items-center justify-between gap-2">
+                      <LanguageSwitcher />
+                      <ThemeToggle
+                        initialTheme={initialTheme}
+                        initialCanPersist={initialCanPersistTheme}
+                      />
                     </div>
 
                     {viewer ? null : (

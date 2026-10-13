@@ -339,11 +339,13 @@ export default function VacancyApplyPanel({
               placeholder={t.messagePlaceholder}
               onChange={(event) => setMessage(event.target.value)}
             />
-            <p className="mt-1 text-right text-xs app-soft" aria-live="polite">
-              {t.messageCounter
-                .replace("{count}", String(message.length))
-                .replace("{max}", String(APPLICATION_LIMITS.messageMax))}
-            </p>
+            {message.length >= APPLICATION_LIMITS.messageMax * 0.8 ? (
+              <p className="mt-1 text-right text-xs app-soft" aria-live="polite">
+                {t.messageCounter
+                  .replace("{count}", String(message.length))
+                  .replace("{max}", String(APPLICATION_LIMITS.messageMax))}
+              </p>
+            ) : null}
           </div>
 
           <div className="rounded-xl bg-[color:var(--surface-muted)] p-4">
@@ -403,10 +405,13 @@ export default function VacancyApplyPanel({
 
   return (
     <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-6" aria-labelledby="vacancy-apply-title">
-      <h2 id="vacancy-apply-title" className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
+      <h2
+        id="vacancy-apply-title"
+        className={state === "team" ? "text-xs font-semibold uppercase tracking-eyebrow app-soft" : "sr-only"}
+      >
         {state === "team" ? copy.team.eyebrow : t.title}
       </h2>
-      <div className="mt-3">{body}</div>
+      <div className={state === "team" ? "mt-3" : undefined}>{body}</div>
       {dialog ? createPortal(dialog, document.body) : null}
     </section>
   );

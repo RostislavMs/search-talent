@@ -215,7 +215,7 @@ export default function FeedFilterBrowser({
                 <form className="space-y-4" onSubmit={applyFilters}>
                   {ui.filterSearch ? (
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-white/78">
+                      <label htmlFor={`${filtersId}-search`} className="sr-only">
                         {ui.filterSearch}
                       </label>
                       <div className="relative">
@@ -233,6 +233,7 @@ export default function FeedFilterBrowser({
                           <path d="m21 21-4.3-4.3" />
                         </svg>
                         <input
+                          id={`${filtersId}-search`}
                           type="search"
                           value={search}
                           onChange={(event) => setSearch(event.target.value)}
@@ -244,10 +245,11 @@ export default function FeedFilterBrowser({
                   ) : null}
 
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-white/78">
+                    <label htmlFor={`${filtersId}-author`} className="sr-only">
                       {ui.filterAuthor}
                     </label>
                     <input
+                      id={`${filtersId}-author`}
                       value={author}
                       onChange={(event) => setAuthor(event.target.value)}
                       placeholder={ui.authorPlaceholder}
@@ -259,9 +261,9 @@ export default function FeedFilterBrowser({
                       instead of two full-width stacked fields. */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-white/78">
+                      <span className="sr-only">
                         {ui.filterCategory}
-                      </label>
+                      </span>
                       <FormSelect
                         value={category}
                         onChange={setCategory}
@@ -274,9 +276,9 @@ export default function FeedFilterBrowser({
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-white/78">
+                      <span className="sr-only">
                         {ui.filterSort}
-                      </label>
+                      </span>
                       <FormSelect
                         value={sort}
                         onChange={setSort}

@@ -120,9 +120,6 @@ export default function ResetPasswordPage() {
   return (
     <main className="mx-auto max-w-md px-0 py-0 sm:px-4 sm:py-16">
       <section className="rounded-none sm:rounded-hero app-card px-4 py-6 sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
-          {dictionary.auth.resetPassword.eyebrow}
-        </p>
 
         {linkState === "loading" && (
           <p className="mt-6 app-muted">
@@ -154,9 +151,6 @@ export default function ResetPasswordPage() {
             <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.auth.resetPassword.title}
             </h1>
-            <p className="mt-3 app-muted">
-              {dictionary.auth.resetPassword.description}
-            </p>
 
             <form
               onSubmit={handleSubmit}

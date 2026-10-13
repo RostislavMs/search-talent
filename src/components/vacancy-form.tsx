@@ -560,7 +560,6 @@ export default function VacancyForm({
               value={form.description}
               onChange={(value) => update("description", value)}
               label={ui.description}
-              hint={ui.descriptionHint}
               placeholder={ui.descriptionPlaceholder}
               minHeight={360}
               maxLength={VACANCY_LIMITS.descriptionMax}
@@ -604,7 +603,6 @@ export default function VacancyForm({
                   onChange={(value) => update("locale", value as VacancyLocale)}
                 />
               </div>
-              <p className={HINT_CLASS}>{ui.languageHint}</p>
             </Field>
 
             <div className="space-y-3 border-t app-border pt-5">
@@ -625,11 +623,11 @@ export default function VacancyForm({
                   {saving === "draft" ? ui.saving : ui.saveDraft}
                 </Button>
               ) : null}
-              <p className="text-xs leading-5 app-soft">
-                {isDraft
-                  ? ui.publishNote.replace("{days}", String(VACANCY_LIMITS.openDays))
-                  : ui.editNote}
-              </p>
+              {isDraft ? (
+                <p className="text-xs leading-5 app-soft">
+                  {ui.publishNote.replace("{days}", String(VACANCY_LIMITS.openDays))}
+                </p>
+              ) : null}
             </div>
           </div>
         </aside>

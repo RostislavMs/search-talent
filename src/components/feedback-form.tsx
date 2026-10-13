@@ -170,15 +170,9 @@ export default function FeedbackForm({ viewer }: FeedbackFormProps) {
   return (
     <main className="mx-auto max-w-3xl px-0 py-10 sm:px-6">
       <section className="rounded-none sm:rounded-hero app-card p-6 sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-          {copy.eyebrow}
-        </p>
-        <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+        <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
           {copy.title}
         </h1>
-        <p className="mt-4 max-w-xl text-base leading-8 app-muted">
-          {copy.description}
-        </p>
 
         {sent ? (
           <div className="mt-8 rounded-panel app-panel p-6 text-center">

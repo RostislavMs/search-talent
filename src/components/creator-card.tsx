@@ -1,6 +1,5 @@
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import LocalizedLink from "@/components/ui/localized-link";
-import { buttonStyles } from "@/components/ui/button-styles";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { formatOpenToList } from "@/lib/open-to";
 import { formatScore } from "@/lib/plural";
@@ -91,21 +90,16 @@ export default function CreatorCard({
               {creator.categoryName}
             </span>
           )}
-          {creator.countryName && (
+          {(creator.city || creator.countryName) && (
             <span className="rounded-full app-panel px-3 py-1 text-xs app-muted">
-              {creator.countryName}
-            </span>
-          )}
-          {creator.city && (
-            <span className="rounded-full app-panel px-3 py-1 text-xs app-muted">
-              {creator.city}
+              {[creator.city, creator.countryName].filter(Boolean).join(", ")}
             </span>
           )}
         </div>
       )}
 
       {creator.technologies && creator.technologies.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
           {creator.technologies.slice(0, 3).map((technology) => (
             <span
               key={technology.id}
@@ -116,12 +110,6 @@ export default function CreatorCard({
           ))}
         </div>
       )}
-
-      <div className="mt-6 flex justify-end">
-        <span className={buttonStyles({ variant: "ghost", size: "sm" })}>
-          {dictionary.common.openProfile}
-        </span>
-      </div>
     </LocalizedLink>
   );
 }

@@ -10,13 +10,6 @@ import type { Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 /** One glyph per kind so a row is identifiable before reading a word of it. */
-const KIND_GLYPH: Record<DiscussionListKind, string> = {
-  topic: "◈",
-  project: "▤",
-  article: "✎",
-  poll: "☑",
-};
-
 export default function DiscussionList({
   items,
   locale,
@@ -45,12 +38,6 @@ export default function DiscussionList({
               href={item.href}
               className="flex gap-4 px-1 py-5 transition-colors hover:bg-[color:var(--surface-muted)] sm:px-3"
             >
-              <span
-                aria-hidden
-                className="mt-0.5 hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border app-border text-base app-soft sm:flex"
-              >
-                {KIND_GLYPH[item.kind]}
-              </span>
 
               <span className="min-w-0 flex-1">
                 {/* Kind, author and time on one line: as separate rows they left

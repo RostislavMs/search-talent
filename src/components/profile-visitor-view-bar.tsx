@@ -24,7 +24,6 @@ export default function ProfileVisitorViewBar({
       >
         <div className="min-w-0">
           <p className="text-sm font-semibold text-[color:var(--foreground)]">{copy.visitorViewTitle}</p>
-          <p className="mt-1 text-sm leading-6 app-muted">{copy.visitorViewHint}</p>
           {hiddenFromVisitors ? (
             <p className="mt-1 text-sm font-medium leading-6 text-[color:var(--foreground)]">
               {copy.visitorViewHidden}

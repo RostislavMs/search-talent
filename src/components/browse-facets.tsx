@@ -70,7 +70,7 @@ export default function BrowseFacets({
             className="rounded-full sm:px-4 sm:py-2.5"
           >
             <span className="text-xs sm:text-sm">{item.label}</span>
-            <span className="ml-1.5 rounded-full bg-black/8 px-1.5 py-0.5 text-[11px] sm:ml-2 sm:px-2 sm:text-xs">
+            <span className="ml-2 hidden rounded-full bg-black/8 px-2 py-0.5 text-xs sm:inline">
               {item.count}
             </span>
           </ButtonLink>

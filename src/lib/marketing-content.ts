@@ -35,7 +35,6 @@ const marketingContent = {
       featuredTalentsDescription:
         "A curated set of standout profiles with real work, clear positioning, and public portfolios.",
       latestArticlesTitle: "Latest articles",
-      latestArticlesDescription: "Tips on portfolios, careers and working in tech.",
       howItWorksTitle: "How it works",
       talentTrackTitle: "If you're a specialist",
       explorerTrackTitle: "If you're looking for one",
@@ -123,8 +122,6 @@ const marketingContent = {
       popularCategoriesDescription:
         "Explore talent directories built around the most active portfolio roles on the platform.",
       popularTechnologiesTitle: "Popular technologies",
-      popularTechnologiesDescription:
-        "These are the stacks and tools that appear most often across public profiles and projects.",
       featuredTalentsTitle: "Featured talents",
       featuredTalentsDescription:
         "Profiles with strong public work, clear positioning, and visible project proof.",
@@ -222,7 +219,6 @@ const marketingContent = {
       featuredTalentsDescription:
         "Добірка сильних профілів з реальними роботами, чітким позиціонуванням і публічними кейсами.",
       latestArticlesTitle: "Останні статті",
-      latestArticlesDescription: "Поради про портфоліо, кар'єру й роботу в IT.",
       howItWorksTitle: "Як це працює",
       talentTrackTitle: "Якщо ви фахівець",
       explorerTrackTitle: "Якщо ви шукаєте фахівця",
@@ -310,8 +306,6 @@ const marketingContent = {
       popularCategoriesDescription:
         "Переглядайте найактивніші ролі з публічними профілями та портфоліо на платформі.",
       popularTechnologiesTitle: "Популярні технології",
-      popularTechnologiesDescription:
-        "Ці інструменти та стеки найчастіше зустрічаються у профілях і проєктах SearchTalent.",
       featuredTalentsTitle: "Рекомендовані таланти",
       featuredTalentsDescription:
         "Профілі з сильними кейсами, зрозумілим позиціонуванням і видимими доказами роботи.",

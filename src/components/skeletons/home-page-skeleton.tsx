@@ -27,11 +27,15 @@ export function HomeBelowHeroSkeleton() {
       {/* Why */}
       <section className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-7">
         <Skeleton className="h-9 w-2/3 max-w-md rounded" />
-        <div className="mt-6 grid gap-4 sm:mt-7 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="rounded-3xl app-panel p-5">
-              <Skeleton className="h-7 w-10 rounded-full" />
-              <div className="mt-4 space-y-2">
+        <div className="mt-6 grid gap-4 sm:mt-7 md:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="relative overflow-hidden rounded-3xl app-panel p-5">
+              <span
+                aria-hidden="true"
+                className="absolute bottom-6 left-0 top-6 w-0.75 rounded-r-full bg-brand opacity-70"
+              />
+              <Skeleton className="h-5 w-2/3 rounded" />
+              <div className="mt-3 space-y-2">
                 <Skeleton className="h-3 w-full rounded" />
                 <Skeleton className="h-3 w-4/5 rounded" />
               </div>
@@ -67,15 +71,14 @@ export function HomeBelowHeroSkeleton() {
           {Array.from({ length: 2 }).map((_, columnIndex) => (
             <div key={columnIndex} className="rounded-panel app-panel p-4 sm:p-5">
               <Skeleton className="h-5 w-1/2 rounded" />
-              <div className="mt-5 space-y-4">
+              <div className="mt-4 space-y-4">
                 {Array.from({ length: 3 }).map((_, stepIndex) => (
-                  <div
-                    key={stepIndex}
-                    className="rounded-2xl bg-[color:var(--surface)] p-4"
-                  >
-                    <Skeleton className="h-3 w-8 rounded" />
-                    <Skeleton className="mt-2 h-4 w-2/3 rounded" />
-                    <Skeleton className="mt-2 h-3 w-full rounded" />
+                  <div key={stepIndex} className="flex gap-3">
+                    <Skeleton className="h-7 w-7 shrink-0 rounded-full" />
+                    <div className="min-w-0 flex-1">
+                      <Skeleton className="h-4 w-2/3 rounded" />
+                      <Skeleton className="mt-2 hidden h-3 w-full rounded sm:block" />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -86,10 +89,7 @@ export function HomeBelowHeroSkeleton() {
 
       {/* Latest articles */}
       <section className="mt-6 rounded-hero app-card p-5 sm:mt-8 sm:p-7">
-        <div className="max-w-3xl space-y-3">
-          <Skeleton className="h-9 w-2/3 rounded" />
-          <Skeleton className="h-4 w-full rounded" />
-        </div>
+        <Skeleton className="h-9 w-2/3 max-w-md rounded" />
         <div className="mt-6">
           <ArticleCardGridSkeleton
             count={4}

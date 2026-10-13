@@ -101,15 +101,14 @@ export default async function ProjectsByTypePage({
   const initial = seed.results;
 
   const hero = {
-    eyebrow: locale === "uk" ? "Тип проєкту" : "Project type",
     title:
       locale === "uk"
         ? `Проєкти типу «${label}»`
         : `${label} projects`,
     subtitle:
       locale === "uk"
-        ? `Публічні проєкти у форматі «${label}». Фільтруйте за технологіями, статусом і рейтингом.`
-        : `Public ${label.toLowerCase()} projects. Filter by technology, status, and rating.`,
+        ? `Публічні проєкти у форматі «${label}».`
+        : `Public ${label.toLowerCase()} projects.`,
   };
 
   const siteUrl = getSiteUrl().replace(/\/$/, "");

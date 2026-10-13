@@ -74,9 +74,11 @@ export default function ForgotPasswordPage() {
     <main className="mx-auto max-w-md px-0 py-0 sm:px-4 sm:py-16">
       <section className="rounded-none sm:rounded-hero app-card px-4 py-6 sm:p-8">
         <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
-            {dictionary.auth.forgotPassword.eyebrow}
-          </p>
+          <h1 className="font-display min-w-0 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+            {sent
+              ? dictionary.auth.forgotPassword.sentTitle
+              : dictionary.auth.forgotPassword.title}
+          </h1>
           <ButtonLink
             href="/"
             variant="ghost"
@@ -89,9 +91,6 @@ export default function ForgotPasswordPage() {
 
         {sent ? (
           <>
-            <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
-              {dictionary.auth.forgotPassword.sentTitle}
-            </h1>
             <p className="mt-3 app-muted">
               {dictionary.auth.forgotPassword.sentDescription}
             </p>
@@ -104,9 +103,6 @@ export default function ForgotPasswordPage() {
           </>
         ) : (
           <>
-            <h1 className="font-display mt-4 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
-              {dictionary.auth.forgotPassword.title}
-            </h1>
             <p className="mt-3 app-muted">
               {dictionary.auth.forgotPassword.description}
             </p>
@@ -126,7 +122,7 @@ export default function ForgotPasswordPage() {
                 <input
                   id="forgot-email"
                   type="email"
-                  placeholder={dictionary.auth.email}
+                  placeholder="name@example.com"
                   className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
                   value={email}
                   onChange={(e) => {

@@ -99,9 +99,8 @@ export default function ThemeToggle({
   initialTheme: Theme;
   /**
    * Server-computed value: true when the user has already accepted the
-   * "preferences" cookie category. Used as the initial state so the
-   * "session-only" indicator doesn't flash on every reload before the
-   * client-side check runs.
+   * "preferences" cookie category. Used as the initial state until the
+   * client-side check runs; without it the choice lasts only for this visit.
    */
   initialCanPersist: boolean;
 }) {
@@ -227,17 +226,6 @@ export default function ThemeToggle({
           />
         </span>
       </button>
-
-      {!canPersist && (
-        <span
-          className="inline-flex h-5 w-5 shrink-0 cursor-help items-center justify-center rounded-full border border-[color:var(--border)] text-[10px] font-semibold app-muted"
-          title={dictionary.cookieConsent.themeSessionOnly}
-          aria-label={dictionary.cookieConsent.themeSessionOnly}
-          role="img"
-        >
-          i
-        </span>
-      )}
     </div>
   );
 }

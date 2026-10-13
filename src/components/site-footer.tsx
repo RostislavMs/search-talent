@@ -11,15 +11,9 @@ type SiteFooterProps = {
 export default function SiteFooter({ dictionary }: SiteFooterProps) {
   const isEnglish = dictionary.nav.search === "Search";
 
-  const talentsLabel = isEnglish ? "Browse Talent" : "Таланти";
-
-  const articlesLabel = isEnglish ? "Tech Articles" : "Статті";
-
-  const newsLabel = isEnglish ? "News" : "Новини";
-
-  const projectsLabel = isEnglish
-    ? "Creator Portfolios"
-    : "Портфоліо авторів";
+  // Same names as the header, so a section is called one thing everywhere.
+  const talentsLabel = isEnglish ? "Talents" : "Таланти";
+  const articlesLabel = isEnglish ? "Articles" : "Статті";
 
   const navLabel = isEnglish ? "Explore" : "Навігація";
 
@@ -31,7 +25,6 @@ export default function SiteFooter({ dictionary }: SiteFooterProps) {
   const aboutLabel = isEnglish ? "About" : "Про нас";
   const forCompaniesLabel = isEnglish ? "For companies" : "Для компаній";
   const ratingGuideLabel = isEnglish ? "Rating guide" : "Гайд по рейтингу";
-  const faqLabel = isEnglish ? "FAQ" : "FAQ";
   const feedbackLabel = isEnglish ? "Feedback" : "Зворотний зв'язок";
   const contactsLabel = isEnglish ? "Contacts" : "Контакти";
 
@@ -39,12 +32,11 @@ export default function SiteFooter({ dictionary }: SiteFooterProps) {
     <footer className="border-t border-[color:var(--border)] bg-[color:var(--surface)]">
       <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 sm:py-10">
         {/*
-          Three link columns remain after the account block was dropped, so the
-          tablet grid is 3-up (brand spans the full first row) — a 2-up grid
-          would leave a hole in the last row.
+          The brand spans the first row below lg; the three link columns sit
+          2-up on phones (legal wraps under) and 3-up on tablets.
         */}
-        <div className="grid gap-8 sm:grid-cols-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div className="sm:col-span-3 lg:col-span-1">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <LocalizedLink
               href="/"
               className="relative block h-9 w-[112px] shrink-0"
@@ -57,7 +49,7 @@ export default function SiteFooter({ dictionary }: SiteFooterProps) {
                 className="object-contain object-left"
               />
             </LocalizedLink>
-            <p className="mt-3 max-w-xs text-sm leading-6 text-[color:var(--muted-foreground)]">
+            <p className="mt-3 hidden max-w-xs text-sm leading-6 text-[color:var(--muted-foreground)] sm:block">
               {dictionary.footer.description}
             </p>
           </div>
@@ -74,16 +66,16 @@ export default function SiteFooter({ dictionary }: SiteFooterProps) {
                 {dictionary.nav.home}
               </LocalizedLink>
               <LocalizedLink
-                href="/projects"
-                className="hover:text-[color:var(--foreground)]"
-              >
-                {projectsLabel}
-              </LocalizedLink>
-              <LocalizedLink
                 href="/talents"
                 className="hover:text-[color:var(--foreground)]"
               >
                 {talentsLabel}
+              </LocalizedLink>
+              <LocalizedLink
+                href="/projects"
+                className="hover:text-[color:var(--foreground)]"
+              >
+                {dictionary.nav.projects}
               </LocalizedLink>
               <LocalizedLink
                 href="/articles"
@@ -95,7 +87,7 @@ export default function SiteFooter({ dictionary }: SiteFooterProps) {
                 href="/news"
                 className="hover:text-[color:var(--foreground)]"
               >
-                {newsLabel}
+                {dictionary.nav.news}
               </LocalizedLink>
               {/*
                 Plain anchor, not LocalizedLink: /sitemap.xml is a root route
@@ -138,7 +130,7 @@ export default function SiteFooter({ dictionary }: SiteFooterProps) {
                 href="/faq"
                 className="hover:text-[color:var(--foreground)]"
               >
-                {faqLabel}
+                FAQ
               </LocalizedLink>
               <LocalizedLink
                 href="/feedback"

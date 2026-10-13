@@ -38,7 +38,6 @@ import {
   type ProjectKind,
   type ProjectStatus,
 } from "@/lib/projects";
-import { useLoginHref } from "@/lib/auth/use-login-href";
 
 export type DiscoveryMode = "projects" | "creators";
 
@@ -96,7 +95,6 @@ const SORT_LABELS: Record<Sort, (copy: DiscoveryCopy["common"]) => string> = {
 };
 
 type DiscoveryHero = {
-  eyebrow?: string;
   /** Rendered as the page <h1>. */
   title: string;
   subtitle?: string;
@@ -126,7 +124,7 @@ type DiscoveryPageProps = {
   lockedFilter?: DiscoveryLockedFilter;
   /**
    * When provided, the marketing gradient hero is swapped for a minimal
-   * header (eyebrow + h1 + subtitle + search). Used by the skill/role
+   * header (h1 + subtitle + search). Used by the skill/role
    * landing pages so they reuse the discovery layout but lead with a
    * compact, SEO-focused heading instead of the full hero.
    */
@@ -190,11 +188,6 @@ type DiscoveryCopy = {
     saveSearch: string;
     saveSearchPlaceholder: string;
     savedSearches: string;
-    noSavedSearches: string;
-    savedSearchesSignIn: string;
-    signIn: string;
-    resultsSummary: string;
-    activeFilters: string;
     queryLabel: string;
     mediaCount: string;
     loading: string;
@@ -206,19 +199,10 @@ type DiscoveryCopy = {
   modes: Record<
     DiscoveryMode,
     {
-      eyebrow: string;
       title: string;
       description: string;
       placeholder: string;
-      secondaryHref: string;
-      secondaryLabel: string;
-      summaryDescription: string;
-      resultsDescription: string;
       emptyMessage: string;
-      heroCards: Array<{
-        title: string;
-        description: string;
-      }>;
     }
   >;
 };
@@ -352,12 +336,6 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
         saveSearch: "Зберегти пошук",
         saveSearchPlaceholder: "Назва пошуку…",
         savedSearches: "Збережені пошуки",
-        noSavedSearches: "У вас ще немає збережених пошуків.",
-        savedSearchesSignIn:
-          "Увійдіть, щоб зберігати пошуки й повертатися до них пізніше.",
-        signIn: "Увійти",
-        resultsSummary: "Зведення пошуку",
-        activeFilters: "Активні фільтри",
         queryLabel: "Запит",
         mediaCount: "Медіа",
         loading: "Оновлення результатів...",
@@ -368,68 +346,20 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       },
       modes: {
         projects: {
-          eyebrow: "Каталог портфоліо",
           title: "Реальні IT-проєкти та портфоліо авторів",
           description:
-            "Досліджуйте каталог фріланс-портфоліо з реальними IT-проєктами: шукайте за стеком, статусом і темою, щоб знайти натхнення чи відкрити нових авторів.",
+            "Публічні проєкти й портфоліо авторів. Шукайте за стеком, типом і статусом.",
           placeholder: "Шукайте проєкти, технології або авторів...",
-          secondaryHref: "/talents",
-          secondaryLabel: "Шукати таланти",
-          summaryDescription:
-            "Звужуйте список за стеком, статусом і наявністю медіа, щоб швидше знаходити потрібні роботи.",
-          resultsDescription:
-            "Тут відображаються лише публічні проєкти, тому шукати й переглядати каталог однаково просто.",
           emptyMessage:
             "Нічого не знайшлося. Спробуйте інший запит або послабте фільтри.",
-          heroCards: [
-            {
-              title: "Пошук за назвою або стеком",
-              description:
-                "Шукайте за назвою, описом або технологіями, щоб швидко знаходити релевантні роботи.",
-            },
-            {
-              title: "Фільтр за статусом і медіа",
-              description:
-                "Залишайте у видачі проєкти з потрібним статусом і достатньою кількістю матеріалів.",
-            },
-            {
-              title: "Перехід до автора",
-              description:
-                "Якщо проєкт зацікавив, одразу переходьте до профілю автора.",
-            },
-          ],
         },
         creators: {
-          eyebrow: "Профілі талантів",
           title: "Пошук IT-спеціалістів — профілі та портфоліо",
           description:
-            "Переглядайте публічні профілі та портфоліо IT-спеціалістів. Відбирайте авторів за навичками, локацією, досвідом і напрямком роботи — без зайвих проєктних результатів.",
+            "Публічні профілі й портфоліо IT-спеціалістів. Шукайте за навичками, напрямком і досвідом.",
           placeholder: "Шукайте таланти, ролі або навички...",
-          secondaryHref: "/projects",
-          secondaryLabel: "Шукати проєкти",
-          summaryDescription:
-            "Комбінуйте фільтри профілю, щоб швидко зібрати короткий список релевантних людей.",
-          resultsDescription:
-            "Тут відображаються лише профілі, тому ніщо не відволікає від пошуку людей.",
           emptyMessage:
             "Нічого не знайшлося. Спробуйте інший запит або зменшіть кількість фільтрів.",
-          heroCards: [
-            {
-              title: "Пошук за роллю або навичками",
-              description:
-                "Вкажіть роль, спеціалізацію або ключову технологію й одразу звузьте видачу.",
-            },
-            {
-              title: "Локація й напрямок",
-              description:
-                "Фільтруйте за країною, напрямком і форматом роботи, коли важливий контекст співпраці.",
-            },
-            {
-              title: "Швидкий перехід у профіль",
-              description:
-                "Відкривайте профіль, щоб одразу оцінити навички, досвід і пов'язані проєкти.",
-            },
-          ],
         },
       },
     };
@@ -461,11 +391,6 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
       saveSearch: "Save search",
       saveSearchPlaceholder: "Search name…",
       savedSearches: "Saved searches",
-      noSavedSearches: "You have no saved searches yet.",
-      savedSearchesSignIn: "Sign in to save searches and come back to them later.",
-      signIn: "Sign in",
-      resultsSummary: "Search summary",
-      activeFilters: "Active filters",
       queryLabel: "Query",
       mediaCount: "Media",
       loading: "Refreshing results...",
@@ -477,68 +402,20 @@ function getDiscoveryCopy(locale: Locale): DiscoveryCopy {
     },
     modes: {
       projects: {
-        eyebrow: "Portfolio catalog",
         title: "Real IT Projects & Creator Portfolios",
         description:
-          "Browse a catalog of creative portfolios and real IT projects. Search by stack, status, or topic to find inspiring work and discover new creators — no profile noise in the results.",
+          "Public projects and creator portfolios. Search by stack, type and status.",
         placeholder: "Search projects, technologies, or authors...",
-        secondaryHref: "/talents",
-        secondaryLabel: "Search talents",
-        summaryDescription:
-          "Narrow the list by stack, status, and media so the right projects surface faster.",
-        resultsDescription:
-          "Only public projects appear here, so searching and browsing the catalog feel like one continuous flow.",
         emptyMessage:
           "No matching projects yet. Try another keyword or relax the filters.",
-        heroCards: [
-          {
-            title: "Search by title or stack",
-            description:
-              "Search by title, description, or technology tags to find relevant work faster.",
-          },
-          {
-            title: "Filter by status and media",
-            description:
-              "Keep projects with the right status and enough supporting media in view.",
-          },
-          {
-            title: "Open creator context",
-            description:
-              "Jump from a project page to the author's profile whenever you need more context.",
-          },
-        ],
       },
       creators: {
-        eyebrow: "Talent profiles",
         title: "Discover IT Specialists — Profiles & Portfolios",
         description:
-          "Explore public profiles and portfolios of IT specialists. Filter by skills, location, experience, and work format to discover the right creators — no project noise in the results.",
+          "Public profiles and portfolios of IT specialists. Search by skills, direction and experience.",
         placeholder: "Search talents, roles, or skills...",
-        secondaryHref: "/projects",
-        secondaryLabel: "Search projects",
-        summaryDescription:
-          "Combine profile filters to build a strong shortlist faster.",
-        resultsDescription:
-          "Only profile cards appear here, so nothing distracts from finding the right people.",
         emptyMessage:
           "No matching talents yet. Try another keyword or reduce the filters.",
-        heroCards: [
-          {
-            title: "Search by role or skill",
-            description:
-              "Type a role, specialty, or core technology and narrow the list quickly.",
-          },
-          {
-            title: "Filter by location and direction",
-            description:
-              "Filter by country, category, and work format when collaboration context matters.",
-          },
-          {
-            title: "Open the public profile",
-            description:
-              "Open a profile to review skills, experience, and linked projects in one place.",
-          },
-        ],
       },
     },
   };
@@ -558,7 +435,6 @@ export default function DiscoveryPage({
   canPersonalize = false,
 }: DiscoveryPageProps) {
   const dictionary = useDictionary();
-  const loginHref = useLoginHref();
   const toast = useToast();
   const locale = useCurrentLocale();
   const copy = useMemo(() => getDiscoveryCopy(locale), [locale]);
@@ -684,6 +560,7 @@ export default function DiscoveryPage({
   // `canPersonalize` is exactly "the viewer is signed in" (see lib/db/search),
   // which is also what saving a search needs.
   const canSaveSearches = canPersonalize;
+  const savedSearchesForMode = savedSearches.filter((s) => s.mode === mode);
 
   useEffect(() => {
     // Guests have nothing saved and the endpoint would only answer 401.
@@ -1098,31 +975,13 @@ export default function DiscoveryPage({
     <section>
       {hero ? (
         <section className="mx-4 rounded-hero app-card p-5 sm:mx-0 sm:p-7">
-          {hero.eyebrow ? (
-            <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft sm:text-sm">
-              {hero.eyebrow}
-            </p>
-          ) : null}
-          <h1 className="font-display mt-2 text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
+          <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
             {hero.title}
           </h1>
           {hero.subtitle ? (
             <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
               {hero.subtitle}
             </p>
-          ) : null}
-          {lockedFilter ? (
-            <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border app-border bg-[color:var(--surface-muted)] px-3 py-1 text-sm font-medium text-[color:var(--foreground)]">
-              <svg
-                viewBox="0 0 16 16"
-                fill="currentColor"
-                className="h-3.5 w-3.5 app-soft"
-                aria-hidden="true"
-              >
-                <path d="M8 1a3 3 0 0 0-3 3v2H4.5A1.5 1.5 0 0 0 3 7.5v6A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 11.5 6H11V4a3 3 0 0 0-3-3Zm2 5H6V4a2 2 0 1 1 4 0v2Z" />
-              </svg>
-              {lockedFilter.label}
-            </span>
           ) : null}
           <input
             type="text"
@@ -1136,10 +995,7 @@ export default function DiscoveryPage({
         <section className="bg-brand-hero mx-4 rounded-2xl border app-border p-5 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:mx-0 sm:rounded-hero sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
-              {pageUi.eyebrow}
-            </p>
-            <h1 className="font-display mt-2 max-w-3xl text-2xl font-medium tracking-tight sm:mt-3 sm:text-3xl md:text-4xl">
+            <h1 className="font-display max-w-3xl text-2xl font-medium tracking-tight sm:text-3xl md:text-4xl">
               {pageUi.title}
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/78 sm:mt-4 sm:text-base sm:leading-8">
@@ -1189,21 +1045,6 @@ export default function DiscoveryPage({
           />
         </div>
 
-        {!hasFilters && (
-          <div className="mt-5 hidden gap-4 sm:mt-8 md:grid md:grid-cols-3">
-            {pageUi.heroCards.map((card) => (
-              <div
-                key={card.title}
-                className="rounded-3xl border border-white/12 bg-white/10 p-5 backdrop-blur"
-              >
-                <p className="font-semibold text-white">{card.title}</p>
-                <p className="mt-2 text-sm leading-6 text-white/72">
-                  {card.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
         </section>
       )}
 
@@ -1584,12 +1425,13 @@ export default function DiscoveryPage({
             </div>
           </section>
 
+          {canSaveSearches && (savedSearchesForMode.length > 0 || hasFilters) ? (
           <section className="rounded-hero app-card p-5">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
                 {commonUi.savedSearches}
               </h2>
-              {canSaveSearches && hasFilters && (
+              {hasFilters && (
                 <button
                   type="button"
                   onClick={() => setShowSaveForm((v) => !v)}
@@ -1600,19 +1442,8 @@ export default function DiscoveryPage({
               )}
             </div>
 
-            {canSaveSearches ? null : (
-              <p className="mt-3 text-sm app-muted">
-                {commonUi.savedSearchesSignIn}{" "}
-                <LocalizedLink
-                  href={loginHref}
-                  className="font-medium text-[color:var(--foreground)] underline-offset-4 transition hover:underline"
-                >
-                  {commonUi.signIn}
-                </LocalizedLink>
-              </p>
-            )}
 
-            {canSaveSearches && showSaveForm && (
+            {showSaveForm && (
               <div className="mt-3 flex gap-2">
                 <input
                   type="text"
@@ -1635,13 +1466,9 @@ export default function DiscoveryPage({
               </div>
             )}
 
-            <div className={canSaveSearches ? "mt-3 space-y-1.5" : "hidden"}>
-              {savedSearches.filter((s) => s.mode === mode).length === 0 ? (
-                <p className="text-sm app-muted">{commonUi.noSavedSearches}</p>
-              ) : (
-                savedSearches
-                  .filter((s) => s.mode === mode)
-                  .map((search) => (
+            {savedSearchesForMode.length > 0 ? (
+            <div className="mt-3 space-y-1.5">
+              {savedSearchesForMode.map((search) => (
                     <div
                       key={search.id}
                       className="group flex items-center justify-between gap-2 rounded-xl app-panel px-3 py-2 transition hover:bg-[color:var(--surface-muted)]"
@@ -1662,35 +1489,17 @@ export default function DiscoveryPage({
                         &times;
                       </button>
                     </div>
-                  ))
-              )}
+                  ))}
             </div>
+            ) : null}
           </section>
+          ) : null}
         </aside>
 
         <div className="space-y-8">
           {activeFilterItems.length > 0 && (
             <section className="rounded-hero app-card p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
-                    {commonUi.activeFilters}
-                  </h2>
-                  <p className="mt-1 text-sm app-muted">
-                    {pageUi.summaryDescription}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="cursor-pointer text-sm app-muted transition hover:text-[color:var(--foreground)]"
-                >
-                  {commonUi.resetFilters}
-                </button>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {activeFilterItems.map((item) => (
                   <button
                     key={item.key}
@@ -1704,6 +1513,13 @@ export default function DiscoveryPage({
                     </span>
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="ml-auto cursor-pointer text-sm app-muted transition hover:text-[color:var(--foreground)]"
+                >
+                  {commonUi.resetFilters}
+                </button>
               </div>
             </section>
           )}
@@ -1715,20 +1531,12 @@ export default function DiscoveryPage({
           )}
 
           <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
-                  {mode === "projects"
-                    ? dictionary.common.projects
-                    : talentsLabel}
-                </h2>
-                <p className="mt-2 app-muted">{pageUi.resultsDescription}</p>
-              </div>
-
-              <span className="text-sm app-muted">
-                {resultCount} {dictionary.search.results}
-              </span>
-            </div>
+            <h2 className="sr-only">
+              {mode === "projects" ? dictionary.common.projects : talentsLabel}
+            </h2>
+            <p className="mb-6 hidden text-right text-sm app-muted xl:block">
+              {resultCount} {dictionary.search.results}
+            </p>
 
             {mode === "projects" ? (
               initialLoading || (loading && projects.length === 0) ? (

@@ -151,7 +151,8 @@ describe("<VacancyApplyPanel /> form", () => {
     await user.click(within(dialog).getByLabelText(projects[1].title));
     await user.click(within(dialog).getByLabelText(projects[0].title));
     await user.type(within(dialog).getByLabelText(uk.apply.messageLabel), "Привіт!");
-    expect(within(dialog).getByText("7 / 1000")).toBeInTheDocument();
+    // The counter only shows near the limit, not for a short note.
+    expect(within(dialog).queryByText("7 / 1000")).not.toBeInTheDocument();
     await user.click(within(dialog).getByLabelText(uk.apply.consent.replace("{company}", "Acme")));
     await user.click(within(dialog).getByRole("button", { name: uk.apply.submit }));
 
@@ -162,6 +163,14 @@ describe("<VacancyApplyPanel /> form", () => {
     expect(await screen.findByText(uk.apply.sent)).toBeInTheDocument();
     expect(router.refresh).toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("shows the character counter once the message nears the limit", async () => {
+    const { user, dialog } = await openForm();
+    const field = within(dialog).getByLabelText(uk.apply.messageLabel);
+    await user.click(field);
+    await user.paste("a".repeat(800));
+    expect(within(dialog).getByText("800 / 1000")).toBeInTheDocument();
   });
 
   it("says why the database refused, and refreshes when the page is out of date", async () => {

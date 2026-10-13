@@ -75,9 +75,6 @@ export default async function NotificationsPage({
           <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
             {dictionary.notifications.pageTitle}
           </h1>
-          <p className="mt-1 text-sm app-muted">
-            {dictionary.notifications.pageDescription}
-          </p>
         </div>
         <LocalizedLink
           href={NOTIFICATION_SETTINGS_PATH}

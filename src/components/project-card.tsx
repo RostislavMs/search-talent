@@ -1,6 +1,5 @@
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import LocalizedLink from "@/components/ui/localized-link";
-import { buttonStyles } from "@/components/ui/button-styles";
 import OptimizedImage from "@/components/ui/optimized-image";
 import {
   buildProjectPath,
@@ -133,14 +132,11 @@ export default function ProjectCard({
           )
         ) : (
           <div
+            aria-hidden="true"
             className={`flex items-end bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.14),_transparent_45%),linear-gradient(135deg,_rgba(148,163,184,0.28),_rgba(255,255,255,0.8))] p-5 ${
               isMasonry ? "aspect-[16/10] w-full" : "h-full"
             }`}
-          >
-            <span className="rounded-full bg-white/85 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm">
-              {dictionary.common.project}
-            </span>
-          </div>
+          />
         )}
       </div>
 
@@ -148,10 +144,12 @@ export default function ProjectCard({
         {/* The score shares the kind's row, so the title below gets the
             card's full width instead of wrapping beside the pill. */}
         <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-eyebrow app-soft">
-            {kindLabel || dictionary.common.project}
-          </p>
-          <span className="font-display shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
+          {kindLabel ? (
+            <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-eyebrow app-soft">
+              {kindLabel}
+            </p>
+          ) : null}
+          <span className="font-display ml-auto shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">
             {scoreLabel}
           </span>
         </div>
@@ -174,18 +172,12 @@ export default function ProjectCard({
         {project.description && (
           <p
             className={`mt-4 text-sm leading-6 app-muted ${
-              isFeatured ? "line-clamp-6" : isCase ? "line-clamp-5" : "line-clamp-3"
+              isFeatured ? "line-clamp-6" : isCase ? "line-clamp-5" : "line-clamp-2 sm:line-clamp-3"
             }`}
           >
             {toPlainText(project.description)}
           </p>
         )}
-
-        <div className="mt-auto flex justify-end pt-6">
-          <span className={buttonStyles({ variant: "ghost", size: "sm" })}>
-            {dictionary.common.viewProject}
-          </span>
-        </div>
       </div>
     </>
   );

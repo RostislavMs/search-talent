@@ -82,15 +82,14 @@ export default async function ProjectsByTagPage({
   const initial = seed.results;
 
   const hero = {
-    eyebrow: locale === "uk" ? "Стек" : "Stack",
     title:
       locale === "uk"
         ? `IT-проєкти на ${technology.name}`
         : `${technology.name} IT projects`,
     subtitle:
       locale === "uk"
-        ? `Публічні проєкти зі стеком ${technology.name}. Фільтруйте за статусом, типом і рейтингом.`
-        : `Public projects built with ${technology.name}. Filter by status, type, and rating.`,
+        ? `Публічні проєкти зі стеком ${technology.name}.`
+        : `Public projects built with ${technology.name}.`,
   };
 
   const siteUrl = getSiteUrl().replace(/\/$/, "");

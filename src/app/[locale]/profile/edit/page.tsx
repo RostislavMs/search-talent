@@ -97,15 +97,9 @@ export default async function ProfileEditPage({
       <section className="rounded-none app-card p-4 sm:rounded-hero sm:p-6">
         <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.dashboardProfile.eyebrow}
-            </p>
-            <h1 className="font-display mt-2 text-xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-2xl">
+            <h1 className="font-display text-xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-2xl">
               {dictionary.dashboardProfile.title}
             </h1>
-            <p className="mt-2 hidden max-w-2xl text-sm leading-6 app-muted sm:block">
-              {dictionary.dashboardProfile.description}
-            </p>
           </div>
 
           <div className="flex flex-wrap gap-3">

@@ -219,7 +219,6 @@ export default function ProfileSharePanel({
           />
           <div className="space-y-2">
             <p className="text-sm font-medium text-[color:var(--foreground)]">{t.qrTitle}</p>
-            <p className="text-sm app-muted">{t.qrHint}</p>
             <Button variant="secondary" size="sm" onClick={handleDownloadQr}>
               {t.downloadQr}
             </Button>

@@ -37,21 +37,11 @@ export default function DiscoveryPageSkeleton({
             <Skeleton className="h-10 w-full rounded-xl" />
             <Skeleton className="h-10 w-full rounded-xl" />
           </div>
-          <div className="rounded-hero app-card p-5 space-y-3">
-            <Skeleton className="h-3 w-32 rounded" />
-            <Skeleton className="h-4 w-full rounded" />
-          </div>
         </aside>
 
         <div className="space-y-8">
           <section className="rounded-hero app-card p-6 sm:p-7">
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div className="space-y-3">
-                <Skeleton className="h-7 w-40 rounded" />
-                <Skeleton className="h-4 w-64 rounded" />
-              </div>
-              <Skeleton className="h-4 w-20 rounded" />
-            </div>
+            <Skeleton className="mb-6 ml-auto hidden h-4 w-20 rounded xl:block" />
             {mode === "projects" ? (
               <ProjectCardGridSkeleton />
             ) : (

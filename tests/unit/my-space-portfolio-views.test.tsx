@@ -43,7 +43,6 @@ describe("<MySpacePortfolioViews />", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(copy.sources.direct)).toBeInTheDocument();
     expect(screen.queryByText(copy.sources.internal)).toBeNull();
-    expect(screen.getByText(copy.directHint)).toBeInTheDocument();
     expect(screen.getByText("linkedin.com")).toBeInTheDocument();
 
     const project = screen.getByRole("link", { name: "Нічне місто" });

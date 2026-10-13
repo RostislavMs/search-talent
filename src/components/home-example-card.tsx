@@ -197,8 +197,6 @@ export default function HomeExampleCard({
           {copy.cta}: {displayName}
         </span>
       </LocalizedLink>
-
-      <p className="mt-2.5 text-xs text-white/60">{copy.customNote}</p>
     </div>
   );
 }

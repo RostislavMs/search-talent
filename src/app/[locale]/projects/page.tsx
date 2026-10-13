@@ -133,20 +133,10 @@ export default async function LocalizedProjectsPage({
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
         <BrowseFacets
           title={locale === "uk" ? "Перегляд за типом" : "Browse by type"}
-          description={
-            locale === "uk"
-              ? "Публічні проєкти за форматом роботи."
-              : "Public projects grouped by their format."
-          }
           items={typeItems}
         />
         <BrowseFacets
           title={locale === "uk" ? "Перегляд за технологією" : "Browse by technology"}
-          description={
-            locale === "uk"
-              ? "Публічні проєкти, згруповані за стеком технологій."
-              : "Public projects grouped by their technology stack."
-          }
           items={techItems}
           viewAllHref={
             visibleTechnologies.length > TAG_LIMIT ? "/projects/tag" : undefined

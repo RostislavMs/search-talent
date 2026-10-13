@@ -621,16 +621,9 @@ export default function ArticleInteractions({
         {/* On a topic page the whole page is the discussion — a "Discussion"
             heading right under the topic title just says it twice. */}
         {context === "article" ? (
-          <div>
-            <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
-              {locale === "uk" ? "Обговорення" : "Discussion"}
-            </h2>
-            <p className="mt-2 text-sm app-muted">
-              {locale === "uk"
-                ? "Діліться думками та відповідайте на коментарі інших."
-                : "Share your thoughts and reply to other comments."}
-            </p>
-          </div>
+          <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
+            {locale === "uk" ? "Обговорення" : "Discussion"}
+          </h2>
         ) : null}
 
         <div className="rounded-panel app-card p-5">

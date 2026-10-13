@@ -29,8 +29,6 @@ export function getStatsUi(locale: Locale) {
       creatorDirectionsMix: "Розподіл за напрямками",
       profileReadiness: "Якість профілів",
       skillsUniverse: "Карта скілів платформи",
-      skillsDescription:
-        "Навички з профілів і технології з проєктів разом — реальний стек платформи.",
       starter: "Початковий",
       growing: "Розвивається",
       complete: "Сильний",
@@ -110,8 +108,6 @@ export function getStatsUi(locale: Locale) {
     creatorDirectionsMix: "Direction distribution",
     profileReadiness: "Profile readiness",
     skillsUniverse: "Platform skill map",
-    skillsDescription:
-      "Profile skills and project technologies combined — the actual platform stack.",
     starter: "Starter",
     growing: "Growing",
     complete: "Strong",

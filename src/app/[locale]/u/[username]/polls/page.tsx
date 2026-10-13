@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { formatCount } from "@/lib/plural";
 import { notFound } from "next/navigation";
 import PollCard from "@/components/poll-card";
 import DeletePollButton from "@/components/delete-poll-button";
@@ -91,7 +92,7 @@ function getOwnerUi(locale: string) {
   };
 }
 
-function formatModerationBadge(status: string | null, locale: string) {
+function formatModerationBadge(status: string | null, locale: string): string | null {
   switch (normalizeModerationStatus(status)) {
     case "under_review":
       return locale === "uk" ? "На перевірці" : "Under review";
@@ -100,7 +101,7 @@ function formatModerationBadge(status: string | null, locale: string) {
     case "removed":
       return locale === "uk" ? "Прибрано" : "Removed";
     default:
-      return locale === "uk" ? "Схвалено" : "Approved";
+      return null;
   }
 }
 
@@ -156,13 +157,9 @@ async function renderOwnerView({ locale, username }: { locale: string; username:
       <section className="rounded-none sm:rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {ui.eyebrow}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {ui.title}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 app-muted">{ui.description}</p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -188,17 +185,23 @@ async function renderOwnerView({ locale, username }: { locale: string; username:
                       {item.title}
                     </h3>
                     <p className="mt-2 text-sm app-muted">
-                      {getCategoryDisplayName(item.category, locale)} ·{" "}
-                      {getPollClosesLabel(item.closesAt, locale)}
+                      {[
+                        getCategoryDisplayName(item.category, locale),
+                        getPollClosesLabel(item.closesAt, locale),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full app-panel px-4 py-2 text-sm app-muted">
                       {item.status === "published" ? ui.published : ui.draft}
                     </span>
-                    <span className="rounded-full border app-border px-4 py-2 text-sm app-muted">
-                      {formatModerationBadge(item.moderationStatus, locale)}
-                    </span>
+                    {formatModerationBadge(item.moderationStatus, locale) ? (
+                      <span className="rounded-full border app-border px-4 py-2 text-sm app-muted">
+                        {formatModerationBadge(item.moderationStatus, locale)}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
@@ -282,7 +285,13 @@ async function renderPublicView({
               {displayName}
             </h1>
             <p className="mt-2 text-sm app-muted">
-              {result.totalCount} {locale === "uk" ? "опитувань" : "polls"}
+              {formatCount(
+                result.totalCount,
+                locale === "uk"
+                  ? { one: "{count} опитування", few: "{count} опитування", many: "{count} опитувань", other: "{count} опитування" }
+                  : { one: "{count} poll", few: "{count} polls", many: "{count} polls", other: "{count} polls" },
+                locale,
+              )}
             </p>
           </div>
 

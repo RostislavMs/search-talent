@@ -156,15 +156,9 @@ export default async function SavedItemsPage({
       <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.bookmarks.title}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.bookmarks.title}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
-              {dictionary.bookmarks.description}
-            </p>
           </div>
         </div>
       </section>
