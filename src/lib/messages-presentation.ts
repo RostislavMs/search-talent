@@ -32,7 +32,14 @@ export function describeLastMessage(message: LastMessagePreview | null, copy: Me
   if (message.removed) return message.removedBy === "author" ? copy.preview.deleted : copy.preview.removed;
   if (message.body === null) return copy.preview.held;
 
-  const text = message.body.replace(/\s+/g, " ").trim();
+  // Files without a word: say they are files.
+  const text =
+    message.body.replace(/\s+/g, " ").trim() ||
+    (message.attachmentCount > 1
+      ? copy.preview.files.replace("{count}", String(message.attachmentCount))
+      : message.attachmentCount === 1
+        ? copy.preview.file
+        : "");
   return message.mine ? copy.preview.you.replace("{text}", text) : text;
 }
 

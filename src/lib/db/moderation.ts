@@ -1,4 +1,5 @@
 import { buildCompanyPath } from "@/lib/companies";
+import { normalizeMessageAttachments, type MessageAttachment } from "@/lib/message-attachments";
 import { buildProjectPath } from "@/lib/projects";
 import { buildVacancyPath } from "@/lib/vacancies";
 import { createClient } from "@/lib/supabase/server";
@@ -115,6 +116,8 @@ export type ReportSnapshotMessage = {
   originalBody: string | null;
   /** From the side the report is about. */
   byReported: boolean;
+  /** Its files, which a moderator opens only from this report. */
+  attachments: MessageAttachment[];
   createdAt: string;
 };
 
@@ -147,6 +150,7 @@ export function parseReportSnapshot(value: unknown): ReportSnapshot | null {
           edited: message.edited === true,
           originalBody: typeof message.originalBody === "string" ? message.originalBody : null,
           byReported: message.byReported === true,
+          attachments: normalizeMessageAttachments(message.attachments),
           createdAt: typeof message.createdAt === "string" ? message.createdAt : "",
         },
       ];

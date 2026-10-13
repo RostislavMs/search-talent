@@ -43,8 +43,9 @@ export async function GET(request: Request, { params }: RouteContext) {
 
 /**
  * POST /api/messages/conversations/:id/messages — a message in an existing
- * conversation. send_message() checks the side, blocks, the request rules,
- * the limits and the text; `clientId` makes a retry safe.
+ * conversation: text, files (`attachmentIds`, confirmed uploads) or both.
+ * send_message() checks the side, blocks, the request rules, the limits, the
+ * text and the files; `clientId` makes a retry safe.
  */
 export async function POST(request: Request, { params }: RouteContext) {
   const route = routeConversationIdSchema.safeParse(await params);
@@ -74,7 +75,13 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: parsed.error, code: "invalid" }, { status: 400 });
   }
 
-  const outcome = await sendMessage(supabase, route.data.id, parsed.data.body, parsed.data.clientId ?? null);
+  const outcome = await sendMessage(
+    supabase,
+    route.data.id,
+    parsed.data.body,
+    parsed.data.clientId ?? null,
+    parsed.data.attachmentIds,
+  );
 
   if (!outcome.ok) {
     return NextResponse.json(

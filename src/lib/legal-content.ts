@@ -40,7 +40,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "These Terms describe the rules for using SearchTalent. They form a living document and may expand as the product grows.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "October 11, 2026",
+      lastUpdatedValue: "October 12, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -115,12 +115,14 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "Signed-in people with a confirmed email can write to each other on SearchTalent, and a company's team can write to people on behalf of the company. A company page that is not verified can write only to people who applied to its vacancies. A conversation is seen only by the people in it; on a company's side, by its whole team, and each message shows who in the team wrote it.",
             "The first message to someone you have not talked to is a request: one message, without links outside SearchTalent, until they reply or accept it; you may try again after 30 days. In the message settings you choose who may write to you. You can block anyone; the person you block is not told. You can edit your message within 15 minutes of sending it and delete it at any time; the other side sees that it was edited or deleted.",
-            "Messages are checked automatically when sent: hate, sexual content, and link spam are not sent, and a message that asks for payment or to move to a messenger reaches the recipient with a warning. You report the other person once, from the conversation's menu. Moderators read a conversation only when someone reports it, and then only its last 20 messages.",
+            "Once a conversation is accepted, you can also send files: images (JPEG, PNG, WebP) and PDF, up to 10 MB each and up to 5 in a message. A request carries no files. Only the people in the conversation can open them.",
+            "Messages are checked automatically when sent: hate, sexual content, and link spam are not sent, and a message that asks for payment or to move to a messenger reaches the recipient with a warning. You report the other person once, from the conversation's menu. Moderators read a conversation only when someone reports it, and then only its last 20 messages and the files in them.",
           ],
           bullets: [
             "No spam, mass mailing, or unsolicited advertising.",
             "Do not ask anyone for payment, passwords, or codes.",
             "No harassment, threats, or hate.",
+            "Send only files you have the right to share. No sexual or violent images, and no images of anyone shared without their consent.",
             "A violation means the messages are removed, and messaging may be limited or the account blocked. When several people block or report someone within a week, that person's new conversations are turned off until a moderator looks.",
           ],
         },
@@ -169,7 +171,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "This Privacy Policy explains what data SearchTalent handles, why it is needed, who processes it, and the rights you have over your information.",
       lastUpdatedLabel: "Last updated",
-      lastUpdatedValue: "October 11, 2026",
+      lastUpdatedValue: "October 12, 2026",
       hubLabel: "Legal hub",
       sections: [
         {
@@ -195,7 +197,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Vacancies: what a company's team publishes about a vacancy (title, description, type, format, place, level, skills, pay, language), who on the team posted it, and when it was published, closed, or ended.",
             "Applications to vacancies: which vacancy you applied to and when, the projects you chose, your message, the moment you agreed to share your contacts, and where the application stands (viewed, shortlisted, rejected, hired, or withdrawn), with who on the company's team changed it and when.",
             "Job alerts: the vacancy searches you follow (their filters and name) or that you follow vacancies fitting your profile, whether they come by email, and which vacancies each alert has already sent you, when, and whether by email.",
-            "Messages: the conversations you take part in — who wrote what and when, on whose behalf (yourself or a company), and whether a message was edited, deleted, or removed or carries a scam warning (an edited message keeps the text it was sent with for 60 days, for reports only); when you last read each conversation and whether you archived, muted, or deleted it for yourself; the people and companies you blocked; your message settings (who may write to you, read receipts); your email choices (message emails at once, once a day, or never; follower emails on or off); and which emails about unread messages were scheduled and when the last daily one went out. A report about someone in a conversation keeps the conversation's last 20 messages.",
+            "Messages: the conversations you take part in — who wrote what and when, on whose behalf (yourself or a company), and whether a message was edited, deleted, or removed or carries a scam warning (an edited message keeps the text it was sent with for 60 days, for reports only); when you last read each conversation and whether you archived, muted, or deleted it for yourself; the files you send in messages (the file, its name, type and size; an image is re-encoded in your browser before upload, which drops its camera data, such as where a photo was taken); the people and companies you blocked; your message settings (who may write to you, read receipts); your email choices (message emails at once, once a day, or never; follower emails on or off); and which emails about unread messages were scheduled and when the last daily one went out. A report about someone in a conversation keeps the conversation's last 20 messages.",
             "Feedback you send: the name, email, and message you submit through the feedback form.",
             "Technical and usage data: information needed for security, reliability, and performance, and aggregate view counts on content.",
             "Page view statistics for profiles, projects, articles, vacancies, and company pages: which page was viewed, whether the visitor came from another SearchTalent page, from another site (its domain only), or directly, and whether they were signed in. We do not store IP addresses or full referring links. A repeat view on the same day is recognized by a code computed from the IP address and browser details together with a random key that we delete the next day; after that, the code cannot be linked to anyone.",
@@ -238,7 +240,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "If you join a company's team, your profile appears on the company page. An invitation nobody has answered yet is seen only by the person invited and by the company's team. A published vacancy is public, also after it closes; a draft, and a vacancy waiting for a moderator, are seen only by the company's team. How many people viewed a vacancy is seen by the team only.",
             "An application is seen only by you and by the team of the company you applied to. The team gets your contacts only while the vacancy and the company page are not hidden by moderation. After you withdraw an application, the team sees only that you applied and withdrew.",
             "The searches you follow and what they sent you are seen only by you.",
-            "Your messages are seen only by the people in the conversation — on a company's side, by its current team; someone who leaves the team no longer sees them. Platform administrators cannot read conversations; a moderator sees only the snapshot a report takes. Messages are not end-to-end encrypted: they are encrypted in transit and stored encrypted by our database provider.",
+            "Your messages are seen only by the people in the conversation — on a company's side, by its current team; someone who leaves the team no longer sees them. Platform administrators cannot read conversations; a moderator sees only the snapshot a report takes. Messages are not end-to-end encrypted: they are encrypted in transit and stored encrypted by our database provider. Files in messages are kept in private storage: they open only for the people in the conversation, through a link that works for a few minutes; a moderator opens a file only from a report that holds it, and every opening is recorded.",
             "Who a project was made for and the client's name are shown on the project page; with the NDA note, only “Client under NDA” is shown. The budget is visible only to you until you turn on showing it. A project you add to a page of a company you are not in is seen only by you and that company's team until the company accepts it.",
           ],
         },
@@ -250,7 +252,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Supabase — database, authentication, file storage, and the live delivery of new messages.",
             "Vercel — application hosting and, only after you allow analytics, usage and performance measurement.",
-            "Cloudflare R2 — storage and delivery of uploaded media and documents.",
+            "Cloudflare R2 — storage and delivery of uploaded media and documents, and private storage of files sent in messages.",
             "Email delivery — sending messages such as the code that confirms account deletion, the emails about applications, unread messages, and new followers, and job alerts, handled through our authentication and email infrastructure.",
             "GitHub — optional sign-in and repository import, if you choose to use it.",
             "Google (Gemini) — optional AI features, as described below.",
@@ -321,7 +323,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "A job alert is deleted when you remove it or delete your account. The record of which vacancies an alert sent is kept for 90 days.",
             "Your place in a company's team is deleted when you leave the team or delete your account. A company page is deleted by its owner, or when the last person in its team deletes their account.",
             "Projects you added stay on the company page after you leave the team; you or the company can take them off at any time. A project's budget and its links to company pages are deleted together with the project.",
-            "A conversation is deleted 24 months after its last message. Deleting it for yourself hides it only from you; when both people in a conversation delete it, it is deleted. When you delete your account, your messages are deleted with it; the other side keeps their own. Removed and deleted messages are kept in the closed archive for 60 days, and so is the text an edited message was sent with; both are seen only in a report's snapshot. A report's snapshot of a conversation is deleted 12 months after the report was answered, and records of scheduled message emails after 30 days.",
+            "A conversation is deleted 24 months after its last message. Deleting it for yourself hides it only from you; when both people in a conversation delete it, it is deleted. When you delete your account, your messages are deleted with it; the other side keeps their own. Removed and deleted messages are kept in the closed archive for 60 days, and so is the text an edited message was sent with; both are seen only in a report's snapshot. A report's snapshot of a conversation is deleted 12 months after the report was answered, and records of scheduled message emails after 30 days. Files in messages go with their message: 60 days after it is deleted or removed — or, when a report holds them, once its snapshot is deleted. Files you upload but never send are deleted after a day.",
             "Applications are deleted 12 months after their vacancy closes or its term ends, or earlier together with the vacancy, the company page, or your account. Until then a withdrawn application keeps only which vacancy you applied to and when. A deleted application is kept in the closed archive for another 60 days.",
           ],
         },
@@ -415,7 +417,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ці Умови описують правила користування SearchTalent. Документ є робочим і може розширюватися разом із розвитком продукту.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "11 жовтня 2026",
+      lastUpdatedValue: "12 жовтня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -490,12 +492,14 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           paragraphs: [
             "Люди в системі з підтвердженою поштою можуть писати одне одному на SearchTalent, а команда компанії — писати людям від імені компанії. Неперевірена сторінка компанії може писати лише тим, хто відгукнувся на її вакансії. Розмову бачать лише її учасники; з боку компанії — уся її команда, і під кожним повідомленням видно, хто з команди його написав.",
             "Перше повідомлення людині, з якою ви ще не листувалися, — це запит: одне повідомлення без посилань поза SearchTalent, доки вона не відповість або не прийме запит; повторити можна через 30 днів. У налаштуваннях повідомлень ви обираєте, хто може вам писати. Заблокувати можна будь-кого; заблокована людина про це не дізнається. Своє повідомлення можна змінити протягом 15 хвилин після надсилання й будь-коли видалити; співрозмовник бачить, що його змінено чи видалено.",
-            "Повідомлення перевіряються автоматично під час надсилання: ворожнеча, сексуальний вміст і спам посиланнями не надсилаються, а повідомлення з вимогою заплатити чи перейти в месенджер приходить одержувачу з попередженням. Поскаржитися на співрозмовника можна один раз, у меню розмови. Модератори читають розмову лише тоді, коли на неї поскаржилися, і лише останні 20 повідомлень.",
+            "Коли розмову прийнято, можна надсилати й файли: зображення (JPEG, PNG, WebP) і PDF, до 10 МБ кожен і до 5 в одному повідомленні. Запит файлів не містить. Відкрити їх можуть лише учасники розмови.",
+            "Повідомлення перевіряються автоматично під час надсилання: ворожнеча, сексуальний вміст і спам посиланнями не надсилаються, а повідомлення з вимогою заплатити чи перейти в месенджер приходить одержувачу з попередженням. Поскаржитися на співрозмовника можна один раз, у меню розмови. Модератори читають розмову лише тоді, коли на неї поскаржилися, і лише останні 20 повідомлень разом із файлами в них.",
           ],
           bullets: [
             "Без спаму, масових розсилок і непрошеної реклами.",
             "Не вимагайте ні від кого оплати, паролів чи кодів.",
             "Без цькування, погроз і ворожнечі.",
+            "Надсилайте лише файли, якими маєте право ділитися. Без сексуальних чи жорстоких зображень і без зображень людей, якими діляться без їхньої згоди.",
             "За порушення повідомлення видаляють, а писати можуть обмежити чи заблокувати акаунт. Якщо за тиждень людину заблокували чи на неї поскаржилися кілька людей, нові розмови їй вимикаються, доки модератор не перевірить.",
           ],
         },
@@ -544,7 +548,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
       intro:
         "Ця Політика конфіденційності пояснює, які дані обробляє SearchTalent, навіщо вони потрібні, хто їх обробляє та які права ви маєте щодо своєї інформації.",
       lastUpdatedLabel: "Останнє оновлення",
-      lastUpdatedValue: "11 жовтня 2026",
+      lastUpdatedValue: "12 жовтня 2026",
       hubLabel: "Правовий розділ",
       sections: [
         {
@@ -570,7 +574,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Вакансії: що команда компанії публікує про вакансію (назва, опис, тип, формат, місце, рівень, навички, оплата, мова), хто з команди її розмістив і коли її опублікували, закрили чи коли минув її термін.",
             "Відгуки на вакансії: на яку вакансію і коли ви відгукнулися, які проєкти обрали, ваше повідомлення, момент, коли ви погодилися передати контакти, і що з відгуком зараз (переглянуто, в обраних, відмова, найнято чи відкликано), а також хто з команди компанії це змінив і коли.",
             "Підписки на вакансії: пошуки вакансій, за якими ви стежите (їхні фільтри й назва), або те, що ви стежите за вакансіями, які вам підходять, чи приходять вони листом, а також які вакансії кожна підписка вже надіслала, коли і чи листом.",
-            "Повідомлення: розмови, у яких ви берете участь, — хто що й коли написав, від чийого імені (від себе чи від компанії), а також чи повідомлення змінено, видалено автором чи модератором і чи воно має попередження про шахрайство (змінене повідомлення 60 днів зберігає текст, з яким його надіслали, — лише для скарг); коли ви востаннє читали кожну розмову і чи перенесли її в архів, вимкнули листи про неї чи видалили у себе; люди й компанії, яких ви заблокували; налаштування повідомлень (хто може писати, позначка «Прочитано»); ваш вибір щодо листів (про повідомлення — одразу, раз на день чи ніколи; про нових підписників — так чи ні); а також які листи про непрочитані повідомлення було заплановано і коли пішов останній щоденний. Скарга на співрозмовника зберігає останні 20 повідомлень розмови.",
+            "Повідомлення: розмови, у яких ви берете участь, — хто що й коли написав, від чийого імені (від себе чи від компанії), а також чи повідомлення змінено, видалено автором чи модератором і чи воно має попередження про шахрайство (змінене повідомлення 60 днів зберігає текст, з яким його надіслали, — лише для скарг); коли ви востаннє читали кожну розмову і чи перенесли її в архів, вимкнули листи про неї чи видалили у себе; файли, які ви надсилаєте в повідомленнях (сам файл, його назва, тип і розмір; зображення перед завантаженням перекодовується у вашому браузері, і з нього зникають дані камери, як-от місце, де зроблено фото); люди й компанії, яких ви заблокували; налаштування повідомлень (хто може писати, позначка «Прочитано»); ваш вибір щодо листів (про повідомлення — одразу, раз на день чи ніколи; про нових підписників — так чи ні); а також які листи про непрочитані повідомлення було заплановано і коли пішов останній щоденний. Скарга на співрозмовника зберігає останні 20 повідомлень розмови.",
             "Звернення через форму зворотного зв'язку: ім'я, email і повідомлення, які ви надсилаєте.",
             "Технічні дані та дані використання: інформація, потрібна для безпеки, стабільності й продуктивності, та агреговані лічильники переглядів контенту.",
             "Статистика переглядів профілів, проєктів, статей, вакансій і сторінок компаній: яку сторінку переглянули, чи прийшов відвідувач з іншої сторінки SearchTalent, з іншого сайту (лише його домен) чи напряму, і чи був він у системі. IP-адреси й повні посилання, з яких прийшли, ми не зберігаємо. Повторний перегляд того ж дня розпізнається за кодом, обчисленим з IP-адреси й даних браузера разом із випадковим ключем, який ми видаляємо наступного дня; після цього код неможливо пов'язати ні з ким.",
@@ -613,7 +617,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Якщо ви приєднуєтеся до команди компанії, ваш профіль з'являється на сторінці компанії. Запрошення, на яке ще не відповіли, бачать лише запрошена людина й команда компанії. Опублікована вакансія публічна, зокрема й після закриття; чернетку й вакансію, що чекає на модератора, бачить лише команда компанії. Скільки людей переглянули вакансію, бачить лише команда.",
             "Відгук бачите лише ви й команда компанії, на вакансію якої ви відгукнулися. Ваші контакти команда отримує, лише поки вакансію й сторінку компанії не приховала модерація. Після того як ви відкличете відгук, команда бачить лише, що ви відгукувалися й відкликали.",
             "Пошуки, за якими ви стежите, і те, що вони вам надіслали, бачите лише ви.",
-            "Ваші повідомлення бачать лише учасники розмови — з боку компанії її теперішня команда; хто виходить із команди, більше їх не бачить. Адміністратори платформи не можуть читати розмови; модератор бачить лише знімок, який робить скарга. Наскрізного шифрування повідомлень немає: вони шифруються під час передавання й зберігаються зашифрованими в нашого постачальника бази даних.",
+            "Ваші повідомлення бачать лише учасники розмови — з боку компанії її теперішня команда; хто виходить із команди, більше їх не бачить. Адміністратори платформи не можуть читати розмови; модератор бачить лише знімок, який робить скарга. Наскрізного шифрування повідомлень немає: вони шифруються під час передавання й зберігаються зашифрованими в нашого постачальника бази даних. Файли з повідомлень лежать у закритому сховищі: відкрити їх можуть лише учасники розмови, за посиланням, що діє кілька хвилин; модератор відкриває файл лише зі скарги, яка його містить, і кожне відкриття записується.",
             "Для кого зроблено проєкт і назву замовника видно на сторінці проєкту; з позначкою NDA там буде лише «Замовник під NDA». Бюджет бачите тільки ви, доки не ввімкнете його показ. Проєкт, який ви додали на сторінку компанії, де ви не в команді, бачите лише ви й команда цієї компанії, доки компанія його не прийме.",
           ],
         },
@@ -625,7 +629,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
           bullets: [
             "Supabase — база даних, авторизація, зберігання файлів і доставка нових повідомлень наживо.",
             "Vercel — хостинг застосунку та, лише після вашого дозволу на аналітику, вимірювання використання й продуктивності.",
-            "Cloudflare R2 — зберігання й доставка завантажених медіа та документів.",
+            "Cloudflare R2 — зберігання й доставка завантажених медіа та документів, а також закрите зберігання файлів із повідомлень.",
             "Доставка email — надсилання повідомлень, як-от коду підтвердження видалення акаунта, листів про відгуки, непрочитані повідомлення й нових підписників та підписок на вакансії, через нашу інфраструктуру авторизації та email.",
             "GitHub — необов'язковий вхід та імпорт репозиторіїв, якщо ви ним користуєтеся.",
             "Google (Gemini) — необов'язкові AI-функції, як описано нижче.",
@@ -696,7 +700,7 @@ const legalDocuments: Record<Locale, Record<LegalDocumentKey, LegalDocument>> = 
             "Підписка на вакансії видаляється, коли ви її прибираєте або видаляєте акаунт. Запис про те, які вакансії надіслала підписка, зберігається 90 днів.",
             "Ваше місце в команді компанії видаляється, коли ви виходите з команди або видаляєте акаунт. Сторінку компанії видаляє її власник; вона також видаляється, коли останній учасник команди видаляє свій акаунт.",
             "Проєкти, які ви додали, лишаються на сторінці компанії й після того, як ви вийдете з команди; прибрати їх можете ви або компанія будь-коли. Бюджет проєкту та його зв'язки зі сторінками компаній видаляються разом із проєктом.",
-            "Розмова видаляється через 24 місяці після останнього повідомлення. Видалення розмови у себе ховає її лише від вас; коли її видаляють обидва учасники, вона видаляється. Коли ви видаляєте акаунт, разом із ним видаляються ваші повідомлення; у співрозмовника лишаються його власні. Видалені повідомлення ще 60 днів зберігаються в закритому архіві, як і текст, з яким надіслали змінене повідомлення; їх видно лише в знімку до скарги. Знімок розмови в скарзі видаляється через 12 місяців після рішення за скаргою, а записи про заплановані листи — через 30 днів.",
+            "Розмова видаляється через 24 місяці після останнього повідомлення. Видалення розмови у себе ховає її лише від вас; коли її видаляють обидва учасники, вона видаляється. Коли ви видаляєте акаунт, разом із ним видаляються ваші повідомлення; у співрозмовника лишаються його власні. Видалені повідомлення ще 60 днів зберігаються в закритому архіві, як і текст, з яким надіслали змінене повідомлення; їх видно лише в знімку до скарги. Знімок розмови в скарзі видаляється через 12 місяців після рішення за скаргою, а записи про заплановані листи — через 30 днів. Файли з повідомлень ідуть разом із повідомленням: через 60 днів після того, як його видалено, — або, якщо їх містить скарга, коли видаляється її знімок. Файли, які ви завантажили, але не надіслали, видаляються через добу.",
             "Відгуки видаляються через 12 місяців після того, як вакансію закрили або минув її термін, а раніше — разом із вакансією, сторінкою компанії чи вашим акаунтом. До того відкликаний відгук зберігає лише те, на яку вакансію і коли ви відгукувалися. Видалений відгук ще 60 днів зберігається в закритому архіві.",
           ],
         },

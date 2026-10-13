@@ -62,6 +62,13 @@ describe("resolveStorageRef", () => {
     ).toEqual({ provider: "supabase", bucket: "project-media", path: "p1/a b.png" });
   });
 
+  it("sends a message file to the private bucket", () => {
+    const key = "messages/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222";
+    expect(resolveStorageRef(`private:${key}`, r2Key)).toEqual({ provider: "r2-private", key });
+    expect(resolveStorageRef("private:avatars/u1/avatar", r2Key)).toBeNull();
+    expect(resolveStorageRef("private:messages/../x", r2Key)).toBeNull();
+  });
+
   it("treats a bare key as an R2 key", () => {
     expect(resolveStorageRef("p1/1-shot.png", r2Key)).toEqual({ provider: "r2", key: "p1/1-shot.png" });
   });

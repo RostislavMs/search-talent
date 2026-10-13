@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ContentReportButton from "@/components/content-report-button";
+import MessageAttachments, { AttachmentDrafts, PaperclipIcon } from "@/components/message-attachments";
 import MessageLinkCards from "@/components/message-link-cards";
 import MessagingAvatar from "@/components/messaging-avatar";
 import { useMessagingEvents } from "@/components/messaging-realtime-provider";
@@ -13,7 +14,9 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { MESSAGE_ATTACHMENT_ACCEPT } from "@/lib/message-attachments";
 import {
+  canAttachFiles,
   canEditMessage,
   conversationPartner,
   hasExternalLink,
@@ -38,8 +41,16 @@ import {
   formatMessageTime,
 } from "@/lib/messages-presentation";
 import { getModerationCopy } from "@/lib/moderation-copy";
+import { releasePreviews, useMessageAttachments } from "@/lib/use-message-attachments";
 
-type Pending = { clientId: string; body: string; status: "sending" | "failed"; error: string | null };
+type Pending = {
+  clientId: string;
+  body: string;
+  /** Uploaded files going out with it; a retry sends the same ones. */
+  attachmentIds: string[];
+  status: "sending" | "failed";
+  error: string | null;
+};
 
 type Editing = { id: string; body: string; saving: boolean; error: string | null };
 
@@ -84,7 +95,8 @@ function MessageText({ text, onDark }: { text: string; onDark: boolean }) {
  * New messages arrive over the live connection (or every few seconds without
  * it); the conversation is marked read only while the tab is visible. One's
  * own messages can be edited for 15 minutes and deleted at any time; links to
- * this site's pages get a card.
+ * this site's pages get a card. In an open conversation files can go too
+ * (picked, pasted or dropped), when the private storage is set up.
  */
 export default function ConversationThread({
   initialView,
@@ -94,6 +106,7 @@ export default function ConversationThread({
   isAuthenticated,
   focusSeq = null,
   initialHasOlder,
+  filesEnabled = false,
 }: {
   initialView: ConversationView;
   initialMessages: ChatMessage[];
@@ -105,6 +118,8 @@ export default function ConversationThread({
   isAuthenticated: boolean;
   /** A search result opened the conversation at this message. */
   focusSeq?: number | null;
+  /** The private bucket for files is set up. */
+  filesEnabled?: boolean;
 }) {
   const dictionary = useDictionary();
   const copy = dictionary.messages;
@@ -133,6 +148,9 @@ export default function ConversationThread({
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ChatMessage | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(focusMessage?.id ?? null);
+  const [dragging, setDragging] = useState(false);
+  const attachments = useMessageAttachments(initialView.id);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLOListElement>(null);
@@ -304,7 +322,7 @@ export default function ConversationThread({
   async function deliver(item: Pending) {
     const result = await apiFetch<{ messageId: string }>(`/api/messages/conversations/${conversationId}/messages`, {
       method: "POST",
-      body: { body: item.body, clientId: item.clientId },
+      body: { body: item.body, clientId: item.clientId, attachmentIds: item.attachmentIds },
     });
 
     if (!result.ok) {
@@ -329,9 +347,23 @@ export default function ConversationThread({
 
   function send() {
     const text = body.replace(/\r/g, "").trim();
-    if (!text || text.length > MESSAGE_MAX_LENGTH) return;
+    if (text.length > MESSAGE_MAX_LENGTH) return;
+    if (attachments.busy) {
+      toast.error(copy.files.waiting);
+      return;
+    }
+    if (!text && attachments.ready.length === 0) return;
 
-    const item: Pending = { clientId: newClientId(), body: text, status: "sending", error: null };
+    const files = attachments.take();
+    // The message shows how many files it carries while it goes out, not the pictures.
+    releasePreviews(files);
+    const item: Pending = {
+      clientId: newClientId(),
+      body: text,
+      attachmentIds: files.flatMap((file) => (file.attachmentId ? [file.attachmentId] : [])),
+      status: "sending",
+      error: null,
+    };
     stickToBottom.current = true;
     setPending((current) => [...current, item]);
     setBody("");
@@ -343,6 +375,44 @@ export default function ConversationThread({
     setPending((current) => current.map((entry) => (entry.clientId === item.clientId ? next : entry)));
     void deliver(next);
   }
+
+  // --- Files -----------------------------------------------------------------------
+
+  const canAttach = filesEnabled && canAttachFiles(view);
+
+  function addFiles(files: File[]) {
+    if (!canAttach || files.length === 0) return;
+    for (const rejected of attachments.add(files)) {
+      toast.error(copy.files.rejected.replace("{name}", rejected.name).replace("{reason}", copy.errors[rejected.code]));
+    }
+  }
+
+  function onComposerPaste(event: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const files = Array.from(event.clipboardData?.files ?? []);
+    if (!canAttach || files.length === 0) return;
+    // A screenshot comes as a file alone; text pasted with it still goes in.
+    if (!event.clipboardData.getData("text/plain")) event.preventDefault();
+    addFiles(files);
+  }
+
+  const dropHandlers = canAttach
+    ? {
+        onDragOver: (event: React.DragEvent) => {
+          if (!Array.from(event.dataTransfer.types).includes("Files")) return;
+          event.preventDefault();
+          setDragging(true);
+        },
+        onDragLeave: (event: React.DragEvent) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+        },
+        onDrop: (event: React.DragEvent) => {
+          if (!Array.from(event.dataTransfer.types).includes("Files")) return;
+          event.preventDefault();
+          setDragging(false);
+          addFiles(Array.from(event.dataTransfer.files));
+        },
+      }
+    : {};
 
   function onComposerKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
@@ -687,6 +757,9 @@ export default function ConversationThread({
             const editState = editing?.id === message.id ? editing : null;
             const isEditing = editState !== null;
             const editText = editState ? editState.body.replace(/\r/g, "").trim() : "";
+            // A message of files alone has no bubble, only its files.
+            const hasFiles = message.attachments.length > 0;
+            const filesOnly = hasFiles && !message.removed && message.body === "";
 
             return (
               <li key={message.id} id={`message-${message.id}`}>
@@ -758,21 +831,28 @@ export default function ConversationThread({
                       className={`flex max-w-[min(32rem,85%)] items-center gap-1 ${message.fromMySide ? "flex-row-reverse" : ""}`}
                     >
                       <div
-                        className={`min-w-0 rounded-2xl px-3.5 py-2 transition-shadow ${bubble} ${
+                        className={`flex min-w-0 flex-col gap-1.5 rounded-2xl transition-shadow ${message.fromMySide ? "items-end" : "items-start"} ${
                           highlightId === message.id ? "ring-2 ring-[color:var(--brand)] ring-offset-2 ring-offset-[color:var(--surface)]" : ""
                         }`}
                       >
-                        {message.removed ? (
-                          <p className="text-sm italic opacity-70">
-                            {message.removedBy === "author" ? copy.thread.deleted : copy.thread.removed}
-                          </p>
-                        ) : message.body === null ? (
-                          <p className="text-sm italic opacity-70">{copy.thread.held}</p>
-                        ) : (
-                          <MessageText text={message.body} onDark={onDark} />
+                        {filesOnly && !message.held ? null : (
+                          <div className={`min-w-0 max-w-full rounded-2xl px-3.5 py-2 ${bubble}`}>
+                            {message.removed ? (
+                              <p className="text-sm italic opacity-70">
+                                {message.removedBy === "author" ? copy.thread.deleted : copy.thread.removed}
+                              </p>
+                            ) : message.body === null ? (
+                              <p className="text-sm italic opacity-70">{copy.thread.held}</p>
+                            ) : message.body !== "" ? (
+                              <MessageText text={message.body} onDark={onDark} />
+                            ) : null}
+                            {message.held && message.mine && message.body !== null ? (
+                              <p className={`text-xs opacity-70 ${message.body !== "" ? "mt-1" : ""}`}>{copy.thread.heldOwn}</p>
+                            ) : null}
+                          </div>
                         )}
-                        {message.held && message.mine && message.body !== null ? (
-                          <p className="mt-1 text-xs opacity-70">{copy.thread.heldOwn}</p>
+                        {hasFiles ? (
+                          <MessageAttachments attachments={message.attachments} locale={locale} alignEnd={message.fromMySide} />
                         ) : null}
                       </div>
                       {ownLive ? (
@@ -831,7 +911,13 @@ export default function ConversationThread({
           {pending.map((item) => (
             <li key={item.clientId} className="flex flex-col items-end">
               <div className="max-w-[min(32rem,85%)] rounded-2xl bg-[color:var(--foreground)] px-3.5 py-2 text-[color:var(--background)] opacity-70">
-                <MessageText text={item.body} onDark />
+                {item.body ? <MessageText text={item.body} onDark /> : null}
+                {item.attachmentIds.length > 0 ? (
+                  <p className={`flex items-center gap-1.5 text-xs ${item.body ? "mt-1" : ""}`}>
+                    <PaperclipIcon />
+                    {copy.files.sendingFiles.replace("{count}", String(item.attachmentIds.length))}
+                  </p>
+                ) : null}
               </div>
               <p className="mt-0.5 mb-1.5 px-1 text-[11px] app-soft" role={item.status === "failed" ? "alert" : undefined}>
                 {item.status === "sending" ? (
@@ -885,10 +971,44 @@ export default function ConversationThread({
               event.preventDefault();
               send();
             }}
-            className="space-y-2"
+            {...dropHandlers}
+            className={`space-y-2 rounded-2xl transition-shadow ${
+              dragging ? "ring-2 ring-[color:var(--brand)] ring-offset-4 ring-offset-[color:var(--surface)]" : ""
+            }`}
           >
             {view.requestRules ? <p className="text-xs leading-5 app-muted">{copy.request.rulesHint}</p> : null}
+            {dragging ? <p className="text-xs app-muted">{copy.files.drop}</p> : null}
+            {canAttach ? (
+              <AttachmentDrafts drafts={attachments.drafts} onRemove={attachments.remove} onRetry={attachments.retry} />
+            ) : null}
             <div className="flex items-end gap-2">
+              {canAttach ? (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept={MESSAGE_ATTACHMENT_ACCEPT}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="hidden"
+                    onChange={(event) => {
+                      addFiles(Array.from(event.target.files ?? []));
+                      // The same file can be picked again after it was taken out.
+                      event.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label={copy.files.attach}
+                    title={copy.files.hint}
+                    className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full app-soft transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
+                  >
+                    <PaperclipIcon />
+                  </button>
+                </>
+              ) : null}
               <label htmlFor={composerId} className="sr-only">
                 {copy.composer.label}
               </label>
@@ -897,6 +1017,7 @@ export default function ConversationThread({
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
                 onKeyDown={onComposerKeyDown}
+                onPaste={onComposerPaste}
                 rows={1}
                 maxAutoHeight={180}
                 maxLength={MESSAGE_MAX_LENGTH + 200}
@@ -905,8 +1026,14 @@ export default function ConversationThread({
                 aria-invalid={tooLong || undefined}
                 className="min-h-[2.75rem] flex-1 resize-none bg-[color:var(--surface-muted)] px-4 py-2.5 text-sm leading-6 text-[color:var(--foreground)]"
               />
-              <Button type="submit" disabled={!trimmed || tooLong}>
-                {copy.composer.send}
+              {/* On a phone the button is an icon, as round as the paperclip; the word stays for screen readers. */}
+              <Button
+                type="submit"
+                disabled={(!trimmed && attachments.ready.length === 0) || tooLong || attachments.busy}
+                className="max-sm:h-11 max-sm:w-11 max-sm:shrink-0 max-sm:px-0 max-sm:py-0"
+              >
+                <span className="max-sm:sr-only">{copy.composer.send}</span>
+                <SendIcon />
               </Button>
             </div>
             <p id={`${composerId}-hint`} className="hidden text-[11px] app-soft sm:block">
@@ -968,6 +1095,20 @@ export default function ConversationThread({
         onClose={() => setReporting(false)}
       />
     </div>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="sm:hidden">
+      <path
+        d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5 21 3Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

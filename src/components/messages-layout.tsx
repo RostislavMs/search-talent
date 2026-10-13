@@ -22,11 +22,13 @@ export default function MessagesLayout({
   return (
     <main className="w-full">
       <MessagingRealtimeProvider userId={userId}>
-        <div className="grid h-[calc(100dvh-var(--site-header-height,4.3rem))] min-h-[24rem] overflow-hidden bg-[color:var(--surface)] lg:grid-cols-[minmax(20rem,26rem)_minmax(0,1fr)]">
-          <aside className={`${threadOpen ? "hidden lg:flex" : "flex"} min-h-0 flex-col app-border lg:border-r`}>
+        {/* grid-cols-1 is minmax(0, 1fr): an implicit `auto` column would grow to the widest
+            unwrapped line (a long headline) and push the screen past a phone's width. */}
+        <div className="grid h-[calc(100dvh-var(--site-header-height,4.3rem))] min-h-[24rem] grid-cols-1 overflow-hidden bg-[color:var(--surface)] lg:grid-cols-[minmax(20rem,26rem)_minmax(0,1fr)]">
+          <aside className={`${threadOpen ? "hidden lg:flex" : "flex"} min-h-0 min-w-0 flex-col app-border lg:border-r`}>
             {list}
           </aside>
-          <section className={`${threadOpen ? "flex" : "hidden lg:flex"} min-h-0 flex-col`}>{thread}</section>
+          <section className={`${threadOpen ? "flex" : "hidden lg:flex"} min-h-0 min-w-0 flex-col`}>{thread}</section>
         </div>
       </MessagingRealtimeProvider>
     </main>

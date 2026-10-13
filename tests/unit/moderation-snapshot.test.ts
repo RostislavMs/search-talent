@@ -27,6 +27,27 @@ describe("parseReportSnapshot", () => {
     // An older snapshot without the field: a removal, the stricter reading.
     expect(snapshot?.messages[3]).toMatchObject({ deleted: true, deletedBy: "moderator" });
     expect(snapshot?.messages[4].kind).toBe("event");
+    expect(snapshot?.messages.every((message) => message.attachments.length === 0)).toBe(true);
+  });
+
+  it("reads a message's files, only of the accepted types", () => {
+    const snapshot = parseReportSnapshot({
+      messages: [
+        {
+          id: "m1",
+          kind: "text",
+          body: "",
+          attachments: [
+            { id: "f1", name: "cv.pdf", type: "application/pdf", size: 1200 },
+            { id: "f2", name: "x.exe", type: "application/x-msdownload", size: 1 },
+          ],
+          createdAt: "t",
+        },
+      ],
+    });
+    expect(snapshot?.messages[0].attachments).toEqual([
+      { id: "f1", name: "cv.pdf", type: "application/pdf", size: 1200, width: null, height: null },
+    ]);
   });
 
   it("is null without a snapshot", () => {

@@ -23,6 +23,7 @@ function last(patch: Partial<LastMessagePreview> = {}): LastMessagePreview {
     held: false,
     removed: false,
     removedBy: null,
+    attachmentCount: 0,
     fromMySide: false,
     mine: false,
     createdAt: "2026-10-10T10:00:00Z",

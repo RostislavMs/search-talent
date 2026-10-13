@@ -40,6 +40,9 @@ export function getModerationCopy(locale: Locale) {
         snapshotDeletedByAuthor: "видалено автором",
         snapshotEdited: "змінено",
         snapshotOriginal: "Спершу було: {text}",
+        snapshotFiles: "Файли",
+        snapshotFilesNote: "Кожне відкриття файлу записується в журнал дій.",
+        snapshotFileOpen: "Відкрити {name}",
         restrictionsTitle: "Обмеження повідомлень",
         restrictionsEmpty: "Зараз нікому не обмежено повідомлення.",
         restrictionScopes: {
@@ -182,6 +185,9 @@ export function getModerationCopy(locale: Locale) {
       snapshotDeletedByAuthor: "deleted by its author",
       snapshotEdited: "edited",
       snapshotOriginal: "At first: {text}",
+      snapshotFiles: "Files",
+      snapshotFilesNote: "Every time a file is opened, it goes into the audit log.",
+      snapshotFileOpen: "Open {name}",
       restrictionsTitle: "Message limits",
       restrictionsEmpty: "Nobody's messages are limited right now.",
       restrictionScopes: {

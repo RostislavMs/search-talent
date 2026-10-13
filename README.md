@@ -130,6 +130,7 @@ search-talent/
 - Your own message can be edited for 15 minutes (up to 10 times, same checks as a new one; both sides see "edited") and deleted at any time ("Message deleted"). The text it was sent with, and the text of a deleted message, stay 60 days for a report's snapshot only, then the daily cron erases them; a request whose message was deleted leaves the recipient's requests.
 - Search (`search_messages()`): the texts you can see and the names of who you talk to, in your own conversations or a company's team inbox; a result opens the conversation at that message.
 - Links to profiles, projects, articles, polls, vacancies and companies on the site get a card under the message (the same `/api/link-preview` as the hover previews).
+- Files (part 13.4): images (JPEG, PNG, WebP) and PDF, up to 10 MB each and 5 in a message, only once a conversation is open — never in a request; 30 files and 150 MB a day per person. They live in a second, private R2 bucket (`R2_PRIVATE_BUCKET_NAME`; without it the paperclip is hidden). The browser re-encodes an image first (no camera metadata), asks `create_message_attachment()` for a key, uploads with a signed PUT, and the server reads the object back — size and first bytes — before `confirm_message_attachment()` accepts it. A file opens only through `/api/messages/attachments/[id]`: the database checks the reader each time and the answer is a redirect to a link that lives 5 minutes. A report's snapshot lists the files; a moderator opens them only from the report, and each opening is in the audit log. Files of a deleted message go 60 days later (unless a report still holds them), unsent uploads after a day, the objects through the trash's storage queue as `private:<key>`.
 - Conversations go 24 months after their last message (the daily cron); a deleted account takes its messages with it.
 
 ### Projects
@@ -393,6 +394,10 @@ search-talent/
 | POST | `/api/email-unsubscribe` | One kind of email off by the token from an email (`k=messages` or `followers`, RFC 8058 one-click) |
 | GET | `/api/messages/search` | Search the caller's messages or a team inbox (`q`, `company`) |
 | PATCH/DELETE | `/api/messages/message/[id]` | Edit one's own message (15 minutes) / delete it |
+| POST | `/api/messages/conversations/[id]/attachments` | A file about to be uploaded: the database checks it, the answer is a signed PUT into the private bucket |
+| POST/DELETE | `/api/messages/conversations/[id]/attachments/[attachmentId]` | The upload finished: read it back and confirm it / take an unsent file out |
+| GET | `/api/messages/attachments/[id]` | Open a file in a message (access checked each time, redirect to a 5-minute link; `?download=1`) |
+| GET | `/api/admin/message-attachments/[id]` | A moderator opens a file from a report (`?report=`), logged |
 | POST | `/api/reports` | Report content |
 | POST | `/api/feedback` | Contact-form messages |
 | GET | `/api/meta` | Site-wide metadata (categories, etc.) |

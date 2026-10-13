@@ -198,7 +198,13 @@ describe("writing", () => {
       data: { status: "ok", conversation_id: ID, message_id: "m2", seq: 6, duplicate: true },
     }));
     expect(await sendMessage(supabase, ID, "Hello", OTHER)).toMatchObject({ ok: true, duplicate: true, created: false });
-    expect(calls[0].args).toEqual({ p_conversation_id: ID, p_body: "Hello", p_client_id: OTHER });
+    expect(calls[0].args).toEqual({ p_conversation_id: ID, p_body: "Hello", p_client_id: OTHER, p_attachment_ids: null });
+  });
+
+  it("sends files, with or without text", async () => {
+    const { supabase, calls } = client(() => ({ data: { status: "ok", conversation_id: ID, message_id: "m3", seq: 7 } }));
+    expect(await sendMessage(supabase, ID, "", OTHER, ["a1", "a2"])).toMatchObject({ ok: true, messageId: "m3" });
+    expect(calls[0].args).toEqual({ p_conversation_id: ID, p_body: "", p_client_id: OTHER, p_attachment_ids: ["a1", "a2"] });
   });
 
   it("marks read and returns the emails to cancel", async () => {

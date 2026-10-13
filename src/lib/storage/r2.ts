@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -12,11 +13,13 @@ const accessKeyId = process.env.R2_ACCESS_KEY_ID;
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
 const bucketName = process.env.R2_BUCKET_NAME;
 const publicBaseUrl = process.env.R2_PUBLIC_BASE_URL;
+// Files in messages: a bucket nobody can read without a signed link.
+const privateBucketName = process.env.R2_PRIVATE_BUCKET_NAME;
 
 let cachedClient: S3Client | null = null;
 
 function getClient() {
-  if (!accountId || !accessKeyId || !secretAccessKey || !bucketName) {
+  if (!accountId || !accessKeyId || !secretAccessKey) {
     return null;
   }
 
@@ -147,6 +150,110 @@ export function isR2Url(url: string | null | undefined) {
     host === "r2.dev" ||
     host.endsWith(".r2.dev")
   );
+}
+
+// --- The private bucket (files in messages) ----------------------------------------
+
+export function isPrivateStorageConfigured() {
+  return Boolean(accountId && accessKeyId && secretAccessKey && privateBucketName);
+}
+
+function getPrivateBucket() {
+  const client = getClient();
+
+  if (!client || !privateBucketName) {
+    throw new Error("Private R2 storage is not configured");
+  }
+
+  return { client, bucket: privateBucketName };
+}
+
+/** A signed PUT into the private bucket: this key, this type, exactly this size. */
+export async function createPrivateUploadUrl({
+  key,
+  contentType,
+  contentLength,
+  expiresIn = 300,
+}: PresignOptions & { contentLength: number }) {
+  const { client, bucket } = getPrivateBucket();
+
+  return getSignedUrl(
+    client,
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ContentType: contentType,
+      ContentLength: contentLength,
+    }),
+    { expiresIn },
+  );
+}
+
+/**
+ * A short-lived signed GET for one private object. The response type is the
+ * one the database holds (checked at upload), never what the uploader sent,
+ * and the file name comes back in Content-Disposition.
+ */
+export async function createPrivateDownloadUrl({
+  key,
+  contentType,
+  contentDisposition,
+  expiresIn = 300,
+}: {
+  key: string;
+  contentType: string;
+  contentDisposition: string;
+  expiresIn?: number;
+}) {
+  const { client, bucket } = getPrivateBucket();
+
+  return getSignedUrl(
+    client,
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ResponseContentType: contentType,
+      ResponseContentDisposition: contentDisposition,
+      ResponseCacheControl: "private, max-age=3600",
+    }),
+    { expiresIn },
+  );
+}
+
+/** How many first bytes of an upload are read back to tell its type. */
+export const PRIVATE_OBJECT_HEAD_BYTES = 16;
+
+/**
+ * What an uploaded private object really is: its size and its first bytes.
+ * Null when there is no such object (the upload never arrived).
+ */
+export async function inspectPrivateObject(key: string): Promise<{ size: number; head: Uint8Array } | null> {
+  const { client, bucket } = getPrivateBucket();
+
+  try {
+    const response = await client.send(
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Range: `bytes=0-${PRIVATE_OBJECT_HEAD_BYTES - 1}`,
+      }),
+    );
+    // "bytes 0-15/2048": the total after the slash.
+    const total = Number(/\/(\d+)$/.exec(response.ContentRange ?? "")?.[1] ?? response.ContentLength ?? 0);
+    const head = response.Body ? await response.Body.transformToByteArray() : new Uint8Array();
+    return { size: total, head };
+  } catch (error) {
+    const name = (error as { name?: string } | null)?.name;
+    if (name === "NoSuchKey" || name === "NotFound") {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function deleteFromPrivateR2(key: string) {
+  const { client, bucket } = getPrivateBucket();
+  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }
 
 /**

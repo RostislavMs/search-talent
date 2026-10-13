@@ -7,6 +7,9 @@ import {
   messagesPageQuerySchema,
   messagingRestrictionSchema,
   messagingSettingsSchema,
+  adminAttachmentQuerySchema,
+  createAttachmentSchema,
+  routeAttachmentSchema,
   sendMessageSchema,
   startConversationSchema,
 } from "@/lib/validation/messages";
@@ -28,6 +31,35 @@ describe("message bodies", () => {
     expect(sendMessageSchema.safeParse({ body: "hi", clientId: ID }).success).toBe(true);
     expect(sendMessageSchema.safeParse({ body: "hi", clientId: "nope" }).success).toBe(false);
     expect(sendMessageSchema.safeParse({ body: "hi", extra: 1 }).success).toBe(false);
+  });
+
+  it("takes files, and with files the text may be empty", () => {
+    expect(sendMessageSchema.parse({ body: "  ", attachmentIds: [ID] })).toMatchObject({ body: "", attachmentIds: [ID] });
+    expect(sendMessageSchema.parse({ attachmentIds: [ID] }).body).toBe("");
+    expect(sendMessageSchema.parse({ body: "hi" }).attachmentIds).toEqual([]);
+    expect(sendMessageSchema.safeParse({ body: "", attachmentIds: [] }).success).toBe(false);
+    expect(sendMessageSchema.safeParse({ attachmentIds: ["x"] }).success).toBe(false);
+    expect(sendMessageSchema.safeParse({ attachmentIds: Array(6).fill(ID) }).success).toBe(false);
+    expect(sendMessageSchema.safeParse({ body: "x".repeat(4001), attachmentIds: [ID] }).success).toBe(false);
+  });
+});
+
+describe("files", () => {
+  it("a file to upload: a known type, at most 10 MB", () => {
+    expect(createAttachmentSchema.parse({ fileName: "  cv.pdf ", contentType: "application/pdf", size: 1000 }).fileName).toBe("cv.pdf");
+    expect(createAttachmentSchema.parse({ fileName: "   ", contentType: "image/png", size: 5, width: 10, height: null }).fileName).toBe("file");
+    expect(createAttachmentSchema.parse({ fileName: "a".repeat(300), contentType: "image/png", size: 5 }).fileName).toHaveLength(120);
+    expect(createAttachmentSchema.safeParse({ fileName: "a.gif", contentType: "image/gif", size: 5 }).success).toBe(false);
+    expect(createAttachmentSchema.safeParse({ fileName: "a.pdf", contentType: "application/pdf", size: 0 }).success).toBe(false);
+    expect(createAttachmentSchema.safeParse({ fileName: "a.pdf", contentType: "application/pdf", size: 10 * 1024 * 1024 + 1 }).success).toBe(false);
+    expect(createAttachmentSchema.safeParse({ fileName: "a.pdf", contentType: "application/pdf", size: 1, extra: 1 }).success).toBe(false);
+  });
+
+  it("ids in the route and the report in a moderator's link", () => {
+    expect(routeAttachmentSchema.safeParse({ id: ID, attachmentId: ID }).success).toBe(true);
+    expect(routeAttachmentSchema.safeParse({ id: ID, attachmentId: "x" }).success).toBe(false);
+    expect(adminAttachmentQuerySchema.safeParse({ report: ID }).success).toBe(true);
+    expect(adminAttachmentQuerySchema.safeParse({}).success).toBe(false);
   });
 });
 

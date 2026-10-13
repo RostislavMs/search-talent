@@ -65,6 +65,7 @@ function message(seq: number, patch: Partial<ChatMessage> = {}): ChatMessage {
     removedBy: null,
     editedAt: null,
     editableUntil: null,
+    attachments: [],
     createdAt: "2026-10-10T10:00:00Z",
     ...patch,
   };
@@ -129,8 +130,17 @@ describe("refusals", () => {
     expect(refusalHttpStatus("not_editable")).toBe(409);
     expect(refusalHttpStatus("edit_window_passed")).toBe(403);
     expect(refusalHttpStatus("too_many_edits")).toBe(403);
+    expect(refusalHttpStatus("file_too_large")).toBe(413);
+    expect(refusalHttpStatus("file_type")).toBe(415);
+    expect(refusalHttpStatus("file_mismatch")).toBe(415);
+    expect(refusalHttpStatus("file_rate_limited")).toBe(429);
+    expect(refusalHttpStatus("invalid_attachments")).toBe(409);
+    expect(refusalHttpStatus("file_missing")).toBe(409);
+    expect(refusalHttpStatus("storage_unavailable")).toBe(503);
+    expect(refusalHttpStatus("too_many_files")).toBe(400);
+    expect(refusalHttpStatus("files_in_request")).toBe(403);
     for (const code of messageRefusalCodes) {
-      expect([400, 401, 403, 404, 409, 429, 500]).toContain(refusalHttpStatus(code));
+      expect([400, 401, 403, 404, 409, 413, 415, 429, 500, 503]).toContain(refusalHttpStatus(code));
     }
   });
 });
