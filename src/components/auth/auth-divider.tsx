@@ -1,10 +1,11 @@
 "use client";
 
 import { useDictionary } from "@/lib/i18n/client";
+import { authCopy } from "@/lib/i18n/copy/auth";
 
 /** Separates the social sign-in row from the email/password form. */
 export default function AuthDivider({ className }: { className?: string }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ auth: authCopy });
 
   return (
     <div

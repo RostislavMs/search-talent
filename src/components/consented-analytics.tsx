@@ -28,6 +28,10 @@ const GA_MEASUREMENT_ID = "G-H24ZSXX8TG";
  * Plerdy set cookies and track behaviour, so gating them is mandatory, not just
  * tidy — and the Cookie Policy names all five tools.
  *
+ * The third-party tags load with `lazyOnload`, once the page has loaded and the
+ * browser is idle: gtag.js alone is ~170KB and none of them is needed to show
+ * or use the page.
+ *
  * Revoking consent stops these from mounting again, but tags that inject their
  * own <script> imperatively (Plerdy) or install globals (gtag) keep running
  * until the next page load — unmounting a next/script cannot unload code the
@@ -63,13 +67,13 @@ export default function ConsentedAnalytics({
       <Script
         src="https://analytics.ahrefs.com/analytics.js"
         data-key="SPXNhltKaN3KRW+jCF6zmw"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       />
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       />
-      <Script id="google-analytics" strategy="afterInteractive">
+      <Script id="google-analytics" strategy="lazyOnload">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}

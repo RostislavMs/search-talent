@@ -8,6 +8,7 @@ import {
 } from "@/lib/constants/github";
 import { renderGithubReadme } from "@/lib/github-readme";
 import { useDictionary } from "@/lib/i18n/client";
+import { githubIntegrationCopy } from "@/lib/i18n/copy/github-integration";
 
 type Props = {
   fullName: string;
@@ -89,7 +90,7 @@ export default function GithubInsightsPanel({
   displayOptions,
   locale,
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ githubIntegration: githubIntegrationCopy });
   const dict = dictionary.githubIntegration;
   const [readmeOpen, setReadmeOpen] = useState(false);
   // Rendered only once the card is opened: a README runs to 50k characters

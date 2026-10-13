@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import ConsentedAnalytics from "@/components/consented-analytics";
 import HydrationCleanupScript from "@/components/hydration-cleanup-script";
-import InteractiveBackground from "@/components/interactive-background";
 import ThemeScript from "@/components/theme-script";
 import {
   allowsCookieCategory,
@@ -68,7 +67,8 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-screen" suppressHydrationWarning>
-        <InteractiveBackground />
+        {/* The animated web background lives only on the sign-in screens and
+            the 404 and error pages — see components/interactive-background. */}
         <div className="relative flex min-h-screen flex-col">{children}</div>
         {/* Plerdy now renders inside ConsentedAnalytics, behind the same
             analytics-consent gate as the other measurement tools. */}

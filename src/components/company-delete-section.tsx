@@ -7,6 +7,7 @@ import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { companiesCopy } from "@/lib/i18n/copy/companies";
 import { createLocalePath } from "@/lib/i18n/config";
 
 /** The owner's "delete this page" block at the bottom of the editor. */
@@ -20,7 +21,7 @@ export default function CompanyDeleteSection({
   const router = useRouter();
   const toast = useToast();
   const locale = useCurrentLocale();
-  const copy = useDictionary().companies;
+  const copy = useDictionary({ companies: companiesCopy }).companies;
   const ui = copy.danger;
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);

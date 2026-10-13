@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { buttonStyles } from "@/components/ui/button-styles";
 import type { ActivePopup } from "@/lib/db/popups";
 import { useDictionary } from "@/lib/i18n/client";
+import { sitePopupCopy } from "@/lib/i18n/copy/site-popup";
 import { isLocale } from "@/lib/i18n/config";
 
 // Frequency = once per browser session (see product decision). Keyed by popup
@@ -67,7 +68,7 @@ type SitePopupProps = {
 };
 
 export default function SitePopup({ popup }: SitePopupProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ sitePopup: sitePopupCopy });
   const copy = dictionary.sitePopup;
 
   const [visible, setVisible] = useState(false);

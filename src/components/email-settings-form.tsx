@@ -7,6 +7,7 @@ import Switch from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { emailSettingsCopy } from "@/lib/i18n/copy/email-settings";
 import { JOB_ALERTS_PATH } from "@/lib/job-alerts";
 import type { NotificationPreferences } from "@/lib/messages";
 
@@ -16,7 +17,7 @@ import type { NotificationPreferences } from "@/lib/messages";
  * own switch per search. Each change saves at once.
  */
 export default function EmailSettingsForm({ initialPreferences }: { initialPreferences: NotificationPreferences }) {
-  const copy = useDictionary().emailSettings;
+  const copy = useDictionary({ emailSettings: emailSettingsCopy }).emailSettings;
   const toast = useToast();
   const followersId = useId();
   const [followerEmails, setFollowerEmails] = useState(initialPreferences.followerEmails);

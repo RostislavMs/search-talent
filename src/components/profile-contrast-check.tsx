@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { profileThemesCopy } from "@/lib/i18n/copy/profile-themes";
 import type { ProfilePresentation } from "@/lib/profile-presentation";
 import { checkProfileContrast, fixProfileContrast } from "@/lib/profile-themes";
 
@@ -17,7 +18,7 @@ export default function ProfileContrastCheck({
   presentation: ProfilePresentation;
   onChange: (next: ProfilePresentation) => void;
 }) {
-  const copy = useDictionary().profileThemes;
+  const copy = useDictionary({ profileThemes: profileThemesCopy }).profileThemes;
   const locale = useCurrentLocale();
   const checks = checkProfileContrast(presentation);
 

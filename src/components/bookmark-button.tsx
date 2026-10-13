@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { bookmarksCopy } from "@/lib/i18n/copy/bookmarks";
 
 type BookmarkButtonProps = {
   targetType: "profile" | "project";
@@ -19,7 +20,7 @@ export default function BookmarkButton({
   initialBookmarked,
   isAuthenticated,
 }: BookmarkButtonProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ bookmarks: bookmarksCopy });
   const toast = useToast();
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
   const [loading, setLoading] = useState(false);

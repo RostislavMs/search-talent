@@ -2,6 +2,7 @@
 
 import type { GithubProjectRole } from "@/lib/constants/github";
 import { useDictionary } from "@/lib/i18n/client";
+import { githubIntegrationCopy } from "@/lib/i18n/copy/github-integration";
 
 type Props = {
   role: GithubProjectRole | null;
@@ -36,7 +37,7 @@ export default function GithubAuthorNarrative({
   showcaseNotes,
   productionUsage,
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ githubIntegration: githubIntegrationCopy });
   const dict = dictionary.githubIntegration;
 
   const hasContributionBlock = hasAnything([

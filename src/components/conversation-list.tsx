@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { messagesCopy } from "@/lib/i18n/copy/messages";
 import {
   buildConversationHref,
   buildConversationPath,
@@ -86,7 +87,7 @@ export default function ConversationList({
   /** ?q= — a search to show at once (coming back from one of its results). */
   initialQuery?: string | null;
 }) {
-  const copy = useDictionary().messages;
+  const copy = useDictionary({ messages: messagesCopy }).messages;
   const searchId = useId();
   const [items, setItems] = useState(initialConversations);
   const [hasMore, setHasMore] = useState(initialConversations.length >= CONVERSATIONS_PAGE_SIZE);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { buildAuthCallbackUrl, sanitizeNextPath } from "@/lib/auth/redirect";
 import { getPublicAuthErrorMessage } from "@/lib/auth/validation";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { authCopy } from "@/lib/i18n/copy/auth";
 import { createClient } from "@/lib/supabase/client";
 import { buttonStyles } from "@/components/ui/button-styles";
 
@@ -58,7 +59,7 @@ export default function OAuthButtons({
   className?: string;
 }) {
   const supabase = createClient();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ auth: authCopy });
   const locale = useCurrentLocale();
   const [pending, setPending] = useState<OAuthProvider | null>(null);
 

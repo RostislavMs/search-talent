@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { applicationsCopy } from "@/lib/i18n/copy/applications";
 
 /** "Withdraw" in "My applications", confirmed first: there is no applying again. */
 export default function ApplicationWithdrawButton({
@@ -17,7 +18,7 @@ export default function ApplicationWithdrawButton({
 }) {
   const router = useLocalizedRouter();
   const toast = useToast();
-  const ui = useDictionary().applications.mine;
+  const ui = useDictionary({ applications: applicationsCopy }).applications.mine;
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 

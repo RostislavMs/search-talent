@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import Switch from "@/components/ui/switch";
 import { useDictionary } from "@/lib/i18n/client";
+import { openToCopy } from "@/lib/i18n/copy/open-to";
 import { normalizeOpenTo, openToOptions, type OpenToOption } from "@/lib/open-to";
 
 /**
@@ -22,7 +23,7 @@ export default function OpenToPicker({
   onChange: (next: OpenToOption[]) => void;
   disabled?: boolean;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ openTo: openToCopy });
   const t = dictionary.openTo;
   const titleId = useId();
   const hintId = useId();

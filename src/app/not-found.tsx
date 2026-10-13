@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import AppShell from "@/components/app-shell";
+import InteractiveBackground from "@/components/interactive-background";
 import NotFoundState from "@/components/not-found-state";
 import {
   defaultLocale,
@@ -15,6 +16,7 @@ export default async function GlobalNotFound() {
 
   return (
     <AppShell locale={locale}>
+      <InteractiveBackground />
       <NotFoundState locale={locale} />
     </AppShell>
   );

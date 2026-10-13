@@ -23,7 +23,7 @@ export default function CreatorCard({
   dictionary,
 }: {
   creator: CreatorCardData;
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "common" | "openTo">;
 }) {
   const name = creator.name || creator.username || dictionary.common.creator;
   const openToList = formatOpenToList(creator.openTo ?? [], dictionary.openTo.phrases);

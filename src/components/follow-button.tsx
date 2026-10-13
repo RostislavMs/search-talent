@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { followsCopy } from "@/lib/i18n/copy/follows";
 
 type FollowButtonProps = {
   followingUserId: string;
@@ -17,7 +18,7 @@ export default function FollowButton({
   initialFollowing,
   isAuthenticated,
 }: FollowButtonProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ follows: followsCopy });
   const toast = useToast();
   const [following, setFollowing] = useState(initialFollowing);
   const [loading, setLoading] = useState(false);

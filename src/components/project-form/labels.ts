@@ -29,7 +29,7 @@ import type {
 // Pure label/format helpers extracted from create-project-form.tsx.
 // Each maps an enum value (and the active dictionary) to a localized string.
 
-export function getDesignRoleLabel(role: DesignRole, dictionary: Dictionary) {
+export function getDesignRoleLabel(role: DesignRole, dictionary: Pick<Dictionary, "forms">) {
   switch (role) {
     case "ui":
       return dictionary.forms.designRoleUi;
@@ -58,7 +58,7 @@ export function getDesignRoleLabel(role: DesignRole, dictionary: Dictionary) {
   }
 }
 
-export function getDesignToolLabel(tool: DesignTool, dictionary: Dictionary) {
+export function getDesignToolLabel(tool: DesignTool, dictionary: Pick<Dictionary, "forms">) {
   switch (tool) {
     case "figma":
       return dictionary.forms.designToolFigma;
@@ -91,7 +91,7 @@ export function getDesignToolLabel(tool: DesignTool, dictionary: Dictionary) {
 
 export function getDesignDeliverableLabel(
   value: DesignDeliverable,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "forms">,
 ) {
   switch (value) {
     case "logo":
@@ -154,7 +154,7 @@ export function formatVideoDuration(seconds: number): string {
   return `${hours}:${String(remainingMinutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`;
 }
 
-export function getVideoRoleLabel(role: VideoRole, dictionary: Dictionary) {
+export function getVideoRoleLabel(role: VideoRole, dictionary: Pick<Dictionary, "forms">) {
   switch (role) {
     case "editor":
       return dictionary.forms.videoRoleEditor;
@@ -179,7 +179,7 @@ export function getVideoRoleLabel(role: VideoRole, dictionary: Dictionary) {
   }
 }
 
-export function getVideoGenreLabel(genre: VideoGenre, dictionary: Dictionary) {
+export function getVideoGenreLabel(genre: VideoGenre, dictionary: Pick<Dictionary, "forms">) {
   switch (genre) {
     case "edit":
       return dictionary.forms.videoGenreEdit;
@@ -236,7 +236,7 @@ export function getVideoGenreLabel(genre: VideoGenre, dictionary: Dictionary) {
   }
 }
 
-export function getAudioRoleLabel(role: AudioRole, dictionary: Dictionary) {
+export function getAudioRoleLabel(role: AudioRole, dictionary: Pick<Dictionary, "forms">) {
   switch (role) {
     case "composer":
       return dictionary.forms.audioRoleComposer;
@@ -265,7 +265,7 @@ export function getAudioRoleLabel(role: AudioRole, dictionary: Dictionary) {
   }
 }
 
-export function getAudioGenreLabel(value: AudioGenre, dictionary: Dictionary) {
+export function getAudioGenreLabel(value: AudioGenre, dictionary: Pick<Dictionary, "forms">) {
   switch (value) {
     case "electronic":
       return dictionary.forms.audioGenreElectronic;
@@ -306,7 +306,7 @@ export function getAudioGenreLabel(value: AudioGenre, dictionary: Dictionary) {
   }
 }
 
-export function getWritingRoleLabel(role: WritingRole, dictionary: Dictionary) {
+export function getWritingRoleLabel(role: WritingRole, dictionary: Pick<Dictionary, "forms">) {
   switch (role) {
     case "author":
       return dictionary.forms.writingRoleAuthor;
@@ -333,7 +333,7 @@ export function getWritingRoleLabel(role: WritingRole, dictionary: Dictionary) {
   }
 }
 
-export function getWritingFormatLabel(value: WritingFormat, dictionary: Dictionary) {
+export function getWritingFormatLabel(value: WritingFormat, dictionary: Pick<Dictionary, "forms">) {
   switch (value) {
     case "article":
       return dictionary.forms.writingFormatArticle;
@@ -372,7 +372,7 @@ export function getWritingFormatLabel(value: WritingFormat, dictionary: Dictiona
   }
 }
 
-export function getWritingTopicLabel(value: WritingTopic, dictionary: Dictionary) {
+export function getWritingTopicLabel(value: WritingTopic, dictionary: Pick<Dictionary, "forms">) {
   switch (value) {
     case "technology":
       return dictionary.forms.writingTopicTechnology;
@@ -409,7 +409,7 @@ export function getWritingTopicLabel(value: WritingTopic, dictionary: Dictionary
 
 export function getWritingLanguageLabel(
   value: WritingLanguage,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "forms">,
 ) {
   switch (value) {
     case "uk":
@@ -437,7 +437,7 @@ export function getWritingLanguageLabel(
   }
 }
 
-export function getMotionRoleLabel(role: MotionRole, dictionary: Dictionary) {
+export function getMotionRoleLabel(role: MotionRole, dictionary: Pick<Dictionary, "forms">) {
   switch (role) {
     case "motion_designer":
       return dictionary.forms.motionRoleMotionDesigner;
@@ -462,7 +462,7 @@ export function getMotionRoleLabel(role: MotionRole, dictionary: Dictionary) {
 
 export function getMotionTechniqueLabel(
   value: MotionTechnique,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "forms">,
 ) {
   switch (value) {
     case "2d":
@@ -496,7 +496,7 @@ export function getMotionTechniqueLabel(
   }
 }
 
-export function getMotionPurposeLabel(value: MotionPurpose, dictionary: Dictionary) {
+export function getMotionPurposeLabel(value: MotionPurpose, dictionary: Pick<Dictionary, "forms">) {
   switch (value) {
     case "logo_reveal":
       return dictionary.forms.motionPurposeLogoReveal;
@@ -531,7 +531,7 @@ export function getMotionPurposeLabel(value: MotionPurpose, dictionary: Dictiona
   }
 }
 
-export function getQaRoleLabel(role: QaRole, dictionary: Dictionary) {
+export function getQaRoleLabel(role: QaRole, dictionary: Pick<Dictionary, "forms">) {
   switch (role) {
     case "manual_qa":
       return dictionary.forms.qaRoleManualQa;
@@ -558,7 +558,7 @@ export function getQaRoleLabel(role: QaRole, dictionary: Dictionary) {
   }
 }
 
-export function getQaTestTypeLabel(value: QaTestType, dictionary: Dictionary) {
+export function getQaTestTypeLabel(value: QaTestType, dictionary: Pick<Dictionary, "forms">) {
   switch (value) {
     case "manual":
       return dictionary.forms.qaTestTypeManual;
@@ -597,7 +597,7 @@ export function getQaTestTypeLabel(value: QaTestType, dictionary: Dictionary) {
   }
 }
 
-export function getQaMethodologyLabel(value: QaMethodology, dictionary: Dictionary) {
+export function getQaMethodologyLabel(value: QaMethodology, dictionary: Pick<Dictionary, "forms">) {
   switch (value) {
     case "agile":
       return dictionary.forms.qaMethodologyAgile;
@@ -620,7 +620,7 @@ export function getQaMethodologyLabel(value: QaMethodology, dictionary: Dictiona
   }
 }
 
-export function getThreeDRoleLabel(role: ThreeDRole, dictionary: Dictionary) {
+export function getThreeDRoleLabel(role: ThreeDRole, dictionary: Pick<Dictionary, "forms">) {
   switch (role) {
     case "modeling":
       return dictionary.forms.threeDRoleModeling;
@@ -647,7 +647,7 @@ export function getThreeDRoleLabel(role: ThreeDRole, dictionary: Dictionary) {
   }
 }
 
-export function getThreeDStyleLabel(value: ThreeDStyle, dictionary: Dictionary) {
+export function getThreeDStyleLabel(value: ThreeDStyle, dictionary: Pick<Dictionary, "forms">) {
   switch (value) {
     case "realistic":
       return dictionary.forms.threeDStyleRealistic;
@@ -672,7 +672,7 @@ export function getThreeDStyleLabel(value: ThreeDStyle, dictionary: Dictionary) 
   }
 }
 
-export function getPhotoRoleLabel(role: PhotoRole, dictionary: Dictionary) {
+export function getPhotoRoleLabel(role: PhotoRole, dictionary: Pick<Dictionary, "forms">) {
   switch (role) {
     case "photographer":
       return dictionary.forms.photoRolePhotographer;
@@ -689,7 +689,7 @@ export function getPhotoRoleLabel(role: PhotoRole, dictionary: Dictionary) {
   }
 }
 
-export function getPhotoGenreLabel(value: PhotoGenre, dictionary: Dictionary) {
+export function getPhotoGenreLabel(value: PhotoGenre, dictionary: Pick<Dictionary, "forms">) {
   switch (value) {
     case "portrait":
       return dictionary.forms.photoGenrePortrait;
@@ -726,7 +726,7 @@ export function getPhotoGenreLabel(value: PhotoGenre, dictionary: Dictionary) {
   }
 }
 
-export function getPhotoMediumLabel(value: PhotoMedium, dictionary: Dictionary) {
+export function getPhotoMediumLabel(value: PhotoMedium, dictionary: Pick<Dictionary, "forms">) {
   switch (value) {
     case "digital":
       return dictionary.forms.photoMediumDigital;
@@ -747,7 +747,7 @@ export function getPhotoMediumLabel(value: PhotoMedium, dictionary: Dictionary) 
 
 export function getCodeArchitectureLabel(
   value: CodeArchitecture,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "forms">,
 ) {
   switch (value) {
     case "web_app":
@@ -791,7 +791,7 @@ export function getCodeArchitectureLabel(
   }
 }
 
-export function getStatusLabel(status: ProjectStatus, dictionary: Dictionary) {
+export function getStatusLabel(status: ProjectStatus, dictionary: Pick<Dictionary, "forms">) {
   switch (status) {
     case "planning":
       return dictionary.forms.projectStatusPlanning;

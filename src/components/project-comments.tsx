@@ -21,7 +21,10 @@ import type { Locale } from "@/lib/i18n/config";
 import { getModerationCopy } from "@/lib/moderation-copy";
 import type { ReactionSummary } from "@/lib/constants/reactions";
 import { isDiscussionOpen } from "@/lib/discussions";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { commentGifCopy } from "@/lib/i18n/copy/comment-gif";
+import { projectCommentsCopy } from "@/lib/i18n/copy/project-comments";
 import { formatRelativeTime } from "@/lib/format-relative-time";
 
 type Comment = {
@@ -133,7 +136,7 @@ function CommentItem({
   onSubmitReply: () => void;
   submitting: boolean;
   gifEnabled: boolean;
-  dictionary: ReturnType<typeof useDictionary>;
+  dictionary: Pick<Dictionary, "projectComments" | "commentGif">;
   projectId: string;
   viewerUserId: string | null;
   ownerUserId: string | null;
@@ -353,7 +356,7 @@ export default function ProjectComments({
   previewLimit = null,
   discussionHref = null,
 }: ProjectCommentsProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ commentGif: commentGifCopy, projectComments: projectCommentsCopy });
   const router = useLocalizedRouter();
   const locale = router.locale;
 

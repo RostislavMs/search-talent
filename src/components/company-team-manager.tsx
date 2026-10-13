@@ -23,6 +23,7 @@ import {
   type CompanyRole,
 } from "@/lib/companies";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { companiesCopy } from "@/lib/i18n/copy/companies";
 import { createLocalePath } from "@/lib/i18n/config";
 
 type PendingAction =
@@ -51,7 +52,7 @@ export default function CompanyTeamManager({
   const router = useRouter();
   const toast = useToast();
   const locale = useCurrentLocale();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ companies: companiesCopy });
   const copy = dictionary.companies;
   const ui = copy.team;
 

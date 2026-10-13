@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { invalidateActivePopup } from "@/lib/db/popups";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import {
   EMPTY_MESSAGE_ERROR,
@@ -110,6 +111,7 @@ export async function PATCH(
     );
   }
 
+  invalidateActivePopup();
   return NextResponse.json({ success: true });
 }
 
@@ -148,5 +150,6 @@ export async function DELETE(
     );
   }
 
+  invalidateActivePopup();
   return NextResponse.json({ success: true });
 }

@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { getArticleFeed } from "@/lib/db/articles";
+import { getLatestPublicArticles } from "@/lib/db/articles";
 import {
   getLeaderboards,
   LEADERBOARDS_CACHE_REVALIDATE_SECONDS,
@@ -19,6 +19,38 @@ import { slugifySegment } from "@/lib/marketing-content";
 import { normalizeProfileSettings } from "@/lib/profile-presentation";
 import { createAdminClient, createPublicReadOnlyClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+
+/**
+ * The skill, type and role directories behind /projects, /talents, the facet
+ * pages and the sitemap. They hold only names and counts that change when work
+ * is published, so every request within the window shares one read.
+ */
+const DIRECTORY_REVALIDATE_SECONDS = 600;
+const DIRECTORIES_CACHE_TAG = "directories";
+
+/**
+ * A failed read throws inside the cache, so it is never stored, and reaches
+ * the caller as an empty list — an empty directory cached for ten minutes would
+ * turn every facet page into a 404.
+ */
+function cachedDirectory<Args extends unknown[], Item>(
+  read: (...args: Args) => Promise<Item[]>,
+  key: string,
+) {
+  const cached = unstable_cache(read, [key], {
+    revalidate: DIRECTORY_REVALIDATE_SECONDS,
+    tags: [DIRECTORIES_CACHE_TAG],
+  });
+
+  return async (...args: Args): Promise<Item[]> => {
+    try {
+      return await cached(...args);
+    } catch (error) {
+      console.error(`[marketing] ${key} unavailable:`, error);
+      return [];
+    }
+  };
+}
 
 async function getPublicReadClient() {
   const publicClient = createPublicReadOnlyClient();
@@ -57,8 +89,12 @@ export async function getFeaturedTalents(limit = 8) {
 }
 
 export async function getLatestArticles(limit = 6, locale?: string | null) {
-  const feed = await getArticleFeed({ sort: "recent", locale });
-  return feed.items.slice(0, limit);
+  try {
+    return await getLatestPublicArticles(limit, locale ?? null);
+  } catch (error) {
+    console.error("[marketing] latest articles unavailable:", error);
+    return [];
+  }
 }
 
 /** Enough rows to cover every candidate's pinned and newest work. */
@@ -226,7 +262,7 @@ export type TechnologyDirectoryItem = {
  * section. `getPopularTechnologies` counts projects + profiles combined,
  * which would surface profile-only skills that have zero matching projects.
  */
-export async function getTechnologyDirectory(
+async function readTechnologyDirectory(
   limit?: number,
 ): Promise<TechnologyDirectoryItem[]> {
   const supabase = await getPublicReadClient();
@@ -241,7 +277,10 @@ export async function getTechnologyDirectory(
     query = query.limit(limit);
   }
 
-  const { data } = await query;
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return ((data || []) as Array<{ id: number; name: string; project_count: number }>).map(
     (skill) => ({
@@ -252,6 +291,11 @@ export async function getTechnologyDirectory(
     }),
   );
 }
+
+export const getTechnologyDirectory = cachedDirectory(
+  readTechnologyDirectory,
+  "technology-directory-v1",
+);
 
 // The facet pages look their term up in generateMetadata and again in the page;
 // React's per-request cache turns that into one directory read.
@@ -265,20 +309,28 @@ export const getTechnologyBySlug = cache(async (techSlug: string) => {
  * /projects/type landing pages and the "browse by type" section. The kind
  * value is already URL-safe, so it doubles as the slug.
  */
-export async function getProjectKindDirectory(): Promise<
+async function readProjectKindDirectory(): Promise<
   Array<{ kind: string; count: number }>
 > {
   const supabase = await getPublicReadClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("project_kind_directory_stats")
     .select("kind, total")
     .order("total", { ascending: false });
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return ((data || []) as Array<{ kind: string; total: number }>).map((row) => ({
     kind: row.kind,
     count: row.total,
   }));
 }
+
+export const getProjectKindDirectory = cachedDirectory(
+  readProjectKindDirectory,
+  "project-kind-directory-v1",
+);
 
 export type DirectoryCreator = {
   username: string;
@@ -400,16 +452,19 @@ export async function getProjectsBySkillId(
  * public moderation status) profiles are counted, so a skill that exists only
  * on hidden profiles never surfaces an empty page.
  */
-export async function getTalentSkillDirectory(): Promise<
+async function readTalentSkillDirectory(): Promise<
   TechnologyDirectoryItem[]
 > {
   const supabase = await getPublicReadClient();
   // Per-skill count of public profiles, aggregated in SQL.
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("skill_directory_stats")
     .select("id, name, profile_count")
     .order("profile_count", { ascending: false })
     .order("name", { ascending: true });
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return ((data || []) as Array<{ id: number; name: string; profile_count: number }>).map(
     (skill) => ({
@@ -420,6 +475,11 @@ export async function getTalentSkillDirectory(): Promise<
     }),
   );
 }
+
+export const getTalentSkillDirectory = cachedDirectory(
+  readTalentSkillDirectory,
+  "talent-skill-directory-v1",
+);
 
 export const getTalentSkillBySlug = cache(async (skillSlug: string) => {
   const items = await getTalentSkillDirectory();
@@ -439,15 +499,18 @@ export type ProfileCategoryDirectoryItem = {
  * Categories carry no slug column in the DB, so we derive one from the name
  * the same way technologies do.
  */
-export async function getProfileCategoryDirectory(): Promise<
+async function readProfileCategoryDirectory(): Promise<
   ProfileCategoryDirectoryItem[]
 > {
   const supabase = await getPublicReadClient();
   // Per-category count of public talents, aggregated in SQL.
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profile_category_directory_stats")
     .select("id, name, total")
     .order("name", { ascending: true });
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return ((data || []) as Array<{ id: number; name: string; total: number }>).map(
     (category) => ({
@@ -458,6 +521,11 @@ export async function getProfileCategoryDirectory(): Promise<
     }),
   );
 }
+
+export const getProfileCategoryDirectory = cachedDirectory(
+  readProfileCategoryDirectory,
+  "profile-category-directory-v1",
+);
 
 export const getProfileCategoryBySlug = cache(async (categorySlug: string) => {
   const items = await getProfileCategoryDirectory();

@@ -15,7 +15,12 @@ import FormSelect from "@/components/ui/form-select";
 import Pagination from "@/components/ui/pagination";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { commonCopy } from "@/lib/i18n/copy/common";
+import { formsCopy } from "@/lib/i18n/copy/forms";
+import { openToCopy } from "@/lib/i18n/copy/open-to";
+import { searchCopy } from "@/lib/i18n/copy/search";
 import type { Locale } from "@/lib/i18n/config";
 import type { ProfileCategory } from "@/lib/profile-categories";
 import {
@@ -209,7 +214,7 @@ type DiscoveryCopy = {
 
 function getStatusLabel(
   status: string | null,
-  dictionary: ReturnType<typeof useDictionary>,
+  dictionary: Pick<Dictionary, "forms">,
   anyStatusLabel: string,
 ) {
   switch (status as ProjectStatus | null) {
@@ -252,7 +257,7 @@ function DiscoveryModeLink({
 
 function getWorkFormatLabel(
   value: WorkFormat,
-  dictionary: ReturnType<typeof useDictionary>,
+  dictionary: Pick<Dictionary, "forms">,
 ) {
   switch (value) {
     case "remote":
@@ -434,7 +439,7 @@ export default function DiscoveryPage({
   initialSort = "relevance",
   canPersonalize = false,
 }: DiscoveryPageProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ common: commonCopy, forms: formsCopy, openTo: openToCopy, search: searchCopy });
   const toast = useToast();
   const locale = useCurrentLocale();
   const copy = useMemo(() => getDiscoveryCopy(locale), [locale]);

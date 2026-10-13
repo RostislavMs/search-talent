@@ -94,7 +94,7 @@ export async function getAppShellData(locale: Locale): Promise<{
       supabase.auth.getUser(),
       getCookieConsentFromCookies(),
       getThemeFromCookies(),
-      getActivePopup(supabase, locale),
+      getActivePopup(locale),
       getSectionVisibility(),
     ]);
 

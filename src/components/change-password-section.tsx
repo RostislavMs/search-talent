@@ -10,13 +10,15 @@ import {
   type AuthFieldErrors,
 } from "@/lib/auth/validation";
 import { useDictionary } from "@/lib/i18n/client";
+import { authCopy } from "@/lib/i18n/copy/auth";
+import { dashboardProfileCopy } from "@/lib/i18n/copy/dashboard-profile";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import PasswordInput from "@/components/ui/password-input";
 
 export default function ChangePasswordSection() {
   const supabase = createClient();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ auth: authCopy, dashboardProfile: dashboardProfileCopy });
   const t = dictionary.dashboardProfile.changePassword;
 
   const [currentPassword, setCurrentPassword] = useState("");

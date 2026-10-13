@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCreatorRatings, getProjectRatings } from "@/lib/db/leaderboards";
 import type { ProjectKind } from "@/lib/projects";
@@ -699,22 +700,35 @@ function applyPersonalScores(
   }
 }
 
+/** New public work reaches the anonymous listing within this window. */
+const PUBLIC_DISCOVERY_REVALIDATE_SECONDS = 300;
+
+// The anonymous result depends only on the search params, so every guest (and
+// Googlebot) asking the same thing shares one read. A failure throws instead
+// of returning null, so it is never cached.
+const readPublicDiscovery = unstable_cache(
+  async (params: DiscoverySearchParams) => {
+    const supabase = createPublicReadOnlyClient();
+
+    if (!supabase) {
+      throw new Error("The public Supabase client is not configured");
+    }
+
+    return searchDiscovery(params, supabase);
+  },
+  ["public-discovery-v1"],
+  { revalidate: PUBLIC_DISCOVERY_REVALIDATE_SECONDS, tags: ["discovery"] },
+);
+
 /**
  * SSR seed for the discovery pages: runs the default first-page query through
- * the cookie-less public read-only client (the anonymous view Googlebot sees,
- * and safe inside statically-generated / ISR pages). Returns null when the
- * public client is unavailable or the query fails, so the caller falls back to
- * the client-only render instead of erroring the page.
+ * the cookie-less public read-only client (the anonymous view Googlebot sees).
+ * Returns null when the public client is unavailable or the query fails, so the
+ * caller falls back to the client-only render instead of erroring the page.
  */
 export async function getInitialDiscoveryResults(params: DiscoverySearchParams) {
-  const supabase = createPublicReadOnlyClient();
-
-  if (!supabase) {
-    return null;
-  }
-
   try {
-    return await searchDiscovery(params, supabase);
+    return await readPublicDiscovery(params);
   } catch {
     return null;
   }

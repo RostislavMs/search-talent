@@ -9,7 +9,9 @@ import {
   type ProviderIntegrationId,
   type ProviderIntegrationSummary,
 } from "@/lib/constants/provider-integrations";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { providerIntegrationsCopy } from "@/lib/i18n/copy/provider-integrations";
 
 type Props = {
   provider: ProviderIntegrationId;
@@ -17,7 +19,7 @@ type Props = {
   returnTo?: string;
 };
 
-type ProviderDict = ReturnType<typeof useDictionary>["providerIntegrations"];
+type ProviderDict = Dictionary["providerIntegrations"];
 
 /** Each provider explains its own import in its own words. */
 function providerDescription(
@@ -42,7 +44,7 @@ export default function ProviderIntegrationCard({
   provider,
   returnTo = "/profile/edit",
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ providerIntegrations: providerIntegrationsCopy });
   const dict = dictionary.providerIntegrations;
   const router = useLocalizedRouter();
   const descriptor = getProviderIntegrationDescriptor(provider);

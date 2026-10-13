@@ -21,7 +21,10 @@ import {
 } from "@/lib/articles";
 import { MAX_CO_AUTHORS } from "@/lib/co-authors";
 import { isLocale } from "@/lib/i18n/config";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { pickDictionary } from "@/lib/i18n/client";
+import { coAuthorsCopy } from "@/lib/i18n/copy/co-authors";
+import { commonCopy } from "@/lib/i18n/copy/common";
+import { formsCopy } from "@/lib/i18n/copy/forms";
 import { compressImageFile } from "@/lib/image-compression";
 import {
   extractPlainTextFromRichText,
@@ -272,7 +275,7 @@ export default function ArticleComposer({
   const isDirty =
     saving === null && currentSnapshot !== (savedSnapshot ?? initialSnapshot);
 
-  const dictionary = getDictionary(isLocale(locale) ? locale : "en");
+  const dictionary = pickDictionary({ coAuthors: coAuthorsCopy, common: commonCopy, forms: formsCopy }, isLocale(locale) ? locale : "en");
   const dictionaryCommon = dictionary.common;
   const coAuthorsDict = dictionary.coAuthors;
   const { isWarningOpen, confirmLeave, cancelLeave } =

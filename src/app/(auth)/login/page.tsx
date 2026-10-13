@@ -12,6 +12,7 @@ import {
 import { buildContinueHref, buildSignupHref } from "@/lib/auth/redirect";
 import { useSearchParam } from "@/lib/auth/use-search-param";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { authCopy } from "@/lib/i18n/copy/auth";
 import { createClient } from "@/lib/supabase/client";
 import AuthDivider from "@/components/auth/auth-divider";
 import AuthLegalNote from "@/components/auth/auth-legal-note";
@@ -22,7 +23,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 
 export default function LoginPage() {
   const supabase = createClient();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ auth: authCopy });
   const locale = useCurrentLocale();
   // From the URL: where the person was heading before being asked to log in
   // (only internal paths survive `sanitizeNextPath`), and a failed Google or

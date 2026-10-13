@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { creatorProfileCopy } from "@/lib/i18n/copy/creator-profile";
+import { formsCopy } from "@/lib/i18n/copy/forms";
+import { openToCopy } from "@/lib/i18n/copy/open-to";
+import { pdfExportCopy } from "@/lib/i18n/copy/pdf-export";
 import type { PublicProfilePageData } from "@/lib/db/public";
 import { formatOpenToList } from "@/lib/open-to";
 import { formatHourlyRate } from "@/lib/profile-private";
@@ -43,7 +47,7 @@ export default function ProfilePdfExport({
   portfolioUrl,
   label,
 }: ProfilePdfExportProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ creatorProfile: creatorProfileCopy, forms: formsCopy, openTo: openToCopy, pdfExport: pdfExportCopy });
   const locale = useCurrentLocale();
   const t = dictionary.pdfExport;
   const [generating, setGenerating] = useState(false);

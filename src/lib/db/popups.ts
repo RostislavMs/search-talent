@@ -1,7 +1,12 @@
 import "server-only";
 
+import { revalidateTag, unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Locale } from "@/lib/i18n/config";
+import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
+
+export const ACTIVE_POPUP_CACHE_TAG = "active-popup";
+const ACTIVE_POPUP_REVALIDATE_SECONDS = 300;
 
 export type PopupKind = "message" | "feedback";
 
@@ -63,15 +68,13 @@ function toActivePopup(row: SitePopupRecord, locale: Locale): ActivePopup {
   };
 }
 
-/**
- * Fetches the single active popup, resolved for the given locale. Returns
- * `null` when nothing is active. Safe to call for anonymous visitors — RLS
- * exposes only the active row to non-admins.
- */
-export async function getActivePopup(
-  supabase: SupabaseClient,
-  locale: Locale,
-): Promise<ActivePopup | null> {
+async function readActivePopupRow(): Promise<SitePopupRecord | null> {
+  // RLS exposes only the active row to anonymous readers, which is all we need.
+  const supabase = createPublicReadOnlyClient();
+  if (!supabase) {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("site_popups")
     .select(POPUP_COLUMNS)
@@ -79,11 +82,37 @@ export async function getActivePopup(
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) {
-    return null;
+  // Thrown, not returned as "no popup", so a failed read is never cached.
+  if (error) {
+    throw new Error(error.message);
   }
 
-  return toActivePopup(data as SitePopupRecord, locale);
+  return (data as SitePopupRecord | null) ?? null;
+}
+
+// The active popup is the same for every visitor and every page, so it is read
+// once per window instead of on each request; admin changes flush it at once.
+const getActivePopupRow = unstable_cache(readActivePopupRow, ["active-popup-v1"], {
+  revalidate: ACTIVE_POPUP_REVALIDATE_SECONDS,
+  tags: [ACTIVE_POPUP_CACHE_TAG],
+});
+
+/**
+ * The single active popup, resolved for the given locale; `null` when nothing
+ * is active.
+ */
+export async function getActivePopup(locale: Locale): Promise<ActivePopup | null> {
+  try {
+    const row = await getActivePopupRow();
+    return row ? toActivePopup(row, locale) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** After an admin change, so the very next page shows the new state. */
+export function invalidateActivePopup() {
+  revalidateTag(ACTIVE_POPUP_CACHE_TAG, { expire: 0 });
 }
 
 /**

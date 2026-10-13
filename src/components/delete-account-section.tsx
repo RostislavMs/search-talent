@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { dashboardProfileCopy } from "@/lib/i18n/copy/dashboard-profile";
 
 type Step = "confirm" | "code" | "done";
 type Mode = "erase" | "anonymize";
 
 export default function DeleteAccountSection({ email }: { email: string }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ dashboardProfile: dashboardProfileCopy });
   const t = dictionary.dashboardProfile.deleteAccount;
   const router = useLocalizedRouter();
 

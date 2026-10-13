@@ -11,6 +11,7 @@ import { apiFetch } from "@/lib/api-client";
 import type { MetaOption } from "@/lib/db/onboarding";
 import type { OpenToOption } from "@/lib/open-to";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { onboardingCopy } from "@/lib/i18n/copy/onboarding";
 import {
   getNextOnboardingStep,
   getOnboardingStepNumber,
@@ -50,7 +51,7 @@ export default function OnboardingFlow({
   codeImportAvailable,
   hasPublishedProject,
 }: OnboardingFlowProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ onboarding: onboardingCopy });
   const t = dictionary.onboarding;
   const router = useLocalizedRouter();
   const [step, setStep] = useState<OnboardingStep>(initialStep);

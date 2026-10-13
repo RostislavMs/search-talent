@@ -31,6 +31,8 @@ import {
   type CompanyType,
 } from "@/lib/companies";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { commonCopy } from "@/lib/i18n/copy/common";
+import { companiesCopy } from "@/lib/i18n/copy/companies";
 import { createLocalePath } from "@/lib/i18n/config";
 import { uploadWithProgress } from "@/lib/storage/upload-with-progress";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
@@ -92,7 +94,7 @@ export default function CompanyForm({
   const router = useRouter();
   const toast = useToast();
   const locale = useCurrentLocale();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ common: commonCopy, companies: companiesCopy });
   const copy = dictionary.companies;
   const ui = copy.form;
   const isEditing = Boolean(company);

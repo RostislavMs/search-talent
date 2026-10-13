@@ -2,6 +2,7 @@
 
 import { forwardRef, useState, type InputHTMLAttributes } from "react";
 import { useDictionary } from "@/lib/i18n/client";
+import { authCopy } from "@/lib/i18n/copy/auth";
 
 type PasswordInputProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -15,7 +16,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     { className, inputClassName, ...rest },
     ref,
   ) {
-    const dictionary = useDictionary();
+    const dictionary = useDictionary({ auth: authCopy });
     const [visible, setVisible] = useState(false);
 
     const toggleLabel = visible

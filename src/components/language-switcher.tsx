@@ -3,12 +3,13 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { switchLocalePathname, type Locale } from "@/lib/i18n/config";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { languageCopy } from "@/lib/i18n/copy/language";
 
 export default function LanguageSwitcher() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const locale = useCurrentLocale();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ language: languageCopy });
 
   const buildTargetHref = (targetLocale: Locale) => {
     const search = searchParams.toString();

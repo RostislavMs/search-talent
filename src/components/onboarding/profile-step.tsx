@@ -8,6 +8,8 @@ import TagSelect from "@/components/ui/tag-select";
 import { apiFetch } from "@/lib/api-client";
 import type { MetaOption } from "@/lib/db/onboarding";
 import { useDictionary } from "@/lib/i18n/client";
+import { onboardingCopy } from "@/lib/i18n/copy/onboarding";
+import { profileTemplatesCopy } from "@/lib/i18n/copy/profile-templates";
 import { suggestProfileTemplate, type ProfileTemplateId } from "@/lib/profile-templates";
 import { USERNAME_PATTERN, suggestUsernameFromName } from "@/lib/username";
 
@@ -40,7 +42,7 @@ export default function OnboardingProfileStep({
   onDone: () => void;
   onSkip: () => void;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ onboarding: onboardingCopy, profileTemplates: profileTemplatesCopy });
   const t = dictionary.onboarding;
   const copy = t.profile;
   const ids = {

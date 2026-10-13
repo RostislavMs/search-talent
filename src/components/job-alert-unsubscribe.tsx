@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { jobAlertsCopy } from "@/lib/i18n/copy/job-alerts";
 import { JOB_ALERTS_PATH } from "@/lib/job-alerts";
 
 /**
@@ -11,7 +12,7 @@ import { JOB_ALERTS_PATH } from "@/lib/job-alerts";
  * not the visit itself: mail scanners open links on their own.
  */
 export default function JobAlertUnsubscribe({ userId, token }: { userId: string; token: string }) {
-  const copy = useDictionary().jobAlerts.unsubscribe;
+  const copy = useDictionary({ jobAlerts: jobAlertsCopy }).jobAlerts.unsubscribe;
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
 
   async function unsubscribe() {

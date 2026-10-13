@@ -15,7 +15,7 @@ import type { ProfileSectionId } from "@/lib/profile-presentation";
 
 export function getLanguageLevelLabel(
   level: LanguageLevel,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "forms">,
 ) {
   switch (level) {
     case "beginner":
@@ -37,7 +37,7 @@ export function getLanguageLevelLabel(
 
 export function getWorkFormatLabel(
   value: WorkFormat,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "forms">,
 ) {
   switch (value) {
     case "remote":
@@ -149,7 +149,7 @@ export function getSalaryCurrencyLabel(value: SalaryCurrency, locale: string) {
 
 export function getPreferredContactMethodLabel(
   value: PreferredContactMethod,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "forms">,
 ) {
   switch (value) {
     case "email":
@@ -169,7 +169,7 @@ export function getPreferredContactMethodLabel(
 
 export function getVisibilityLabel(
   value: ProfileVisibilityKey,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "forms">,
 ) {
   switch (value) {
     case "about":
@@ -212,7 +212,7 @@ export function getPreferredContactMethodPlaceholder(locale: string) {
 
 export function getSectionOrderLabel(
   sectionId: ProfileSectionId,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "forms">,
   locale: string,
 ) {
   switch (sectionId) {

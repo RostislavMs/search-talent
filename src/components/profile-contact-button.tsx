@@ -9,6 +9,8 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { apiFetch } from "@/lib/api-client";
 import { useLoginHref } from "@/lib/auth/use-login-href";
 import { useDictionary } from "@/lib/i18n/client";
+import { messagesCopy } from "@/lib/i18n/copy/messages";
+import { openToCopy } from "@/lib/i18n/copy/open-to";
 import { buildConversationPath, messagingIsOffered, type ProfileMessaging } from "@/lib/messages";
 import type { PreferredContactMethod } from "@/lib/profile-sections";
 
@@ -114,7 +116,7 @@ export default function ProfileContactButton({
   variant?: ButtonVariant;
   messaging?: ProfileMessaging | null;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ messages: messagesCopy, openTo: openToCopy });
   const t = dictionary.openTo;
   const m = dictionary.messages;
   const [writing, setWriting] = useState(false);

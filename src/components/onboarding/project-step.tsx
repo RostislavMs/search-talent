@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/Button";
 import { buttonStyles } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import { useDictionary } from "@/lib/i18n/client";
+import { formsCopy } from "@/lib/i18n/copy/forms";
+import { onboardingCopy } from "@/lib/i18n/copy/onboarding";
 import { ONBOARDING_PROJECT_KINDS, buildOnboardingProjectHref } from "@/lib/onboarding";
 import { getProjectKindLabel } from "@/lib/projects";
 
@@ -23,7 +25,7 @@ export default function OnboardingProjectStep({
   onBack: () => void;
   onSkip: () => void;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ forms: formsCopy, onboarding: onboardingCopy });
   const t = dictionary.onboarding;
   const copy = t.project;
 

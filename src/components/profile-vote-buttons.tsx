@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import LocalizedLink from "@/components/ui/localized-link";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { creatorProfileCopy } from "@/lib/i18n/copy/creator-profile";
 import { getModerationCopy } from "@/lib/moderation-copy";
 import { getOptimisticVoteState, type VoteState, type VoteValue } from "@/lib/vote-state";
 
@@ -29,7 +30,7 @@ export default function ProfileVoteButtons({
   className,
 }: ProfileVoteButtonsProps) {
   const locale = useCurrentLocale();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ creatorProfile: creatorProfileCopy });
   const moderationCopy = getModerationCopy(locale);
   const router = useLocalizedRouter();
   const [loading, setLoading] = useState(false);

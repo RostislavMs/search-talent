@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { aiProfileSummaryCopy } from "@/lib/i18n/copy/ai-profile-summary";
 
 type Props = {
   /** Public username of the profile being viewed. */
@@ -26,7 +27,7 @@ export default function ProfileAiSummaryPublic({
   username,
   isAuthenticated,
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ aiProfileSummary: aiProfileSummaryCopy });
   const dict = dictionary.aiProfileSummary;
   const router = useLocalizedRouter();
 

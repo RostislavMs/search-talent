@@ -31,7 +31,7 @@ export default function ProjectCard({
   variant = "grid",
   priority = false,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "common" | "forms">;
   project: ProjectCardData;
   hideOwner?: boolean;
   /**
@@ -213,7 +213,7 @@ function ProjectGalleryCard({
   wide,
   priority,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "common" | "forms">;
   project: ProjectCardData;
   wide: boolean;
   priority: boolean;

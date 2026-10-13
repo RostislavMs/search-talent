@@ -18,6 +18,7 @@ import {
   type ApplyState,
 } from "@/lib/applications";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { applicationsCopy } from "@/lib/i18n/copy/applications";
 import { formatCount } from "@/lib/vacancies";
 import { formatVacancyDate } from "@/lib/vacancy-presentation";
 
@@ -51,7 +52,7 @@ export default function VacancyApplyPanel({
   teamHref: string;
   applicationsCount: { total: number; fresh: number } | null;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ applications: applicationsCopy });
   const copy = dictionary.applications;
   const t = copy.apply;
   const toast = useToast();

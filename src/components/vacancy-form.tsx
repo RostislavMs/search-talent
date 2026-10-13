@@ -11,6 +11,8 @@ import TagSelect from "@/components/ui/tag-select";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { commonCopy } from "@/lib/i18n/copy/common";
+import { vacanciesCopy } from "@/lib/i18n/copy/vacancies";
 import { createLocalePath } from "@/lib/i18n/config";
 import { salaryCurrencies, type SalaryCurrency } from "@/lib/profile-sections";
 import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
@@ -206,7 +208,7 @@ export default function VacancyForm({
   const router = useRouter();
   const toast = useToast();
   const uiLocale = useCurrentLocale();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ common: commonCopy, vacancies: vacanciesCopy });
   const copy = dictionary.vacancies;
   const ui = copy.form;
   const fieldId = useId();

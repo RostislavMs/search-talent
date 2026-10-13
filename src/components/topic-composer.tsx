@@ -9,7 +9,9 @@ import { apiFetch } from "@/lib/api-client";
 import { DISCUSSIONS_CATEGORY_SLUG } from "@/lib/articles";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 import type { Locale } from "@/lib/i18n/config";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { pickDictionary } from "@/lib/i18n/client";
+import { discussionsCopy } from "@/lib/i18n/copy/discussions";
+import { projectCommentsCopy } from "@/lib/i18n/copy/project-comments";
 
 const RichTextComposer = dynamic(
   () => import("@/components/rich-text-composer"),
@@ -59,7 +61,7 @@ export default function TopicComposer({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const dictionary = getDictionary(locale);
+  const dictionary = pickDictionary({ discussions: discussionsCopy, projectComments: projectCommentsCopy }, locale);
   const ui = dictionary.discussions;
 
   const [title, setTitle] = useState(editTopic?.title ?? "");

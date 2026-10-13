@@ -18,6 +18,7 @@ import {
 } from "@/lib/notifications-presentation";
 import { formatRelativeTime } from "@/lib/format-relative-time";
 import { useDictionary } from "@/lib/i18n/client";
+import { notificationsCopy } from "@/lib/i18n/copy/notifications";
 import type { Locale } from "@/lib/i18n/config";
 
 type Props = {
@@ -68,7 +69,7 @@ export default function NotificationsList({
   locale,
   emptyLabel,
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ notifications: notificationsCopy });
   const dict = dictionary.notifications;
   const [items, setItems] = useState<NotificationItem[]>(initialItems);
   const [cursor, setCursor] = useState<string | null>(

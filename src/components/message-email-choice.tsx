@@ -5,6 +5,7 @@ import RadioCards from "@/components/ui/radio-cards";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { emailSettingsCopy } from "@/lib/i18n/copy/email-settings";
 import { messageEmailModes, type MessageEmailMode, type NotificationPreferences } from "@/lib/messages";
 
 /**
@@ -21,7 +22,7 @@ export default function MessageEmailChoice({
   title: string;
   hint?: string;
 }) {
-  const copy = useDictionary().emailSettings;
+  const copy = useDictionary({ emailSettings: emailSettingsCopy }).emailSettings;
   const toast = useToast();
   const headingId = useId();
   const [value, setValue] = useState(initialValue);

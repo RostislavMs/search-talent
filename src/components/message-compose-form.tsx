@@ -7,6 +7,7 @@ import FormTextarea from "@/components/ui/form-textarea";
 import LocalizedLink from "@/components/ui/localized-link";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { messagesCopy } from "@/lib/i18n/copy/messages";
 import {
   buildConversationPath,
   hasExternalLink,
@@ -41,7 +42,7 @@ export default function MessageComposeForm({
   onSent?: (conversationId: string) => void;
   onCancel?: () => void;
 }) {
-  const copy = useDictionary().messages;
+  const copy = useDictionary({ messages: messagesCopy }).messages;
   const fieldId = useId();
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);

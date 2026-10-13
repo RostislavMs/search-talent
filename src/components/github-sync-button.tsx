@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { githubIntegrationCopy } from "@/lib/i18n/copy/github-integration";
+import { localeNameCopy } from "@/lib/i18n/copy/locale-name";
 import type { GithubProjectStats } from "@/lib/constants/github";
 
 type Props = {
@@ -31,7 +33,7 @@ function relativeTime(iso: string | null, locale: string): string {
 }
 
 export default function GithubSyncButton({ projectId, initialSyncedAt }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ githubIntegration: githubIntegrationCopy, localeName: localeNameCopy });
   const dict = dictionary.githubIntegration;
   const router = useRouter();
   const [syncedAt, setSyncedAt] = useState<string | null>(initialSyncedAt);

@@ -14,6 +14,8 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { applicationsCopy } from "@/lib/i18n/copy/applications";
+import { messagesCopy } from "@/lib/i18n/copy/messages";
 import { MESSAGE_ATTACHMENT_ACCEPT } from "@/lib/message-attachments";
 import {
   canAttachFiles,
@@ -63,7 +65,7 @@ const NEAR_BOTTOM_PX = 140;
 const FOCUS_HIGHLIGHT_MS = 2500;
 
 function MessageText({ text, onDark }: { text: string; onDark: boolean }) {
-  const copy = useDictionary().messages;
+  const copy = useDictionary({ messages: messagesCopy }).messages;
 
   return (
     <p className="whitespace-pre-wrap break-words text-sm leading-6">
@@ -121,7 +123,7 @@ export default function ConversationThread({
   /** The private bucket for files is set up. */
   filesEnabled?: boolean;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ applications: applicationsCopy, messages: messagesCopy });
   const copy = dictionary.messages;
   const moderationCopy = getModerationCopy(locale === "uk" ? "uk" : "en");
   const router = useLocalizedRouter();

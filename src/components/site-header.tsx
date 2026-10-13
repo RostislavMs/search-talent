@@ -10,7 +10,7 @@ import HeaderScrollProgress from "@/components/header-scroll-progress";
 import NavLink from "@/components/nav-link";
 import LogoutButton from "@/components/logout-button";
 import LanguageSwitcher from "@/components/language-switcher";
-import MessagesNavLink from "@/components/messages-nav-link";
+import MessagesNavLink, { type MessagesNavLinkCopy } from "@/components/messages-nav-link";
 import NotificationsBell from "@/components/notifications-bell";
 import ThemeToggle from "@/components/theme-toggle";
 import { buttonStyles } from "@/components/ui/button-styles";
@@ -41,6 +41,7 @@ export type SiteHeaderDictionary = {
   nav: Dictionary["nav"];
   discussions: Pick<Dictionary["discussions"], "pageTitle">;
   mySpace: Pick<Dictionary["mySpace"], "editProfile">;
+  messages: MessagesNavLinkCopy;
 };
 
 type SiteHeaderProps = {
@@ -437,7 +438,7 @@ export default function SiteHeader({
 
         {viewer ? (
           <div className="hidden items-center gap-2 lg:flex">
-            {viewer.messages?.show ? <MessagesNavLink initialCount={viewer.messages.unread} /> : null}
+            {viewer.messages?.show ? <MessagesNavLink copy={dictionary.messages} initialCount={viewer.messages.unread} /> : null}
             <NotificationsBell />
           </div>
         ) : null}
@@ -556,7 +557,7 @@ export default function SiteHeader({
             menu. Profile stays a compact dropdown; navigation opens as a
             full-height right-side drawer. */}
         <div className="ml-auto flex items-center gap-2 lg:hidden">
-          {viewer?.messages?.show ? <MessagesNavLink initialCount={viewer.messages.unread} /> : null}
+          {viewer?.messages?.show ? <MessagesNavLink copy={dictionary.messages} initialCount={viewer.messages.unread} /> : null}
           {viewer ? <NotificationsBell mode="link" /> : null}
 
           {viewer ? (

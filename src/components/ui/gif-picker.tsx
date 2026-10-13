@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { commentGifCopy } from "@/lib/i18n/copy/comment-gif";
 
 export type PickedGif = {
   url: string;
@@ -44,7 +45,7 @@ export default function GifPicker({
   onSelect,
   disabled = false,
 }: GifPickerProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ commentGif: commentGifCopy });
   const dict = dictionary.commentGif;
 
   const [open, setOpen] = useState(false);

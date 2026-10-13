@@ -9,6 +9,8 @@ import { SHARE_SERVICES, type ShareService } from "@/components/ui/share-button"
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { openToCopy } from "@/lib/i18n/copy/open-to";
+import { profileShareCopy } from "@/lib/i18n/copy/profile-share";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { formatOpenToList, type OpenToOption } from "@/lib/open-to";
 import { buildBadgeMarkdown } from "@/lib/portfolio-badge";
@@ -78,7 +80,7 @@ export default function ProfileSharePanel({
    */
   onShared?: () => void;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ openTo: openToCopy, profileShare: profileShareCopy });
   const t = dictionary.profileShare;
   const toast = useToast();
   const sharedRef = useRef(alreadyShared);

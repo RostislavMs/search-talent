@@ -26,7 +26,7 @@ export default function VideoCoverPicker({
   onConfirm,
 }: {
   file: File;
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   onCancel: () => void;
   onConfirm: (blob: Blob) => void;
 }) {

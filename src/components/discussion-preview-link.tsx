@@ -2,6 +2,7 @@
 
 import { ButtonLink } from "@/components/ui/Button";
 import { useDictionary } from "@/lib/i18n/client";
+import { discussionsCopy } from "@/lib/i18n/copy/discussions";
 
 /**
  * Footer of a truncated comment thread: states how much is hidden and links to
@@ -17,7 +18,7 @@ export default function DiscussionPreviewLink({
   shown: number;
   total: number;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ discussions: discussionsCopy });
   // A promoted thread can still fit entirely inline (few top-level comments,
   // many replies). Nothing is hidden then, so claiming "showing 10 of 10" would
   // be noise — the permalink button alone is the whole point.

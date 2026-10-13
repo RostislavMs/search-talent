@@ -11,6 +11,7 @@ import {
   type ProviderIntegrationSummary,
 } from "@/lib/constants/provider-integrations";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { providerIntegrationsCopy } from "@/lib/i18n/copy/provider-integrations";
 
 export type ProviderImportPayload = {
   provider: ProviderIntegrationId;
@@ -43,7 +44,7 @@ export default function ProviderResourceImporter({
   onUnlink,
   returnTo = "/projects/new",
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ providerIntegrations: providerIntegrationsCopy });
   const dict = dictionary.providerIntegrations;
   const router = useLocalizedRouter();
   const descriptor = getProviderIntegrationDescriptor(provider);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { invalidateActivePopup } from "@/lib/db/popups";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import {
   EMPTY_MESSAGE_ERROR,
@@ -65,5 +66,6 @@ export async function POST(request: Request) {
     );
   }
 
+  invalidateActivePopup();
   return NextResponse.json({ success: true, id: (data as { id: string }).id });
 }

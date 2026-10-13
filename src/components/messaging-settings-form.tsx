@@ -10,6 +10,7 @@ import Switch from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { messagesCopy } from "@/lib/i18n/copy/messages";
 import {
   NOTIFICATION_SETTINGS_PATH,
   personLabel,
@@ -30,7 +31,7 @@ export default function MessagingSettingsForm({
   initialSettings: MessagingSettings;
   initialBlocks: MessageBlock[];
 }) {
-  const copy = useDictionary().messages;
+  const copy = useDictionary({ messages: messagesCopy }).messages;
   const page = copy.settingsPage;
   const toast = useToast();
   const groupId = useId();

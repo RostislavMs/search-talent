@@ -8,6 +8,8 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { jobAlertsCopy } from "@/lib/i18n/copy/job-alerts";
+import { openToCopy } from "@/lib/i18n/copy/open-to";
 import { JOB_ALERTS_PATH, vacancyKindsFromOpenTo } from "@/lib/job-alerts";
 import { formatOpenToList, isOpenToStale, type OpenToOption } from "@/lib/open-to";
 
@@ -34,7 +36,7 @@ export default function OpenToCard({
   /** The "fits me" job alert, if it is on; omit to leave the offer out. */
   jobAlert?: { alertId: string | null };
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ jobAlerts: jobAlertsCopy, openTo: openToCopy });
   const t = dictionary.openTo;
   const alertCopy = dictionary.jobAlerts.mySpace;
   const toast = useToast();

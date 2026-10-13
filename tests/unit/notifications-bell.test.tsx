@@ -106,6 +106,21 @@ describe("<NotificationsBell />", () => {
     expect(vi.mocked(apiFetch)).toHaveBeenCalledWith("/api/notifications/unread-count");
   });
 
+  it("shares one unread-count request between the desktop and phone copies", async () => {
+    wireApi({ count: 4 });
+    render(
+      <>
+        <NotificationsBell />
+        <NotificationsBell mode="link" />
+      </>,
+    );
+    expect(await screen.findAllByText("4")).toHaveLength(2);
+    const countCalls = vi
+      .mocked(apiFetch)
+      .mock.calls.filter(([url]) => url === "/api/notifications/unread-count");
+    expect(countCalls).toHaveLength(1);
+  });
+
   it("caps the badge at 99+", async () => {
     wireApi({ count: 250 });
     render(<NotificationsBell />);

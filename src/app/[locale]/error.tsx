@@ -1,6 +1,7 @@
 "use client";
 
 import ErrorState from "@/components/error-state";
+import InteractiveBackground from "@/components/interactive-background";
 
 export default function LocalizedError({
   error,
@@ -9,5 +10,10 @@ export default function LocalizedError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <ErrorState error={error} reset={reset} />;
+  return (
+    <>
+      <InteractiveBackground />
+      <ErrorState error={error} reset={reset} />
+    </>
+  );
 }

@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { MAX_CO_AUTHORS } from "@/lib/co-authors";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { pickDictionary } from "@/lib/i18n/client";
+import { coAuthorsCopy } from "@/lib/i18n/copy/co-authors";
 import { isLocale } from "@/lib/i18n/config";
 
 export type CoAuthorOption = {
@@ -51,7 +52,7 @@ export default function CoAuthorPicker({
   inputLabel,
 }: CoAuthorPickerProps) {
   const dict = {
-    ...getDictionary(isLocale(locale) ? locale : "en").coAuthors,
+    ...pickDictionary({ coAuthors: coAuthorsCopy }, isLocale(locale) ? locale : "en").coAuthors,
     ...labels,
   };
   const [query, setQuery] = useState("");

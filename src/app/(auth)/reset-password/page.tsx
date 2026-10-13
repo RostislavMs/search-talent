@@ -11,6 +11,7 @@ import {
   type AuthFieldErrors,
 } from "@/lib/auth/validation";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { authCopy } from "@/lib/i18n/copy/auth";
 import { createClient } from "@/lib/supabase/client";
 import PasswordInput from "@/components/ui/password-input";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -39,7 +40,7 @@ function useUrlReadable() {
  */
 export default function ResetPasswordPage() {
   const supabase = createClient();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ auth: authCopy });
   const router = useLocalizedRouter();
   const tokenHash = useSearchParam("token_hash");
   const recoveryCode = useSearchParam("recovery_code");

@@ -8,6 +8,8 @@ import {
   type ProviderIntegrationId,
 } from "@/lib/constants/provider-integrations";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { aiDraftCopy } from "@/lib/i18n/copy/ai-draft";
+import { providerIntegrationsCopy } from "@/lib/i18n/copy/provider-integrations";
 
 export type SourceDraftFieldValues = {
   description: string;
@@ -38,7 +40,7 @@ export default function SourceAiDraft({
   existing,
   onApply,
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ aiDraft: aiDraftCopy, providerIntegrations: providerIntegrationsCopy });
   const dict = dictionary.aiDraft;
   const router = useLocalizedRouter();
   const [generating, setGenerating] = useState(false);

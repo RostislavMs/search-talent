@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import FormSelect from "@/components/ui/form-select";
 import SearchSelect from "@/components/ui/search-select";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { vacanciesCopy } from "@/lib/i18n/copy/vacancies";
 import {
   VACANCY_KINDS,
   VACANCY_LEVELS,
@@ -35,7 +36,7 @@ export default function VacancyFilters({
   skills: Option[];
 }) {
   const router = useLocalizedRouter();
-  const copy = useDictionary().vacancies;
+  const copy = useDictionary({ vacancies: vacanciesCopy }).vacancies;
   const ui = copy.list.filters;
   const [query, setQuery] = useState(filters.q);
   // On phones the selects wait behind a "Filters" button so the list starts
