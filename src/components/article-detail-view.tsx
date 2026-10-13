@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import AdminContentQuickActions from "@/components/admin-content-quick-actions";
 import ArticleInteractions from "@/components/article-interactions";
 import { isGifSearchConfigured } from "@/lib/gif/provider";
@@ -63,6 +64,18 @@ export type ArticleDetailData = {
   isAdmin: boolean;
 };
 
+async function StreamedArticleRelated({
+  articles,
+  locale,
+  title,
+}: {
+  articles: Promise<ArticleFeedItem[]>;
+  locale: string;
+  title: string;
+}) {
+  return <ArticleRelated articles={await articles} locale={locale} title={title} />;
+}
+
 function getModerationLabel(status: string | null, locale: string): string | null {
   switch (normalizeModerationStatus(status)) {
     case "under_review":
@@ -81,14 +94,17 @@ export default function ArticleDetailView({
   locale,
   slug,
   section,
-  relatedArticles = [],
+  relatedArticles,
 }: {
   data: ArticleDetailData;
   locale: string;
   slug: string;
   section: ArticleSection;
-  /** Relevant articles to surface at the foot of the page. Empty hides the block. */
-  relatedArticles?: ArticleFeedItem[];
+  /**
+   * Relevant articles to surface at the foot of the page, streamed in after
+   * the article. Empty or absent hides the block.
+   */
+  relatedArticles?: Promise<ArticleFeedItem[]>;
 }) {
   const { article, viewerUserId, isOwner, isAdmin } = data;
   const isUkrainian = locale === "uk";
@@ -480,13 +496,17 @@ export default function ArticleDetailView({
           </aside>
         ) : null}
       </div>
-      <div className={showTableOfContents ? "" : "mx-auto max-w-6xl"}>
-        <ArticleRelated
-          articles={relatedArticles}
-          locale={locale}
-          title={ui.related}
-        />
-      </div>
+      {relatedArticles ? (
+        <div className={showTableOfContents ? "" : "mx-auto max-w-6xl"}>
+          <Suspense fallback={null}>
+            <StreamedArticleRelated
+              articles={relatedArticles}
+              locale={locale}
+              title={ui.related}
+            />
+          </Suspense>
+        </div>
+      ) : null}
       <ScrollToTopButton
         label={getDictionary(isUkrainian ? "uk" : "en").common.scrollToTop}
       />
