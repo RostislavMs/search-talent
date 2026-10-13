@@ -1,4 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { cache } from "react";
 import { slugify } from "@/lib/slug";
 import {
   getOwnLocales,
@@ -529,7 +530,7 @@ export async function getArticleFeed(params?: {
   };
 }
 
-export async function getArticleDetail(slug: string, locale?: string | null) {
+async function loadArticleDetail(slug: string, locale?: string | null) {
   noStore();
   const viewer = await getCurrentViewerRole();
   const supabase = viewer.supabase;
@@ -648,6 +649,9 @@ export async function getArticleDetail(slug: string, locale?: string | null) {
     isAdmin: viewer.isAdmin,
   };
 }
+
+/** One read per request, shared by generateMetadata and the page. */
+export const getArticleDetail = cache(loadArticleDetail);
 
 // High-frequency function words (4+ letters, so they survive the length gate)
 // that would otherwise match across almost every article and drown out the

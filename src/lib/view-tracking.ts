@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 // ---------------------------------------------------------------------------
 // Portfolio view tracking for the product metrics (plan part 3). Pure helpers
 // shared by the browser beacon and /api/metrics/view.
@@ -16,14 +14,6 @@ export type ViewTargetType = (typeof VIEW_TARGET_TYPES)[number];
 
 export const VIEW_SOURCES = ["internal", "external", "direct"] as const;
 export type ViewSource = (typeof VIEW_SOURCES)[number];
-
-export const viewBeaconSchema = z.object({
-  targetType: z.enum(VIEW_TARGET_TYPES),
-  targetId: z.string().uuid(),
-  referrer: z.string().max(2048).nullish(),
-});
-
-export type ViewBeaconPayload = z.infer<typeof viewBeaconSchema>;
 
 /**
  * Lower-cased host without a port, a leading `www.` or a trailing dot; null if

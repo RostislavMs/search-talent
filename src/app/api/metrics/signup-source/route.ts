@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { allowsCookieCategory } from "@/lib/cookie-consent";
 import { getCookieConsentFromCookies } from "@/lib/cookie-consent-server";
-import { signupSourceSchema } from "@/lib/first-touch";
 import { createClient } from "@/lib/supabase/server";
+import { signupSourceSchema } from "@/lib/validation/metrics";
 
 /**
  * POST /api/metrics/signup-source — stores where a new account's first visit

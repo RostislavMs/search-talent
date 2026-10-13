@@ -6,6 +6,7 @@ import {
   type ProfileCompletenessBreakdown,
 } from "@/lib/profile-completeness";
 import { unstable_noStore as noStore } from "next/cache";
+import { cache } from "react";
 import {
   normalizeProjectMediaItem,
   type ProjectMediaItem,
@@ -256,7 +257,7 @@ export type PublicProfilePageData = {
   isFollowing: boolean;
 };
 
-export async function getPublicProjectPageData(
+async function loadPublicProjectPageData(
   routeValue: string,
 ): Promise<PublicProjectPageData | null> {
   noStore();
@@ -429,7 +430,11 @@ export async function getPublicProjectPageData(
   };
 }
 
-export async function getPublicProfilePageData(
+// One read per request: generateMetadata and the page both ask for it, and
+// React's cache lives only for the request, so no viewer sees another's data.
+export const getPublicProjectPageData = cache(loadPublicProjectPageData);
+
+async function loadPublicProfilePageData(
   username: string,
   locale?: string | null,
 ): Promise<PublicProfilePageData | null> {
@@ -795,6 +800,9 @@ export async function getPublicProfilePageData(
     isFollowing: Boolean(followResponse.data),
   };
 }
+
+/** One read per request, shared by generateMetadata and the page. */
+export const getPublicProfilePageData = cache(loadPublicProfilePageData);
 
 export type UserProjectsPageResult = {
   profile: {

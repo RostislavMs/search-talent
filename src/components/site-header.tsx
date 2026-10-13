@@ -32,8 +32,19 @@ type Viewer = {
   messages?: { show: boolean; unread: number };
 } | null;
 
+/**
+ * Only the strings the header shows. Props of a client component travel to the
+ * browser with every page, and the whole dictionary is about 150-220KB.
+ */
+export type SiteHeaderDictionary = {
+  site: Pick<Dictionary["site"], "name">;
+  nav: Dictionary["nav"];
+  discussions: Pick<Dictionary["discussions"], "pageTitle">;
+  mySpace: Pick<Dictionary["mySpace"], "editProfile">;
+};
+
 type SiteHeaderProps = {
-  dictionary: Dictionary;
+  dictionary: SiteHeaderDictionary;
   viewer: Viewer;
   /**
    * Audience-dependent sections (polls, discussions, news, analytics) only get

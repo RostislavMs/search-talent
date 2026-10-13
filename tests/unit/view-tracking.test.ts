@@ -6,8 +6,8 @@ import {
   isLikelyBot,
   normalizeHost,
   resolveBeaconReferrer,
-  viewBeaconSchema,
 } from "@/lib/view-tracking";
+import { viewBeaconSchema } from "@/lib/validation/metrics";
 
 const ID = "22222222-2222-4222-8222-222222222222";
 const SITE = ["searchtalent.com.ua", "localhost:3000"];

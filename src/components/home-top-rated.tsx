@@ -9,8 +9,13 @@ import { toPlainText } from "@/lib/plain-text";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 
+/** Only the strings this block shows: its props reach the browser with the page. */
+export type HomeTopRatedDictionary = Pick<Dictionary, "home" | "common"> & {
+  projectPage: Pick<Dictionary["projectPage"], "likes">;
+};
+
 type HomeTopRatedProps = {
-  dictionary: Dictionary;
+  dictionary: HomeTopRatedDictionary;
   creators: {
     all: RankedCreator[];
     month: RankedCreator[];
@@ -53,7 +58,7 @@ function LeaderboardScore({
   dictionary,
 }: {
   score: number;
-  dictionary: Dictionary;
+  dictionary: HomeTopRatedDictionary;
 }) {
   return (
     <span className="font-display shrink-0 whitespace-nowrap rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-on-soft">

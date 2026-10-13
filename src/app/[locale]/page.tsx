@@ -296,7 +296,11 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
       {/* Desire — соціальний доказ через топ-рейтинги */}
       <div className="mt-6 sm:mt-10">
         <HomeTopRated
-          dictionary={dictionary}
+          dictionary={{
+            home: dictionary.home,
+            common: dictionary.common,
+            projectPage: { likes: dictionary.projectPage.likes },
+          }}
           creators={leaderboards.creators}
           projects={leaderboards.projects}
           freshCreators={leaderboards.freshCreators}
