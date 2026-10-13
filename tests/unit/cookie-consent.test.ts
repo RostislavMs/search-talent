@@ -78,6 +78,37 @@ describe("parseCookieConsentValue", () => {
     expect(parseCookieConsentValue(invalid)).toBeNull();
   });
 
+  it("returns null when a field has the wrong shape", () => {
+    const valid = buildAllowAllConsent();
+    const variants = [
+      { ...valid, status: "most" },
+      { ...valid, updatedAt: 123 },
+      { ...valid, categories: { ...valid.categories, essential: false } },
+      { ...valid, categories: { ...valid.categories, analytics: "yes" } },
+      { ...valid, categories: null },
+      [valid],
+    ];
+
+    for (const variant of variants) {
+      expect(
+        parseCookieConsentValue(encodeURIComponent(JSON.stringify(variant))),
+      ).toBeNull();
+    }
+  });
+
+  it("drops unknown keys", () => {
+    const consent = buildAllowAllConsent();
+    const encoded = encodeURIComponent(
+      JSON.stringify({
+        ...consent,
+        extra: "x",
+        categories: { ...consent.categories, extra: true },
+      }),
+    );
+
+    expect(parseCookieConsentValue(encoded)).toEqual(consent);
+  });
+
   it("parses a valid URL-encoded consent payload", () => {
     const consent = buildAllowAllConsent();
     const encoded = encodeURIComponent(serializeCookieConsent(consent));

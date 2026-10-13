@@ -33,7 +33,12 @@ export default async function AppShell({
   return (
     <ToastProvider>
       <SiteHeader
-        dictionary={dictionary}
+        dictionary={{
+          site: { name: dictionary.site.name },
+          nav: dictionary.nav,
+          discussions: { pageTitle: dictionary.discussions.pageTitle },
+          mySpace: { editProfile: dictionary.mySpace.editProfile },
+        }}
         viewer={viewer}
         sections={sections}
         initialTheme={initialTheme}

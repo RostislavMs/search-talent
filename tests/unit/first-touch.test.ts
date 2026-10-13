@@ -3,9 +3,9 @@ import {
   buildFirstTouch,
   parseFirstTouch,
   serializeFirstTouch,
-  signupSourceSchema,
   toSignupSourcePayload,
 } from "@/lib/first-touch";
+import { signupSourceSchema } from "@/lib/validation/metrics";
 
 const NOW = Date.parse("2026-09-26T12:00:00Z");
 
@@ -72,6 +72,35 @@ describe("parseFirstTouch", () => {
     expect(parseFirstTouch(null)).toBeNull();
     expect(parseFirstTouch("{not json")).toBeNull();
     expect(parseFirstTouch(JSON.stringify({ v: 2 }))).toBeNull();
+  });
+
+  it("rejects oversized tags and impossible timestamps", () => {
+    const touch = buildFirstTouch({
+      landingUrl: "https://searchtalent.com.ua/uk",
+      documentReferrer: "",
+      now: NOW,
+    })!;
+    const variants = [
+      { ...touch, utmSource: "a".repeat(101) },
+      { ...touch, landingPath: 42 },
+      { ...touch, firstSeenAt: -1 },
+      { ...touch, firstSeenAt: 1.5 },
+      { ...touch, sent: "no" },
+      [touch],
+    ];
+
+    for (const variant of variants) {
+      expect(parseFirstTouch(JSON.stringify(variant))).toBeNull();
+    }
+  });
+
+  it("drops unknown keys", () => {
+    const touch = buildFirstTouch({
+      landingUrl: "https://searchtalent.com.ua/uk",
+      documentReferrer: "",
+      now: NOW,
+    })!;
+    expect(parseFirstTouch(JSON.stringify({ ...touch, extra: 1 }))).toEqual(touch);
   });
 });
 

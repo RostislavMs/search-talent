@@ -3,13 +3,13 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getSiteUrl } from "@/lib/seo";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { viewBeaconSchema } from "@/lib/validation/metrics";
 import {
   buildVisitorSeed,
   classifyReferrer,
   getClientIp,
   hostFromUrl,
   isLikelyBot,
-  viewBeaconSchema,
 } from "@/lib/view-tracking";
 
 /**

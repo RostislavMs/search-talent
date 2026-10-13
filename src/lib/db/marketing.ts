@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { getArticleFeed } from "@/lib/db/articles";
 import {
   getLeaderboards,
@@ -252,10 +253,12 @@ export async function getTechnologyDirectory(
   );
 }
 
-export async function getTechnologyBySlug(techSlug: string) {
+// The facet pages look their term up in generateMetadata and again in the page;
+// React's per-request cache turns that into one directory read.
+export const getTechnologyBySlug = cache(async (techSlug: string) => {
   const items = await getTechnologyDirectory();
   return items.find((item) => item.slug === techSlug) || null;
-}
+});
 
 /**
  * Count of public (approved + published) projects per `kind`. Powers the
@@ -418,10 +421,10 @@ export async function getTalentSkillDirectory(): Promise<
   );
 }
 
-export async function getTalentSkillBySlug(skillSlug: string) {
+export const getTalentSkillBySlug = cache(async (skillSlug: string) => {
   const items = await getTalentSkillDirectory();
   return items.find((item) => item.slug === skillSlug) || null;
-}
+});
 
 export type ProfileCategoryDirectoryItem = {
   id: number;
@@ -456,10 +459,10 @@ export async function getProfileCategoryDirectory(): Promise<
   );
 }
 
-export async function getProfileCategoryBySlug(categorySlug: string) {
+export const getProfileCategoryBySlug = cache(async (categorySlug: string) => {
   const items = await getProfileCategoryDirectory();
   return items.find((item) => item.slug === categorySlug) || null;
-}
+});
 
 export type ArticleCategoryDirectoryItem = {
   id: number;

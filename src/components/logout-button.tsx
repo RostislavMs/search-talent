@@ -1,17 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { createClient } from "@/lib/supabase/client";
 import { useDictionary, useLocalizedHref } from "@/lib/i18n/client";
 
 export default function LogoutButton({ className = "" }: { className?: string }) {
-  const supabase = createClient();
   const dictionary = useDictionary();
   const loginHref = useLocalizedHref("/login");
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      // Loaded on click: the button sits in the header of every page, and a
+      // static import shipped the whole Supabase SDK (~55KB) to every visitor.
+      const { createClient } = await import("@/lib/supabase/client");
+      await createClient().auth.signOut();
       await fetch("/api/auth/logout", {
         method: "POST",
         cache: "no-store",

@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 export const cookieConsentCookieName = "st_cookie_consent";
 export const cookieConsentUpdatedEvent = "searchtalent:cookie-consent-updated";
 export const cookieConsentOpenEvent = "searchtalent:cookie-consent-open";
@@ -15,19 +13,56 @@ export const consentCategories = [
 
 export type ConsentCategory = (typeof consentCategories)[number];
 
-export const cookieConsentSchema = z.object({
-  version: z.literal(cookieConsentVersion),
-  status: z.enum(["essential", "limited", "all", "custom"]),
-  updatedAt: z.string(),
-  categories: z.object({
-    essential: z.literal(true),
-    preferences: z.boolean(),
-    analytics: z.boolean(),
-    marketing: z.boolean(),
-  }),
-});
+const consentStatuses = ["essential", "limited", "all", "custom"] as const;
 
-export type CookieConsent = z.infer<typeof cookieConsentSchema>;
+export type CookieConsent = {
+  version: typeof cookieConsentVersion;
+  status: (typeof consentStatuses)[number];
+  updatedAt: string;
+  categories: {
+    essential: true;
+    preferences: boolean;
+    analytics: boolean;
+    marketing: boolean;
+  };
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Checked by hand rather than with zod: this module runs in the browser on
+ * every page, and zod alone would add about 60KB of JavaScript to each of them.
+ * Unknown keys are dropped, as a zod object would.
+ */
+function toCookieConsent(value: unknown): CookieConsent | null {
+  if (!isRecord(value) || !isRecord(value.categories)) {
+    return null;
+  }
+
+  const { version, status, updatedAt, categories } = value;
+  const { essential, preferences, analytics, marketing } = categories;
+
+  if (
+    version !== cookieConsentVersion ||
+    !consentStatuses.some((known) => known === status) ||
+    typeof updatedAt !== "string" ||
+    essential !== true ||
+    typeof preferences !== "boolean" ||
+    typeof analytics !== "boolean" ||
+    typeof marketing !== "boolean"
+  ) {
+    return null;
+  }
+
+  return {
+    version,
+    status: status as CookieConsent["status"],
+    updatedAt,
+    categories: { essential, preferences, analytics, marketing },
+  };
+}
 
 type OptionalConsentCategories = Pick<
   CookieConsent["categories"],
@@ -105,7 +140,7 @@ export function parseCookieConsentValue(value: string | null | undefined) {
 
   try {
     const decoded = decodeURIComponent(value);
-    return cookieConsentSchema.parse(JSON.parse(decoded));
+    return toCookieConsent(JSON.parse(decoded));
   } catch {
     return null;
   }

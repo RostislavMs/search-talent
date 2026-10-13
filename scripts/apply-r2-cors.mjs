@@ -2,7 +2,10 @@
  * One-off: apply a CORS policy to the R2 bucket so the browser can PUT
  * directly to presigned upload URLs. Reads R2_* from .env.local.
  *
- * Run: node --env-file=.env.local scripts/apply-r2-cors.mjs
+ * Run: node --env-file=.env.local scripts/apply-r2-cors.mjs [bucket]
+ * Without [bucket] it uses R2_BUCKET_NAME (the public bucket). The private
+ * messages bucket (R2_PRIVATE_BUCKET_NAME) needs the same policy:
+ *   node --env-file=.env.local scripts/apply-r2-cors.mjs searchtalent-messages
  */
 import {
   S3Client,
@@ -13,7 +16,7 @@ import {
 const accountId = process.env.R2_ACCOUNT_ID;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-const bucket = process.env.R2_BUCKET_NAME;
+const bucket = process.argv[2] || process.env.R2_BUCKET_NAME;
 
 if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
   throw new Error("Missing R2_* env vars");
