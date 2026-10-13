@@ -205,11 +205,8 @@ export default function PollComposer({
   const ui = isUkrainian
     ? {
         editorLabel: "Опис (необов'язково)",
-        editorHint: "Додайте контекст: текст, зображення, відео. Можна лишити порожнім.",
-        sidebarTitle: "Параметри опитування",
         languageLabel: "Мова опису",
-        languageHint: "Заповніть одну або обидві мови.",
-        editingIn: "Редагуєте",
+        languageHint: "Друга мова — необов'язкова.",
         needTitle: "Додайте назву хоча б однією мовою.",
         needQuestion: "Кожне питання потребує тексту.",
         needOptions: "Питання з варіантами потребує щонайменше двох варіантів.",
@@ -237,11 +234,8 @@ export default function PollComposer({
       }
     : {
         editorLabel: "Description (optional)",
-        editorHint: "Add context: text, images, video. You can leave it empty.",
-        sidebarTitle: "Poll settings",
         languageLabel: "Description language",
-        languageHint: "Fill in one or both languages.",
-        editingIn: "Editing",
+        languageHint: "The second language is optional.",
         needTitle: "Add a title in at least one language.",
         needQuestion: "Every question needs a prompt.",
         needOptions: "Choice questions need at least two options.",
@@ -446,7 +440,6 @@ export default function PollComposer({
             value={current.content}
             onChange={(value) => updateActive({ content: value })}
             label={ui.editorLabel}
-            hint={ui.editorHint}
             placeholder={ui.placeholder}
             minHeight={260}
             maxLength={50000}
@@ -468,7 +461,7 @@ export default function PollComposer({
 
         {/* Scrolls on its own once taller than the viewport — a sticky column
             without a height cap pins in place and hides its own overflow. */}
-        <aside className="app-sticky-pane order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)] xl:order-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:self-start">
+        <aside className="app-sticky-pane order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 xl:order-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:self-start">
           <div className="space-y-5 p-5">
             {/* Language switcher lives here rather than in a row above the
                 grid: as a right-aligned strip it left a wide empty band across
@@ -511,15 +504,6 @@ export default function PollComposer({
                 })}
               </div>
               <p className="text-xs leading-5 app-soft">{ui.languageHint}</p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="min-w-0 text-xs font-semibold uppercase tracking-eyebrow app-soft">
-                {ui.sidebarTitle}
-              </p>
-              <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border app-border px-2.5 py-1 text-xs font-medium app-muted">
-                {ui.editingIn}: {LOCALE_NAMES[activeLocale]}
-              </span>
             </div>
 
             <div className="space-y-2">

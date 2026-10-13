@@ -30,7 +30,7 @@ import { buildMetadata, getMetadataBase } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-function getModerationLabel(status: string | null, locale: string) {
+function getModerationLabel(status: string | null, locale: string): string | null {
   switch (normalizeModerationStatus(status)) {
     case "under_review":
       return locale === "uk" ? "На перевірці" : "Under review";
@@ -38,8 +38,9 @@ function getModerationLabel(status: string | null, locale: string) {
       return locale === "uk" ? "Обмежено" : "Restricted";
     case "removed":
       return locale === "uk" ? "Прибрано" : "Removed";
+    // Approved is the normal state — only a problem gets a label.
     default:
-      return locale === "uk" ? "Схвалено" : "Approved";
+      return null;
   }
 }
 
@@ -152,11 +153,11 @@ export default async function PollDetailPage({
                 {ui.draft}
               </span>
             ) : null}
-            {(isOwner || isAdmin) && (
+            {(isOwner || isAdmin) && getModerationLabel(poll.moderationStatus, safeLocale) ? (
               <span className="rounded-full border app-border px-4 py-2 text-sm app-muted">
                 {getModerationLabel(poll.moderationStatus, safeLocale)}
               </span>
-            )}
+            ) : null}
           </div>
 
           <h1 className="font-display mt-6 text-4xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-5xl">
@@ -217,16 +218,9 @@ export default async function PollDetailPage({
                 />
               </span>
             )}
-            <span>
-              {ui.published}: {formatArticleDate(poll.publishedAt || poll.createdAt, safeLocale)}
-            </span>
-            {poll.editedAt ? (
-              <span>
-                {ui.updated}: {formatArticleDate(poll.editedAt, safeLocale)}
-              </span>
-            ) : null}
+            <span>{formatArticleDate(poll.publishedAt || poll.createdAt, safeLocale)}</span>
             <span>{getCategoryDisplayName(poll.category, safeLocale)}</span>
-            <span>{getPollClosesLabel(poll.closesAt, safeLocale)}</span>
+            {poll.closesAt ? <span>{getPollClosesLabel(poll.closesAt, safeLocale)}</span> : null}
           </div>
 
           {(isOwner || isAdmin) && poll.moderationNote ? (

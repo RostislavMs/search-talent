@@ -664,20 +664,11 @@ export default function ProfileForm({
             background: "\u0411\u0430\u043d\u0435\u0440 (hero)",
             sectionBackground: "\u0424\u043e\u043d \u0441\u0435\u043a\u0446\u0456\u0439",
           },
-          panelHint:
-            "\u041a\u043e\u043b\u0456\u0440 \u0432\u043a\u043b\u0430\u0434\u0435\u043d\u0438\u0445 \u0431\u043b\u043e\u043a\u0456\u0432 \u0443\u0441\u0435\u0440\u0435\u0434\u0438\u043d\u0456 \u0441\u0435\u043a\u0446\u0456\u0439 (\u043d\u0430\u043f\u0440\u0438\u043a\u043b\u0430\u0434, \u043a\u0430\u0440\u0442\u043a\u0438 \u0434\u043e\u0441\u0432\u0456\u0434\u0443 \u0447\u0438 \u043a\u043e\u043d\u0442\u0430\u043a\u0442\u0456\u0432).",
           tabs: {
             themeTitle: "\u0422\u0435\u043c\u0430 \u043f\u0440\u043e\u0444\u0456\u043b\u044e",
-            themeDescription:
-              "\u041a\u043e\u043b\u044c\u043e\u0440\u0438, \u0448\u0440\u0438\u0444\u0442 \u0456 \u0440\u043e\u0437\u043c\u0456\u0440 \u0442\u0435\u043a\u0441\u0442\u0443 \u2014 \u0431\u0430\u0437\u043e\u0432\u0430 \u043f\u0430\u043b\u0456\u0442\u0440\u0430 \u043f\u0440\u043e\u0444\u0456\u043b\u044e.",
             backgroundTitle: "\u0424\u043e\u043d",
-            backgroundDescription:
-              "\u0422\u043b\u043e \u0432\u0441\u0456\u0454\u0457 \u0441\u0442\u043e\u0440\u0456\u043d\u043a\u0438 \u0442\u0430 \u0431\u0430\u043d\u0435\u0440 (hero) \u0443\u0433\u043e\u0440\u0456 \u043f\u0440\u043e\u0444\u0456\u043b\u044e.",
             cardsTitle: "\u041a\u0430\u0440\u0442\u043a\u0438",
-            cardsDescription:
-              "\u0421\u0442\u0438\u043b\u044c \u0441\u0435\u043a\u0446\u0456\u0439, \u0444\u043e\u043d \u0441\u0435\u043a\u0446\u0456\u0439 \u0456 \u043a\u043e\u043b\u0456\u0440 \u0432\u043a\u043b\u0430\u0434\u0435\u043d\u0438\u0445 \u043a\u0430\u0440\u0442\u043e\u043a.",
             blocksTitle: "\u0411\u043b\u043e\u043a\u0438",
-            blocksDescription: "\u041f\u043e\u0440\u044f\u0434\u043e\u043a \u0456 \u0448\u0438\u0440\u0438\u043d\u0430 \u0431\u043b\u043e\u043a\u0456\u0432 \u043d\u0430 \u043f\u0443\u0431\u043b\u0456\u0447\u043d\u0456\u0439 \u0441\u0442\u043e\u0440\u0456\u043d\u0446\u0456.",
           },
         }
       : {
@@ -743,21 +734,11 @@ export default function ProfileForm({
             background: "Hero banner",
             sectionBackground: "Sections background",
           },
-          panelHint:
-            "Colour of the nested blocks inside sections (e.g. experience or contact cards).",
           tabs: {
             themeTitle: "Profile theme",
-            themeDescription:
-              "Colors, font, and text size — the base palette of your profile.",
             backgroundTitle: "Background",
-            backgroundDescription:
-              "The whole-page backdrop and the hero banner at the top of your profile.",
             cardsTitle: "Cards",
-            cardsDescription:
-              "Section style, section background, and the colour of nested cards.",
             blocksTitle: "Blocks",
-            blocksDescription:
-              "The order and width of blocks on your public page.",
           },
         };
   const profileThemesUi = dictionary.profileThemes;
@@ -770,7 +751,7 @@ export default function ProfileForm({
           backgroundReady: "Фон готовий",
           backgroundUploading: "Завантаження фону...",
           backgroundUploadFailed: "Не вдалося завантажити фон.",
-          dragHint: "Перетягуйте блоки мишкою, щоб змінювати порядок.",
+          dragHint: "Перетягуйте, щоб змінити порядок; ширина — на картці.",
           dragHandle: "тягнути",
           blockSize: "Ширина блоку",
           sizes: {
@@ -789,7 +770,7 @@ export default function ProfileForm({
           backgroundReady: "Background ready",
           backgroundUploading: "Uploading background...",
           backgroundUploadFailed: "Could not upload the background.",
-          dragHint: "Drag cards to change the order.",
+          dragHint: "Drag to reorder; set the width on the card.",
           dragHandle: "drag",
           blockSize: "Block width",
           sizes: {
@@ -800,30 +781,6 @@ export default function ProfileForm({
           },
           bioHint:
             "Summarize what makes you strong, how you like to work, and what kind of opportunities fit you.",
-        };
-  const workspaceUi =
-    locale === "uk"
-      ? {
-          content: "Редагування профілю",
-          builder: "Конструктор профілю",
-          contentDescription:
-            "Тут змінюються самі дані: тексти, досвід, контакти, сертифікати, навички та інше наповнення.",
-          builderDescription:
-            "Тут збирається зовнішній вигляд профілю: фон, стиль і реальні блоки, які можна перетягувати та змінювати по ширині.",
-          canvasTitle: "Полотно конструктора",
-          canvasDescription:
-            "Перетягніть картку на нове місце, а ширину змінюйте прямо на самій картці.",
-        }
-      : {
-          content: "Profile content",
-          builder: "Profile builder",
-          contentDescription:
-            "Edit the actual content here: texts, experience, contacts, certificates, skills, and the rest of the profile data.",
-          builderDescription:
-            "Use this mode to shape presentation: background, style, and real cards you can drag and resize.",
-          canvasTitle: "Builder canvas",
-          canvasDescription:
-            "Drag a card to a new position and change its width directly on the card.",
         };
   const sectionNavUi =
     locale === "uk"
@@ -876,12 +833,10 @@ export default function ProfileForm({
   const draftUi =
     locale === "uk"
       ? {
-          resetCustomization: "Скинути кастомізацію",
+          resetCustomization: "Скинути оформлення",
           resetCustomizationHint:
             "Повертає кольори, фон, стиль карток, порядок і ширину блоків до стандартного вигляду.",
           unsavedChanges: "Є незбережені зміни.",
-          unsavedChangesHint:
-            "Якщо підете зі сторінки зараз, ці правки можуть загубитися.",
           confirmLeave:
             "У вас є незбережені зміни профілю. Справді перейти зі сторінки?",
           confirmLeaveTitle: "Залишити сторінку?",
@@ -889,12 +844,10 @@ export default function ProfileForm({
           confirmLeaveStay: "Залишитись",
         }
       : {
-          resetCustomization: "Reset customization",
+          resetCustomization: "Reset style",
           resetCustomizationHint:
             "Restore default colors, background, card style, block order, and block widths.",
           unsavedChanges: "You have unsaved changes.",
-          unsavedChangesHint:
-            "If you leave now, those profile edits may be lost.",
           confirmLeave:
             "You have unsaved profile changes. Do you really want to leave this page?",
           confirmLeaveTitle: "Leave this page?",
@@ -2309,9 +2262,6 @@ export default function ProfileForm({
             <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
               {customizationUi.tabs.themeTitle}
             </h2>
-            <p className="mt-2 text-sm leading-6 app-muted">
-              {customizationUi.tabs.themeDescription}
-            </p>
           </div>
           <Button
             variant="secondary"
@@ -2497,9 +2447,6 @@ export default function ProfileForm({
             <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
               {customizationUi.tabs.backgroundTitle}
             </h2>
-            <p className="mt-2 text-sm leading-6 app-muted">
-              {customizationUi.tabs.backgroundDescription}
-            </p>
           </div>
           <Button
             variant="secondary"
@@ -2788,9 +2735,6 @@ export default function ProfileForm({
             <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
               {customizationUi.tabs.cardsTitle}
             </h2>
-            <p className="mt-2 text-sm leading-6 app-muted">
-              {customizationUi.tabs.cardsDescription}
-            </p>
           </div>
           <Button
             variant="secondary"
@@ -2966,9 +2910,6 @@ export default function ProfileForm({
                 }
               />
             </div>
-            <p className="mt-3 text-xs app-muted">
-              {customizationUi.panelHint}
-            </p>
           </ControlGroup>
         </div>
       </section>
@@ -2985,9 +2926,6 @@ export default function ProfileForm({
             <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
               {customizationUi.tabs.blocksTitle}
             </h2>
-            <p className="mt-2 text-sm leading-6 app-muted">
-              {customizationUi.tabs.blocksDescription}
-            </p>
           </div>
           <Button
             variant="secondary"
@@ -3003,14 +2941,6 @@ export default function ProfileForm({
 
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-base font-semibold text-[color:var(--foreground)]">
-                {workspaceUi.canvasTitle}
-              </h3>
-              <p className="mt-1 text-sm app-muted">
-                {workspaceUi.canvasDescription}
-              </p>
-            </div>
             <p className="text-sm app-soft">{presentationExtrasUi.dragHint}</p>
           </div>
 
@@ -3662,9 +3592,6 @@ export default function ProfileForm({
           <h2 className="font-display text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
             {dictionary.forms.blockVisibility}
           </h2>
-          <p className="mt-2 text-sm app-muted">
-            {dictionary.forms.blockVisibilityHint}
-          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {profileVisibilityKeys.map((key) => {
@@ -3741,7 +3668,6 @@ export default function ProfileForm({
           <p className="text-sm font-medium text-[color:var(--foreground)]">
             {draftUi.unsavedChanges}
           </p>
-          <p className="mt-1 text-sm app-muted">{draftUi.unsavedChangesHint}</p>
         </div>
       ) : null}
 

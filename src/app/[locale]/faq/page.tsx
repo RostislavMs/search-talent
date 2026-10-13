@@ -59,10 +59,7 @@ export default async function FaqPage({
       <section className="-mx-4 rounded-none app-card p-8 sm:mx-0 sm:rounded-hero sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.faqPage.eyebrow}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.faqPage.title}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 app-muted">

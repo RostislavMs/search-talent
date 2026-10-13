@@ -81,6 +81,8 @@ export default function ProfileCompletenessButton({
     };
   }, [open]);
 
+  if (missing.length === 0) return null;
+
   return (
     <>
       <button
@@ -147,7 +149,6 @@ export default function ProfileCompletenessButton({
                     style={{ width: `${percent}%` }}
                   />
                 </div>
-                <p className="mt-2 text-xs font-semibold app-soft">{percent}%</p>
               </div>
               <button
                 type="button"

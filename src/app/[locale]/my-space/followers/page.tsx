@@ -136,15 +136,9 @@ export default async function FollowersPage({
       <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {dictionary.follows.followersTitle}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
               {dictionary.follows.followersTitle}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 app-muted">
-              {dictionary.follows.followersDescription}
-            </p>
           </div>
         </div>
       </section>
@@ -197,9 +191,6 @@ export default async function FollowersPage({
                     </p>
                   </div>
                 </LocalizedLink>
-                <span className="shrink-0 whitespace-nowrap rounded-full app-panel px-3 py-1 text-xs app-muted">
-                  {dictionary.follows.followsYou}
-                </span>
               </div>
             ))}
           </div>

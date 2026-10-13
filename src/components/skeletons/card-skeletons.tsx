@@ -13,15 +13,12 @@ export function ProjectCardSkeleton() {
           <Skeleton className="h-6 w-16 rounded-full" />
         </div>
 
+        <Skeleton className="mt-2 h-3 w-32 rounded" />
+
         <div className="mt-4 space-y-2">
           <Skeleton className="h-3 w-full rounded" />
           <Skeleton className="h-3 w-11/12 rounded" />
-          <Skeleton className="h-3 w-2/3 rounded" />
-        </div>
-
-        <div className="mt-6 flex items-center justify-between gap-3">
-          <Skeleton className="h-3 w-32 rounded" />
-          <Skeleton className="h-8 w-24 rounded-full" />
+          <Skeleton className="hidden h-3 w-2/3 rounded sm:block" />
         </div>
       </div>
     </div>
@@ -46,12 +43,13 @@ export function CreatorCardSkeleton() {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Skeleton className="h-6 w-20 rounded-full" />
-        <Skeleton className="h-6 w-16 rounded-full" />
-        <Skeleton className="h-6 w-24 rounded-full" />
+        <Skeleton className="h-6 w-28 rounded-full" />
       </div>
 
-      <div className="mt-6 flex justify-end">
-        <Skeleton className="h-8 w-28 rounded-full" />
+      <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
+        <Skeleton className="h-6 w-16 rounded-full" />
+        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-6 w-14 rounded-full" />
       </div>
     </div>
   );
@@ -107,7 +105,6 @@ export function ArticleCardSkeleton({
         </div>
 
         <div className="mt-3 flex items-center gap-4">
-          <Skeleton className="h-4 w-10 rounded" />
           <Skeleton className="h-4 w-10 rounded" />
           <Skeleton className="h-4 w-10 rounded" />
         </div>

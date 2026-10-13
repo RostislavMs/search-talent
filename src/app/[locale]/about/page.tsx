@@ -202,10 +202,7 @@ export default async function AboutPage({
           LCP element and paints at full opacity on the first frame), while the
           diagram draws itself in beside it. */}
       <section className="bg-brand-hero relative overflow-hidden rounded-none sm:rounded-hero border app-border p-6 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:p-10">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
-            {about.eyebrow}
-          </p>
+        <div className="flex justify-end">
           <LocalizedLink
             href="/"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-white/80 transition hover:text-white"
@@ -262,7 +259,7 @@ export default async function AboutPage({
           </div>
           {/* The scrim keeps the white line art readable over the amber end of
               the hero gradient. */}
-          <div className="flex aspect-3/2 items-center justify-center rounded-2xl bg-[rgba(8,15,30,0.42)] p-5 text-white ring-1 ring-white/15 backdrop-blur-sm sm:p-7">
+          <div className="hidden aspect-3/2 items-center justify-center rounded-2xl bg-[rgba(8,15,30,0.42)] lg:flex p-5 text-white ring-1 ring-white/15 backdrop-blur-sm sm:p-7">
             <Art on="load">
               <PlatformMapIllustration label={about.heroIllustrationLabel} />
             </Art>
@@ -300,7 +297,6 @@ export default async function AboutPage({
         <h2 id="about-pillars" className={HEADING}>
           {about.pillarsTitle}
         </h2>
-        <p className={`mt-3 max-w-3xl ${BODY}`}>{about.pillarsDescription}</p>
         <div className="app-cascade mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {about.pillars.map((pillar, index) => {
             const Vignette = PILLAR_VIGNETTES[index] ?? ProfileVignette;
@@ -310,13 +306,12 @@ export default async function AboutPage({
                 style={beat(index)}
                 className="flex flex-col rounded-3xl border app-border p-5"
               >
-                <div className="flex aspect-10/7 items-center justify-center rounded-2xl app-panel-brand p-4">
+                <div className="mb-5 hidden aspect-10/7 items-center justify-center rounded-2xl app-panel-brand p-4 sm:flex">
                   <Art>
                     <Vignette label={pillar.illustrationLabel} />
                   </Art>
                 </div>
-                <p className={`mt-5 ${ORDINAL}`}>{ordinal(index)}</p>
-                <h3 className="font-display mt-2 text-lg font-medium tracking-tight text-[color:var(--foreground)]">
+                <h3 className="font-display text-lg font-medium tracking-tight text-[color:var(--foreground)]">
                   {pillar.title}
                 </h3>
                 <p className="mt-2 text-sm leading-7 app-muted">{pillar.text}</p>
@@ -334,9 +329,8 @@ export default async function AboutPage({
         <h2 id="about-steps" className={HEADING}>
           {about.stepsTitle}
         </h2>
-        <p className={`mt-3 max-w-3xl ${BODY}`}>{about.stepsDescription}</p>
         <div className="mt-7 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:items-start lg:gap-12">
-          <div className="rounded-3xl app-panel-brand px-4 py-7 sm:px-8 lg:sticky lg:top-24">
+          <div className="hidden rounded-3xl app-panel-brand px-4 py-7 sm:px-8 lg:sticky lg:top-24 lg:block">
             <Art>
               <StepFlowIllustration label={about.stepsIllustrationLabel} />
             </Art>
@@ -374,7 +368,6 @@ export default async function AboutPage({
         <h2 id="about-features" className={HEADING}>
           {about.featuresTitle}
         </h2>
-        <p className={`mt-3 max-w-3xl ${BODY}`}>{about.featuresDescription}</p>
         <ul className="app-cascade app-art app-art--scroll mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {about.features.map((feature, index) => {
             const Icon = FEATURE_ICONS[index] ?? IdCardIcon;

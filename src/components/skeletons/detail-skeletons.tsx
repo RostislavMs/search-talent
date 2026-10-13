@@ -132,8 +132,7 @@ export function ProjectDetailSkeleton() {
         <aside className="app-sticky-pane space-y-4 sm:space-y-6 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:self-start xl:row-span-2">
           {/* VoteButtons panel */}
           <section className="rounded-panel app-panel p-4">
-            <Skeleton className="h-5 w-28 rounded" />
-            <div className="mt-3 flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <Skeleton className="h-9 w-16 rounded-full" />
               <Skeleton className="h-9 w-16 rounded-full" />
               <Skeleton className="h-9 w-16 rounded-full" />
@@ -175,7 +174,10 @@ export function ProjectDetailSkeleton() {
 
       {/* Related projects — matches the page's own Suspense fallback */}
       <section className="mt-5 rounded-none app-card p-4 sm:mt-8 sm:rounded-hero sm:p-6">
-        <ProjectCardGridSkeleton count={3} />
+        <Skeleton className="h-7 w-48 rounded sm:h-8" />
+        <div className="mt-6">
+          <ProjectCardGridSkeleton count={3} />
+        </div>
       </section>
     </main>
   );
@@ -228,9 +230,9 @@ export function ArticleDetailSkeleton() {
                 <Skeleton className="h-11 w-11 rounded-full" />
                 <Skeleton className="h-4 w-28 rounded" />
               </div>
-              <Skeleton className="h-4 w-32 rounded" />
+              <Skeleton className="h-4 w-24 rounded" />
+              <Skeleton className="hidden h-4 w-16 rounded sm:block" />
               <Skeleton className="h-4 w-20 rounded" />
-              <Skeleton className="h-4 w-28 rounded" />
             </div>
           </div>
 
@@ -362,8 +364,9 @@ export function ProfileSkeleton() {
                   <Skeleton className="h-7 w-28 rounded-full" />
                   <Skeleton className="h-7 w-24 rounded-full" />
                 </div>
+                {/* Visitors see earned badges only, so the shelf is often short. */}
                 <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-4">
-                  {Array.from({ length: 5 }).map((_, index) => (
+                  {Array.from({ length: 3 }).map((_, index) => (
                     <Skeleton key={index} className="h-8 w-8 rounded-full" />
                   ))}
                 </div>
@@ -413,10 +416,11 @@ export function ProfileTabSkeleton({
     >
       <section className="rounded-hero app-card p-5 sm:p-8 md:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          {/* Heading plus one short line (the count on a public tab); the
+              owner's header no longer carries an eyebrow or an intro. */}
           <div className="space-y-3">
-            <Skeleton className="h-3 w-28 rounded-full" />
             <Skeleton className="h-8 w-64 rounded" />
-            <Skeleton className="h-4 w-full max-w-md rounded" />
+            <Skeleton className="h-4 w-24 rounded" />
           </div>
           <div className="flex flex-wrap gap-3">
             <Skeleton className="h-10 w-32 rounded-full" />

@@ -13,7 +13,6 @@ export default function ArticlesLoading() {
       <section className="relative rounded-none app-card sm:rounded-hero">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
           <div className="space-y-4 p-4 sm:p-8">
-            <Skeleton className="h-3 w-32 rounded-full" />
             <Skeleton className="h-8 w-3/4 rounded sm:h-12" />
             <Skeleton className="h-4 w-full rounded" />
             <Skeleton className="h-4 w-5/6 rounded" />
@@ -28,9 +27,7 @@ export default function ArticlesLoading() {
           </div>
 
           <div className="hidden space-y-4 rounded-panel border app-border bg-[color:var(--surface-muted)] p-6 sm:p-8 lg:-my-px lg:-mr-px lg:block lg:rounded-l-panel lg:rounded-r-hero">
-            <Skeleton className="h-4 w-24 rounded" />
             <Skeleton className="h-12 w-full rounded-2xl" />
-            <Skeleton className="h-4 w-24 rounded" />
             <Skeleton className="h-12 w-full rounded-2xl" />
             <div className="grid gap-4 sm:grid-cols-2">
               <Skeleton className="h-12 w-full rounded-2xl" />

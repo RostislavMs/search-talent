@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 /**
  * Section layout: copy on one side, a supporting visual on the other.
- * Stacks to copy-then-visual on narrow screens.
+ * Below md only the copy shows; the visual joins from md up.
  *
  * `media` takes any node — an illustration, a chart, or an image — so the
  * pattern is reusable outside this page.
@@ -24,7 +24,7 @@ export default function MediaSplit({
       <div className={side === "start" ? "lg:order-2" : undefined}>{children}</div>
       <div
         className={[
-          "flex items-center justify-center rounded-3xl app-panel p-6 sm:p-8",
+          "hidden items-center justify-center rounded-3xl app-panel p-6 sm:p-8 md:flex",
           aspect,
           side === "start" ? "lg:order-1" : "",
         ].join(" ")}

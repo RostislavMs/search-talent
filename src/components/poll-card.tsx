@@ -4,6 +4,7 @@ import AuthorList from "@/components/author-list";
 import type { ContentAuthor } from "@/lib/co-authors";
 import { formatArticleDate, getCategoryDisplayName } from "@/lib/articles";
 import { isPollClosed, type PollFeedItem } from "@/lib/polls";
+import { formatCount } from "@/lib/plural";
 
 export default function PollCard({
   poll,
@@ -38,9 +39,14 @@ export default function PollCard({
       ]
     : coAuthors;
 
-  const questionLabel = isUkrainian
-    ? `${poll.questionCount} ${poll.questionCount === 1 ? "питання" : "питань"}`
-    : `${poll.questionCount} ${poll.questionCount === 1 ? "question" : "questions"}`;
+  // "2 питання", not "2 питань".
+  const questionLabel = formatCount(
+    poll.questionCount,
+    isUkrainian
+      ? { one: "{count} питання", few: "{count} питання", many: "{count} питань", other: "{count} питання" }
+      : { one: "{count} question", few: "{count} questions", many: "{count} questions", other: "{count} questions" },
+    locale,
+  );
 
   return (
     <LocalizedLink
@@ -138,15 +144,6 @@ export default function PollCard({
             <span className="font-display font-semibold tabular-nums">{poll.responsesCount}</span>
           </span>
 
-          <span
-            className="inline-flex items-center gap-1.5"
-            title={isUkrainian ? "Перегляди" : "Views"}
-          >
-            <svg aria-hidden="true" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10 4C5.5 4 1.7 6.9 0 10c1.7 3.1 5.5 6 10 6s8.3-2.9 10-6c-1.7-3.1-5.5-6-10-6zm0 10a4 4 0 110-8 4 4 0 010 8zm0-6a2 2 0 100 4 2 2 0 000-4z" />
-            </svg>
-            <span className="font-display font-semibold tabular-nums">{poll.viewsCount}</span>
-          </span>
 
           <span
             className="inline-flex items-center gap-1.5"

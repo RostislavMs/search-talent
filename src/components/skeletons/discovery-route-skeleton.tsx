@@ -2,14 +2,11 @@ import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleto
 import Skeleton from "@/components/ui/skeleton";
 import type { DiscoveryMode } from "@/components/discovery-page";
 
-/** Mirrors a `BrowseFacets` block (title + description + pill links). */
+/** Mirrors a `BrowseFacets` block (title + pill links). */
 function BrowseFacetsSkeleton({ chips = 12 }: { chips?: number }) {
   return (
     <section className="rounded-hero app-card p-5 sm:p-7">
-      <div className="max-w-3xl space-y-3">
-        <Skeleton className="h-7 w-1/2 max-w-xs rounded" />
-        <Skeleton className="h-4 w-2/3 rounded" />
-      </div>
+      <Skeleton className="h-7 w-1/2 max-w-xs rounded" />
       <div className="mt-5 flex flex-wrap gap-2">
         {Array.from({ length: chips }).map((_, index) => (
           <Skeleton key={index} className="h-9 w-24 rounded-full" />

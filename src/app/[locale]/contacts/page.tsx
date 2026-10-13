@@ -103,15 +103,9 @@ export default async function ContactsPage({
           inLanguage: toBcp47(locale),
         })}
       />
-      <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-        {t.eyebrow}
-      </p>
-      <h1 className="font-display mt-3 text-4xl font-medium tracking-tight text-[color:var(--foreground)]">
+      <h1 className="font-display text-4xl font-medium tracking-tight text-[color:var(--foreground)]">
         {t.title}
       </h1>
-      <p className="mt-4 max-w-2xl text-base leading-8 app-muted">
-        {t.description}
-      </p>
 
       <ul className="mt-12 divide-y divide-[color:var(--border)] border-y border-[color:var(--border)]">
         {channels.map((channel) => (

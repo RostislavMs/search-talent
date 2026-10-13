@@ -91,9 +91,9 @@ export default function LoginPage() {
     <main className="mx-auto flex w-full max-w-md flex-col justify-center px-0 py-0 sm:min-h-[calc(100svh-4.5rem)] sm:px-4 sm:py-6">
       <section className="w-full rounded-none sm:rounded-hero app-card px-4 py-6 sm:px-7 sm:py-6">
         <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 text-xs font-semibold uppercase tracking-eyebrow text-orange-400">
-            {dictionary.auth.login.eyebrow}
-          </p>
+          <h1 className="font-display min-w-0 text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
+            {dictionary.auth.login.title}
+          </h1>
           <ButtonLink
             href="/"
             variant="ghost"
@@ -103,10 +103,6 @@ export default function LoginPage() {
             {dictionary.auth.home}
           </ButtonLink>
         </div>
-
-        <h1 className="font-display mt-2 text-2xl font-medium tracking-tight text-[color:var(--foreground)]">
-          {dictionary.auth.login.title}
-        </h1>
 
         <OAuthButtons className="mt-5" disabled={loading} next={next} onError={setError} />
 
@@ -123,7 +119,7 @@ export default function LoginPage() {
             <input
               id="login-email"
               type="email"
-              placeholder={dictionary.auth.email}
+              placeholder="name@example.com"
               className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
               value={email}
               onChange={(e) => {
@@ -210,12 +206,6 @@ export default function LoginPage() {
             className="hover:text-[color:var(--foreground)]"
           >
             {dictionary.auth.login.createAccount}
-          </LocalizedLink>
-          <LocalizedLink
-            href="/talents"
-            className="hover:text-[color:var(--foreground)]"
-          >
-            {dictionary.auth.login.exploreFirst}
           </LocalizedLink>
         </div>
       </section>

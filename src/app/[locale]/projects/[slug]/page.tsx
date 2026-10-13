@@ -440,7 +440,11 @@ export default async function PublicProjectPage({
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
       <section className="overflow-hidden rounded-none app-card sm:rounded-hero">
-        <div className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+        <div
+          className={`grid grid-cols-1 gap-0 ${
+            project.cover_url ? "lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]" : ""
+          }`}
+        >
           <div className="p-5 sm:p-8 md:p-10">
             <div className="flex flex-wrap items-center gap-3">
               <ButtonLink href="/projects" variant="ghost" size="sm">
@@ -481,10 +485,11 @@ export default async function PublicProjectPage({
               {project.title}
             </h1>
 
-            <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-7 app-muted sm:mt-4 sm:text-base sm:leading-8">
-              {toPlainTextWithBreaks(project.description) ||
-                dictionary.projectPage.noDescription}
-            </p>
+            {project.description ? (
+              <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-7 app-muted sm:mt-4 sm:text-base sm:leading-8">
+                {toPlainTextWithBreaks(project.description)}
+              </p>
+            ) : null}
 
             {/* The live site and the code are what a visitor wants next, so
                 they sit by the description rather than at the end of Details. */}
@@ -562,16 +567,6 @@ export default async function PublicProjectPage({
                   {dictionary.coAuthors.sectionTitle} +{coAuthors.length}
                 </a>
               )}
-              {project.github_full_name ? (
-                <a
-                  href={`https://github.com/${project.github_full_name}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center cursor-pointer rounded-full app-panel px-3 py-1 text-sm app-muted transition-colors hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]"
-                >
-                  🔗 {dictionary.githubIntegration.syncedFromGithubBadge}
-                </a>
-              ) : null}
             </div>
           </div>
 
@@ -581,15 +576,7 @@ export default async function PublicProjectPage({
               alt={project.title}
               isProtected={project.allow_downloads === false && !isOwner}
             />
-          ) : (
-            <div className="relative min-h-[12rem] bg-[color:var(--surface-muted)] sm:min-h-[18rem]">
-              <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.14),_transparent_45%),linear-gradient(135deg,_rgba(148,163,184,0.28),_rgba(255,255,255,0.8))] p-6">
-                <span className="rounded-full bg-white/85 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm">
-                  {dictionary.common.project}
-                </span>
-              </div>
-            </div>
-          )}
+          ) : null}
         </div>
       </section>
 
@@ -696,15 +683,11 @@ export default async function PublicProjectPage({
                   wide
                   label={dictionary.projectPage.timeline}
                   value={[
-                    formatDate(project.started_on, locale)
-                      ? `${dictionary.projectPage.startedOn}: ${formatDate(project.started_on, locale)}`
-                      : null,
-                    formatDate(project.completed_on, locale)
-                      ? `${dictionary.projectPage.completedOn}: ${formatDate(project.completed_on, locale)}`
-                      : null,
+                    formatDate(project.started_on, locale),
+                    formatDate(project.completed_on, locale),
                   ]
                     .filter(Boolean)
-                    .join(" / ")}
+                    .join(" — ")}
                 />
               )}
             </div>
@@ -796,7 +779,7 @@ export default async function PublicProjectPage({
 
               <GithubInsightsPanel
                 fullName={project.github_full_name}
-                syncedAt={project.github_synced_at}
+                syncedAt={isOwner ? project.github_synced_at : null}
                 stats={project.github_stats}
                 techStack={project.tech_stack}
                 readme={project.github_readme}

@@ -179,7 +179,6 @@ export default async function MyApplicationsPage({
           <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
             {copy.title}
           </h1>
-          <p className="mt-1 text-sm app-muted">{copy.description}</p>
         </div>
         {applications.length > 0 ? (
           <ButtonLink href={JOBS_PATH} variant="secondary">

@@ -59,9 +59,6 @@ export default async function RelatedProjects({
       >
         {dictionary.projectPage.relatedTitle}
       </h2>
-      <p className="mt-2 max-w-2xl text-sm leading-7 app-muted">
-        {dictionary.projectPage.relatedSubtitle}
-      </p>
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {related.map((project) => (

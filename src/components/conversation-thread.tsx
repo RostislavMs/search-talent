@@ -1036,7 +1036,7 @@ export default function ConversationThread({
                 <SendIcon />
               </Button>
             </div>
-            <p id={`${composerId}-hint`} className="hidden text-[11px] app-soft sm:block">
+            <p id={`${composerId}-hint`} className="sr-only">
               {copy.composer.hintDesktop}
             </p>
             {linkWarning ? (

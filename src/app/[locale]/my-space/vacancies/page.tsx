@@ -131,7 +131,6 @@ export default async function MyVacanciesPage({
           <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
             {copy.mine.title}
           </h1>
-          <p className="mt-1 text-sm app-muted">{copy.mine.description}</p>
         </div>
         {canPost ? <ButtonLink href="/jobs/new">{copy.mine.create}</ButtonLink> : null}
       </div>

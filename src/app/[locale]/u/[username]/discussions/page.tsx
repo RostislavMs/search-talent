@@ -90,17 +90,16 @@ export default async function UserDiscussionsPage({
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <section className="rounded-hero app-card p-6 sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-          {ui.pageEyebrow}
-        </p>
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
               {isOwner ? ui.myTitle : `${ui.pageTitle} — ${displayName}`}
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 app-muted sm:text-base">
-              {ui.myDescription}
-            </p>
+            {isOwner ? (
+              <p className="mt-3 max-w-2xl text-sm leading-6 app-muted sm:text-base">
+                {ui.myDescription}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
             {isOwner ? (

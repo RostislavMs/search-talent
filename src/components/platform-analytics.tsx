@@ -299,7 +299,6 @@ function SkillCloud({
       <h2 className="font-display mb-2 text-lg font-semibold tracking-tight text-[color:var(--foreground)]">
         {ui.skillsUniverse}
       </h2>
-      <p className="mb-5 text-xs app-muted">{ui.skillsDescription}</p>
 
       <div className="flex flex-wrap gap-2">
         {visibleSkills.map((skill) => {
@@ -442,9 +441,7 @@ export default function PlatformAnalytics({
     <div className="space-y-6">
       {/* ─── Platform overview (without total votes) ─── */}
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest app-soft">
-          {dictionary.analytics.platformOverview}
-        </h2>
+        <h2 className="sr-only">{dictionary.analytics.platformOverview}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <PlatformMetricCard
             label={dictionary.analytics.totalCreators}
@@ -456,13 +453,11 @@ export default function PlatformAnalytics({
             label={dictionary.analytics.totalProjects}
             value={formatCompactNumber(stats.siteTotals.projects, locale)}
             accent="bg-emerald-500"
-            hint={dictionary.analytics.siteProjectsHint}
           />
           <PlatformMetricCard
             label={dictionary.analytics.profileCompletion}
             value={`${stats.siteTotals.avgProfileCompletion}%`}
             accent="bg-slate-500"
-            hint={ui.profileReadiness}
           />
         </div>
       </section>

@@ -51,7 +51,6 @@ export const dictionaries = {
       login: "Log in",
       signup: "Create account",
       menu: "Menu",
-      signedInAs: "Signed in as",
       logout: "Log out",
       adminConsole: "Admin console",
       notifications: "Notifications",
@@ -564,8 +563,6 @@ export const dictionaries = {
       marketingTitle: "Marketing",
       marketingDescription:
         "Reserved for future campaigns, attribution, and third-party promotion tools. Nothing runs here yet.",
-      themeSessionOnly:
-        "Theme changes work for this visit, but they are not saved until you allow preference cookies.",
     },
     sitePopup: {
       regionLabel: "Notice",
@@ -607,8 +604,6 @@ export const dictionaries = {
       pinFailedMessage: "Could not update pin right now.",
       openProfile: "Open profile",
       relatedCreatorsTitle: "Related creators",
-      relatedCreatorsSubtitle:
-        "Talents who share technologies or a field with this profile.",
       open: "Open",
       profile: "Profile",
       unsavedChangesTitle: "Unsaved changes",
@@ -744,7 +739,6 @@ export const dictionaries = {
         label: "Example portfolio",
         cta: "Open portfolio",
         fallback: "An example of a strong portfolio will appear here.",
-        customNote: "The author chose the colours, font and background.",
       },
       trendingTitle: "Trending portfolio projects",
       trendingDescription:
@@ -755,8 +749,6 @@ export const dictionaries = {
         "Open a profile, review skills and experience, and jump into related portfolio projects.",
       searchTalent: "Search talent",
       topRatedTitle: "The best creators and work",
-      topRatedDescription:
-        "Fill in your profile and add strong work to climb the ranking — the higher you are, the more people see you.",
       topRatedGuideCta: "How to raise your rating",
       topCreatorsTitle: "Top talents",
       freshCreatorsTitle: "New portfolios",
@@ -766,7 +758,6 @@ export const dictionaries = {
       leaderboardScore: "rating",
       leaderboardEmpty:
         "Nothing here yet. Publish a project and it could show up here.",
-      profileCompletionLabel: "Profile complete",
       projectsCountLabel: "Projects",
       topProjectLabel: "Best project",
       projectMediaLabel: "Media",
@@ -780,7 +771,7 @@ export const dictionaries = {
       eyebrow: "Community knowledge hub",
       title: "Tech Articles, Guides & Case Studies",
       description:
-        "A dedicated space for technical guides, case studies, and industry insights. Read what is new, discover active writers, and jump into deeper discussions.",
+        "Guides, case studies and personal experience from the community: building a portfolio, finding work and growing in your field.",
       filterSearch: "Search",
       searchPlaceholder: "Search articles by keyword",
       filterCategory: "Category",
@@ -819,16 +810,13 @@ export const dictionaries = {
       files: "Files",
       downloadFile: "Download file",
       watchVideo: "Watch video",
-      noDescription: "This project does not have a description yet.",
       status: "Status",
       technologies: "Technologies",
       role: "Role",
       teamSize: "Team size",
       hoursSpent: "Time spent",
       hoursSuffix: "h",
-      timeline: "Timeline",
-      startedOn: "Started",
-      completedOn: "Completed",
+      timeline: "Dates",
       liveProject: "Live project",
       repository: "Repository",
       links: "Links",
@@ -853,11 +841,7 @@ export const dictionaries = {
       voteStateDisliked:
         "You dislike this project. Click again to remove your vote.",
       voteStateIdle: "Choose whether this project helped or impressed you.",
-      ownerVoteHint:
-        "This is your project. Community ratings show how visitors react to it.",
       relatedTitle: "Related projects",
-      relatedSubtitle:
-        "More public work that shares technologies with this project.",
     },
     projectComments: {
       title: "Comments",
@@ -920,8 +904,6 @@ export const dictionaries = {
       composerSave: "Save changes",
       composerSaving: "Saving...",
       composerRequirements: "Add a title and a few sentences to publish.",
-      composerPublishNote:
-        "The topic appears in Discussions as soon as you publish.",
       composerPublished: "Topic published.",
       composerError: "Could not publish the topic. Please try again.",
       composerLeaveWarning: "The topic is not saved. Leave anyway?",
@@ -1045,7 +1027,7 @@ export const dictionaries = {
       form: {
         createTitle: "Create a company page",
         createDescription:
-          "A page for your company or studio: who you are, your team and their work. It takes a couple of minutes.",
+          "A page for your company or studio: who you are, your team and their work.",
         name: "Name",
         namePlaceholder: "Acme Studio",
         type: "What it is",
@@ -1314,7 +1296,7 @@ export const dictionaries = {
         intro:
           "On SearchTalent people show real projects: code, design, video, 3D. A company page puts your team next to them and shows candidates who they'd work with.",
         ctaCreate: "Create a company page",
-        ctaSignup: "Sign up and create a page",
+        ctaSignup: "Create a company page",
         ctaBrowse: "Browse specialists",
         whyTitle: "Why a portfolio beats a résumé",
         why: [
@@ -1346,8 +1328,8 @@ export const dictionaries = {
             text: "Enter your work email on the company's domain and the code from the email. Verified pages get a mark and appear in search.",
           },
           {
-            title: "Post jobs, find people",
-            text: "Post a job, an internship or a paid task. People apply with their portfolio: 1 to 3 projects and a message. You can also browse portfolios by skill and role and contact those who are open to work.",
+            title: "Post a job",
+            text: "A job, an internship or a paid task. People apply with their projects.",
           },
         ],
         internshipsTitle: "Internships and small paid tasks",
@@ -1455,7 +1437,7 @@ export const dictionaries = {
         eyebrow: "Jobs",
         title: "Jobs, internships and freelance",
         intro:
-          "Openings from companies on SearchTalent. Every company has a page with its team and their work, so you can see who you would work with.",
+          "Jobs from companies whose team and work you can see.",
         postCta: "Post a job",
         forCompaniesCta: "For companies",
         count: {
@@ -1466,7 +1448,7 @@ export const dictionaries = {
         },
         empty: "No open positions yet.",
         emptyHint:
-          "Companies are only starting to post here. Press “Follow this search” and we'll write when new ones appear. Meanwhile, mark on your page what you're open to: companies find people in the catalogue too.",
+          "Follow this search and we'll email you when jobs appear.",
         emptyFiltered: "Nothing matches these filters.",
         emptyFilteredHint: "Try fewer filters or a shorter search.",
         browseTalents: "Browse specialists",
@@ -1476,6 +1458,7 @@ export const dictionaries = {
           searchPlaceholder: "For example, frontend",
           apply: "Search",
           reset: "Reset filters",
+          toggle: "Filters",
           kind: "Type",
           anyKind: "Any type",
           format: "Format",
@@ -1526,14 +1509,13 @@ export const dictionaries = {
       form: {
         createTitle: "Post a job",
         createDescription:
-          "A job, an internship or a paid freelance task. Say what the work is, who you're looking for and how it's paid. It stays open for 60 days.",
+          "A job, an internship or a paid freelance task. Say what the work is, who you're looking for and how it's paid.",
         editTitle: "Edit vacancy",
         openPage: "Open page",
         company: "Company",
         unverifiedHint:
           "The page isn't verified yet, so a moderator will check the vacancy before it goes live. Verify the page and it goes live right away.",
         language: "Language of the vacancy",
-        languageHint: "The one you write it in.",
         title: "Title",
         titlePlaceholder: "For example, Junior frontend developer",
         kind: "Type",
@@ -1555,17 +1537,15 @@ export const dictionaries = {
         payCurrency: "Currency",
         payPeriod: "Period",
         payRequiredHint:
-          "Required for a job or an internship: people want to know what to expect. Leave “To” empty for an exact amount.",
+          "Required for jobs and internships. For an exact amount leave “To” empty.",
         payOptionalHint: "Optional, but a vacancy with pay gets more replies. Leave “To” empty for an exact amount.",
         description: "Description",
-        descriptionHint: "What the person will do, what they need for it, and what you offer.",
         descriptionPlaceholder: "What you'll work on, what we expect, what we offer…",
         publish: "Publish",
         save: "Save",
         saveDraft: "Save draft",
         saving: "Saving…",
         publishNote: "A published vacancy stays open for {days} days; you can extend it with one click.",
-        editNote: "Changes show up as soon as you save.",
         draftSaved: "Draft saved",
         published: "Vacancy published",
         saved: "Saved",
@@ -1696,7 +1676,7 @@ export const dictionaries = {
       apply: {
         title: "Apply",
         intro:
-          "Here an application is your portfolio: the company sees your profile and the 1 to 3 projects you choose.",
+          "The company sees your profile and the 1–3 projects you choose.",
         button: "Apply",
         signInText: "Sign in to apply with your portfolio.",
         signIn: "Sign in",
@@ -1937,9 +1917,9 @@ export const dictionaries = {
       scopePersonal: "Mine",
       settings: "Settings",
       empty: {
-        inbox: "No conversations yet. When someone writes to you, or you write first, it shows up here.",
+        inbox: "No conversations yet.",
         unread: "Nothing unread.",
-        requests: "No requests. First messages from people you haven't talked to wait here.",
+        requests: "No requests.",
         archived: "The archive is empty.",
       },
       emptyCompany: "No conversations yet. Write to a candidate from their application, or to anyone open to offers from their profile.",
@@ -2018,7 +1998,7 @@ export const dictionaries = {
       request: {
         toMeTitle: "{name} wants to talk",
         toMeText:
-          "Reply or accept, and you can write to each other freely. Until then they can't send anything else. Deleting removes it quietly; you can also block.",
+          "Reply or accept to keep talking.",
         accept: "Accept",
         delete: "Delete",
         block: "Block",
@@ -2218,7 +2198,7 @@ export const dictionaries = {
     emailSettings: {
       title: "Email settings",
       description:
-        "Which emails we send you. Service emails — sign-in links, codes, answers to your applications — always come.",
+        "Service emails (sign-in, codes, answers to applications) always arrive.",
       back: "Notifications",
       openLink: "Email settings",
       messagesTitle: "New messages",
@@ -2226,7 +2206,7 @@ export const dictionaries = {
       messageModes: {
         instant: {
           label: "At once",
-          hint: "When a message stays unread for 10 minutes. One email per conversation until you open it, not more than 10 a day.",
+          hint: "If a message stays unread for 10 minutes.",
         },
         daily: {
           label: "Once a day",
@@ -2238,7 +2218,7 @@ export const dictionaries = {
         },
       },
       followersTitle: "New followers",
-      followersHint: "When someone follows you. One email per person, not more than 3 a day.",
+      followersHint: "When someone follows you.",
       jobAlertsTitle: "Job alerts",
       jobAlertsHint: "Each saved search has its own email switch.",
       jobAlertsLink: "Manage job alerts",
@@ -2435,7 +2415,6 @@ export const dictionaries = {
       lastSynced: "Last synced",
       syncError: "Could not sync from the provider.",
       panelTitle: "Imported from {provider}",
-      panelEmpty: "No data pulled yet — use “Sync” to fetch it.",
       stats: {
         stars: "Stars",
         forks: "Forks",
@@ -2550,7 +2529,6 @@ export const dictionaries = {
       readmeTitle: "Project README",
       contributionSectionTitle: "Author's contribution",
       narrativeSectionTitle: "Project story",
-      syncedFromGithubBadge: "Synced from GitHub",
     },
     aiDraft: {
       title: "AI draft",
@@ -2617,7 +2595,6 @@ export const dictionaries = {
       feedEmpty:
         "No new posts from the authors you follow yet. As soon as someone publishes, it will show here.",
       manageFollowing: "Manage followed authors",
-      manageFollowingDescription: "Unfollow authors whose updates you no longer want.",
       newArticle: "Published a new article",
       newProject: "Published a new project",
       unfollow: "Unfollow",
@@ -2631,7 +2608,6 @@ export const dictionaries = {
       followersDescription:
         "People who follow your activity. They get notified when you publish new projects or articles.",
       followersEmpty: "No one is following you yet.",
-      followsYou: "Follows you",
       followedAt: "Started following {date}",
     },
     emails: {
@@ -2813,7 +2789,6 @@ export const dictionaries = {
       articleViews: "Article views",
       portfolioViews: {
         title: "Portfolio views",
-        hint: "How many people opened your profile and projects. Each person counts once a day; your own visits don't count.",
         week: "Last 7 days",
         month: "Last 30 days",
         split: "profile {profile} · projects {projects}",
@@ -2830,7 +2805,6 @@ export const dictionaries = {
           direct: "Direct link",
           internal: "SearchTalent",
         },
-        directHint: "A direct link is a message, a PDF, a bookmark or a typed address.",
         referrersTitle: "Sites",
         topProjects: "Most viewed projects",
         projectViews: "{month} in 30 days · {week} in 7",
@@ -2888,8 +2862,7 @@ export const dictionaries = {
         alreadyPublished: "You already have a published project. Add another one or move on.",
         importTitle: "Import code from GitHub or GitLab",
         importDescription: "The name, description and technologies fill in by themselves.",
-        manualTitle: "Add it yourself",
-        manualDescription: "What kind of work is it?",
+        manualTitle: "Or pick the kind of work",
       },
       share: {
         title: "Share your portfolio",
@@ -2909,7 +2882,6 @@ export const dictionaries = {
       copyFailed: "Could not copy. Select the link and copy it by hand.",
       shareOn: "Share on",
       qrTitle: "QR code",
-      qrHint: "For a printed CV, a badge or a slide.",
       downloadQr: "Download PNG",
       qrLabel: "QR code for {url}",
       postLabel: "Post text",
@@ -2919,14 +2891,13 @@ export const dictionaries = {
       copyPost: "Copy text with link",
       postCopied: "Text copied. Paste it into your post.",
       badgeTitle: "README badge",
-      badgeHint: "Show your portfolio score on GitHub or GitLab. The badge links to your portfolio and updates on its own.",
+      badgeHint: "For your README on GitHub or GitLab.",
       badgeSnippetLabel: "Markdown for your README",
       badgeAlt: "SearchTalent badge with the portfolio score",
       button: "Share",
       dialogTitle: "Share your portfolio",
       close: "Close",
       cardTitle: "Share your portfolio",
-      cardDescription: "Your link, a ready post, a QR code and a badge for GitHub.",
     },
     profileThemes: {
       title: "Ready themes",
@@ -2984,7 +2955,7 @@ export const dictionaries = {
         cases: "Case studies",
       },
       onboardingTitle: "How to show your work",
-      onboardingHint: "Pick a template. You can change it, the theme and the blocks any time in the editor.",
+      onboardingHint: "You can change it any time.",
     },
     profileStyleFile: {
       title: "Your look in a file",
@@ -3039,7 +3010,7 @@ export const dictionaries = {
       },
       badge: "Open to: {list}",
       toggle: "Open to offers",
-      toggleHint: "Show on your page what you are open to. People looking for someone will find you in the catalog and can get in touch.",
+      toggleHint: "People looking for someone will find you in the catalog and can get in touch.",
       pickOne: "Pick at least one.",
       workFormats: "Work format",
       saveFailed: "Could not save. Please try again.",
@@ -3057,7 +3028,7 @@ export const dictionaries = {
       telegram: "Telegram",
       linkedin: "LinkedIn",
       website: "Website",
-      privateSignIn: "Email and phone are shown after you sign in. This keeps addresses away from scrapers.",
+      privateSignIn: "Email and phone are shown after you sign in.",
       signIn: "Sign in",
       loading: "Loading contacts…",
       rateLimited: "You have opened a lot of contacts in a short time. Please try again later.",
@@ -3066,7 +3037,6 @@ export const dictionaries = {
       noChannels: "No contacts added yet.",
       directDeal: "You agree on everything directly. SearchTalent is not a party to it.",
       close: "Close",
-      showPrivate: "Show email and phone",
       salaryPublic: "Show salary expectations on my page",
       salaryPublicHint: "Off: only you can see it.",
       hourlyRate: "Hourly rate",
@@ -3088,12 +3058,10 @@ export const dictionaries = {
     },
     analytics: {
       title: "Analytics",
-      updatedDaily: "Live from current site data",
       platformOverview: "Platform overview",
       totalCreators: "Total creators",
       totalProjects: "Total projects",
       profileCompletion: "Profile completion",
-      siteProjectsHint: "All public work currently indexed on the platform.",
       growthLastMonths: "Growth over the last 6 months",
       projectsPublished: "Projects published",
       creatorsJoined: "Talents joined",
@@ -3102,7 +3070,7 @@ export const dictionaries = {
     },
     dashboardProjects: {
       eyebrow: "Project workspace",
-      title: "Create & Manage Your IT Project Portfolio",
+      title: "My projects",
       description:
         "Create a new project, upload media, and open the public page to see how visitors experience it.",
       yourProjects: "Your projects",
@@ -3152,10 +3120,7 @@ export const dictionaries = {
       projectDeleted: "Project deleted",
     },
     dashboardProfile: {
-      eyebrow: "Profile settings",
-      title: "Edit Your Professional IT Profile & Skills",
-      description:
-        "Update the public information that shapes your profile and helps people find you in search.",
+      title: "Edit profile",
       backToProfile: "Back to profile",
       viewPublicProfile: "View public profile",
       profileNotFound: "Profile not found",
@@ -3239,22 +3204,18 @@ export const dictionaries = {
     },
     auth: {
       login: {
-        eyebrow: "Welcome back",
         title: "Log in",
         submit: "Log in",
         loading: "Signing in...",
         google: "Continue with Google",
         github: "Continue with GitHub",
         createAccount: "Create account",
-        exploreFirst: "Explore first",
       },
       signup: {
-        eyebrow: "Join the platform",
         title: "Create account",
         submit: "Sign up",
         loading: "Creating...",
         alreadyHaveAccount: "Already have an account?",
-        browseProjects: "Browse projects",
       },
       verify: {
         title: "Check your email",
@@ -3271,10 +3232,9 @@ export const dictionaries = {
         backHome: "Back to home",
       },
       forgotPassword: {
-        eyebrow: "Forgot your password?",
         title: "Reset your password",
         description:
-          "Enter the email you signed up with and we will send you a secure link to create a new password.",
+          "We'll email you a link to set a new password.",
         submit: "Send reset link",
         loading: "Sending...",
         sentTitle: "Check your inbox",
@@ -3284,7 +3244,6 @@ export const dictionaries = {
         link: "Forgot password?",
       },
       resetPassword: {
-        eyebrow: "Secure account recovery",
         title: "Choose a new password",
         description:
           "Pick a strong password you have not used before. The link expires in 1 hour.",
@@ -3339,7 +3298,6 @@ export const dictionaries = {
     creatorProfile: {
       backToSearch: "Back to talents",
       backToProfile: "Back to profile",
-      browseProjects: "Browse projects",
       editProfile: "Edit profile",
       manageProjects: "Manage projects",
       ownerView: "Your public profile",
@@ -3352,8 +3310,6 @@ export const dictionaries = {
       ratingEmailUnverified:
         "Please verify your email address before rating. Check your inbox for the verification link.",
       cannotRateOwnProfile: "You cannot rate your own profile.",
-      ownerRatingHint:
-        "Other users can rate your profile based on quality and trust.",
       ratingStateLiked:
         "You recommended this profile. Click again to remove your vote.",
       ratingStateDisliked:
@@ -3388,18 +3344,14 @@ export const dictionaries = {
       qa: "Q&A",
       openCertificateLink: "Open credential link",
       openCertificateFile: "Open certificate file",
-      links: "Links",
       projects: "Projects",
       articles: "Articles",
-      publishedWork: "Published work from this profile.",
-      publishedArticles: "Published articles from this profile.",
       viewAllProjects: "View all projects",
       viewAllArticles: "View all articles",
       experienceChip: "{value} of experience",
       ratingChipLabel: "Profile rating: {score}. How it works",
       visitorView: "View as visitor",
       visitorViewTitle: "This is how a guest sees your page",
-      visitorViewHint: "No owner buttons, no email or phone: guests get those through Contact.",
       visitorViewHidden: "While the page is on review, guests get “Page not found” instead.",
       visitorViewExit: "Back to my page",
       noProjects: "No public projects have been added yet.",
@@ -3419,8 +3371,6 @@ export const dictionaries = {
         "For example: Product designer or Full-stack developer",
       projectKind: "Project type",
       projectKindPlaceholder: "What kind of work is this?",
-      projectKindHint:
-        "Helps the right people find your work and unlocks role-aware features later.",
       projectKindCode: "Code / development",
       projectKindDesign: "Design (UI / UX / brand)",
       projectKindVideo: "Video / editing",
@@ -3432,8 +3382,6 @@ export const dictionaries = {
       projectKindWriting: "Writing / docs",
       projectKindOther: "Other",
       designSectionTitle: "Design details",
-      designSectionHint:
-        "Surface the things designers care about: specialty, tools, and where the source lives.",
       designRoleLabel: "Specialty",
       designRolePlaceholder: "What kind of design is this?",
       designRoleUi: "UI design",
@@ -3484,8 +3432,6 @@ export const dictionaries = {
       designDeliverablePrint: "Print",
       designDeliverableAnimation: "Animation",
       codeSectionTitle: "Code details",
-      codeSectionHint:
-        "Help engineers find your work: type, stack, hosting, license, and links beyond the repo.",
       codeArchitectureLabel: "Project type",
       codeArchitecturePlaceholder: "What kind of code is this?",
       codeArchitectureWebApp: "Web app",
@@ -3518,8 +3464,6 @@ export const dictionaries = {
       codeApiPlaygroundUrlLabel: "API playground URL",
       codeUrlPlaceholder: "https://...",
       videoSectionTitle: "Video details",
-      videoSectionHint:
-        "Help producers and directors find you: role, tools, format, and your showreel link.",
       videoRoleLabel: "Role on this project",
       videoRolePlaceholder: "What did you do?",
       videoRoleEditor: "Editor",
@@ -3572,8 +3516,6 @@ export const dictionaries = {
       videoShowreelUrlPlaceholder: "https://vimeo.com/... or https://youtu.be/...",
       videoClientLabel: "Client",
       photoSectionTitle: "Photo details",
-      photoSectionHint:
-        "Tell visitors what kind of shoot this was: genre, gear, medium and what came out of it.",
       photoRoleLabel: "Role on this shoot",
       photoRolePlaceholder: "What was your part?",
       photoRolePhotographer: "Photographer",
@@ -3613,8 +3555,6 @@ export const dictionaries = {
       photoLocationPlaceholder: "City, studio, or country",
       photoClientLabel: "Client",
       threeDSectionTitle: "3D details",
-      threeDSectionHint:
-        "Surface what makes the asset shine: discipline, software, render engine, and a live Sketchfab or Spline preview.",
       threeDRoleLabel: "Discipline",
       threeDRolePlaceholder: "What part did you do?",
       threeDRoleModeling: "Modeling",
@@ -3649,8 +3589,6 @@ export const dictionaries = {
         "https://sketchfab.com/3d-models/... or https://my.spline.design/...",
       threeDClientLabel: "Client",
       audioSectionTitle: "Audio details",
-      audioSectionHint:
-        "Show what the track is and where to hear it: role, genre, DAW and a Soundcloud or Spotify link.",
       audioRoleLabel: "Role on this track",
       audioRolePlaceholder: "What did you do?",
       audioRoleComposer: "Composer",
@@ -3697,8 +3635,6 @@ export const dictionaries = {
       audioKeyPlaceholder: "Musical key",
       audioClientLabel: "Client",
       qaSectionTitle: "QA details",
-      qaSectionHint:
-        "Surface how you tested: discipline, types of testing, tools, methodology, and any numbers worth sharing.",
       qaRoleLabel: "Role on this project",
       qaRolePlaceholder: "What was your QA focus?",
       qaRoleManualQa: "Manual QA",
@@ -3750,8 +3686,6 @@ export const dictionaries = {
       qaReportUrlPlaceholder: "https://...",
       qaClientLabel: "Client",
       motionSectionTitle: "Motion details",
-      motionSectionHint:
-        "Show what kind of motion this is: discipline, techniques, tools, and a Vimeo/YouTube preview.",
       motionRoleLabel: "Role on this project",
       motionRolePlaceholder: "What did you do?",
       motionRoleMotionDesigner: "Motion designer",
@@ -3802,8 +3736,6 @@ export const dictionaries = {
         "https://vimeo.com/... or https://youtu.be/...",
       motionClientLabel: "Client",
       writingSectionTitle: "Writing details",
-      writingSectionHint:
-        "Tell readers what you wrote and where to find it: role, format, topics, and word count.",
       writingRoleLabel: "Role on this piece",
       writingRolePlaceholder: "What did you do?",
       writingRoleAuthor: "Author",
@@ -3932,28 +3864,10 @@ export const dictionaries = {
         "Walk visitors through the problem, solution, and results.",
       stepMediaTitle: "Media",
       stepMediaDescription:
-        "Upload images and a video. Drag tiles to reorder. The first image will be the cover.",
-      stepMediaHintCode:
-        "Drop UI screenshots, architecture diagrams, or demo videos.",
-      stepMediaHintDesign:
-        "Add a gallery of mockups, hero shots, and finished deliverables.",
-      stepMediaHintVideo:
-        "Add behind-the-scenes stills or supporting clips. Your showreel lives in the previous step.",
-      stepMediaHintPhoto:
-        "Drop the photo set — first image becomes the cover.",
-      stepMediaHint3d:
-        "Add renders and turntables. The interactive Sketchfab/Spline view lives in the previous step.",
-      stepMediaHintAudio:
-        "Add cover art or waveform stills. The audio player lives in the previous step.",
-      stepMediaHintQa: "Drop screenshots of bug reports, test runs, or graphs.",
-      stepMediaHintWriting: "Add cover art or supporting illustrations.",
-      stepMediaHintMotion: "Drop key frames or supporting clips.",
-      stepMediaHintOther:
-        "Drop any media that helps explain this project.",
+        "Photos, videos and video links.",
       mediaDropHint: "Drag & drop files here, or",
       mediaBrowseFiles: "Browse files",
       mediaUploadAnother: "Add more files",
-      mediaEmptyState: "No media added yet.",
       mediaReorderHint: "Drag to reorder. The first image is used as the cover.",
       mediaImageLimit: "Images up to {limit} MB.",
       mediaVideoLimit: "Videos up to {limit} MB.",
@@ -3970,7 +3884,7 @@ export const dictionaries = {
       mediaTitleRequired: "Add a project title before continuing.",
       mediaLinkLabel: "Add a video link",
       mediaLinkHint:
-        "Paste a link from YouTube, Vimeo, TikTok or Instagram — it embeds right in the project. Up to {limit} links.",
+        "YouTube, Vimeo, TikTok or Instagram.",
       mediaLinkPlaceholder:
         "youtube.com/… · vimeo.com/… · tiktok.com/… · instagram.com/…",
       mediaLinkAdd: "Add link",
@@ -3984,7 +3898,7 @@ export const dictionaries = {
       mediaCoverFrameAdded: "Frame added as the project cover.",
       mediaSetCover: "Set as cover",
       videoLinksMovedHint:
-        "Add video links (YouTube, Vimeo, TikTok, Instagram) in the final Media step — they embed straight into the gallery.",
+        "Add video links on the Media step.",
       coverSectionTitle: "Project cover",
       coverSectionHint:
         "The image shown on cards and previews. Upload one, or capture a frame from an uploaded video below.",
@@ -4102,15 +4016,13 @@ export const dictionaries = {
       qaQuestion: "Question",
       qaAnswer: "Answer",
       blockVisibility: "Public block visibility",
-      blockVisibilityHint:
-        "Choose which sections will be shown on your public profile.",
       sectionVisible: "Visible",
       sectionHidden: "Hidden",
       viewOthersCustomization: "Other profiles' appearance",
       viewOthersCustomizationHint:
-        "When on, you see each profile with the colours, fonts and card styles its owner chose. When off, other profiles use the default look — only the hero photo is kept. Your own profile is unaffected.",
+        "Turn off to see other profiles in the standard look. Your own profile isn't affected.",
       viewOthersCustomizationOn: "Show their style",
-      viewOthersCustomizationOff: "Default style",
+      viewOthersCustomizationOff: "Standard style",
       visibilityAbout: "About",
       visibilityProfessionalDetails: "Professional details",
       visibilityWorkExperience: "Work experience",
@@ -4131,7 +4043,6 @@ export const dictionaries = {
       errorSavingProfile: "Could not save the profile right now.",
     },
     aboutPage: {
-      eyebrow: "About the platform",
       title: "SearchTalent — the community where work gets seen",
       description:
         "A platform for IT and digital specialists — show your portfolio, publish projects and articles, and build a professional reputation.",
@@ -4139,8 +4050,6 @@ export const dictionaries = {
       heroIllustrationLabel:
         "Diagram: one profile feeding a project, an article, a leaderboard, and a rating mark",
       pillarsTitle: "What is inside",
-      pillarsDescription:
-        "Four parts that only work together: the profile gives context, the work gives proof, the community gives a response, the reputation gives reach.",
       pillars: [
         {
           title: "A public profile",
@@ -4166,8 +4075,6 @@ export const dictionaries = {
         },
       ],
       stepsTitle: "How it works",
-      stepsDescription:
-        "Three steps — and the third one runs by itself once the first two are done.",
       stepsIllustrationLabel:
         "Diagram: three connected steps — create the profile, show your work, build a reputation",
       steps: [
@@ -4200,8 +4107,6 @@ export const dictionaries = {
       missionIllustrationLabel:
         "Diagram: scattered files, links, and screenshots converging into a single profile page",
       featuresTitle: "What you can do",
-      featuresDescription:
-        "Everything below is available from the moment you sign up.",
       features: [
         "A customizable public profile with a PDF résumé export",
         "Portfolio projects with images, video, and tech stacks",
@@ -4224,7 +4129,7 @@ export const dictionaries = {
         },
         {
           title: "So it cannot be gamed",
-          text: "One vote per account, a weighted score, and time decay so an old win cannot sit on the board forever.",
+          text: "One account, one vote — and an old win doesn't stay on top forever.",
         },
       ],
       communityIllustrationLabel:
@@ -4240,8 +4145,7 @@ export const dictionaries = {
       backToHome: "Back to home",
     },
     faqPage: {
-      eyebrow: "Frequently asked questions",
-      title: "FAQ",
+      title: "Frequently asked questions",
       description:
         "Answers to the most common questions about using SearchTalent — accounts, profiles, projects, and more.",
       backToHome: "Back to home",
@@ -4276,11 +4180,11 @@ export const dictionaries = {
         },
         {
           q: "How does the rating system work?",
-          a: "Community members can upvote or downvote profiles and projects. The ranking factors in project depth, profile completeness, community response (using a Wilson score), recent activity with time decay, and earned badges. For the full breakdown of factors and weights, see the rating guide.",
+          a: "The rating looks at how fully your work and profile are described and how people respond to them. A few random likes won't lift weak work. The rating guide has the details.",
         },
         {
           q: "What are badges and how do I earn them?",
-          a: "Badges are awarded automatically for your activity and achievements — publishing your first project, completing your profile, verifying your email or GitHub, reaching the leaderboards, and more. They come in four categories with up to three tiers each, and together they can add up to +5 bonus points to your rating.",
+          a: "Badges appear on their own when you reach something: a first project, a complete profile, a place in the top. Tap a badge on your profile to see its criterion.",
         },
         {
           q: "Can I export my profile?",
@@ -4301,10 +4205,7 @@ export const dictionaries = {
       ],
     },
     feedbackPage: {
-      eyebrow: "We value your input",
-      title: "Feedback & Suggestions",
-      description:
-        "Have an idea, found a bug, or want to share feedback? Let us know — every message helps make SearchTalent better.",
+      title: "Feedback",
       backToHome: "Back to home",
       nameLabel: "Your name",
       namePlaceholder: "How should we address you?",
@@ -4334,10 +4235,7 @@ export const dictionaries = {
       attachFailed: "Could not upload the image. Please try again.",
     },
     contactsPage: {
-      eyebrow: "Get in touch",
       title: "Contacts",
-      description:
-        "Have a question, found a bug, or want to collaborate? Here is how to reach the SearchTalent team.",
       backToHome: "Back to home",
       emailTitle: "Email",
       emailText:
@@ -4398,7 +4296,6 @@ export const dictionaries = {
       login: "Увійти",
       signup: "Створити акаунт",
       menu: "Меню",
-      signedInAs: "Увійшли як",
       logout: "Вийти",
       adminConsole: "Адмін-панель",
       notifications: "Сповіщення",
@@ -4911,8 +4808,6 @@ export const dictionaries = {
       marketingTitle: "Маркетинг",
       marketingDescription:
         "Зарезервовано для майбутніх кампаній, атрибуції та сторонніх промо-інструментів. Поки нічого не працює.",
-      themeSessionOnly:
-        "Зміна теми працює для поточного візиту, але не зберігається без дозволу на cookies налаштувань.",
     },
     sitePopup: {
       regionLabel: "Повідомлення",
@@ -4954,8 +4849,6 @@ export const dictionaries = {
       pinFailedMessage: "Зараз не вдалося оновити статус закріплення.",
       openProfile: "Відкрити профіль",
       relatedCreatorsTitle: "Схожі фахівці",
-      relatedCreatorsSubtitle:
-        "Фахівці зі спільними технологіями або напрямом діяльності.",
       open: "Відкрити",
       profile: "Профіль",
       unsavedChangesTitle: "Незбережені зміни",
@@ -5091,7 +4984,6 @@ export const dictionaries = {
         label: "Приклад портфоліо",
         cta: "Відкрити портфоліо",
         fallback: "Тут з'явиться приклад сильного портфоліо.",
-        customNote: "Кольори, шрифт і фон автор обрав сам.",
       },
       trendingTitle: "Популярні портфоліо-проєкти",
       trendingDescription:
@@ -5102,8 +4994,6 @@ export const dictionaries = {
         "Відкрийте профіль, перегляньте навички та досвід і переходьте до портфоліо-проєктів.",
       searchTalent: "Пошук талантів",
       topRatedTitle: "Найкращі автори й роботи",
-      topRatedDescription:
-        "Заповнюйте профіль і додавайте сильні роботи — так ви піднімаєтесь у топ, і вас бачить більше людей.",
       topRatedGuideCta: "Як підняти рейтинг",
       topCreatorsTitle: "Топ фахівців",
       freshCreatorsTitle: "Нові портфоліо",
@@ -5113,7 +5003,6 @@ export const dictionaries = {
       leaderboardScore: "рейтинг",
       leaderboardEmpty:
         "Тут поки порожньо. Опублікуйте проєкт, і він може з'явитися тут.",
-      profileCompletionLabel: "Профіль заповнено",
       projectsCountLabel: "Проєкти",
       topProjectLabel: "Найкращий проєкт",
       projectMediaLabel: "Медіа",
@@ -5127,7 +5016,7 @@ export const dictionaries = {
       eyebrow: "База знань спільноти",
       title: "Технічні статті, гайди та кейси спільноти",
       description:
-        "Простір для технічних гайдів, кейсів та інсайтів індустрії. Читайте оновлення, відстежуйте активних авторів і переходьте до обговорень.",
+        "Гайди, кейси й особистий досвід від спільноти: як будувати портфоліо, шукати роботу й рости у професії.",
       filterSearch: "Пошук",
       searchPlaceholder: "Пошук статей за словами",
       filterCategory: "Категорія",
@@ -5166,16 +5055,13 @@ export const dictionaries = {
       files: "Файли",
       downloadFile: "Завантажити файл",
       watchVideo: "Переглянути відео",
-      noDescription: "У цього проєкту поки немає опису.",
       status: "Статус",
       technologies: "Технології",
       role: "Роль",
       teamSize: "Розмір команди",
       hoursSpent: "Витрачено часу",
       hoursSuffix: "год",
-      timeline: "Таймлайн",
-      startedOn: "Початок",
-      completedOn: "Завершення",
+      timeline: "Терміни",
       liveProject: "Живий проєкт",
       repository: "Репозиторій",
       links: "Посилання",
@@ -5202,10 +5088,7 @@ export const dictionaries = {
         "Вам не сподобався цей проєкт. Натисніть ще раз, щоб прибрати голос.",
       voteStateIdle:
         "Оцініть проєкт, якщо він був корисним або справив враження.",
-      ownerVoteHint:
-        "Це ваш проєкт. Оцінки спільноти показують, як на нього реагують відвідувачі.",
       relatedTitle: "Схожі проєкти",
-      relatedSubtitle: "Інші публічні проєкти зі спільними технологіями.",
     },
     projectComments: {
       title: "Коментарі",
@@ -5268,8 +5151,6 @@ export const dictionaries = {
       composerSave: "Зберегти зміни",
       composerSaving: "Збереження...",
       composerRequirements: "Додайте назву й кілька речень тексту, щоб опублікувати.",
-      composerPublishNote:
-        "Тема з'явиться в розділі «Обговорення» одразу після публікації.",
       composerPublished: "Тему опубліковано.",
       composerError: "Не вдалося опублікувати тему. Спробуйте ще раз.",
       composerLeaveWarning: "Тема не збережена. Все одно вийти?",
@@ -5392,7 +5273,7 @@ export const dictionaries = {
       form: {
         createTitle: "Створіть сторінку компанії",
         createDescription:
-          "Сторінка вашої компанії чи студії: хто ви, ваша команда та її роботи. Це кілька хвилин.",
+          "Сторінка вашої компанії чи студії: хто ви, ваша команда та її роботи.",
         name: "Назва",
         namePlaceholder: "Наприклад, Студія Ромашка",
         type: "Що це",
@@ -5661,7 +5542,7 @@ export const dictionaries = {
         intro:
           "На SearchTalent люди показують справжні проєкти: код, дизайн, відео, 3D. Сторінка компанії ставить поруч вашу команду й показує кандидатам, з ким вони працюватимуть.",
         ctaCreate: "Створити сторінку компанії",
-        ctaSignup: "Зареєструватися й створити сторінку",
+        ctaSignup: "Створити сторінку компанії",
         ctaBrowse: "Переглянути фахівців",
         whyTitle: "Чому портфоліо краще за резюме",
         why: [
@@ -5693,8 +5574,8 @@ export const dictionaries = {
             text: "Уведіть робочу пошту на домені компанії й код із листа. Перевірені сторінки мають позначку й з'являються в пошуку.",
           },
           {
-            title: "Розмістіть вакансію, знайдіть людей",
-            text: "Розмістіть роботу, стажування чи оплачувану задачу. Люди відгукуються портфоліо: 1–3 проєкти й повідомлення. А ще можна переглядати портфоліо за навичками й ролями та писати тим, хто відкритий до роботи.",
+            title: "Розмістіть вакансію",
+            text: "Робота, стажування чи оплачувана задача. Люди відгукуються своїми проєктами.",
           },
         ],
         internshipsTitle: "Стажування й невеликі оплачувані задачі",
@@ -5802,7 +5683,7 @@ export const dictionaries = {
         eyebrow: "Вакансії",
         title: "Робота, стажування й фриланс",
         intro:
-          "Вакансії компаній на SearchTalent. У кожної компанії є сторінка з командою та її роботами, тож видно, з ким працюватимете.",
+          "Вакансії компаній, у яких видно команду та її роботи.",
         postCta: "Розмістити вакансію",
         forCompaniesCta: "Для компаній",
         count: {
@@ -5813,7 +5694,7 @@ export const dictionaries = {
         },
         empty: "Відкритих вакансій поки немає.",
         emptyHint:
-          "Компанії тільки починають їх розміщувати. Натисніть «Стежити за пошуком», і ми напишемо, щойно з'являться нові. А поки позначте на своїй сторінці, до чого ви відкриті: компанії шукають людей і в каталозі.",
+          "Стежте за пошуком — напишемо, щойно з'являться.",
         emptyFiltered: "За цими фільтрами нічого немає.",
         emptyFilteredHint: "Приберіть частину фільтрів або скоротіть пошук.",
         browseTalents: "Переглянути фахівців",
@@ -5823,6 +5704,7 @@ export const dictionaries = {
           searchPlaceholder: "Наприклад, frontend",
           apply: "Шукати",
           reset: "Скинути фільтри",
+          toggle: "Фільтри",
           kind: "Тип",
           anyKind: "Будь-який тип",
           format: "Формат",
@@ -5873,14 +5755,13 @@ export const dictionaries = {
       form: {
         createTitle: "Розмістити вакансію",
         createDescription:
-          "Робота, стажування чи оплачувана фриланс-задача. Напишіть, що за робота, кого шукаєте і як платите. Вакансія відкрита 60 днів.",
+          "Робота, стажування чи оплачувана фриланс-задача. Напишіть, що за робота, кого шукаєте і як платите.",
         editTitle: "Редагування вакансії",
         openPage: "Відкрити сторінку",
         company: "Компанія",
         unverifiedHint:
           "Сторінку ще не перевірено, тож вакансію перед показом перегляне модератор. Перевірте сторінку — і вакансії з'являтимуться одразу.",
         language: "Мова вакансії",
-        languageHint: "Та, якою ви її пишете.",
         title: "Назва",
         titlePlaceholder: "Наприклад, Junior frontend-розробник",
         kind: "Тип",
@@ -5902,18 +5783,16 @@ export const dictionaries = {
         payCurrency: "Валюта",
         payPeriod: "За що",
         payRequiredHint:
-          "Для роботи й стажування оплата обов'язкова: люди хочуть знати, на що розраховувати. Для точної суми лишіть «До» порожнім.",
+          "Для роботи й стажування — обов'язково. Для точної суми лишіть «До» порожнім.",
         payOptionalHint:
           "Необов'язково, але на вакансію з оплатою відгукуються охочіше. Для точної суми лишіть «До» порожнім.",
         description: "Опис",
-        descriptionHint: "Що робитиме людина, що для цього потрібно і що ви пропонуєте.",
         descriptionPlaceholder: "Над чим працюватимете, чого чекаємо, що пропонуємо…",
         publish: "Опублікувати",
         save: "Зберегти",
         saveDraft: "Зберегти чернетку",
         saving: "Зберігаємо…",
         publishNote: "Опублікована вакансія відкрита {days} днів; продовжити можна одним кліком.",
-        editNote: "Зміни з'являться одразу після збереження.",
         draftSaved: "Чернетку збережено",
         published: "Вакансію опубліковано",
         saved: "Збережено",
@@ -6044,7 +5923,7 @@ export const dictionaries = {
       apply: {
         title: "Відгукнутися",
         intro:
-          "Відгук тут — це ваше портфоліо: компанія побачить профіль і 1–3 проєкти, які ви оберете.",
+          "Компанія побачить ваш профіль і 1–3 проєкти, які ви оберете.",
         button: "Відгукнутися",
         signInText: "Увійдіть, щоб відгукнутися своїм портфоліо.",
         signIn: "Увійти",
@@ -6286,9 +6165,9 @@ export const dictionaries = {
       scopePersonal: "Мої",
       settings: "Налаштування",
       empty: {
-        inbox: "Розмов поки немає. Коли вам напишуть або ви напишете першими, розмова з'явиться тут.",
+        inbox: "Розмов поки немає.",
         unread: "Непрочитаних немає.",
-        requests: "Запитів немає. Тут чекають перші повідомлення від тих, з ким ви ще не листувалися.",
+        requests: "Запитів немає.",
         archived: "Архів порожній.",
       },
       emptyCompany: "Розмов поки немає. Напишіть кандидату з його відгуку або будь-кому, хто відкритий до пропозицій, з профілю.",
@@ -6367,7 +6246,7 @@ export const dictionaries = {
       request: {
         toMeTitle: "{name} хоче поговорити",
         toMeText:
-          "Відповідайте або прийміть запит, і зможете вільно листуватися. Доти співрозмовник не може надіслати нічого більше. Видалення прибирає запит мовчки, також можна заблокувати.",
+          "Відповідайте або прийміть запит, щоб листуватися далі.",
         accept: "Прийняти",
         delete: "Видалити",
         block: "Заблокувати",
@@ -6567,7 +6446,7 @@ export const dictionaries = {
     emailSettings: {
       title: "Налаштування листів",
       description:
-        "Які листи ми вам надсилаємо. Службові — посилання для входу, коди, відповіді на ваші відгуки — приходять завжди.",
+        "Службові листи (вхід, коди, відповіді на відгуки) приходять завжди.",
       back: "Сповіщення",
       openLink: "Налаштування листів",
       messagesTitle: "Нові повідомлення",
@@ -6575,7 +6454,7 @@ export const dictionaries = {
       messageModes: {
         instant: {
           label: "Одразу",
-          hint: "Коли повідомлення 10 хвилин лишається непрочитаним. Один лист на розмову, доки ви її не відкриєте, не більше 10 на добу.",
+          hint: "Якщо повідомлення 10 хвилин лишається непрочитаним.",
         },
         daily: {
           label: "Раз на день",
@@ -6587,7 +6466,7 @@ export const dictionaries = {
         },
       },
       followersTitle: "Нові підписники",
-      followersHint: "Коли хтось підписується на вас. Один лист про кожну людину, не більше 3 на добу.",
+      followersHint: "Коли хтось підписується на вас.",
       jobAlertsTitle: "Підписки на вакансії",
       jobAlertsHint: "У кожного збереженого пошуку свій перемикач листів.",
       jobAlertsLink: "Керувати підписками",
@@ -6784,7 +6663,6 @@ export const dictionaries = {
       lastSynced: "Остання синхронізація",
       syncError: "Не вдалося синхронізувати з провайдером.",
       panelTitle: "Імпортовано з {provider}",
-      panelEmpty: "Даних ще немає — натисніть «Синхронізувати».",
       stats: {
         stars: "Зірки",
         forks: "Форки",
@@ -6899,7 +6777,6 @@ export const dictionaries = {
       readmeTitle: "README проєкту",
       contributionSectionTitle: "Внесок автора",
       narrativeSectionTitle: "Історія проєкту",
-      syncedFromGithubBadge: "Підтягнуто з GitHub",
     },
     aiDraft: {
       title: "AI чернетка",
@@ -6966,7 +6843,6 @@ export const dictionaries = {
       feedEmpty:
         "Поки що немає нових записів від авторів, на яких ви підписані. Як тільки щось буде опубліковано — побачите тут.",
       manageFollowing: "Керувати підписками",
-      manageFollowingDescription: "Відпишіться від авторів, оновлення яких вам більше не потрібні.",
       newArticle: "Опублікував(ла) нову статтю",
       newProject: "Опублікував(ла) новий проєкт",
       unfollow: "Не стежити",
@@ -6980,7 +6856,6 @@ export const dictionaries = {
       followersDescription:
         "Люди, які стежать за вашою активністю. Вони отримують сповіщення, коли ви публікуєте нові проєкти чи статті.",
       followersEmpty: "На вас поки що ніхто не підписаний.",
-      followsYou: "Підписаний(а) на вас",
       followedAt: "Підписався(лась) {date}",
     },
     emails: {
@@ -7164,7 +7039,6 @@ export const dictionaries = {
       articleViews: "Перегляди статей",
       portfolioViews: {
         title: "Перегляди портфоліо",
-        hint: "Скільки людей відкрили ваш профіль і проєкти. Кожна людина рахується раз на день, ваші власні перегляди — ні.",
         week: "За 7 днів",
         month: "За 30 днів",
         split: "профіль {profile} · проєкти {projects}",
@@ -7181,7 +7055,6 @@ export const dictionaries = {
           direct: "За прямим посиланням",
           internal: "Із SearchTalent",
         },
-        directHint: "Пряме посилання — це повідомлення, PDF, закладка чи введена вручну адреса.",
         referrersTitle: "Сайти",
         topProjects: "Найпереглянутіші проєкти",
         projectViews: "{month} за 30 днів · {week} за 7",
@@ -7239,8 +7112,7 @@ export const dictionaries = {
         alreadyPublished: "У вас уже є опублікований проєкт. Додайте ще один або йдіть далі.",
         importTitle: "Імпортуйте код з GitHub або GitLab",
         importDescription: "Назва, опис і технології заповняться самі.",
-        manualTitle: "Додайте вручну",
-        manualDescription: "Що це за робота?",
+        manualTitle: "Або оберіть тип роботи",
       },
       share: {
         title: "Поділіться портфоліо",
@@ -7260,7 +7132,6 @@ export const dictionaries = {
       copyFailed: "Не вдалося скопіювати. Виділіть посилання і скопіюйте вручну.",
       shareOn: "Поділитися в",
       qrTitle: "QR-код",
-      qrHint: "Для друкованого резюме, бейджа чи слайда.",
       downloadQr: "Завантажити PNG",
       qrLabel: "QR-код для {url}",
       postLabel: "Текст допису",
@@ -7270,14 +7141,13 @@ export const dictionaries = {
       copyPost: "Копіювати текст із посиланням",
       postCopied: "Текст скопійовано. Вставте його в допис.",
       badgeTitle: "Значок для README",
-      badgeHint: "Покажіть оцінку портфоліо на GitHub чи GitLab. Значок веде на ваше портфоліо й оновлюється сам.",
+      badgeHint: "Для README на GitHub чи GitLab.",
       badgeSnippetLabel: "Markdown для README",
       badgeAlt: "Значок SearchTalent з оцінкою портфоліо",
       button: "Поділитися",
       dialogTitle: "Поділитися портфоліо",
       close: "Закрити",
       cardTitle: "Поділіться портфоліо",
-      cardDescription: "Посилання, готовий текст для допису, QR-код і значок для GitHub.",
     },
     profileThemes: {
       title: "Готові теми",
@@ -7335,7 +7205,7 @@ export const dictionaries = {
         cases: "Кейси",
       },
       onboardingTitle: "Як показати роботи",
-      onboardingHint: "Оберіть шаблон. Його, тему й блоки можна змінити будь-коли в редакторі.",
+      onboardingHint: "Змінити можна будь-коли.",
     },
     profileStyleFile: {
       title: "Оформлення у файлі",
@@ -7390,7 +7260,7 @@ export const dictionaries = {
       },
       badge: "Відкрито до: {list}",
       toggle: "Відкрито до пропозицій",
-      toggleHint: "Покажіть на сторінці, до чого ви відкриті. Ті, хто шукає фахівця, знайдуть вас у каталозі й зможуть написати.",
+      toggleHint: "Вас знайдуть у каталозі й зможуть написати.",
       pickOne: "Оберіть хоча б один варіант.",
       workFormats: "Формат роботи",
       saveFailed: "Не вдалося зберегти. Спробуйте ще раз.",
@@ -7408,7 +7278,7 @@ export const dictionaries = {
       telegram: "Telegram",
       linkedin: "LinkedIn",
       website: "Сайт",
-      privateSignIn: "Пошту й телефон видно після входу. Так ми захищаємо адреси від збирання.",
+      privateSignIn: "Пошту й телефон видно після входу.",
       signIn: "Увійти",
       loading: "Завантажуємо контакти…",
       rateLimited: "Ви відкрили багато контактів за короткий час. Спробуйте пізніше.",
@@ -7417,7 +7287,6 @@ export const dictionaries = {
       noChannels: "Контактів ще немає.",
       directDeal: "Про все домовляєтеся напряму. SearchTalent не є стороною домовленості.",
       close: "Закрити",
-      showPrivate: "Показати пошту й телефон",
       salaryPublic: "Показувати зарплатні очікування на сторінці",
       salaryPublicHint: "Вимкнено: бачите лише ви.",
       hourlyRate: "Погодинна ставка",
@@ -7439,12 +7308,10 @@ export const dictionaries = {
     },
     analytics: {
       title: "Аналітика",
-      updatedDaily: "Актуально за поточними даними сайту",
       platformOverview: "Огляд платформи",
       totalCreators: "Всього фахівців",
       totalProjects: "Всього проєктів",
       profileCompletion: "Заповненість профілів",
-      siteProjectsHint: "Усі публічні роботи, які зараз індексує платформа.",
       growthLastMonths: "Динаміка за останні 6 місяців",
       projectsPublished: "Опубліковані проєкти",
       creatorsJoined: "Нові фахівці",
@@ -7453,7 +7320,7 @@ export const dictionaries = {
     },
     dashboardProjects: {
       eyebrow: "Робоча зона проєктів",
-      title: "Створюйте та Керуйте Вашим IT-Портфоліо Проєктів",
+      title: "Мої проєкти",
       description:
         "Створюйте нові проєкти, завантажуйте медіа та відкривайте публічну сторінку, щоб побачити її очима відвідувачів.",
       yourProjects: "Ваші проєкти",
@@ -7503,10 +7370,7 @@ export const dictionaries = {
       projectDeleted: "Проєкт видалено",
     },
     dashboardProfile: {
-      eyebrow: "Налаштування профілю",
-      title: "Редагуйте Ваш Професійний IT-Профіль та Навички",
-      description:
-        "Оновлюйте публічну інформацію, яка формує ваш профіль і допомагає знаходити вас у пошуку.",
+      title: "Редагування профілю",
       backToProfile: "Назад до профілю",
       viewPublicProfile: "Переглянути публічний профіль",
       profileNotFound: "Профіль не знайдено",
@@ -7590,22 +7454,18 @@ export const dictionaries = {
     },
     auth: {
       login: {
-        eyebrow: "З поверненням",
         title: "Вхід",
         submit: "Увійти",
         loading: "Вхід...",
         google: "Продовжити через Google",
         github: "Продовжити через GitHub",
         createAccount: "Створити акаунт",
-        exploreFirst: "Спочатку переглянути",
       },
       signup: {
-        eyebrow: "Приєднатися до платформи",
         title: "Створення акаунта",
         submit: "Зареєструватися",
         loading: "Створення...",
         alreadyHaveAccount: "Уже є акаунт?",
-        browseProjects: "Переглянути проєкти",
       },
       verify: {
         title: "Перевірте пошту",
@@ -7622,10 +7482,9 @@ export const dictionaries = {
         backHome: "На головну",
       },
       forgotPassword: {
-        eyebrow: "Забули пароль?",
         title: "Скидання пароля",
         description:
-          "Введіть email, з яким ви реєструвалися, і ми надішлемо вам безпечне посилання для створення нового пароля.",
+          "Надішлемо посилання для нового пароля.",
         submit: "Надіслати посилання",
         loading: "Надсилання...",
         sentTitle: "Перевірте пошту",
@@ -7635,7 +7494,6 @@ export const dictionaries = {
         link: "Забули пароль?",
       },
       resetPassword: {
-        eyebrow: "Безпечне відновлення акаунту",
         title: "Оберіть новий пароль",
         description:
           "Вигадайте надійний пароль, який ви раніше не використовували. Посилання діє 1 годину.",
@@ -7690,7 +7548,6 @@ export const dictionaries = {
     creatorProfile: {
       backToSearch: "Назад до талантів",
       backToProfile: "Назад до профілю",
-      browseProjects: "Переглянути проєкти",
       editProfile: "Редагувати профіль",
       manageProjects: "Керувати проєктами",
       ownerView: "Ваш публічний профіль",
@@ -7703,8 +7560,6 @@ export const dictionaries = {
       ratingEmailUnverified:
         "Підтвердьте email-адресу, щоб оцінювати. Перевірте свою пошту та перейдіть за посиланням з листа.",
       cannotRateOwnProfile: "Ви не можете оцінювати власний профіль.",
-      ownerRatingHint:
-        "Інші користувачі можуть оцінювати ваш профіль за якістю та довірою.",
       ratingStateLiked:
         "Ви рекомендували цей профіль. Натисніть ще раз, щоб прибрати голос.",
       ratingStateDisliked:
@@ -7739,18 +7594,14 @@ export const dictionaries = {
       qa: "Питання та відповіді",
       openCertificateLink: "Відкрити посилання",
       openCertificateFile: "Відкрити файл сертифіката",
-      links: "Посилання",
       projects: "Проєкти",
       articles: "Статті",
-      publishedWork: "Опубліковані роботи цього фахівця.",
-      publishedArticles: "Опубліковані статті цього фахівця.",
       viewAllProjects: "Усі проєкти",
       viewAllArticles: "Усі статті",
       experienceChip: "{value} досвіду",
       ratingChipLabel: "Рейтинг профілю: {score}. Як рахується",
       visitorView: "Переглянути як відвідувач",
       visitorViewTitle: "Так вашу сторінку бачить гість",
-      visitorViewHint: "Без ваших кнопок, без пошти й телефону: гості відкривають їх через «Зв'язатися».",
       visitorViewHidden: "Поки сторінка на перевірці, гості замість неї бачать «Сторінку не знайдено».",
       visitorViewExit: "Повернутися до своєї сторінки",
       noProjects: "Публічних проєктів поки не додано.",
@@ -7771,8 +7622,6 @@ export const dictionaries = {
         "Наприклад: Product designer або Full-stack developer",
       projectKind: "Тип проєкту",
       projectKindPlaceholder: "Який це тип роботи?",
-      projectKindHint:
-        "Допомагає правильним людям знаходити вашу роботу і відкриває рольові фічі в майбутньому.",
       projectKindCode: "Код / розробка",
       projectKindDesign: "Дизайн (UI / UX / бренд)",
       projectKindVideo: "Відео / монтаж",
@@ -7784,8 +7633,6 @@ export const dictionaries = {
       projectKindWriting: "Тексти / документація",
       projectKindOther: "Інше",
       designSectionTitle: "Деталі дизайну",
-      designSectionHint:
-        "Покажіть те, що важливо саме дизайнерам: спеціалізацію, інструменти і де лежить джерело.",
       designRoleLabel: "Спеціалізація",
       designRolePlaceholder: "Який це тип дизайну?",
       designRoleUi: "UI-дизайн",
@@ -7836,8 +7683,6 @@ export const dictionaries = {
       designDeliverablePrint: "Друк",
       designDeliverableAnimation: "Анімація",
       codeSectionTitle: "Деталі коду",
-      codeSectionHint:
-        "Допоможіть інженерам знайти ваш проєкт: тип, стек, хостинг, ліцензія і посилання поза репозиторієм.",
       codeArchitectureLabel: "Тип проєкту",
       codeArchitecturePlaceholder: "Що це за код?",
       codeArchitectureWebApp: "Веб-застосунок",
@@ -7870,8 +7715,6 @@ export const dictionaries = {
       codeApiPlaygroundUrlLabel: "API playground",
       codeUrlPlaceholder: "https://...",
       videoSectionTitle: "Деталі відео",
-      videoSectionHint:
-        "Допоможіть продюсерам і режисерам вас знайти: роль, інструменти, формат і посилання на шоуріл.",
       videoRoleLabel: "Ваша роль у проєкті",
       videoRolePlaceholder: "Що ви робили?",
       videoRoleEditor: "Монтажер",
@@ -7924,8 +7767,6 @@ export const dictionaries = {
       videoShowreelUrlPlaceholder: "https://vimeo.com/... або https://youtu.be/...",
       videoClientLabel: "Клієнт",
       photoSectionTitle: "Деталі фотопроєкту",
-      photoSectionHint:
-        "Розкажіть, що це була за зйомка: жанр, техніка, носій і що з неї вийшло.",
       photoRoleLabel: "Ваша роль у зйомці",
       photoRolePlaceholder: "Чим ви займались?",
       photoRolePhotographer: "Фотограф",
@@ -7965,8 +7806,6 @@ export const dictionaries = {
       photoLocationPlaceholder: "Місто, студія або країна",
       photoClientLabel: "Клієнт",
       threeDSectionTitle: "Деталі 3D-проєкту",
-      threeDSectionHint:
-        "Покажіть, чим саме ви займались: дисципліна, софт, рендер-енджин і живий прев'ю Sketchfab або Spline.",
       threeDRoleLabel: "Дисципліна",
       threeDRolePlaceholder: "Що ви робили?",
       threeDRoleModeling: "Моделінг",
@@ -8001,8 +7840,6 @@ export const dictionaries = {
         "https://sketchfab.com/3d-models/... або https://my.spline.design/...",
       threeDClientLabel: "Клієнт",
       audioSectionTitle: "Деталі аудіо",
-      audioSectionHint:
-        "Покажіть що це за трек і де його послухати: роль, жанр, DAW і Soundcloud або Spotify.",
       audioRoleLabel: "Ваша роль у треку",
       audioRolePlaceholder: "Що ви робили?",
       audioRoleComposer: "Композитор",
@@ -8049,8 +7886,6 @@ export const dictionaries = {
       audioKeyPlaceholder: "Музична тональність",
       audioClientLabel: "Клієнт",
       qaSectionTitle: "Деталі QA",
-      qaSectionHint:
-        "Покажіть як ви тестували: спеціалізація, типи тестування, інструменти, методологія та цифри, варті уваги.",
       qaRoleLabel: "Ваша роль у проєкті",
       qaRolePlaceholder: "На чому ви були сфокусовані?",
       qaRoleManualQa: "Мануальний QA",
@@ -8102,8 +7937,6 @@ export const dictionaries = {
       qaReportUrlPlaceholder: "https://...",
       qaClientLabel: "Клієнт",
       motionSectionTitle: "Деталі motion-проєкту",
-      motionSectionHint:
-        "Покажіть який це motion: дисципліна, техніки, інструменти та превʼю з Vimeo/YouTube.",
       motionRoleLabel: "Ваша роль у проєкті",
       motionRolePlaceholder: "Що ви робили?",
       motionRoleMotionDesigner: "Motion-дизайнер",
@@ -8154,8 +7987,6 @@ export const dictionaries = {
         "https://vimeo.com/... або https://youtu.be/...",
       motionClientLabel: "Клієнт",
       writingSectionTitle: "Деталі тексту",
-      writingSectionHint:
-        "Розкажіть що ви написали і де його знайти: роль, формат, теми, обсяг.",
       writingRoleLabel: "Ваша роль у тексті",
       writingRolePlaceholder: "Що ви робили?",
       writingRoleAuthor: "Автор",
@@ -8284,28 +8115,10 @@ export const dictionaries = {
         "Проведіть відвідувачів через проблему, рішення та результати.",
       stepMediaTitle: "Медіа",
       stepMediaDescription:
-        "Завантажте зображення та відео. Перетягуйте, щоб змінити порядок. Перше зображення стане обкладинкою.",
-      stepMediaHintCode:
-        "Завантажте скріни UI, діаграми архітектури або демо-відео.",
-      stepMediaHintDesign:
-        "Додайте галерею макетів, hero-кадрів і фінальних результатів.",
-      stepMediaHintVideo:
-        "Додайте кадри з-за лаштунків або допоміжні кліпи. Шоуріл — на попередньому кроці.",
-      stepMediaHintPhoto:
-        "Завантажте фотосет — перше фото стане обкладинкою.",
-      stepMediaHint3d:
-        "Додайте рендери та turntables. Інтерактивний Sketchfab/Spline — на попередньому кроці.",
-      stepMediaHintAudio:
-        "Додайте cover art або скріни хвилеформи. Плеєр — на попередньому кроці.",
-      stepMediaHintQa: "Завантажте скріни баг-репортів, тест-ранів або графіки.",
-      stepMediaHintWriting: "Додайте cover art або супровідні ілюстрації.",
-      stepMediaHintMotion: "Додайте ключові кадри або допоміжні кліпи.",
-      stepMediaHintOther:
-        "Завантажте будь-яке медіа, що допомагає пояснити проєкт.",
+        "Фото, відео й посилання на відео.",
       mediaDropHint: "Перетягніть файли сюди або",
       mediaBrowseFiles: "Обрати файли",
       mediaUploadAnother: "Додати ще файли",
-      mediaEmptyState: "Медіа ще не додано.",
       mediaReorderHint:
         "Перетягуйте, щоб змінити порядок. Перше зображення стане обкладинкою.",
       mediaImageLimit: "Зображення — до {limit} МБ.",
@@ -8323,7 +8136,7 @@ export const dictionaries = {
       mediaTitleRequired: "Додайте назву проєкту, перш ніж продовжити.",
       mediaLinkLabel: "Додати посилання на відео",
       mediaLinkHint:
-        "Вставте посилання з YouTube, Vimeo, TikTok чи Instagram — воно вбудується прямо в проєкт. Максимум {limit} посилання.",
+        "YouTube, Vimeo, TikTok або Instagram.",
       mediaLinkPlaceholder:
         "youtube.com/… · vimeo.com/… · tiktok.com/… · instagram.com/…",
       mediaLinkAdd: "Додати посилання",
@@ -8337,7 +8150,7 @@ export const dictionaries = {
       mediaCoverFrameAdded: "Кадр додано як обкладинку проєкту.",
       mediaSetCover: "Зробити обкладинкою",
       videoLinksMovedHint:
-        "Посилання на відео (YouTube, Vimeo, TikTok, Instagram) додавайте на фінальному кроці «Media» — вони вбудуються прямо в галерею.",
+        "Посилання на відео додаються на кроці «Медіа».",
       coverSectionTitle: "Обкладинка проєкту",
       coverSectionHint:
         "Зображення на картках і прев'ю. Завантажте своє або захопіть кадр із завантаженого відео нижче.",
@@ -8455,15 +8268,13 @@ export const dictionaries = {
       qaQuestion: "Питання",
       qaAnswer: "Відповідь",
       blockVisibility: "Видимість блоків",
-      blockVisibilityHint:
-        "Оберіть, які секції будуть показані у публічному профілі.",
       sectionVisible: "Видимо",
       sectionHidden: "Приховано",
       viewOthersCustomization: "Оформлення інших профілів",
       viewOthersCustomizationHint:
-        "Коли увімкнено, ви бачите кожен профіль із кольорами, шрифтами та стилем карток, які обрав його власник. Коли вимкнено, інші профілі показуються в дефолтному оформленні — зберігається лише фото hero-секції. На ваш власний профіль це не впливає.",
+        "Вимкніть, щоб бачити чужі профілі у стандартному оформленні. На ваш профіль це не впливає.",
       viewOthersCustomizationOn: "Показувати їхній стиль",
-      viewOthersCustomizationOff: "Дефолтне оформлення",
+      viewOthersCustomizationOff: "Стандартне оформлення",
       visibilityAbout: "Про себе",
       visibilityProfessionalDetails: "Професійна інформація",
       visibilityWorkExperience: "Досвід роботи",
@@ -8484,7 +8295,6 @@ export const dictionaries = {
       errorSavingProfile: "Зараз не вдалося зберегти профіль.",
     },
     aboutPage: {
-      eyebrow: "Про платформу",
       title: "SearchTalent — спільнота, де роботу видно",
       description:
         "Платформа для IT- та digital-фахівців, де можна показувати портфоліо, публікувати проєкти й статті та будувати професійну репутацію.",
@@ -8492,8 +8302,6 @@ export const dictionaries = {
       heroIllustrationLabel:
         "Схема: один профіль живить проєкт, статтю, лідерборд і рейтингову позначку",
       pillarsTitle: "Що всередині",
-      pillarsDescription:
-        "Чотири частини, які працюють лише разом: профіль дає контекст, роботи — доказ, спільнота — реакцію, репутація — видимість.",
       pillars: [
         {
           title: "Публічний профіль",
@@ -8519,8 +8327,6 @@ export const dictionaries = {
         },
       ],
       stepsTitle: "Як це працює",
-      stepsDescription:
-        "Три кроки — і третій починає працювати сам, коли зроблені перші два.",
       stepsIllustrationLabel:
         "Схема: три пов'язані кроки — створити профіль, показати роботи, розвивати репутацію",
       steps: [
@@ -8549,8 +8355,6 @@ export const dictionaries = {
       missionIllustrationLabel:
         "Схема: розрізнені файли, посилання та скриншоти сходяться в одну сторінку профілю",
       featuresTitle: "Що ви можете робити",
-      featuresDescription:
-        "Усе перелічене доступне з першої хвилини після реєстрації.",
       features: [
         "Кастомізований публічний профіль з експортом PDF-резюме",
         "Портфоліо-проєкти із зображеннями, відео та стеком технологій",
@@ -8573,7 +8377,7 @@ export const dictionaries = {
         },
         {
           title: "Щоб це не можна було накрутити",
-          text: "Один голос від акаунта, зважена оцінка й затухання з часом, щоб стара перемога не сиділа в топі вічно.",
+          text: "Один акаунт — один голос, і стара перемога не сидить у топі вічно.",
         },
       ],
       communityIllustrationLabel:
@@ -8589,8 +8393,7 @@ export const dictionaries = {
       backToHome: "На головну",
     },
     faqPage: {
-      eyebrow: "Поширені запитання",
-      title: "FAQ",
+      title: "Поширені запитання",
       description:
         "Відповіді на найпоширеніші запитання про використання SearchTalent — акаунти, профілі, проєкти та інше.",
       backToHome: "На головну",
@@ -8625,11 +8428,11 @@ export const dictionaries = {
         },
         {
           q: "Як працює система рейтингу?",
-          a: "Учасники спільноти можуть голосувати за профілі та проєкти. Рейтинг враховує глибину проєкту, заповненість профілю, реакцію спільноти (за оцінкою Вілсона), нещодавню активність із часовим спадом та здобуті бейджі. Повний перелік факторів і ваг дивіться у гайді по рейтингу.",
+          a: "Рейтинг дивиться, наскільки повно описані ваші роботи й профіль і як на них реагують люди. Кілька випадкових лайків не піднімуть слабку роботу. Докладніше — у гайді по рейтингу.",
         },
         {
           q: "Що таке бейджі і як їх отримати?",
-          a: "Бейджі нараховуються автоматично за вашу активність і досягнення — перший опублікований проєкт, заповнений профіль, підтверджені email чи GitHub, потрапляння в лідерборди тощо. Вони поділені на чотири категорії, кожен має до трьох рівнів, і разом вони можуть додати до +5 бонусних балів до вашого рейтингу.",
+          a: "Бейджі з'являються самі, коли ви чогось досягли: перший проєкт, заповнений профіль, місце в топі. Критерій видно, якщо натиснути на бейдж у профілі.",
         },
         {
           q: "Чи можна експортувати профіль?",
@@ -8650,10 +8453,7 @@ export const dictionaries = {
       ],
     },
     feedbackPage: {
-      eyebrow: "Ми цінуємо вашу думку",
-      title: "Зворотний зв'язок та пропозиції",
-      description:
-        "Маєте ідею, знайшли помилку або хочете поділитися думкою? Напишіть нам — кожне повідомлення допомагає зробити SearchTalent кращим.",
+      title: "Зворотний зв'язок",
       backToHome: "На головну",
       nameLabel: "Ваше ім'я",
       namePlaceholder: "Як до вас звертатися?",
@@ -8683,10 +8483,7 @@ export const dictionaries = {
       attachFailed: "Не вдалося завантажити зображення. Спробуйте ще раз.",
     },
     contactsPage: {
-      eyebrow: "Зв'яжіться з нами",
       title: "Контакти",
-      description:
-        "Маєте питання, знайшли помилку чи хочете співпрацювати? Ось як зв'язатися з командою SearchTalent.",
       backToHome: "На головну",
       emailTitle: "Email",
       emailText:

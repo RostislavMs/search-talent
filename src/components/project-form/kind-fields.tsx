@@ -146,9 +146,6 @@ export function DesignDetailsFields({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.designSectionTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.forms.designSectionHint}
-        </p>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -244,9 +241,6 @@ export function CodeDetailsFields({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.codeSectionTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.forms.codeSectionHint}
-        </p>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -386,9 +380,6 @@ export function VideoDetailsFields({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.videoSectionTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.forms.videoSectionHint}
-        </p>
       </header>
 
       <p className="rounded-2xl app-panel px-4 py-3 text-sm app-muted">
@@ -509,9 +500,6 @@ export function PhotoDetailsFields({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.photoSectionTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.forms.photoSectionHint}
-        </p>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -648,9 +636,6 @@ export function ThreeDDetailsFields({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.threeDSectionTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.forms.threeDSectionHint}
-        </p>
       </header>
 
       <UrlField
@@ -776,9 +761,6 @@ export function AudioDetailsFields({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.audioSectionTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.forms.audioSectionHint}
-        </p>
       </header>
 
       <UrlField
@@ -914,9 +896,6 @@ export function QaDetailsFields({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.qaSectionTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.forms.qaSectionHint}
-        </p>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -1097,9 +1076,6 @@ export function MotionDetailsFields({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.motionSectionTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.forms.motionSectionHint}
-        </p>
       </header>
 
       <UrlField
@@ -1197,9 +1173,6 @@ export function WritingDetailsFields({
         <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
           {dictionary.forms.writingSectionTitle}
         </h3>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.forms.writingSectionHint}
-        </p>
       </header>
 
       <UrlField

@@ -112,9 +112,6 @@ export default async function MySpacePage({
           <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
             {dictionary.mySpace.title}
           </h1>
-          <p className="mt-1 text-sm app-muted">
-            {dictionary.mySpace.description}
-          </p>
         </div>
         {onboarding ? (
           <ProfileCompletenessButton
@@ -183,7 +180,6 @@ export default async function MySpacePage({
           >
             {dictionary.profileShare.cardTitle}
           </h2>
-          <p className="mt-1 text-sm app-muted">{dictionary.profileShare.cardDescription}</p>
           <div className="mt-5">
             <ProfileSharePanel
               profileUrl={new URL(`/u/${shareUsername}`, getSiteUrl()).toString()}
@@ -244,9 +240,6 @@ export default async function MySpacePage({
           >
             {hasCompanies ? companiesCopy.mine : companiesCopy.title}
           </h2>
-          {hasCompanies ? null : (
-            <p className="mt-1 text-sm app-muted">{companiesCopy.text}</p>
-          )}
         </div>
         <div className="flex flex-wrap gap-2 self-start sm:self-auto">
           {hasCompanies ? (

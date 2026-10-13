@@ -126,10 +126,7 @@ export default async function JobsPage({
       <section className="rounded-none app-card p-5 sm:rounded-hero sm:p-8 md:p-10">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-eyebrow app-soft">
-              {copy.list.eyebrow}
-            </p>
-            <h1 className="font-display mt-3 text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
               {copy.list.title}
             </h1>
             <p className="mt-4 text-base leading-8 app-muted">{copy.list.intro}</p>

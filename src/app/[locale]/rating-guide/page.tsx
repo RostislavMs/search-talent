@@ -186,7 +186,6 @@ type Factor = {
 type MechanicId = "trust" | "decay" | "saturation";
 
 type GuideCopy = {
-  eyebrow: string;
   title: string;
   description: string;
   backHome: string;
@@ -204,14 +203,12 @@ type GuideCopy = {
   /** The two scores are constantly confused, so the page names both outright. */
   split: {
     title: string;
-    description: string;
     items: Array<{ name: string; text: string; detail: string; Icon: () => ReactElement }>;
   };
   profile: { title: string; description: string; factors: Factor[] };
   project: { title: string; description: string; factors: Factor[] };
   mechanics: {
     title: string;
-    description: string;
     items: Array<{
       id: MechanicId;
       name: string;
@@ -239,7 +236,6 @@ type GuideCopy = {
 function getCopy(locale: Locale): GuideCopy {
   if (locale === "uk") {
     return {
-      eyebrow: "Гайд",
       title: "Як працює рейтинг і як його заробляти",
       description:
         "Рейтинг тут про якість, а не популярність: реальні роботи, зароблена довіра спільноти й профіль, який дає їм контекст.",
@@ -271,8 +267,6 @@ function getCopy(locale: Locale): GuideCopy {
       },
       split: {
         title: "Два рейтинги — і вони про різне",
-        description:
-          "На платформі рахуються два незалежні бали. Їх легко сплутати, тому ось межа між ними.",
         items: [
           {
             name: "Рейтинг профілю",
@@ -398,8 +392,6 @@ function getCopy(locale: Locale): GuideCopy {
       },
       mechanics: {
         title: "Механіки під капотом",
-        description:
-          "Три прийоми роблять формулу стійкою до накрутки і чесною до різних типів учасників. Під кожним графіком — те саме простими словами.",
         items: [
           {
             id: "trust",
@@ -444,10 +436,10 @@ function getCopy(locale: Locale): GuideCopy {
       boards: {
         title: "Дві таблиці",
         description:
-          "All-time зберігає історію, топ за 30 днів дає шанс новачкам. Низький all-time не закриває вам дорогу в місячний топ.",
+          "«За весь час» зберігає історію, «Останні 30 днів» дають шанс новачкам. Низьке місце за весь час не закриває дорогу в місячний топ.",
         items: [
           {
-            name: "All-time",
+            name: "За весь час",
             text: "Уся історія, свіжість не враховується. Старожили тримають топ, доки накопичений сигнал не переб'ють.",
             Icon: TrophyIcon,
           },
@@ -481,7 +473,6 @@ function getCopy(locale: Locale): GuideCopy {
   }
 
   return {
-    eyebrow: "Guide",
     title: "How the rating works and how to earn it",
     description:
       "The rating here is about quality, not popularity: real work, community trust you actually earned, and a profile that gives both some context.",
@@ -513,8 +504,6 @@ function getCopy(locale: Locale): GuideCopy {
     },
     split: {
       title: "Two ratings, and they measure different things",
-      description:
-        "The platform keeps two independent scores. They are easy to confuse, so here is the line between them.",
       items: [
         {
           name: "Profile rating",
@@ -637,8 +626,6 @@ function getCopy(locale: Locale): GuideCopy {
     },
     mechanics: {
       title: "Mechanics under the hood",
-      description:
-        "Three techniques make the formula resistant to gaming and fair to different kinds of contributors. Under each chart is the same thing in plain terms.",
       items: [
         {
           id: "trust",
@@ -858,10 +845,7 @@ export default async function RatingGuidePage({
     <main className="mx-auto max-w-[88rem] px-0 py-10 sm:px-6">
       {/* Hero */}
       <section className="bg-brand-hero relative overflow-hidden rounded-none sm:rounded-hero border app-border p-6 text-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:p-10">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <p className="text-xs font-semibold uppercase tracking-eyebrow text-white/70 sm:text-sm">
-            {copy.eyebrow}
-          </p>
+        <div className="flex justify-end">
           <LocalizedLink
             href="/"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-white/80 transition hover:text-white"
@@ -903,7 +887,7 @@ export default async function RatingGuidePage({
           </div>
           {/* The scrim keeps the white line art readable over the amber end of
               the hero gradient. */}
-          <div className="flex aspect-3/2 items-center justify-center rounded-2xl bg-[rgba(8,15,30,0.42)] p-5 text-white ring-1 ring-white/15 backdrop-blur-sm sm:p-7">
+          <div className="hidden aspect-3/2 items-center justify-center rounded-2xl bg-[rgba(8,15,30,0.42)] p-5 text-white ring-1 ring-white/15 backdrop-blur-sm sm:p-7 lg:flex">
             <Art on="load">
               <SignalsToScoreIllustration label={copy.heroIllustrationLabel} />
             </Art>
@@ -984,9 +968,6 @@ export default async function RatingGuidePage({
         >
           {copy.split.title}
         </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
-          {copy.split.description}
-        </p>
         <div className="app-cascade mt-6 grid gap-4 lg:grid-cols-2">
           {copy.split.items.map((item, index) => {
             const ItemIcon = item.Icon;
@@ -1031,7 +1012,7 @@ export default async function RatingGuidePage({
         <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
           {copy.profile.description}
         </p>
-        <div className="mt-6">
+        <div className="mt-6 hidden md:block">
           <RatingWeightsChart kind="profile" locale={locale} />
         </div>
         <div className="app-cascade mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -1055,7 +1036,7 @@ export default async function RatingGuidePage({
         <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
           {copy.project.description}
         </p>
-        <div className="mt-6">
+        <div className="mt-6 hidden md:block">
           <RatingWeightsChart kind="project" locale={locale} />
         </div>
         <div className="app-cascade mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -1076,9 +1057,6 @@ export default async function RatingGuidePage({
         >
           {copy.mechanics.title}
         </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 app-muted sm:text-base sm:leading-8">
-          {copy.mechanics.description}
-        </p>
         <div className="app-cascade mt-6 grid gap-4 md:grid-cols-3">
           {copy.mechanics.items.map((item, index) => (
             <MechanicCard

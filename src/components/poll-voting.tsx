@@ -64,8 +64,7 @@ export default function PollVoting({
             cancel: "Скасувати",
             loginToVote: "Увійдіть, щоб проголосувати",
             closed: "Опитування завершено",
-            selectOne: "Оберіть один варіант",
-            selectMany: "Оберіть один або декілька варіантів",
+            selectMany: "Можна кілька",
             yourAnswer: "Ваша відповідь",
             votes: "голосів",
             average: "Середня оцінка",
@@ -79,8 +78,7 @@ export default function PollVoting({
             cancel: "Cancel",
             loginToVote: "Log in to vote",
             closed: "This poll is closed",
-            selectOne: "Choose one option",
-            selectMany: "Choose one or more options",
+            selectMany: "Pick any",
             yourAnswer: "Your answer",
             votes: "votes",
             average: "Average rating",
@@ -193,14 +191,8 @@ export default function PollVoting({
               </h3>
             </div>
 
-            {!showResults ? (
-              <p className="mt-1 text-xs app-soft">
-                {question.type === "single"
-                  ? ui.selectOne
-                  : question.type === "multiple"
-                    ? ui.selectMany
-                    : null}
-              </p>
+            {!showResults && question.type === "multiple" ? (
+              <p className="mt-1 text-xs app-soft">{ui.selectMany}</p>
             ) : null}
 
             <div className="mt-4 space-y-2.5">

@@ -237,7 +237,7 @@ function HowItWorksTrack({
             </span>
             <div className="min-w-0">
               <h4 className="font-semibold text-[color:var(--foreground)]">{step.title}</h4>
-              <p className="mt-1 text-sm leading-6 app-muted">{step.description}</p>
+              <p className="mt-1 hidden text-sm leading-6 app-muted sm:block">{step.description}</p>
             </div>
           </li>
         ))}
@@ -284,10 +284,7 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
                 aria-hidden="true"
                 className="absolute bottom-6 left-0 top-6 w-0.75 rounded-r-full bg-brand opacity-70"
               />
-              <span className="font-mono inline-flex h-7 min-w-10 items-center justify-center rounded-full bg-brand-soft px-2 text-xs font-semibold tabular-nums text-brand-on-soft">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <h3 className="mt-4 text-lg font-semibold text-[color:var(--foreground)]">
+              <h3 className="text-lg font-semibold text-[color:var(--foreground)]">
                 {item.title}
               </h3>
               <p className="mt-1.5 text-sm leading-6 app-muted">{item.description}</p>
@@ -335,17 +332,12 @@ async function HomeBelowContent({ locale }: { locale: Locale }) {
         aria-labelledby="home-articles-heading"
         className="mt-6 rounded-none app-card p-5 sm:mt-8 sm:rounded-hero sm:p-7"
       >
-        <div className="max-w-3xl">
-          <h2
-            id="home-articles-heading"
-            className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl"
-          >
-            {marketing.home.latestArticlesTitle}
-          </h2>
-          <p className="mt-3 text-sm leading-7 app-muted sm:text-base">
-            {marketing.home.latestArticlesDescription}
-          </p>
-        </div>
+        <h2
+          id="home-articles-heading"
+          className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl"
+        >
+          {marketing.home.latestArticlesTitle}
+        </h2>
 
         {/* `--auto` rather than `beat()`: ArticleCard is shared with the feeds
             and takes no style prop, so the stagger index is read off the card's

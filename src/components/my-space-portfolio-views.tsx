@@ -45,7 +45,6 @@ export default function MySpacePortfolioViews({
       >
         {copy.title}
       </h2>
-      <p className="mt-1 max-w-3xl text-sm app-muted">{copy.hint}</p>
 
       {hasPortfolioViews(views) ? (
         <ViewsBody views={views} copy={copy} number={number} formatDay={formatDay} viewsLabel={viewsLabel} />
@@ -116,7 +115,6 @@ function ViewsBody({
         {sourceRows.length > 0 ? (
           <ChartFigure
             title={copy.sourcesTitle}
-            note={views.sources.direct > 0 ? copy.directHint : undefined}
           >
             <BarRows rows={sourceRows} series={[{ name: copy.sourcesTitle, tone: 1 }]} max={sourceMax} />
             {views.referrers.length > 0 ? (

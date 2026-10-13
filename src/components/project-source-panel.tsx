@@ -103,11 +103,7 @@ export default function ProjectSourcePanel({
             </div>
           ))}
         </dl>
-      ) : (
-        <p className="mt-3 text-sm app-muted">
-          {dictionary.providerIntegrations.panelEmpty}
-        </p>
-      )}
+      ) : null}
     </div>
   );
 }

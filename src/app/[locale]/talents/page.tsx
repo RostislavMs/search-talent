@@ -138,11 +138,6 @@ export default async function LocalizedTalentsPage({
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
         <BrowseFacets
           title={locale === "uk" ? "Перегляд за напрямком" : "Browse by direction"}
-          description={
-            locale === "uk"
-              ? "Профілі фахівців за основним напрямком роботи."
-              : "Talent profiles grouped by their main direction."
-          }
           items={roleItems}
           viewAllHref={
             visibleRoles.length > ROLE_LIMIT ? "/talents/role" : undefined
@@ -151,7 +146,6 @@ export default async function LocalizedTalentsPage({
         />
         <BrowseFacets
           title={marketing.talents.popularTechnologiesTitle}
-          description={marketing.talents.popularTechnologiesDescription}
           items={skillItems}
           viewAllHref={
             visibleSkills.length > SKILL_LIMIT ? "/talents/skill" : undefined

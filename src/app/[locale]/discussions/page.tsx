@@ -121,10 +121,7 @@ export default async function DiscussionsPage({
           }`}
         >
           <div className="p-5 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-              {ui.pageEyebrow}
-            </p>
-            <h1 className="mt-1.5 font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:mt-2 sm:text-4xl">
+            <h1 className="font-display text-2xl font-medium tracking-tight text-[color:var(--foreground)] sm:text-4xl">
               {ui.pageTitle}
             </h1>
             {/* Clamped on phones: the full sentence pushed the list a whole

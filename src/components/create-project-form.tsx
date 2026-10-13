@@ -2340,7 +2340,6 @@ function StepBasics({
       <Field
         label={dictionary.forms.projectKind}
         htmlFor="project-kind"
-        description={dictionary.forms.projectKindHint}
         className="md:col-span-2"
       >
         <FormSelect
@@ -3199,35 +3198,6 @@ function StepStory({
   );
 }
 
-function getMediaHint(
-  kind: ProjectKind | "",
-  dictionary: Dictionary,
-): string | null {
-  switch (kind) {
-    case "code":
-      return dictionary.forms.stepMediaHintCode;
-    case "design":
-      return dictionary.forms.stepMediaHintDesign;
-    case "video":
-      return dictionary.forms.stepMediaHintVideo;
-    case "photo":
-      return dictionary.forms.stepMediaHintPhoto;
-    case "3d":
-      return dictionary.forms.stepMediaHint3d;
-    case "audio":
-      return dictionary.forms.stepMediaHintAudio;
-    case "qa":
-      return dictionary.forms.stepMediaHintQa;
-    case "writing":
-      return dictionary.forms.stepMediaHintWriting;
-    case "motion":
-      return dictionary.forms.stepMediaHintMotion;
-    case "other":
-      return dictionary.forms.stepMediaHintOther;
-    default:
-      return null;
-  }
-}
 
 function StepMedia({
   dictionary,
@@ -3274,7 +3244,6 @@ function StepMedia({
 }) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
-  const kindHint = getMediaHint(kind, dictionary);
   const atEmbedLimit = embedCount >= MAX_VIDEO_EMBEDS;
 
   const coverPreview =
@@ -3290,10 +3259,6 @@ function StepMedia({
 
   return (
     <div className="space-y-5">
-      {kindHint ? (
-        <p className="text-sm app-muted">{kindHint}</p>
-      ) : null}
-
       <section className="rounded-2xl border app-border p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -3450,11 +3415,7 @@ function StepMedia({
         ) : null}
       </div>
 
-      {mediaItems.length === 0 ? (
-        <div className="rounded-3xl app-panel-dashed p-6 text-sm app-muted">
-          {dictionary.forms.mediaEmptyState}
-        </div>
-      ) : (
+      {mediaItems.length === 0 ? null : (
         <>
           <p className="text-xs app-soft">
             {dictionary.forms.mediaReorderHint}

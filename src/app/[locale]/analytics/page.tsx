@@ -75,9 +75,6 @@ export default async function AnalyticsPage({
         <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
           {dictionary.analytics.title}
         </h1>
-        <p className="mt-1 text-sm app-muted">
-          {dictionary.analytics.updatedDaily}
-        </p>
       </div>
 
       <PlatformAnalytics

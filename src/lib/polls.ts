@@ -148,10 +148,8 @@ export function isPollClosed(closesAt: string | null): boolean {
   return date.getTime() <= Date.now();
 }
 
-export function getPollClosesLabel(closesAt: string | null, locale: string) {
-  if (!closesAt) {
-    return locale === "uk" ? "Без обмеження часу" : "No time limit";
-  }
+export function getPollClosesLabel(closesAt: string | null, locale: string): string | null {
+  if (!closesAt) return null;
 
   const date = new Date(closesAt);
   if (Number.isNaN(date.getTime())) return closesAt;

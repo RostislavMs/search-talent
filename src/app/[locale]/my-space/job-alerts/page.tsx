@@ -157,7 +157,6 @@ export default async function JobAlertsPage({
           <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
             {copy.title}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm app-muted">{copy.description}</p>
         </div>
         <ButtonLink href={JOBS_PATH} variant="secondary">
           {copy.browse}

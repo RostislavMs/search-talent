@@ -45,9 +45,6 @@ export default async function RelatedCreators({
         >
           {dictionary.common.relatedCreatorsTitle}
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-7 app-muted">
-          {dictionary.common.relatedCreatorsSubtitle}
-        </p>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {related.map((creator) => (

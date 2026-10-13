@@ -290,12 +290,8 @@ export default function ArticleComposer({
     ? {
         pageTitle: isEditing ? "Редагувати статтю" : "Нова стаття",
         editorLabel: "Зміст",
-        editorHint:
-          "Форматуйте текст і додавайте заголовки, списки, цитати, посилання та медіа.",
-        sidebarTitle: "Параметри статті",
         languageLabel: "Мова статті",
-        languageHint: "Заповніть одну або обидві мови. Друга — необов'язкова.",
-        editingIn: "Редагуєте",
+        languageHint: "Друга мова — необов'язкова.",
         needTitle: "Додайте назву хоча б однією мовою.",
         title: "Назва статті",
         titlePlaceholder: "Введіть назву",
@@ -344,12 +340,8 @@ export default function ArticleComposer({
     : {
         pageTitle: isEditing ? "Edit article" : "New article",
         editorLabel: "Content",
-        editorHint:
-          "Format your text and add headings, lists, quotes, links, and media.",
-        sidebarTitle: "Article settings",
         languageLabel: "Article language",
-        languageHint: "Fill in one or both languages. The second is optional.",
-        editingIn: "Editing",
+        languageHint: "The second language is optional.",
         needTitle: "Add a title in at least one language.",
         title: "Article title",
         titlePlaceholder: "Enter a title",
@@ -648,7 +640,6 @@ export default function ArticleComposer({
             value={current.content}
             onChange={(value) => updateActive({ content: value })}
             label={ui.editorLabel}
-            hint={ui.editorHint}
             placeholder={ui.placeholder}
             minHeight={520}
             maxLength={50000}
@@ -672,7 +663,7 @@ export default function ArticleComposer({
 
         {/* Scrolls on its own once taller than the viewport — a sticky column
             without a height cap pins in place and hides its own overflow. */}
-        <aside className="app-sticky-pane order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 shadow-[0_22px_80px_rgba(2,6,23,0.22)] xl:order-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:self-start">
+        <aside className="app-sticky-pane order-1 rounded-panel border app-border bg-[color:var(--surface)]/92 xl:order-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:self-start">
           <div className="space-y-5 p-5">
             <div className="flex flex-col gap-1.5">
               <div
@@ -711,15 +702,6 @@ export default function ArticleComposer({
                 })}
               </div>
               <p className="text-xs leading-5 app-soft">{ui.languageHint}</p>
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-                {ui.sidebarTitle}
-              </p>
-              <span className="inline-flex items-center gap-1.5 rounded-full border app-border px-2.5 py-1 text-xs font-medium app-muted">
-                {ui.editingIn}: {LOCALE_NAMES[activeLocale]}
-              </span>
             </div>
 
             <div className="space-y-2">

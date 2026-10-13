@@ -58,7 +58,7 @@ export default function FollowButton({
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 20 20"
+        viewBox={following ? "0 0 20 20" : "0 0 24 24"}
         fill={following ? "currentColor" : "none"}
         stroke="currentColor"
         strokeWidth={following ? 0 : 1.5}

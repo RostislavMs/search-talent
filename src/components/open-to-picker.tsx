@@ -89,7 +89,7 @@ export default function OpenToPicker({
                   ].join(" ")}
                 >
                   <span className="block text-sm font-medium">{t.options[option]}</span>
-                  <span className={`mt-0.5 block text-xs ${active ? "opacity-80" : "app-muted"}`}>
+                  <span className={`mt-0.5 hidden text-xs sm:block ${active ? "opacity-80" : "app-muted"}`}>
                     {t.hints[option]}
                   </span>
                 </button>

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import LocalizedLink from "@/components/ui/localized-link";
 import type { Locale } from "@/lib/i18n/config";
-import { getDictionary } from "@/lib/i18n/dictionaries";
 
 /**
  * Frame shared by every auto-promoted discussion page. The page owns nothing of
@@ -9,20 +8,18 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
  * header names the parent and links straight back to it.
  */
 export default function DiscussionPageShell({
-  locale,
   parentHref,
   parentTitle,
   backLabel,
   children,
 }: {
+  /** Kept so callers stay uniform; the shell itself has no copy to localize. */
   locale: Locale;
   parentHref: string;
   parentTitle: string;
   backLabel: string;
   children: ReactNode;
 }) {
-  const dictionary = getDictionary(locale);
-
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
       <LocalizedLink
@@ -33,10 +30,7 @@ export default function DiscussionPageShell({
       </LocalizedLink>
 
       <header className="mt-4 mb-8">
-        <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-          {dictionary.discussions.sectionTitle}
-        </p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
+        <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--foreground)]">
           <LocalizedLink
             href={parentHref}
             className="transition-colors hover:text-[color:var(--brand)]"
