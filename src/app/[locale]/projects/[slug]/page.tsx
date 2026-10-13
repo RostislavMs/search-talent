@@ -23,7 +23,6 @@ import { buttonStyles } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import ShareButton from "@/components/ui/share-button";
 import { buildCompanyPath } from "@/lib/companies";
-import { getPublicProjectBudget, loadProjectCompanyLinks } from "@/lib/db/project-companies";
 import {
   describeProjectClient,
   formatProjectBudget,
@@ -211,11 +210,8 @@ export default async function PublicProjectPage({
   }
 
   // Companies the project is on (the author also sees open requests), and the
-  // budget only when the author put it on show.
-  const [companyLinks, budget] = await Promise.all([
-    loadProjectCompanyLinks(viewer.supabase, data.project.id),
-    getPublicProjectBudget(viewer.supabase, data.project.id),
-  ]);
+  // budget only when the author put it on show — read with the project itself.
+  const { companyLinks, budget } = data;
   const projectOrigin = normalizeProjectOrigin(data.project.origin);
   const clientLabel = describeProjectClient(
     {

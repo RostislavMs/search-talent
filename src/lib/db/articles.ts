@@ -630,16 +630,21 @@ export const getLatestPublicArticles = unstable_cache(
 
 async function loadArticleDetail(slug: string, locale?: string | null) {
   noStore();
-  const viewer = await getCurrentViewerRole();
-  const supabase = viewer.supabase;
+  const supabase = await createClient();
 
-  const { data: row } = await supabase
-    .from("articles")
-    .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, edited_at, created_at, content_locale, translations",
-    )
-    .eq("slug", slug)
-    .maybeSingle();
+  // Three rounds of reads: the viewer and the article, then everything about
+  // the article, then what depends on its comments. A chain of awaits here
+  // used to cost a database round trip per step.
+  const [viewer, { data: row }] = await Promise.all([
+    getCurrentViewerRole(),
+    supabase
+      .from("articles")
+      .select(
+        "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, edited_at, created_at, content_locale, translations",
+      )
+      .eq("slug", slug)
+      .maybeSingle(),
+  ]);
 
   if (!row) {
     return null;
@@ -656,60 +661,65 @@ async function loadArticleDetail(slug: string, locale?: string | null) {
     return null;
   }
 
-  const [categoryMap, authorMap, commentsResponse, currentLikeResponse] =
-    await Promise.all([
-      getCategoriesMap(
-        supabase,
-        article.category_id ? [article.category_id] : [],
-      ),
-      getAuthorsMap(
-        supabase,
-        article.author_user_id ? [article.author_user_id] : [],
-      ),
-      supabase
-        .from("article_comments")
-        .select("id, article_id, author_user_id, parent_id, body, media_url, created_at")
-        .eq("article_id", article.id)
-        .order("created_at", { ascending: true }),
-      viewer.user
-        ? supabase
-            .from("article_likes")
-            .select("article_id")
-            .eq("article_id", article.id)
-            .eq("user_id", viewer.user.id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
-
-  const commentRows = (commentsResponse.data || []) as ArticleCommentRow[];
-  const commentAuthorMap = await getAuthorsMap(
-    supabase,
-    Array.from(
-      new Set(
-        commentRows
-          .map((item) => item.author_user_id)
-          .filter((id): id is string => Boolean(id)),
-      ),
+  const [
+    categoryMap,
+    authorMap,
+    commentsResponse,
+    currentLikeResponse,
+    articleReactionsMap,
+    coAuthorsMap,
+  ] = await Promise.all([
+    getCategoriesMap(
+      supabase,
+      article.category_id ? [article.category_id] : [],
     ),
-  );
-  const feedItem = toFeedItem(article, categoryMap, authorMap, locale);
-  const localized = pickLocalizedVersion(article, locale);
-
-  const commentTree = buildCommentTree(commentRows, commentAuthorMap);
-
-  const commentIds = commentRows.map((row) => row.id);
-  const [articleReactionsMap, commentReactionsMap] = await Promise.all([
+    getAuthorsMap(
+      supabase,
+      article.author_user_id ? [article.author_user_id] : [],
+    ),
+    supabase
+      .from("article_comments")
+      .select("id, article_id, author_user_id, parent_id, body, media_url, created_at")
+      .eq("article_id", article.id)
+      .order("created_at", { ascending: true }),
+    viewer.user
+      ? supabase
+          .from("article_likes")
+          .select("article_id")
+          .eq("article_id", article.id)
+          .eq("user_id", viewer.user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     getReactionsForTargets(supabase, {
       targetType: "article",
       targetIds: [article.id],
       viewerUserId: viewer.user?.id ?? null,
     }),
+    loadAcceptedCoAuthorsMap(supabase, "article", [article.id]),
+  ]);
+
+  const commentRows = (commentsResponse.data || []) as ArticleCommentRow[];
+  const [commentAuthorMap, commentReactionsMap] = await Promise.all([
+    getAuthorsMap(
+      supabase,
+      Array.from(
+        new Set(
+          commentRows
+            .map((item) => item.author_user_id)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ),
+    ),
     getReactionsForTargets(supabase, {
       targetType: "article_comment",
-      targetIds: commentIds,
+      targetIds: commentRows.map((comment) => comment.id),
       viewerUserId: viewer.user?.id ?? null,
     }),
   ]);
+  const feedItem = toFeedItem(article, categoryMap, authorMap, locale);
+  const localized = pickLocalizedVersion(article, locale);
+
+  const commentTree = buildCommentTree(commentRows, commentAuthorMap);
 
   const annotateReactions = (comments: ArticleComment[]) => {
     for (const comment of comments) {
@@ -718,10 +728,6 @@ async function loadArticleDetail(slug: string, locale?: string | null) {
     }
   };
   annotateReactions(commentTree);
-
-  const coAuthorsMap = await loadAcceptedCoAuthorsMap(supabase, "article", [
-    article.id,
-  ]);
 
   const detail: ArticleDetail = {
     ...feedItem,
@@ -884,45 +890,51 @@ function collectRelatedTerms(
 // one that shares no vocabulary.
 const RELATED_CATEGORY_BOOST = 6;
 
-/**
- * Articles to recommend at the foot of a detail page. Relevance is driven by
- * how much a candidate's text overlaps the current article's own vocabulary
- * (title weighted highest, then excerpt, then body) — not by category or
- * recency, which only nudge and break ties. The News category is excluded (it
- * has its own /news section) and only published, publicly-visible articles are
- * eligible.
- */
-export async function getRelatedArticles(params: {
-  articleId: string;
-  categoryId: number | null;
-  title: string;
-  excerpt?: string | null;
-  content?: string | null;
-  locale?: string | null;
-  limit?: number;
-}): Promise<ArticleFeedItem[]> {
-  noStore();
-  const { articleId, categoryId, title, locale } = params;
-  const limit = params.limit ?? 3;
+/** A new or edited article reaches other articles' suggestions within this. */
+const RELATED_ARTICLES_REVALIDATE_SECONDS = 600;
 
-  const viewer = await getCurrentViewerRole();
-  const supabase = viewer.supabase;
+async function readRelatedArticles(
+  articleId: string,
+  locale: string | null,
+  limit: number,
+): Promise<ArticleFeedItem[]> {
+  const supabase = createPublicReadOnlyClient();
+  if (!supabase) {
+    throw new Error("The public Supabase client is not configured");
+  }
 
-  let query = supabase
-    .from("articles")
-    .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at, content_locale, translations",
-    )
-    .eq("status", "published")
-    .neq("id", articleId)
-    .limit(40);
+  const [currentResponse, sectionCategoryIds] = await Promise.all([
+    supabase.from("articles").select(FEED_COLUMNS).eq("id", articleId).maybeSingle(),
+    getSectionCategoryIds(supabase),
+  ]);
 
-  query = excludeSectionCategories(
-    query,
-    await getSectionCategoryIds(supabase),
-  );
+  // Thrown, not returned as "nothing related", so a failed read is never cached.
+  if (currentResponse.error) {
+    throw new Error(currentResponse.error.message);
+  }
 
-  const { data } = await query.order("published_at", { ascending: false });
+  // A draft or hidden article is not public, and neither are suggestions for it.
+  if (!currentResponse.data) {
+    return [];
+  }
+
+  const currentRow = currentResponse.data as ArticleRow;
+  const current = pickLocalizedVersion(currentRow, locale);
+  const categoryId = currentRow.category_id;
+
+  const { data, error } = await excludeSectionCategories(
+    supabase
+      .from("articles")
+      .select(FEED_COLUMNS)
+      .eq("status", "published")
+      .neq("id", articleId)
+      .limit(40),
+    sectionCategoryIds,
+  ).order("published_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   const rows = ((data || []) as ArticleRow[]).filter((item) =>
     isPublicModerationStatus(item.moderation_status),
@@ -933,9 +945,9 @@ export async function getRelatedArticles(params: {
   }
 
   const currentWeights = buildRelatedTermWeights(
-    title,
-    params.excerpt ?? null,
-    params.content ?? null,
+    current.title,
+    current.excerpt,
+    current.content,
   );
   const publishedTime = (row: ArticleRow) =>
     new Date(row.published_at || row.created_at || 0).getTime();
@@ -1009,6 +1021,24 @@ export async function getRelatedArticles(params: {
 
   return items;
 }
+
+/**
+ * Articles to recommend at the foot of a detail page. Relevance is driven by
+ * how much a candidate's text overlaps the current article's own vocabulary
+ * (title weighted highest, then excerpt, then body) — not by category or
+ * recency, which only nudge and break ties. The News category is excluded (it
+ * has its own /news section) and only published, publicly-visible articles are
+ * eligible.
+ *
+ * Ranking reads 40 candidates with their bodies, so the result is shared by
+ * every reader of the article for a while, and the page streams it in after
+ * the article itself instead of waiting for it.
+ */
+export const getRelatedArticles = unstable_cache(
+  readRelatedArticles,
+  ["related-articles-v1"],
+  { revalidate: RELATED_ARTICLES_REVALIDATE_SECONDS, tags: [ARTICLES_CACHE_TAG] },
+);
 
 export async function getDashboardArticles(locale?: string | null) {
   noStore();

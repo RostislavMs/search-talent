@@ -5,7 +5,7 @@ import {
   getProfileCompletenessBreakdown,
   type ProfileCompletenessBreakdown,
 } from "@/lib/profile-completeness";
-import { unstable_noStore as noStore } from "next/cache";
+import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 import { cache } from "react";
 import {
   normalizeProjectMediaItem,
@@ -34,7 +34,7 @@ import {
   type PublicSalary,
 } from "@/lib/profile-private";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, createPublicReadOnlyClient } from "@/lib/supabase/admin";
 import {
   loadAcceptedCoAuthorsMap,
   loadCoAuthoredContentIds,
@@ -42,7 +42,6 @@ import {
 import type { ContentAuthor } from "@/lib/co-authors";
 import { getProfileVoteSummary } from "@/lib/db/profile-votes";
 import { getProjectVoteSummary } from "@/lib/db/project-votes";
-import { getProjectViewsCount } from "@/lib/db/project-views";
 import { getCreatorRatings, getProjectRatings } from "@/lib/db/leaderboards";
 import {
   applyViewerCustomizationPreference,
@@ -60,6 +59,13 @@ import {
   selectRelated,
 } from "@/lib/recommendations";
 import type { ViewerAffinity } from "@/lib/personalization";
+import { locales, type Locale } from "@/lib/i18n/config";
+import {
+  getPublicProjectBudget,
+  loadProjectCompanyLinks,
+  type ProjectCompanyLink,
+} from "@/lib/db/project-companies";
+import type { ProjectBudget } from "@/lib/project-context";
 
 function getRelationName(
   relation: { name?: string | null } | Array<{ name?: string | null }> | null,
@@ -69,6 +75,44 @@ function getRelationName(
   }
 
   return relation?.name || null;
+}
+
+// An article card needs each language version's title, excerpt and cover —
+// never the bodies, which `translations` also holds and which turned a
+// prolific author's profile into megabytes of reads.
+const ARTICLE_CARD_TRANSLATION_COLUMNS = locales
+  .flatMap((locale) => [
+    `${locale}_title:translations->${locale}->>title`,
+    `${locale}_excerpt:translations->${locale}->>excerpt`,
+    `${locale}_cover:translations->${locale}->>cover_image_url`,
+  ])
+  .join(", ");
+
+type ArticleCardTranslationRow = {
+  [Key in `${Locale}_${"title" | "excerpt" | "cover"}`]?: string | null;
+};
+
+/**
+ * Rebuilds the slim `translations` map localizeArticleListFields reads. A
+ * version counts as present when it has a title: the body is not read here.
+ */
+function toArticleCardTranslations(row: ArticleCardTranslationRow) {
+  const translations: Record<
+    string,
+    { title?: string; excerpt?: string | null; cover_image_url?: string | null }
+  > = {};
+
+  for (const locale of locales) {
+    const title = row[`${locale}_title`];
+    const excerpt = row[`${locale}_excerpt`] ?? null;
+    const cover = row[`${locale}_cover`] ?? null;
+
+    if (title || excerpt || cover) {
+      translations[locale] = { title: title ?? undefined, excerpt, cover_image_url: cover };
+    }
+  }
+
+  return translations;
 }
 
 type PublicProjectRow = {
@@ -175,6 +219,10 @@ export type PublicProjectPageData = {
   isAuthenticated: boolean;
   isOwner: boolean;
   isBookmarked: boolean;
+  /** Company pages the project is on; the author also sees open requests. */
+  companyLinks: ProjectCompanyLink[];
+  /** Only when the author put the budget on show. */
+  budget: ProjectBudget | null;
 };
 
 export type PublicProfilePageData = {
@@ -262,15 +310,12 @@ async function loadPublicProjectPageData(
 ): Promise<PublicProjectPageData | null> {
   noStore();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   const parsedRoute = parseProjectPath(routeValue);
 
   let projectQuery = supabase
     .from("projects")
     .select(
-      "id, owner_id, title, slug, description, role, kind, kind_metadata, source_integration, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status, status, github_full_name, github_synced_at, github_stats, tech_stack, github_readme, github_role, github_contribution, github_motivation, github_tech_decisions, github_learnings, github_showcase_notes, github_production_usage, github_display_options, github_auto_sync, allow_downloads, origin, client_name, client_nda",
+      "id, owner_id, title, slug, description, role, kind, kind_metadata, source_integration, score, cover_url, project_status, team_size, project_url, repository_url, started_on, completed_on, problem, solution, results, created_at, moderation_status, status, views_count, github_full_name, github_synced_at, github_stats, tech_stack, github_readme, github_role, github_contribution, github_motivation, github_tech_decisions, github_learnings, github_showcase_notes, github_production_usage, github_display_options, github_auto_sync, allow_downloads, origin, client_name, client_nda",
     )
     .limit(1);
 
@@ -282,7 +327,15 @@ async function loadPublicProjectPageData(
     return null;
   }
 
-  const { data: project } = await projectQuery.maybeSingle();
+  // Every read below runs in one of two rounds: the session and the project
+  // first, then everything about the project at once. A chain of awaits here
+  // used to cost a database round trip per step.
+  const [
+    {
+      data: { user },
+    },
+    { data: project },
+  ] = await Promise.all([supabase.auth.getUser(), projectQuery.maybeSingle()]);
 
   if (!project) {
     return null;
@@ -290,25 +343,24 @@ async function loadPublicProjectPageData(
 
   const typedProject = project as PublicProjectRow;
   const isOwner = user?.id === typedProject.owner_id;
+  const isPublic =
+    isPublicModerationStatus(typedProject.moderation_status) &&
+    typedProject.status === "published";
 
-  let isAdmin = false;
+  // A hidden project is visible only to its owner and admins; the admin check
+  // is needed for that rare case only.
+  if (!isPublic && !isOwner) {
+    const { data: adminRecord } = user
+      ? await supabase
+          .from("platform_admins")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : { data: null };
 
-  if (user && !isOwner) {
-    const { data: adminRecord } = await supabase
-      .from("platform_admins")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    isAdmin = Boolean(adminRecord);
-  }
-
-  if (
-    !isOwner &&
-    !isAdmin &&
-    (!isPublicModerationStatus(typedProject.moderation_status) ||
-      typedProject.status !== "published")
-  ) {
-    return null;
+    if (!adminRecord) {
+      return null;
+    }
   }
 
   const [
@@ -316,8 +368,11 @@ async function loadPublicProjectPageData(
     skillsResponse,
     mediaResponse,
     voteSummary,
-    viewsCount,
     bookmarkResponse,
+    projectRatings,
+    coAuthorsMap,
+    companyLinks,
+    budget,
   ] = await Promise.all([
       supabase
         .from("profiles")
@@ -346,7 +401,6 @@ async function loadPublicProjectPageData(
         .order("sort_index", { ascending: true })
         .order("created_at", { ascending: true }),
       getProjectVoteSummary(supabase, typedProject.id, user?.id),
-      getProjectViewsCount(supabase, typedProject.id),
       user
         ? supabase
             .from("bookmarks")
@@ -355,7 +409,19 @@ async function loadPublicProjectPageData(
             .eq("target_project_id", typedProject.id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
+      // Composite rating shown on the homepage / search (votes + media + tech +
+      // completeness + freshness), not the Wilson-only net votes. Shares the
+      // leaderboard cache.
+      getProjectRatings(),
+      loadAcceptedCoAuthorsMap(supabase, "project", [typedProject.id]),
+      loadProjectCompanyLinks(supabase, typedProject.id),
+      getPublicProjectBudget(supabase, typedProject.id),
     ]);
+
+  const viewsCount =
+    typeof (project as { views_count?: unknown }).views_count === "number"
+      ? (project as { views_count: number }).views_count
+      : 0;
 
   const owner = ownerResponse.data as
     | {
@@ -376,15 +442,6 @@ async function loadPublicProjectPageData(
   // Country name is embedded via the profiles.country_id -> countries FK in the
   // owner select above, so no extra round-trip is needed here.
   const countryName = getRelationName(owner?.countries ?? null);
-
-  // Composite rating shown on the homepage / search (votes + media + tech +
-  // completeness + freshness), not the Wilson-only net votes. Shares the
-  // leaderboard cache.
-  const projectRatings = await getProjectRatings();
-
-  const coAuthorsMap = await loadAcceptedCoAuthorsMap(supabase, "project", [
-    typedProject.id,
-  ]);
 
   return {
     project: typedProject,
@@ -427,6 +484,8 @@ async function loadPublicProjectPageData(
     isAuthenticated: Boolean(user),
     isOwner,
     isBookmarked: Boolean(bookmarkResponse.data),
+    companyLinks,
+    budget,
   };
 }
 
@@ -441,17 +500,24 @@ async function loadPublicProfilePageData(
   noStore();
   const supabase = await createClient();
   const dataClient = createAdminClient() ?? supabase;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(
-      "id, user_id, username, name, headline, bio, avatar_url, country_id, city, category_id, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, telegram_username, preferred_contact_method, experience_level, experience_years, open_to, work_formats, additional_info, profile_visibility, moderation_status, email_verified",
-    )
-    .eq("username", username)
-    .maybeSingle();
+  // Two rounds of reads: the session and the profile first, then everything
+  // about the profile at once (see loadPublicProjectPageData).
+  const [
+    {
+      data: { user },
+    },
+    { data: profile },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("profiles")
+      .select(
+        "id, user_id, username, name, headline, bio, avatar_url, country_id, city, category_id, website, github, twitter, linkedin, behance, dribbble, artstation, vimeo, youtube, instagram, telegram_username, preferred_contact_method, experience_level, experience_years, open_to, work_formats, additional_info, profile_visibility, moderation_status, email_verified",
+      )
+      .eq("username", username)
+      .maybeSingle(),
+  ]);
 
   if (!profile) {
     return null;
@@ -463,19 +529,20 @@ async function loadPublicProfilePageData(
   };
   const isOwner = user?.id === typedProfile.user_id;
 
-  let isAdmin = false;
+  // A hidden profile is visible only to its owner and admins. Settled before
+  // the rest is read: those reads use the service key.
+  if (!isOwner && !isPublicModerationStatus(typedProfile.moderation_status)) {
+    const { data: adminRecord } = user
+      ? await supabase
+          .from("platform_admins")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : { data: null };
 
-  if (user && !isOwner) {
-    const { data: adminRecord } = await supabase
-      .from("platform_admins")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    isAdmin = Boolean(adminRecord);
-  }
-
-  if (!isOwner && !isAdmin && !isPublicModerationStatus(typedProfile.moderation_status)) {
-    return null;
+    if (!adminRecord) {
+      return null;
+    }
   }
 
   const [
@@ -495,6 +562,8 @@ async function loadPublicProfilePageData(
     badges,
     viewerSettingsResponse,
     privateDetailsResponse,
+    projectRatings,
+    creatorRatings,
   ] = await Promise.all([
     dataClient
       .from("profile_skills")
@@ -554,7 +623,7 @@ async function loadPublicProfilePageData(
     supabase
       .from("articles")
       .select(
-        "id, slug, title, excerpt, cover_image_url, translations, content_locale, published_at, created_at",
+        `id, slug, title, excerpt, cover_image_url, content_locale, published_at, created_at, ${ARTICLE_CARD_TRANSLATION_COLUMNS}`,
       )
       .eq("author_user_id", typedProfile.user_id)
       .eq("status", "published")
@@ -611,6 +680,13 @@ async function loadPublicProfilePageData(
       .select(PROFILE_PRIVATE_DETAILS_COLUMNS)
       .eq("user_id", typedProfile.user_id)
       .maybeSingle(),
+    // The persisted projects.score column is Wilson-only (votes), so it reads 0
+    // for projects with no votes even when the composite rating shown on the
+    // homepage / search is higher. Override with the same composite rating
+    // below. The creator rating map (same leaderboard cache) backs the profile
+    // rating badge, which would otherwise show only net votes.
+    getProjectRatings(),
+    getCreatorRatings(),
   ]);
 
   const profileSettings = normalizeProfileSettings(typedProfile.profile_visibility);
@@ -668,16 +744,6 @@ async function loadPublicProfilePageData(
     qaCount,
     workExperienceCount,
   });
-
-  // The persisted projects.score column is Wilson-only (votes), so it reads 0
-  // for projects with no votes even when the composite rating shown on the
-  // homepage / search is higher. Override with the same composite rating here.
-  // The creator rating map (same leaderboard cache) backs the profile rating
-  // badge, which would otherwise show only net votes.
-  const [projectRatings, creatorRatings] = await Promise.all([
-    getProjectRatings(),
-    getCreatorRatings(),
-  ]);
 
   return {
     profile: {
@@ -757,26 +823,17 @@ async function loadPublicProfilePageData(
         score: projectRatings[project.id] ?? project.score,
       })),
     articles: (
-      (articlesResponse.data || []) as Array<
-        PublicProfilePageData["articles"][number] & {
-          content_locale: string | null;
-          translations:
-            | Record<
-                string,
-                {
-                  title?: string;
-                  excerpt?: string | null;
-                  content?: string;
-                  cover_image_url?: string | null;
-                } | null
-              >
-            | null;
-        }
+      (articlesResponse.data || []) as unknown as Array<
+        PublicProfilePageData["articles"][number] &
+          ArticleCardTranslationRow & { content_locale: string | null }
       >
     ).map((article) => {
       // Localize title/excerpt to the viewing locale and resolve the cover
       // (a cover uploaded on only one language tab lives in `translations`).
-      const localized = localizeArticleListFields(article, locale);
+      const localized = localizeArticleListFields(
+        { ...article, translations: toArticleCardTranslations(article) },
+        locale,
+      );
       return {
         id: article.id,
         slug: article.slug,
@@ -1567,13 +1624,18 @@ async function fetchInChunks<T>(
  *
  * See `src/lib/recommendations.ts` for the scoring itself.
  */
+type RelatedProjectsReference = {
+  projectId: string;
+  skillIds: number[];
+  kind?: string | null;
+  ownerUserId?: string | null;
+};
+
+/** A project's suggestions change only as other work is published. */
+const RELATED_REVALIDATE_SECONDS = 600;
+
 export async function getRelatedProjects(
-  reference: {
-    projectId: string;
-    skillIds: number[];
-    kind?: string | null;
-    ownerUserId?: string | null;
-  },
+  reference: RelatedProjectsReference,
   limit = RELATED_ITEMS_LIMIT,
   viewer: ViewerAffinity | null = null,
 ): Promise<RelatedProjectItem[]> {
@@ -1583,12 +1645,54 @@ export async function getRelatedProjects(
     return [];
   }
 
+  // Without a personal term the result depends on the project alone, so every
+  // such visitor shares one computation for a while.
+  if (!viewer) {
+    try {
+      return await getImpersonalRelatedProjects(reference, limit);
+    } catch {
+      // Fall through to an uncached read.
+    }
+  }
+
+  return computeRelatedProjects(await createClient(), reference, limit, viewer);
+}
+
+const getImpersonalRelatedProjects = unstable_cache(
+  async (reference: RelatedProjectsReference, limit: number) => {
+    const supabase = createPublicReadOnlyClient();
+    if (!supabase) {
+      throw new Error("The public Supabase client is not configured");
+    }
+    return computeRelatedProjects(supabase, reference, limit, null);
+  },
+  ["related-projects-v1"],
+  { revalidate: RELATED_REVALIDATE_SECONDS, tags: ["related"] },
+);
+
+async function computeRelatedProjects(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  reference: RelatedProjectsReference,
+  limit: number,
+  viewer: ViewerAffinity | null,
+): Promise<RelatedProjectItem[]> {
   const { projectId, skillIds: referenceSkillIds } = reference;
-  const supabase = await createClient();
 
   // 1. Per-skill project counts drive both the IDF weighting and the order in
-  //    which we spend the candidate budget.
-  const skillCounts = await loadSkillProjectCounts(supabase);
+  //    which we spend the candidate budget. The padding candidates (3) do not
+  //    depend on them, so they load at the same time.
+  const [skillCounts, fallbackIds] = await Promise.all([
+    loadSkillProjectCounts(supabase),
+    // 3. A project with no (or only unique) technologies still deserves a
+    //    section, so top up the candidate pool with strong recent work of the
+    //    same format. `selectRelated` keeps these behind genuine matches.
+    loadFallbackCandidateIds(
+      supabase,
+      reference.kind ?? null,
+      projectId,
+      Math.max(limit * 4, 24),
+    ),
+  ]);
   const totalProjects = [...skillCounts.values()].reduce(
     (max, count) => (count > max ? count : max),
     0,
@@ -1600,16 +1704,6 @@ export async function getRelatedProjects(
     supabase,
     orderSkillsByRarity(referenceSkillIds, skillCounts),
     projectId,
-  );
-
-  // 3. A project with no (or only unique) technologies still deserves a
-  //    section, so top up the candidate pool with strong recent work of the
-  //    same format. `selectRelated` keeps these behind genuine matches.
-  const fallbackIds = await loadFallbackCandidateIds(
-    supabase,
-    reference.kind ?? null,
-    projectId,
-    Math.max(limit * 4, 24),
   );
 
   const allCandidateIds = [...new Set([...candidateIds, ...fallbackIds])];
@@ -1774,50 +1868,94 @@ export async function getRelatedCreators(
     return [];
   }
 
-  const supabase = await createClient();
-
-  // 1. Skill-overlap candidates.
-  let sharedCounts = new Map<string, number>();
-  if (referenceSkillIds.length > 0) {
-    const { data: skillLinks } = await supabase
-      .from("profile_skills")
-      .select("profile_id, skill_id")
-      .in("skill_id", referenceSkillIds)
-      .limit(1000);
-
-    sharedCounts = tallySharedSkills(
-      (
-        (skillLinks || []) as Array<{ profile_id: string; skill_id: number }>
-      ).map((row) => ({ entityId: row.profile_id, skillId: row.skill_id })),
-      referenceSkillIds,
+  // Not personalised, so every visitor of the profile shares one computation
+  // for a while.
+  try {
+    return await getCachedRelatedCreators(profileId, referenceSkillIds, categoryId, limit);
+  } catch {
+    // An unavailable section is hidden, not an error on the profile.
+    return computeRelatedCreators(
+      await createClient(),
       profileId,
-    );
+      referenceSkillIds,
+      categoryId,
+      limit,
+    ).catch((): RelatedCreatorItem[] => []);
+  }
+}
+
+const getCachedRelatedCreators = unstable_cache(
+  async (
+    profileId: string,
+    referenceSkillIds: number[],
+    categoryId: number | null,
+    limit: number,
+  ) => {
+    const supabase = createPublicReadOnlyClient();
+    if (!supabase) {
+      throw new Error("The public Supabase client is not configured");
+    }
+    return computeRelatedCreators(supabase, profileId, referenceSkillIds, categoryId, limit);
+  },
+  ["related-creators-v1"],
+  { revalidate: RELATED_REVALIDATE_SECONDS, tags: ["related"] },
+);
+
+async function computeRelatedCreators(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  profileId: string,
+  referenceSkillIds: number[],
+  categoryId: number | null,
+  limit: number,
+): Promise<RelatedCreatorItem[]> {
+  const hydrateCap = Math.max(limit * 4, 24);
+
+  // 1. Skill-overlap candidates, and 2. the same-category fill so creators with
+  //    few skills still get neighbours. Neither depends on the other.
+  //    A failed read throws, so it is never cached as "nothing related".
+  const [skillLinksResponse, categoryRowsResponse] = await Promise.all([
+    referenceSkillIds.length > 0
+      ? supabase
+          .from("profile_skills")
+          .select("profile_id, skill_id")
+          .in("skill_id", referenceSkillIds)
+          .limit(1000)
+      : Promise.resolve({ data: [], error: null }),
+    categoryId !== null
+      ? supabase
+          .from("profiles")
+          .select("id")
+          .eq("category_id", categoryId)
+          .eq("moderation_status", "approved")
+          .not("username", "is", null)
+          .neq("id", profileId)
+          // Surface the strongest creators in the category fallback instead of
+          // an arbitrary heap-order slice once the category grows past hydrateCap.
+          .order("score", { ascending: false })
+          .limit(hydrateCap)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (skillLinksResponse.error || categoryRowsResponse.error) {
+    throw new Error("Related creators are unavailable");
   }
 
-  const hydrateCap = Math.max(limit * 4, 24);
+  const sharedCounts = tallySharedSkills(
+    (
+      (skillLinksResponse.data || []) as Array<{ profile_id: string; skill_id: number }>
+    ).map((row) => ({ entityId: row.profile_id, skillId: row.skill_id })),
+    referenceSkillIds,
+    profileId,
+  );
+
   const candidateIds = new Set<string>(
     Array.from(sharedCounts.keys())
       .sort((a, b) => (sharedCounts.get(b) || 0) - (sharedCounts.get(a) || 0))
       .slice(0, hydrateCap),
   );
 
-  // 2. Same-category fill so creators with few skills still get neighbours.
-  if (categoryId !== null) {
-    const { data: categoryRows } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("category_id", categoryId)
-      .eq("moderation_status", "approved")
-      .not("username", "is", null)
-      .neq("id", profileId)
-      // Surface the strongest creators in the category fallback instead of an
-      // arbitrary heap-order slice once the category grows past hydrateCap.
-      .order("score", { ascending: false })
-      .limit(hydrateCap);
-
-    for (const row of (categoryRows || []) as Array<{ id: string }>) {
-      candidateIds.add(row.id);
-    }
+  for (const row of (categoryRowsResponse.data || []) as Array<{ id: string }>) {
+    candidateIds.add(row.id);
   }
 
   if (candidateIds.size === 0) {
@@ -1825,13 +1963,17 @@ export async function getRelatedCreators(
   }
 
   // 3. Hydrate candidate profiles (public only).
-  const { data: profileRows } = await supabase
+  const { data: profileRows, error: profilesError } = await supabase
     .from("profiles")
     .select(
       "id, username, name, headline, avatar_url, city, country_id, category_id, created_at, moderation_status, open_to",
     )
     .in("id", Array.from(candidateIds))
     .not("username", "is", null);
+
+  if (profilesError) {
+    throw new Error(profilesError.message);
+  }
 
   const candidates = ((profileRows || []) as RelatedCreatorRow[]).filter(
     (row) =>

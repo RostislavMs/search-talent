@@ -5,6 +5,7 @@ import {
   DISCUSSIONS_CATEGORY_SLUG,
   NEWS_CATEGORY_SLUG,
   getCategoryDisplayName,
+  type ArticleFeedItem,
 } from "@/lib/articles";
 import { getArticleDetail, getRelatedArticles } from "@/lib/db/articles";
 import { isLocale } from "@/lib/i18n/config";
@@ -108,15 +109,11 @@ export default async function ArticleDetailPage({
     redirect(`/${safeLocale}/discussions/${slug}`);
   }
 
-  const relatedArticles = await getRelatedArticles({
-    articleId: data.article.id,
-    categoryId: data.article.category?.id ?? null,
-    title: data.article.title,
-    excerpt: data.article.excerpt,
-    content: data.article.content,
-    locale: safeLocale,
-    limit: 3,
-  });
+  // Not awaited: the article renders first, and the suggestions stream in
+  // below it. Missing suggestions are no reason to fail the page.
+  const relatedArticles = getRelatedArticles(data.article.id, safeLocale, 3).catch(
+    (): ArticleFeedItem[] => [],
+  );
 
   return (
     <ArticleDetailView
