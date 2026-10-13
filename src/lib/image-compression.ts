@@ -1,4 +1,4 @@
-export type CompressionPreset = "avatar" | "cover" | "inline" | "photo";
+export type CompressionPreset = "avatar" | "cover" | "inline" | "photo" | "message";
 
 type PresetConfig = {
   maxSizeMB: number;
@@ -14,7 +14,16 @@ const PRESETS: Record<CompressionPreset, PresetConfig> = {
   // full-resolution, original-format asset — running it through any
   // resize/recompress step would defeat the purpose of uploading a photo.
   photo: { maxSizeMB: Infinity, maxWidthOrHeight: Infinity, initialQuality: 1 },
+  // A file sent in a message: sharp enough to read a screenshot.
+  message: { maxSizeMB: 2, maxWidthOrHeight: 2560, initialQuality: 0.85 },
 };
+
+/**
+ * Presets whose result is always the re-encoded image, even when it comes out
+ * larger: re-encoding is what drops the camera's metadata (where a photo was
+ * taken, the device), and a private message must not carry that.
+ */
+const ALWAYS_REENCODE = new Set<CompressionPreset>(["message"]);
 
 const SKIP_MIME_TYPES = new Set(["image/gif", "image/svg+xml"]);
 
@@ -51,7 +60,7 @@ export async function compressImageFile(
       initialQuality,
     });
 
-    if (compressed.size >= file.size) {
+    if (compressed.size >= file.size && !ALWAYS_REENCODE.has(preset)) {
       return file;
     }
 

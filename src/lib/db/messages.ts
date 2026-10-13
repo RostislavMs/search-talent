@@ -301,16 +301,19 @@ export async function startConversation(
   return toSendOutcome(data, error);
 }
 
+/** A message in a conversation: text, files (the caller's confirmed uploads), or both. */
 export async function sendMessage(
   supabase: SupabaseClient,
   conversationId: string,
   body: string,
   clientId: string | null = null,
+  attachmentIds: string[] = [],
 ): Promise<SendOutcome> {
   const { data, error } = await supabase.rpc("send_message", {
     p_conversation_id: conversationId,
     p_body: body,
     p_client_id: clientId,
+    p_attachment_ids: attachmentIds.length > 0 ? attachmentIds : null,
   });
 
   return toSendOutcome(data, error);

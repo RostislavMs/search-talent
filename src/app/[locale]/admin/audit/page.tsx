@@ -70,6 +70,7 @@ const ACTION_VALUES = [
   "revoke_admin",
   "messaging_restricted",
   "messaging_unrestricted",
+  "view_attachment",
 ] as const;
 
 export default async function AdminAuditPage({

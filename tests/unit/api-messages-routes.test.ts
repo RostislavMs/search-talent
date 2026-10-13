@@ -201,7 +201,7 @@ describe("messages in a conversation", () => {
     expect(await res.json()).toEqual({ conversationId: CONV, messageId: "m1", seq: 4, scam: false });
     expect(holder.rpcCalls[0]).toEqual({
       fn: "send_message",
-      args: { p_conversation_id: CONV, p_body: "Hello", p_client_id: OTHER },
+      args: { p_conversation_id: CONV, p_body: "Hello", p_client_id: OTHER, p_attachment_ids: null },
     });
     expect(scheduleMessageEmails).toHaveBeenCalledWith("m1");
   });

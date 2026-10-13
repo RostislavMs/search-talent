@@ -9,6 +9,7 @@ import { getModerationQueue } from "@/lib/db/moderation";
 import { createClient } from "@/lib/supabase/server";
 import { createLocalePath, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { attachmentTypeLabel, buildAdminAttachmentHref, formatFileSize } from "@/lib/message-attachments";
 import { getModerationCopy } from "@/lib/moderation-copy";
 import { buildMetadata } from "@/lib/seo";
 
@@ -190,6 +191,31 @@ export default async function AdminModerationPage({
                               <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 app-muted">
                                 {copy.dashboard.snapshotOriginal.replace("{text}", message.originalBody)}
                               </p>
+                            ) : null}
+                            {message.attachments.length > 0 ? (
+                              <div className="mt-2">
+                                <p className="text-xs app-soft">
+                                  {copy.dashboard.snapshotFiles} · {copy.dashboard.snapshotFilesNote}
+                                </p>
+                                <ul className="mt-1 space-y-1">
+                                  {message.attachments.map((attachment) => (
+                                    <li key={attachment.id}>
+                                      <a
+                                        href={buildAdminAttachmentHref(attachment.id, item.id)}
+                                        target="_blank"
+                                        rel="noopener"
+                                        aria-label={copy.dashboard.snapshotFileOpen.replace("{name}", attachment.name)}
+                                        className="text-xs font-medium text-[color:var(--foreground)] underline decoration-[color:var(--border)] underline-offset-4"
+                                      >
+                                        {attachment.name}
+                                      </a>
+                                      <span className="ml-2 text-xs app-soft">
+                                        {attachmentTypeLabel(attachment.type)} · {formatFileSize(attachment.size, locale)}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
                             ) : null}
                             {message.kind === "text" && !message.deleted ? (
                               <div className="mt-1">

@@ -65,6 +65,7 @@ function preview(patch: Partial<ConversationPreview> = {}): ConversationPreview 
       held: false,
       removed: false,
       removedBy: null,
+      attachmentCount: 0,
       fromMySide: false,
       mine: false,
       createdAt: "2026-10-10T10:00:00Z",
@@ -120,6 +121,7 @@ function chat(seq: number, patch: Partial<ChatMessage> = {}): ChatMessage {
     removedBy: null,
     editedAt: null,
     editableUntil: null,
+    attachments: [],
     createdAt: "2026-10-10T10:00:00Z",
     ...patch,
   };

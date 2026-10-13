@@ -25,6 +25,7 @@ import {
   type ChatMessage,
 } from "@/lib/messages";
 import { buildMetadata } from "@/lib/seo";
+import { isPrivateStorageConfigured } from "@/lib/storage/r2";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -160,6 +161,7 @@ export default async function ConversationPage({
           locale={locale}
           listQuery={buildMessagesQuery(box, companyId, search)}
           isAuthenticated
+          filesEnabled={isPrivateStorageConfigured()}
         />
       }
     />

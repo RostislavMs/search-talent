@@ -8,6 +8,7 @@
  */
 
 import { parseLinkPreviewHref } from "@/lib/link-preview";
+import { normalizeMessageAttachments, type MessageAttachment } from "@/lib/message-attachments";
 
 export const MESSAGES_PATH = "/messages";
 export const MESSAGES_SETTINGS_PATH = "/messages/settings";
@@ -135,6 +136,8 @@ export type ChatMessage = {
   editedAt: string | null;
   /** Until when the caller may still edit their own message; null when they cannot. */
   editableUntil: string | null;
+  /** Its files; none once it is deleted, removed, or held from the caller. */
+  attachments: MessageAttachment[];
   createdAt: string;
 };
 
@@ -150,6 +153,8 @@ export type LastMessagePreview = {
   held: boolean;
   removed: boolean;
   removedBy: MessageRemovedBy | null;
+  /** How many files it carries (0 when they are not the caller's to see). */
+  attachmentCount: number;
   fromMySide: boolean;
   mine: boolean;
   createdAt: string;
@@ -314,6 +319,17 @@ export const messageRefusalCodes = [
   "not_editable",
   "edit_window_passed",
   "too_many_edits",
+  // Files.
+  "files_in_request",
+  "file_type",
+  "file_empty",
+  "file_too_large",
+  "file_rate_limited",
+  "file_mismatch",
+  "file_missing",
+  "too_many_files",
+  "invalid_attachments",
+  "storage_unavailable",
   "failed",
 ] as const;
 
@@ -332,12 +348,24 @@ export function refusalHttpStatus(code: MessageRefusalCode): number {
       return 404;
     case "rate_limited":
     case "company_rate_limited":
+    case "file_rate_limited":
       return 429;
     case "not_editable":
+    case "file_missing":
+    case "invalid_attachments":
       return 409;
+    case "file_too_large":
+      return 413;
+    case "file_type":
+    case "file_mismatch":
+      return 415;
+    case "storage_unavailable":
+      return 503;
     case "failed":
       return 500;
     case "empty":
+    case "file_empty":
+    case "too_many_files":
     case "too_long":
     case "links_in_request":
     case "moderation_blocked":
@@ -457,6 +485,7 @@ export function normalizeMessageRow(value: unknown): ChatMessage | null {
     removedBy: bool(row.removed) ? (normalizeRemovedBy(row.removed_by) ?? "moderator") : null,
     editedAt: str(row.edited_at),
     editableUntil: str(row.editable_until),
+    attachments: normalizeMessageAttachments(row.attachments),
     createdAt: str(row.created_at) ?? new Date(0).toISOString(),
   };
 }
@@ -478,6 +507,7 @@ function normalizeLastMessage(value: unknown): LastMessagePreview | null {
     held: bool(row.held),
     removed: bool(row.removed),
     removedBy: bool(row.removed) ? (normalizeRemovedBy(row.removedBy) ?? "moderator") : null,
+    attachmentCount: num(row.attachmentCount),
     fromMySide: bool(row.fromMySide),
     mine: bool(row.mine),
     createdAt: str(row.createdAt) ?? new Date(0).toISOString(),
@@ -780,6 +810,17 @@ export function lastReadOwnMessageId(messages: ChatMessage[], theirLastReadSeq: 
   }
 
   return null;
+}
+
+// --- Files -----------------------------------------------------------------------------------
+
+/**
+ * Whether the paperclip shows: the caller may write here and the
+ * conversation is open — a request never carries files (the database says
+ * the same, files_in_request).
+ */
+export function canAttachFiles(view: Pick<ConversationView, "canSend" | "state" | "requestRules">): boolean {
+  return view.canSend && view.state === "open" && !view.requestRules;
 }
 
 // --- Editing ---------------------------------------------------------------------------------

@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { deleteFromR2, getR2KeyFromUrl } from "@/lib/storage/r2";
+import { deleteFromPrivateR2, deleteFromR2, getR2KeyFromUrl } from "@/lib/storage/r2";
 import {
   DELETED_ACCOUNT_BAN,
   classifyTrashError,
@@ -246,6 +246,8 @@ export async function runTrashCleanup(): Promise<TrashCleanupResult | { skipped:
     try {
       if (target?.provider === "r2") {
         await deleteFromR2(target.key);
+      } else if (target?.provider === "r2-private") {
+        await deleteFromPrivateR2(target.key);
       } else if (target?.provider === "supabase") {
         const { error } = await admin.storage.from(target.bucket).remove([target.path]);
         if (error) throw new Error(error.message);

@@ -68,7 +68,11 @@ export function classifyTrashError(message: string | null | undefined): {
 
 export type StorageTarget =
   | { provider: "r2"; key: string }
+  | { provider: "r2-private"; key: string }
   | { provider: "supabase"; bucket: string; path: string };
+
+/** Files in messages, queued as "private:messages/<conversation>/<file>". */
+const PRIVATE_MESSAGE_REF = /^private:(messages\/[0-9a-f-]{36}\/[0-9a-f-]{36})$/i;
 
 const SUPABASE_PUBLIC_PATH = /\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/;
 
@@ -84,6 +88,11 @@ export function resolveStorageRef(
   const value = ref.trim();
   if (!value || value.split("/").includes("..")) {
     return null;
+  }
+
+  if (value.startsWith("private:")) {
+    const match = PRIVATE_MESSAGE_REF.exec(value);
+    return match ? { provider: "r2-private", key: match[1] } : null;
   }
 
   if (/^https?:\/\//i.test(value)) {

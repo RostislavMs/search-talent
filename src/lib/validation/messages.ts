@@ -1,5 +1,11 @@
 import { z } from "zod";
 import {
+  MESSAGE_ATTACHMENT_MAX_BYTES,
+  MESSAGE_ATTACHMENT_NAME_MAX,
+  MESSAGE_ATTACHMENT_TYPES,
+  MESSAGE_ATTACHMENTS_PER_MESSAGE,
+} from "@/lib/message-attachments";
+import {
   conversationBoxes,
   MESSAGE_MAX_LENGTH,
   MESSAGE_SEARCH_MAX_LENGTH,
@@ -33,12 +39,51 @@ export const startConversationSchema = z
   })
   .strict();
 
+/**
+ * A message in a conversation: text, files (confirmed uploads, by id), or
+ * both. With files the text may be empty; the database checks the files.
+ */
 export const sendMessageSchema = z
   .object({
-    body: messageBody,
+    body: z
+      .string()
+      .max(MESSAGE_MAX_LENGTH + 200, { message: "The message is too long" })
+      .transform((value) => value.replace(/\r/g, "").trim())
+      .refine((value) => value.length <= MESSAGE_MAX_LENGTH, { message: "The message is too long" })
+      .default(""),
     clientId: z.string().uuid(uuidMessage).optional(),
+    attachmentIds: z
+      .array(z.string().uuid(uuidMessage))
+      .max(MESSAGE_ATTACHMENTS_PER_MESSAGE, { message: "Too many files" })
+      .optional()
+      .default([]),
+  })
+  .strict()
+  .refine((value) => value.body.length > 0 || value.attachmentIds.length > 0, {
+    message: "The message is empty",
+    path: ["body"],
+  });
+
+/** A file about to be uploaded into a conversation; the database checks the rest. */
+export const createAttachmentSchema = z
+  .object({
+    fileName: z.string().max(1000).transform((value) => value.trim().slice(0, MESSAGE_ATTACHMENT_NAME_MAX) || "file"),
+    contentType: z.enum(MESSAGE_ATTACHMENT_TYPES),
+    size: z.number().int().min(1).max(MESSAGE_ATTACHMENT_MAX_BYTES),
+    width: z.number().int().min(1).max(20000).nullish(),
+    height: z.number().int().min(1).max(20000).nullish(),
   })
   .strict();
+
+export const routeAttachmentSchema = z.object({
+  id: z.string().uuid(uuidMessage),
+  attachmentId: z.string().uuid(uuidMessage),
+});
+
+/** ?report= on a moderator's file link. */
+export const adminAttachmentQuerySchema = z.object({
+  report: z.string().uuid(uuidMessage),
+});
 
 /** A new text for one's own message; edit_message() checks the rest. */
 export const editMessageSchema = z
