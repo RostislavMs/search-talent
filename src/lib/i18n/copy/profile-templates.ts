@@ -1,0 +1,58 @@
+export const profileTemplatesCopy = {
+  en: {
+    title: "Templates",
+    hint: "One click sets the order of the blocks, their width and how projects look. Your content stays as it is.",
+    names: {
+      gallery: "Gallery",
+      cases: "Case studies",
+      resume: "Résumé",
+    },
+    descriptions: {
+      gallery: "Big covers, little text. For design, video, photo and 3D.",
+      cases: "Each project with its story beside the cover. For development, QA and data.",
+      resume: "Experience and education first, projects after.",
+    },
+    suggested: "Suits your field",
+    themeLabel: "{theme} theme",
+    withTheme: "With the template's theme",
+    withThemeHint: "Untick to keep your colours and font.",
+    undo: "Undo",
+    undoHint: "Bring back the layout you had before",
+    projectLayout: "Project cards",
+    projectLayouts: {
+      grid: "Standard",
+      gallery: "Gallery",
+      cases: "Case studies",
+    },
+    onboardingTitle: "How to show your work",
+    onboardingHint: "You can change it any time.",
+  },
+  uk: {
+    title: "Шаблони",
+    hint: "Один клік — і порядок блоків, їхня ширина та вигляд проєктів готові. Ваші дані лишаються як були.",
+    names: {
+      gallery: "Галерея",
+      cases: "Кейси",
+      resume: "Резюме",
+    },
+    descriptions: {
+      gallery: "Великі обкладинки, мало тексту. Для дизайну, відео, фото й 3D.",
+      cases: "Кожен проєкт з описом поруч з обкладинкою. Для розробки, QA й даних.",
+      resume: "Спершу досвід і освіта, проєкти — після.",
+    },
+    suggested: "Пасує вашому напряму",
+    themeLabel: "Тема «{theme}»",
+    withTheme: "Разом із темою шаблону",
+    withThemeHint: "Зніміть позначку, щоб лишити свої кольори й шрифт.",
+    undo: "Повернути як було",
+    undoHint: "Відновити розкладку, яка була перед цим",
+    projectLayout: "Картки проєктів",
+    projectLayouts: {
+      grid: "Стандартні",
+      gallery: "Галерея",
+      cases: "Кейси",
+    },
+    onboardingTitle: "Як показати роботи",
+    onboardingHint: "Змінити можна будь-коли.",
+  },
+} as const;

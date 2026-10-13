@@ -1,0 +1,36 @@
+export const linkPreviewCopy = {
+  // Hover cards for internal links and @mentions. The kind labels are used
+  // server-side by /api/link-preview, which ships the card already localized.
+  en: {
+    profile: "Profile",
+    project: "Project",
+    article: "Article",
+    poll: "Poll",
+    views: "views",
+    responses: "responses",
+    projects: "projects",
+    articles: "articles",
+    vacancy: "Vacancy",
+    company: "Company",
+    vacancyClosed: "No longer hiring",
+    companyVerified: "Verified",
+    openVacancies: "Open vacancies: {count}",
+    loading: "Loading preview…",
+  },
+  uk: {
+    profile: "Профіль",
+    project: "Проєкт",
+    article: "Стаття",
+    poll: "Опитування",
+    views: "переглядів",
+    responses: "відповідей",
+    projects: "проєктів",
+    articles: "статей",
+    vacancy: "Вакансія",
+    company: "Компанія",
+    vacancyClosed: "Набір закрито",
+    companyVerified: "Перевірена",
+    openVacancies: "Відкритих вакансій: {count}",
+    loading: "Завантаження…",
+  },
+} as const;

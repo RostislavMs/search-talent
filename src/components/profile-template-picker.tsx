@@ -3,6 +3,8 @@
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useDictionary } from "@/lib/i18n/client";
+import { profileTemplatesCopy } from "@/lib/i18n/copy/profile-templates";
+import { profileThemesCopy } from "@/lib/i18n/copy/profile-themes";
 import {
   profileProjectLayouts,
   type ProfilePresentation,
@@ -33,7 +35,7 @@ export function ProfileTemplateOptions({
   onSelect: (id: ProfileTemplateId) => void;
   onClear?: () => void;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ profileTemplates: profileTemplatesCopy, profileThemes: profileThemesCopy });
   const copy = dictionary.profileTemplates;
 
   return (
@@ -97,7 +99,7 @@ export default function ProfileTemplatePicker({
   presentation: ProfilePresentation;
   onChange: (next: ProfilePresentation) => void;
 }) {
-  const copy = useDictionary().profileTemplates;
+  const copy = useDictionary({ profileTemplates: profileTemplatesCopy }).profileTemplates;
   const withThemeId = useId();
   const [undo, setUndo] = useState<{
     before: ProfilePresentation;
@@ -170,7 +172,7 @@ function ProjectLayoutSwitch({
   value: ProfileProjectLayout;
   onChange: (value: ProfileProjectLayout) => void;
 }) {
-  const copy = useDictionary().profileTemplates;
+  const copy = useDictionary({ profileTemplates: profileTemplatesCopy }).profileTemplates;
 
   return (
     <div>

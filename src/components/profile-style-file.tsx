@@ -4,6 +4,9 @@ import { useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { ProfileLookSwatch, SiteSwatch } from "@/components/profile-theme-picker";
 import { useDictionary } from "@/lib/i18n/client";
+import { profileStyleFileCopy } from "@/lib/i18n/copy/profile-style-file";
+import { profileTemplatesCopy } from "@/lib/i18n/copy/profile-templates";
+import { profileThemesCopy } from "@/lib/i18n/copy/profile-themes";
 import type { ProfilePresentation } from "@/lib/profile-presentation";
 import {
   applyProfileStyle,
@@ -40,7 +43,7 @@ export default function ProfileStyleFile({
   presentation: ProfilePresentation;
   onChange: (next: ProfilePresentation) => void;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ profileStyleFile: profileStyleFileCopy });
   const copy = dictionary.profileStyleFile;
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<ProfileStyleFileError | "unreadable" | null>(null);
@@ -185,7 +188,7 @@ function StylePreview({
   onApply: () => void;
   onCancel: () => void;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ profileStyleFile: profileStyleFileCopy, profileTemplates: profileTemplatesCopy, profileThemes: profileThemesCopy });
   const copy = dictionary.profileStyleFile;
   const themeId = getActiveProfileThemeId(next);
   const templateId = getActiveProfileTemplateId(next);

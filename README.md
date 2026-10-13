@@ -200,7 +200,7 @@ search-talent/
 
 - Locales: **uk** (default) and **en**, resolved as `locale` cookie → `Accept-Language` → `uk`.
 - URL shape: `/{locale}/{route}`.
-- Dictionaries: `src/lib/i18n/dictionaries.ts`. Server: `getDictionary(locale)`. Client: `useDictionary()`.
+- Strings: one module per namespace in `src/lib/i18n/copy/`, both languages side by side; `src/lib/i18n/dictionaries.ts` assembles them. Server: `getDictionary(locale)`. Client: `useDictionary({ nav: navCopy })` with only the namespaces the component shows, so the rest never reaches the browser.
 
 ---
 

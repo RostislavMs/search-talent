@@ -6,6 +6,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { vacanciesCopy } from "@/lib/i18n/copy/vacancies";
 import {
   canExtendVacancy,
   resolveVacancyState,
@@ -41,7 +42,7 @@ export default function VacancyStatusActions({
 }) {
   const router = useLocalizedRouter();
   const toast = useToast();
-  const copy = useDictionary().vacancies;
+  const copy = useDictionary({ vacancies: vacanciesCopy }).vacancies;
   const ui = copy.actions;
   const [busy, setBusy] = useState<VacancyStatusAction | "delete" | null>(null);
   const [confirm, setConfirm] = useState<"close" | "delete" | null>(null);

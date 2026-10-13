@@ -7,11 +7,12 @@ import Switch from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { jobAlertsCopy } from "@/lib/i18n/copy/job-alerts";
 
 /** Switches an alert's morning email on or off. */
 function useEmailSwitch(alertId: string | null, initial: boolean) {
   const toast = useToast();
-  const copy = useDictionary().jobAlerts.page;
+  const copy = useDictionary({ jobAlerts: jobAlertsCopy }).jobAlerts.page;
   const [notifyEmail, setNotifyEmail] = useState(initial);
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +33,7 @@ function useEmailSwitch(alertId: string | null, initial: boolean) {
 }
 
 function EmailSwitch({ alertId, notifyEmail: initial }: { alertId: string; notifyEmail: boolean }) {
-  const copy = useDictionary().jobAlerts.page;
+  const copy = useDictionary({ jobAlerts: jobAlertsCopy }).jobAlerts.page;
   const labelId = useId();
   const { notifyEmail, busy, change } = useEmailSwitch(alertId, initial);
 
@@ -56,7 +57,7 @@ export function JobAlertControls({
   name: string;
   notifyEmail: boolean;
 }) {
-  const copy = useDictionary().jobAlerts.page;
+  const copy = useDictionary({ jobAlerts: jobAlertsCopy }).jobAlerts.page;
   const router = useLocalizedRouter();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
@@ -118,7 +119,7 @@ export function JobAlertProfileSwitch({
   disabled?: boolean;
   showEmail?: boolean;
 }) {
-  const copy = useDictionary().jobAlerts.page;
+  const copy = useDictionary({ jobAlerts: jobAlertsCopy }).jobAlerts.page;
   const locale = useCurrentLocale();
   const router = useLocalizedRouter();
   const toast = useToast();

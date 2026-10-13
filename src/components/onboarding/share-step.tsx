@@ -4,6 +4,7 @@ import OpenToCard from "@/components/open-to-card";
 import ProfileSharePanel from "@/components/profile-share-panel";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { useDictionary } from "@/lib/i18n/client";
+import { onboardingCopy } from "@/lib/i18n/copy/onboarding";
 import type { OnboardingStep } from "@/lib/onboarding";
 import type { OpenToOption } from "@/lib/open-to";
 
@@ -49,7 +50,7 @@ export default function OnboardingShareStep({
   onBack: () => void;
   onFinish: () => void;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ onboarding: onboardingCopy });
   const t = dictionary.onboarding;
   const copy = t.share;
 

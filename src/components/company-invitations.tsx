@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { buildCompanyPath, COMPANY_LIMITS, type CompanyInvitation } from "@/lib/companies";
 import { useDictionary } from "@/lib/i18n/client";
+import { companiesCopy } from "@/lib/i18n/copy/companies";
 
 /**
  * Invitations to company teams waiting for an answer, with Accept / Decline.
@@ -22,7 +23,7 @@ export default function CompanyInvitations({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ companies: companiesCopy });
   const copy = dictionary.companies;
   const ui = copy.invitations;
   const [invitations, setInvitations] = useState<CompanyInvitation[]>(

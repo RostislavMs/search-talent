@@ -39,7 +39,7 @@ export default function ProjectContextFields({
   companies,
   onCompaniesChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "projectContext">;
   value: ProjectContextValue;
   onChange: <K extends keyof ProjectContextValue>(field: K, next: ProjectContextValue[K]) => void;
   companies: CompanyOption[];

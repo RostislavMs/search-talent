@@ -26,6 +26,14 @@ import CoAuthorPicker, {
 import { apiFetch } from "@/lib/api-client";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { projectContextCopy } from "@/lib/i18n/copy/project-context";
+import { aiDraftCopy } from "@/lib/i18n/copy/ai-draft";
+import { coAuthorsCopy } from "@/lib/i18n/copy/co-authors";
+import { commonCopy } from "@/lib/i18n/copy/common";
+import { dashboardProjectsCopy } from "@/lib/i18n/copy/dashboard-projects";
+import { formsCopy } from "@/lib/i18n/copy/forms";
+import { githubIntegrationCopy } from "@/lib/i18n/copy/github-integration";
+import { providerIntegrationsCopy } from "@/lib/i18n/copy/provider-integrations";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { compressImageFile } from "@/lib/image-compression";
@@ -440,7 +448,7 @@ export default function CreateProjectForm({
   fromOnboarding?: boolean;
 }) {
   const router = useLocalizedRouter();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ aiDraft: aiDraftCopy, coAuthors: coAuthorsCopy, common: commonCopy, dashboardProjects: dashboardProjectsCopy, forms: formsCopy, githubIntegration: githubIntegrationCopy, projectContext: projectContextCopy, providerIntegrations: providerIntegrationsCopy });
   const toast = useToast();
   const isEditMode = Boolean(project);
 
@@ -2144,7 +2152,7 @@ function StepHeader({
   descriptors: StepDescriptor[];
   current: number;
   onSelect: (target: number) => void;
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "aiDraft" | "coAuthors" | "common" | "dashboardProjects" | "forms" | "githubIntegration" | "providerIntegrations">;
   // When true (edit mode), every step is directly clickable — the project
   // already has data, so there is no need to walk through with "Next".
   unlockAll?: boolean;
@@ -2211,7 +2219,7 @@ function SidebarContent({
   onDelete,
   onAfterAction,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "aiDraft" | "coAuthors" | "common" | "dashboardProjects" | "forms" | "githubIntegration" | "providerIntegrations">;
   isFirstStep: boolean;
   isLastStep: boolean;
   submitting: boolean;
@@ -2295,7 +2303,7 @@ function StepBasics({
   skillIds,
   onSkillsChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "aiDraft" | "coAuthors" | "common" | "dashboardProjects" | "forms" | "githubIntegration" | "providerIntegrations">;
   form: ProjectFormState;
   update: <K extends keyof ProjectFormState>(
     field: K,
@@ -2378,7 +2386,7 @@ function StepBasics({
 }
 
 type StepSpecificsProps = {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "aiDraft" | "coAuthors" | "common" | "dashboardProjects" | "forms" | "githubIntegration" | "providerIntegrations">;
   form: ProjectFormState;
   update: <K extends keyof ProjectFormState>(
     field: K,
@@ -2599,7 +2607,7 @@ function StepGithub({
   projectId,
   onUnlinked,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "aiDraft" | "coAuthors" | "common" | "dashboardProjects" | "forms" | "githubIntegration" | "providerIntegrations">;
   form: ProjectFormState;
   update: <K extends keyof ProjectFormState>(
     field: K,
@@ -3027,7 +3035,7 @@ function StepDetails({
   form,
   update,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "aiDraft" | "coAuthors" | "common" | "dashboardProjects" | "forms" | "githubIntegration" | "providerIntegrations">;
   form: ProjectFormState;
   update: <K extends keyof ProjectFormState>(
     field: K,
@@ -3156,7 +3164,7 @@ function StepStory({
   form,
   update,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "aiDraft" | "coAuthors" | "common" | "dashboardProjects" | "forms" | "githubIntegration" | "providerIntegrations">;
   form: ProjectFormState;
   update: <K extends keyof ProjectFormState>(
     field: K,
@@ -3221,7 +3229,7 @@ function StepMedia({
   allowDownloads,
   onToggleAllowDownloads,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "aiDraft" | "coAuthors" | "common" | "dashboardProjects" | "forms" | "githubIntegration" | "providerIntegrations">;
   kind: ProjectKind | "";
   mediaItems: WizardMediaItem[];
   onPickFiles: () => void;

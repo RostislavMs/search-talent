@@ -7,10 +7,15 @@ import {
 } from "./helpers/supabase-mock";
 
 vi.mock("@/lib/moderation-server", () => ({ getCurrentViewerRole: vi.fn() }));
+vi.mock("next/cache", () => ({
+  revalidateTag: vi.fn(),
+  unstable_cache: (fn: unknown) => fn,
+}));
 
 import { POST } from "@/app/api/admin/popups/route";
 import { DELETE, PATCH } from "@/app/api/admin/popups/[id]/route";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
+import { revalidateTag } from "next/cache";
 
 const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
 const POPUP_ID = "22222222-2222-4222-8222-222222222222";
@@ -68,6 +73,7 @@ describe("POST /api/admin/popups — gate", () => {
   it("400 on an invalid payload (missing kind)", async () => {
     setViewer(adminUser, true, makeMock(() => ({ error: null })));
     expect((await POST(postReq({}))).status).toBe(400);
+    expect(vi.mocked(revalidateTag)).not.toHaveBeenCalled();
   });
 
   it("400 on an unsafe CTA link", async () => {
@@ -91,6 +97,8 @@ describe("POST /api/admin/popups — create", () => {
     const res = await POST(postReq({ kind: "feedback" }));
     expect(res.status).toBe(200);
     expect((await res.json()).id).toBe(POPUP_ID);
+    // The cached active popup is flushed, so the change shows on the next page.
+    expect(vi.mocked(revalidateTag)).toHaveBeenCalledWith("active-popup", { expire: 0 });
 
     const insert = mock.calls.find(
       (c) => c.table === "site_popups" && c.verb === "insert",

@@ -42,7 +42,7 @@ export default function CoverCropEditor({
   hint,
 }: {
   file: File;
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   onCancel: () => void;
   onConfirm: (file: File) => void;
   /** Restrict the offered formats. A single key locks the ratio and turns the

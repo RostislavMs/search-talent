@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { commonCopy } from "@/lib/i18n/copy/common";
 
 type PinProjectToggleProps = {
   projectId: string;
@@ -15,7 +16,7 @@ export default function PinProjectToggle({
   projectId,
   initialPinned,
 }: PinProjectToggleProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ common: commonCopy });
   const toast = useToast();
   const router = useRouter();
   const [pinned, setPinned] = useState(initialPinned);

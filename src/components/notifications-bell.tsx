@@ -11,6 +11,7 @@ import {
 import { buttonStyles } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { notificationsCopy } from "@/lib/i18n/copy/notifications";
 import {
   buildNotificationHref,
   describeNotification,
@@ -18,8 +19,17 @@ import {
   resolveNotificationEmoji,
 } from "@/lib/notifications-presentation";
 import { formatRelativeTime } from "@/lib/format-relative-time";
+import { createPolledValue, usePolledValue } from "@/lib/polled-value";
 
 const PREVIEW_LIMIT = 6;
+
+// Shared by the desktop and phone copies of the bell: one poll for both.
+const unreadCountStore = createPolledValue(async () => {
+  const result = await apiFetch<{ count: number }>(
+    "/api/notifications/unread-count",
+  );
+  return result.ok ? result.data.count : null;
+}, NOTIFICATIONS_POLL_INTERVAL_MS);
 
 type NotificationsBellProps = {
   /**
@@ -37,24 +47,17 @@ export default function NotificationsBell({
   mode = "dropdown",
   className,
 }: NotificationsBellProps = {}) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ notifications: notificationsCopy });
   const dict = dictionary.notifications;
   const router = useLocalizedRouter();
   const locale = router.locale;
 
   const [open, setOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const unreadCount = usePolledValue(unreadCountStore) ?? 0;
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
-
-  const refreshUnread = useCallback(async () => {
-    const result = await apiFetch<{ count: number }>(
-      "/api/notifications/unread-count",
-    );
-    if (result.ok) setUnreadCount(result.data.count);
-  }, []);
 
   const loadPreview = useCallback(async () => {
     setLoading(true);
@@ -75,7 +78,7 @@ export default function NotificationsBell({
     if (!pathname) return;
     if (!/\/notifications(?:\/|$|\?)/.test(pathname)) return;
     queueMicrotask(() => {
-      setUnreadCount(0);
+      unreadCountStore.update(() => 0);
       setItems((current) =>
         current.map((entry) =>
           entry.readAt
@@ -86,35 +89,13 @@ export default function NotificationsBell({
     });
   }, [pathname]);
 
-  // Initial fetch + polling. Pauses when the tab is hidden to save tokens.
+  // Initial fetch; the store keeps polling while any copy of the bell is
+  // mounted. Both copies ask on mount, and the second reuses the first request.
   useEffect(() => {
-    // Defer the first fetch off the effect tick to avoid the
-    // `set-state-in-effect` lint rule (still runs on mount).
     queueMicrotask(() => {
-      void refreshUnread();
+      void unreadCountStore.refresh();
     });
-
-    const tick = () => {
-      if (document.visibilityState !== "visible") return;
-      void refreshUnread();
-    };
-
-    const intervalId = window.setInterval(
-      tick,
-      NOTIFICATIONS_POLL_INTERVAL_MS,
-    );
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        void refreshUnread();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      window.clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, [refreshUnread]);
+  }, []);
 
   // Close dropdown on outside click / ESC.
   useEffect(() => {
@@ -159,7 +140,7 @@ export default function NotificationsBell({
       body: { all: true },
     });
     if (!result.ok) return;
-    setUnreadCount(0);
+    unreadCountStore.update(() => 0);
     setItems((current) =>
       current.map((entry) =>
         entry.readAt ? entry : { ...entry, readAt: new Date().toISOString() },
@@ -175,7 +156,7 @@ export default function NotificationsBell({
    */
   const handleItemClick = (item: NotificationItem) => {
     if (item.readAt) return;
-    setUnreadCount((current) => Math.max(0, current - 1));
+    unreadCountStore.update((current) => Math.max(0, (current ?? 0) - 1));
     setItems((current) =>
       current.map((entry) =>
         entry.id === item.id

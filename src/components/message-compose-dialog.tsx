@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { buttonStyles, type ButtonVariant } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import { useDictionary } from "@/lib/i18n/client";
+import { messagesCopy } from "@/lib/i18n/copy/messages";
 import { buildConversationPath } from "@/lib/messages";
 
 /**
@@ -33,7 +34,7 @@ export default function MessageComposeDialog({
   label?: string;
   variant?: ButtonVariant;
 }) {
-  const copy = useDictionary().messages;
+  const copy = useDictionary({ messages: messagesCopy }).messages;
   const titleId = useId();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);

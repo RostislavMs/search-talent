@@ -6,6 +6,7 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { jobAlertsCopy } from "@/lib/i18n/copy/job-alerts";
 import {
   JOB_ALERTS_PATH,
   JOB_ALERT_LIMITS,
@@ -39,7 +40,7 @@ export default function JobAlertFollow({
   isAuthenticated: boolean;
   loginHref: string;
 }) {
-  const copy = useDictionary().jobAlerts.follow;
+  const copy = useDictionary({ jobAlerts: jobAlertsCopy }).jobAlerts.follow;
   const locale = useCurrentLocale();
   const router = useLocalizedRouter();
   const toast = useToast();

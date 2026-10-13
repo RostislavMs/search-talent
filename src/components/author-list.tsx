@@ -1,7 +1,9 @@
 import OptimizedImage from "@/components/ui/optimized-image";
 import LocalizedLink from "@/components/ui/localized-link";
 import type { ContentAuthor } from "@/lib/co-authors";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+// Only this namespace, not the whole dictionary: the list also renders inside
+// client feeds, where getDictionary would ship every string of both languages.
+import { coAuthorsCopy } from "@/lib/i18n/copy/co-authors";
 import { isLocale } from "@/lib/i18n/config";
 
 type AuthorListProps = {
@@ -46,7 +48,7 @@ export default function AuthorList({
   showAvatars = true,
   className = "",
 }: AuthorListProps) {
-  const dict = getDictionary(isLocale(locale) ? locale : "en").coAuthors;
+  const dict = coAuthorsCopy[isLocale(locale) ? locale : "en"];
   const fallback = dict.authorFallback;
   const visible = authors.filter(Boolean);
   if (visible.length === 0) return null;

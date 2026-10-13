@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { bookmarksCopy } from "@/lib/i18n/copy/bookmarks";
 
 type BookmarkRemoveButtonProps = {
   targetType: "profile" | "project";
@@ -15,7 +16,7 @@ export default function BookmarkRemoveButton({
   targetType,
   targetId,
 }: BookmarkRemoveButtonProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ bookmarks: bookmarksCopy });
   const toast = useToast();
   const router = useRouter();
   const [pending, startTransition] = useTransition();

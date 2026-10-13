@@ -6,6 +6,7 @@ import IntegrationCard from "@/components/integration-card";
 import { apiFetch } from "@/lib/api-client";
 import type { GithubIntegrationSummary } from "@/lib/constants/github";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { githubIntegrationCopy } from "@/lib/i18n/copy/github-integration";
 
 type Props = {
   /** Optional URL to land on after the OAuth round-trip. */
@@ -15,7 +16,7 @@ type Props = {
 export default function GithubIntegrationCard({
   returnTo = "/profile/edit",
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ githubIntegration: githubIntegrationCopy });
   const dict = dictionary.githubIntegration;
   const router = useLocalizedRouter();
   const [integration, setIntegration] =

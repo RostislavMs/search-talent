@@ -17,6 +17,7 @@ import {
   type CookieConsent,
 } from "@/lib/cookie-consent";
 import { useDictionary } from "@/lib/i18n/client";
+import { cookieConsentCopy } from "@/lib/i18n/copy/cookie-consent";
 import {
   clearThemePreferencePersistence,
   getThemeFromDocument,
@@ -30,7 +31,7 @@ type CookieConsentBannerProps = {
 export default function CookieConsentBanner({
   initialConsent,
 }: CookieConsentBannerProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ cookieConsent: cookieConsentCopy });
   const pathname = usePathname();
   const [consent, setConsent] = useState(initialConsent);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);

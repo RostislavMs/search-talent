@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { useDictionary } from "@/lib/i18n/client";
+import { profileThemesCopy } from "@/lib/i18n/copy/profile-themes";
 import {
   createDefaultProfilePresentation,
   getProfileFonts,
@@ -31,7 +32,7 @@ export default function ProfileThemePicker({
   presentation: ProfilePresentation;
   onChange: (next: ProfilePresentation) => void;
 }) {
-  const copy = useDictionary().profileThemes;
+  const copy = useDictionary({ profileThemes: profileThemesCopy }).profileThemes;
   const [undo, setUndo] = useState<{
     before: ProfilePresentation;
     after: ProfilePresentation;

@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentLocale, useDictionary } from "@/lib/i18n/client";
+import { formsCopy } from "@/lib/i18n/copy/forms";
+import { openToCopy } from "@/lib/i18n/copy/open-to";
+import { profileThemesCopy } from "@/lib/i18n/copy/profile-themes";
 import {
   createProfileCertificateEntry,
   createDefaultProfileVisibility,
@@ -569,7 +572,7 @@ export default function ProfileForm({
   initialSection?: string | null;
 }) {
   const router = useRouter();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ forms: formsCopy, openTo: openToCopy, profileThemes: profileThemesCopy });
   const toast = useToast();
   const locale = useCurrentLocale();
   const profileSettings = normalizeProfileSettings(profile.profile_visibility);

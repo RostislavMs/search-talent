@@ -134,7 +134,7 @@ export function getAuthFieldErrors(error: z.ZodError): AuthFieldErrors {
 
 export function getAuthErrorMessage(
   code: string,
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "auth">,
 ) {
   switch (code) {
     case "email_required":
@@ -162,7 +162,7 @@ export function getAuthErrorMessage(
 
 export function getPublicAuthErrorMessage(
   mode: "login" | "signup" | "oauth",
-  dictionary: Dictionary,
+  dictionary: Pick<Dictionary, "auth">,
 ) {
   switch (mode) {
     case "login":

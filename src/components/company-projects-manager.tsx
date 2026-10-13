@@ -8,6 +8,7 @@ import LocalizedLink from "@/components/ui/localized-link";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { companiesCopy } from "@/lib/i18n/copy/companies";
 import { buildProjectPath } from "@/lib/projects";
 
 export type ManagedCompanyProject = {
@@ -47,7 +48,7 @@ export default function CompanyProjectsManager({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const ui = useDictionary().companies.projects;
+  const ui = useDictionary({ companies: companiesCopy }).companies.projects;
   const [selected, setSelected] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
 

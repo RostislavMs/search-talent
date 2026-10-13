@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useDictionary } from "@/lib/i18n/client";
+import { messagesCopy } from "@/lib/i18n/copy/messages";
 import {
   attachmentTypeLabel,
   buildAttachmentHref,
@@ -41,7 +42,7 @@ export function PaperclipIcon() {
 
 /** A file that is not an image (a PDF): its name, type and size; opens in a new tab. */
 function FileCard({ attachment, locale }: { attachment: MessageAttachment; locale: string }) {
-  const copy = useDictionary().messages.files;
+  const copy = useDictionary({ messages: messagesCopy }).messages.files;
 
   return (
     <a
@@ -66,7 +67,7 @@ function FileCard({ attachment, locale }: { attachment: MessageAttachment; local
 
 /** An image: the picture itself (its place kept while it loads); opens full size in a new tab. */
 function ImageTile({ attachment, single }: { attachment: MessageAttachment; single: boolean }) {
-  const copy = useDictionary().messages.files;
+  const copy = useDictionary({ messages: messagesCopy }).messages.files;
   const [broken, setBroken] = useState(false);
   const href = buildAttachmentHref(attachment.id);
 
@@ -161,7 +162,7 @@ export function AttachmentDrafts({
   onRemove: (key: string) => void;
   onRetry: (key: string) => void;
 }) {
-  const copy = useDictionary().messages;
+  const copy = useDictionary({ messages: messagesCopy }).messages;
 
   if (drafts.length === 0) return null;
 

@@ -38,6 +38,11 @@ export default async function AppShell({
           nav: dictionary.nav,
           discussions: { pageTitle: dictionary.discussions.pageTitle },
           mySpace: { editProfile: dictionary.mySpace.editProfile },
+          messages: {
+            title: dictionary.messages.title,
+            openLabel: dictionary.messages.openLabel,
+            unreadLabel: dictionary.messages.unreadLabel,
+          },
         }}
         viewer={viewer}
         sections={sections}

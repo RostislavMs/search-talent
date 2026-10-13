@@ -20,7 +20,9 @@ import { apiFetch } from "@/lib/api-client";
 import { getCategoryDisplayName, sortArticleCategories } from "@/lib/articles";
 import type { PollCategory } from "@/lib/polls";
 import { isLocale } from "@/lib/i18n/config";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { pickDictionary } from "@/lib/i18n/client";
+import { coAuthorsCopy } from "@/lib/i18n/copy/co-authors";
+import { commonCopy } from "@/lib/i18n/copy/common";
 import { compressImageFile } from "@/lib/image-compression";
 import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes";
 
@@ -193,8 +195,8 @@ export default function PollComposer({
   });
   const isDirty = saving === null && currentSnapshot !== initialSnapshot;
 
-  const dictionaryCommon = getDictionary(isLocale(locale) ? locale : "en").common;
-  const coAuthorsDict = getDictionary(isLocale(locale) ? locale : "en").coAuthors;
+  const dictionaryCommon = pickDictionary({ common: commonCopy }, isLocale(locale) ? locale : "en").common;
+  const coAuthorsDict = pickDictionary({ coAuthors: coAuthorsCopy }, isLocale(locale) ? locale : "en").coAuthors;
   const { isWarningOpen, confirmLeave, cancelLeave } = useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {

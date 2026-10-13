@@ -9,6 +9,7 @@ import type {
   GithubRepoSummary,
 } from "@/lib/constants/github";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { githubIntegrationCopy } from "@/lib/i18n/copy/github-integration";
 
 export type GithubImportPayload = {
   repo: GithubRepoDetail;
@@ -32,7 +33,7 @@ export default function GithubRepoImporter({
   onImport,
   returnTo = "/projects/new",
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ githubIntegration: githubIntegrationCopy });
   const dict = dictionary.githubIntegration;
   const router = useLocalizedRouter();
 

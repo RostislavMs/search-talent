@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import type { ApplicationStatus, TeamApplicationStatus } from "@/lib/applications";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { applicationsCopy } from "@/lib/i18n/copy/applications";
 
 /**
  * What the team does with one application: shortlist, mark as hired, reject —
@@ -22,7 +23,7 @@ export default function ApplicationTeamActions({
 }) {
   const router = useLocalizedRouter();
   const toast = useToast();
-  const ui = useDictionary().applications.team.actions;
+  const ui = useDictionary({ applications: applicationsCopy }).applications.team.actions;
   const [busy, setBusy] = useState<TeamApplicationStatus | null>(null);
   const [confirm, setConfirm] = useState<"rejected" | "hired" | null>(null);
 

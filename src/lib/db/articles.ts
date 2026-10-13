@@ -1,4 +1,4 @@
-import { unstable_noStore as noStore } from "next/cache";
+import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 import { cache } from "react";
 import { slugify } from "@/lib/slug";
 import {
@@ -22,10 +22,15 @@ import {
 } from "@/lib/db/article-sections";
 import { getCurrentViewerRole } from "@/lib/moderation-server";
 import { isPublicModerationStatus } from "@/lib/moderation";
+import { createPublicReadOnlyClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getReactionsForTargets } from "@/lib/db/reactions";
 import { loadAcceptedCoAuthorsMap } from "@/lib/db/co-authors";
 import { extractPlainTextFromRichText } from "@/lib/rich-text-plain";
+
+/** Home "latest articles": a new article reaches it within this window. */
+const LATEST_ARTICLES_REVALIDATE_SECONDS = 300;
+const ARTICLES_CACHE_TAG = "articles";
 
 // Shape of a single language version, both as stored in the `translations`
 // jsonb column and as accepted from the API payload.
@@ -357,6 +362,16 @@ export async function getArticleCategories() {
   return ((data || []) as ArticleCategoryRow[]).map((item) => mapCategory(item)!);
 }
 
+const FEED_COLUMNS =
+  "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at, content_locale, translations";
+
+/** How many of the newest published articles a feed considers. */
+const FEED_WINDOW = 60;
+
+function isPinnedNow(item: Pick<ArticleFeedItem, "pinnedUntil">, now: number) {
+  return Boolean(item.pinnedUntil && new Date(item.pinnedUntil).getTime() > now);
+}
+
 export async function getArticleFeed(params?: {
   categorySlug?: string | null;
   authorQuery?: string | null;
@@ -371,11 +386,9 @@ export async function getArticleFeed(params?: {
 
   let query = supabase
     .from("articles")
-    .select(
-      "id, author_user_id, category_id, title, slug, excerpt, content, cover_image_url, cover_image_storage_path, hero_video_url, hero_video_storage_path, status, moderation_status, moderation_note, views_count, likes_count, comments_count, pinned_until, published_at, created_at, content_locale, translations",
-    )
+    .select(FEED_COLUMNS)
     .eq("status", "published")
-    .limit(60);
+    .limit(FEED_WINDOW);
 
   if (params?.categorySlug) {
     const { data: category } = await supabase
@@ -461,8 +474,8 @@ export async function getArticleFeed(params?: {
     .map((item) => toFeedItem(item, categoryMap, authorMap, params?.locale))
     .sort((left, right) => {
       // Pinned articles always come first
-      const leftPinned = left.pinnedUntil && new Date(left.pinnedUntil).getTime() > now ? 1 : 0;
-      const rightPinned = right.pinnedUntil && new Date(right.pinnedUntil).getTime() > now ? 1 : 0;
+      const leftPinned = isPinnedNow(left, now) ? 1 : 0;
+      const rightPinned = isPinnedNow(right, now) ? 1 : 0;
       if (leftPinned !== rightPinned) return rightPinned - leftPinned;
 
       if (sort === "popular") {
@@ -529,6 +542,91 @@ export async function getArticleFeed(params?: {
     viewerUserId: viewer.user?.id || null,
   };
 }
+
+async function readLatestPublicArticles(
+  limit: number,
+  locale: string | null,
+): Promise<ArticleFeedItem[]> {
+  const supabase = createPublicReadOnlyClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await excludeSectionCategories(
+    supabase
+      .from("articles")
+      .select(FEED_COLUMNS)
+      .eq("status", "published")
+      .limit(FEED_WINDOW),
+    await getSectionCategoryIds(supabase),
+  ).order("published_at", { ascending: false });
+
+  // Thrown, not returned as "no articles", so a failed read is never cached.
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Same order as the community feed's "recent": pinned first, then newest.
+  const now = Date.now();
+  const rows = ((data || []) as ArticleRow[])
+    .filter((row) => isPublicModerationStatus(row.moderation_status))
+    .sort((left, right) => {
+      const pinned =
+        Number(isPinnedNow({ pinnedUntil: right.pinned_until }, now)) -
+        Number(isPinnedNow({ pinnedUntil: left.pinned_until }, now));
+      return (
+        pinned ||
+        new Date(right.published_at || right.created_at || 0).getTime() -
+          new Date(left.published_at || left.created_at || 0).getTime()
+      );
+    })
+    .slice(0, limit);
+
+  const [categoryMap, authorMap, coAuthorsMap] = await Promise.all([
+    getCategoriesMap(
+      supabase,
+      Array.from(
+        new Set(
+          rows
+            .map((row) => row.category_id)
+            .filter((id): id is number => typeof id === "number"),
+        ),
+      ),
+    ),
+    getAuthorsMap(
+      supabase,
+      Array.from(
+        new Set(
+          rows
+            .map((row) => row.author_user_id)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ),
+    ),
+    loadAcceptedCoAuthorsMap(
+      supabase,
+      "article",
+      rows.map((row) => row.id),
+    ),
+  ]);
+
+  return rows.map((row) => ({
+    ...toFeedItem(row, categoryMap, authorMap, locale),
+    coAuthors: coAuthorsMap.get(row.id) ?? [],
+  }));
+}
+
+/**
+ * The newest public articles for the home page. Unlike the feed it does not
+ * depend on who is looking — a guest, the author and an admin all see the same
+ * public cards — so every visitor shares one read for a few minutes, and only
+ * the cards shown are built.
+ */
+export const getLatestPublicArticles = unstable_cache(
+  readLatestPublicArticles,
+  ["latest-public-articles-v1"],
+  { revalidate: LATEST_ARTICLES_REVALIDATE_SECONDS, tags: [ARTICLES_CACHE_TAG] },
+);
 
 async function loadArticleDetail(slug: string, locale?: string | null) {
   noStore();

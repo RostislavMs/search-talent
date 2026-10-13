@@ -1,13 +1,14 @@
 "use client";
 
 import { useDictionary } from "@/lib/i18n/client";
+import { verifiedBadgeCopy } from "@/lib/i18n/copy/verified-badge";
 
 export default function VerifiedBadge({
   verified,
 }: {
   verified: boolean;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ verifiedBadge: verifiedBadgeCopy });
 
   if (!verified) {
     return null;

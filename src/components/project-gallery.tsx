@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useDictionary } from "@/lib/i18n/client";
+import { projectPageCopy } from "@/lib/i18n/copy/project-page";
 import {
   detectVideoEmbed,
   type ProjectMediaItem,
@@ -304,7 +305,7 @@ export default function ProjectGallery({
 }) {
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [activeEmbed, setActiveEmbed] = useState<VideoEmbed | null>(null);
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ projectPage: projectPageCopy });
 
   if (media.length === 0) {
     return (

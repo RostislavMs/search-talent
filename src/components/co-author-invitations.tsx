@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import OptimizedImage from "@/components/ui/optimized-image";
 import type { CoAuthorInvitation, CoAuthorContentType } from "@/lib/co-authors";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { pickDictionary } from "@/lib/i18n/client";
+import { coAuthorsCopy } from "@/lib/i18n/copy/co-authors";
 import { isLocale } from "@/lib/i18n/config";
 
 /**
@@ -13,7 +14,7 @@ import { isLocale } from "@/lib/i18n/config";
  * so it is safe to mount unconditionally (e.g. atop the notifications page).
  */
 export default function CoAuthorInvitations({ locale }: { locale: string }) {
-  const dict = getDictionary(isLocale(locale) ? locale : "en").coAuthors;
+  const dict = pickDictionary({ coAuthors: coAuthorsCopy }, isLocale(locale) ? locale : "en").coAuthors;
   const typeLabels: Record<CoAuthorContentType, string> = {
     project: dict.typeProject,
     article: dict.typeArticle,

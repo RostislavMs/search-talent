@@ -5,6 +5,7 @@ import ContentReportButton from "@/components/content-report-button";
 import { Button } from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api-client";
 import { useCurrentLocale, useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { projectPageCopy } from "@/lib/i18n/copy/project-page";
 import { getModerationCopy } from "@/lib/moderation-copy";
 import { getOptimisticVoteState, type VoteState, type VoteValue } from "@/lib/vote-state";
 
@@ -72,7 +73,7 @@ export default function VoteButtons({
   isOwner,
 }: VoteButtonsProps) {
   const locale = useCurrentLocale();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ projectPage: projectPageCopy });
   const moderationCopy = getModerationCopy(locale);
   const router = useLocalizedRouter();
   const [loading, setLoading] = useState(false);

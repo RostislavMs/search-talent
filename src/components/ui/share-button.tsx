@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useDictionary } from "@/lib/i18n/client";
+import { shareCopy } from "@/lib/i18n/copy/share";
 import { useToast } from "@/components/ui/toast";
 
 type ShareButtonProps = {
@@ -113,7 +114,7 @@ export default function ShareButton({
   className,
   triggerClassName,
 }: ShareButtonProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ share: shareCopy });
   const t = dictionary.share;
   const toast = useToast();
 

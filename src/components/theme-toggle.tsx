@@ -7,6 +7,7 @@ import {
   getCookieConsentFromDocument,
 } from "@/lib/cookie-consent";
 import { useDictionary } from "@/lib/i18n/client";
+import { themeCopy } from "@/lib/i18n/copy/theme";
 import type { Theme } from "@/lib/theme";
 import {
   applyThemeToDocument,
@@ -104,7 +105,7 @@ export default function ThemeToggle({
    */
   initialCanPersist: boolean;
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ theme: themeCopy });
   // Read the live theme from <html data-theme> so the switch always reflects the
   // real, current theme — not a prop captured at mount. SSR/hydration use the
   // server-computed `initialTheme` to avoid a mismatch, then it syncs on mount.

@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { isCompanyVerificationCode, type CompanyDomainCheck } from "@/lib/companies";
 import { useDictionary } from "@/lib/i18n/client";
+import { companiesCopy } from "@/lib/i18n/copy/companies";
 
 type FailedReason = Extract<CompanyDomainCheck, { ok: false }>["reason"];
 type Step = { kind: "email" } | { kind: "code"; email: string };
@@ -40,7 +41,7 @@ export default function CompanyVerificationCard({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ companies: companiesCopy });
   const copy = dictionary.companies;
   const ui = copy.verification;
   const fieldId = useId();

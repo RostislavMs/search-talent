@@ -10,6 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useDictionary } from "@/lib/i18n/client";
+import { dashboardProfileCopy } from "@/lib/i18n/copy/dashboard-profile";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { Button } from "@/components/ui/Button";
 import { apiFetch } from "@/lib/api-client";
@@ -41,7 +42,7 @@ export default function AvatarUpload({
   fallbackText: string;
 }) {
   const supabase = createClient();
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ dashboardProfile: dashboardProfileCopy });
   const editorUi = dictionary.dashboardProfile.avatarEditor;
   const router = useRouter();
 

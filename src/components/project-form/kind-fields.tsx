@@ -129,7 +129,7 @@ export function DesignDetailsFields({
   value,
   onChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   value: DesignKindMetadata;
   onChange: (next: DesignKindMetadata) => void;
 }) {
@@ -224,7 +224,7 @@ export function CodeDetailsFields({
   value,
   onChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   value: CodeKindMetadata;
   onChange: (next: CodeKindMetadata) => void;
 }) {
@@ -361,7 +361,7 @@ export function VideoDetailsFields({
   onChange,
   onDurationInputChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   value: VideoKindMetadata;
   durationInput: string;
   onChange: (next: VideoKindMetadata) => void;
@@ -483,7 +483,7 @@ export function PhotoDetailsFields({
   value,
   onChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   value: PhotoKindMetadata;
   onChange: (next: PhotoKindMetadata) => void;
 }) {
@@ -619,7 +619,7 @@ export function ThreeDDetailsFields({
   value,
   onChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   value: ThreeDKindMetadata;
   onChange: (next: ThreeDKindMetadata) => void;
 }) {
@@ -742,7 +742,7 @@ export function AudioDetailsFields({
   onChange,
   onDurationInputChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   value: AudioKindMetadata;
   durationInput: string;
   onChange: (next: AudioKindMetadata) => void;
@@ -879,7 +879,7 @@ export function QaDetailsFields({
   value,
   onChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   value: QaKindMetadata;
   onChange: (next: QaKindMetadata) => void;
 }) {
@@ -1057,7 +1057,7 @@ export function MotionDetailsFields({
   onChange,
   onDurationInputChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   value: MotionKindMetadata;
   durationInput: string;
   onChange: (next: MotionKindMetadata) => void;
@@ -1156,7 +1156,7 @@ export function WritingDetailsFields({
   value,
   onChange,
 }: {
-  dictionary: Dictionary;
+  dictionary: Pick<Dictionary, "forms">;
   value: WritingKindMetadata;
   onChange: (next: WritingKindMetadata) => void;
 }) {

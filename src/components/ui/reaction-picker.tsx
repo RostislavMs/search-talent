@@ -9,6 +9,7 @@ import {
   type ReactionTargetType,
 } from "@/lib/constants/reactions";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { reactionsCopy } from "@/lib/i18n/copy/reactions";
 import { useLoginHref } from "@/lib/auth/use-login-href";
 
 type ReactionPickerProps = {
@@ -65,7 +66,7 @@ export default function ReactionPicker({
   isAuthenticated,
   size = "md",
 }: ReactionPickerProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ reactions: reactionsCopy });
   const router = useLocalizedRouter();
   // Guests are sent to sign in. A client-side push is enough: nothing about
   // the session changes until they actually log in there.

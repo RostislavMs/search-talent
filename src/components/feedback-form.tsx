@@ -9,6 +9,8 @@ import OptimizedImage from "@/components/ui/optimized-image";
 import { apiFetch } from "@/lib/api-client";
 import { compressImageFile } from "@/lib/image-compression";
 import { useDictionary } from "@/lib/i18n/client";
+import { coAuthorsCopy } from "@/lib/i18n/copy/co-authors";
+import { feedbackPageCopy } from "@/lib/i18n/copy/feedback-page";
 import { uploadWithProgress } from "@/lib/storage/upload-with-progress";
 
 const MAX_ATTACHMENTS = 5;
@@ -32,7 +34,7 @@ type FeedbackFormProps = {
 };
 
 export default function FeedbackForm({ viewer }: FeedbackFormProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ coAuthors: coAuthorsCopy, feedbackPage: feedbackPageCopy });
   const copy = dictionary.feedbackPage;
   const isSignedIn = viewer !== null;
   const viewerLabel =

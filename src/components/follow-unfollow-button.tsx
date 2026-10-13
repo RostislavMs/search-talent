@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { useDictionary } from "@/lib/i18n/client";
+import { followsCopy } from "@/lib/i18n/copy/follows";
 
 type FollowUnfollowButtonProps = {
   followingUserId: string;
@@ -13,7 +14,7 @@ type FollowUnfollowButtonProps = {
 export default function FollowUnfollowButton({
   followingUserId,
 }: FollowUnfollowButtonProps) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ follows: followsCopy });
   const toast = useToast();
   const router = useRouter();
   const [pending, startTransition] = useTransition();

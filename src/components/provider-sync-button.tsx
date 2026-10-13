@@ -10,6 +10,8 @@ import {
   type ProviderIntegrationId,
 } from "@/lib/constants/provider-integrations";
 import { useDictionary } from "@/lib/i18n/client";
+import { localeNameCopy } from "@/lib/i18n/copy/locale-name";
+import { providerIntegrationsCopy } from "@/lib/i18n/copy/provider-integrations";
 
 type Props = {
   projectId: string;
@@ -40,7 +42,7 @@ export default function ProviderSyncButton({
   provider,
   initialSyncedAt,
 }: Props) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ localeName: localeNameCopy, providerIntegrations: providerIntegrationsCopy });
   const dict = dictionary.providerIntegrations;
   const router = useRouter();
   const [syncedAt, setSyncedAt] = useState<string | null>(initialSyncedAt);

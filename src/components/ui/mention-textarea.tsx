@@ -12,6 +12,7 @@ import Image from "next/image";
 import { apiFetch } from "@/lib/api-client";
 import { MENTION_TRIGGER_REGEX } from "@/lib/constants/mentions";
 import { useDictionary } from "@/lib/i18n/client";
+import { mentionsCopy } from "@/lib/i18n/copy/mentions";
 
 type Suggestion = {
   userId: string;
@@ -47,7 +48,7 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
   function MentionTextarea(props, externalRef) {
     const { value, onChange, className, ...textareaProps } = props;
 
-    const dictionary = useDictionary();
+    const dictionary = useDictionary({ mentions: mentionsCopy });
     const dict = dictionary.mentions;
 
     const innerRef = useRef<HTMLTextAreaElement | null>(null);

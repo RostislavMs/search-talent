@@ -588,14 +588,14 @@ describe("the messages screen", () => {
 
 describe("<MessagesNavLink />", () => {
   it("shows what is new", () => {
-    render(<MessagesNavLink initialCount={3} />);
+    render(<MessagesNavLink copy={uk} initialCount={3} />);
     const link = screen.getByRole("link", { name: uk.unreadLabel.replace("{count}", "3") });
     expect(link).toHaveAttribute("href", "/uk/messages");
     expect(link).toHaveTextContent("3");
   });
 
   it("has a plain label without anything new", () => {
-    render(<MessagesNavLink />);
+    render(<MessagesNavLink copy={uk} />);
     expect(screen.getByRole("link", { name: uk.openLabel })).toBeInTheDocument();
   });
 });

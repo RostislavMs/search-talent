@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import ProfileSharePanel from "@/components/profile-share-panel";
 import { Button } from "@/components/ui/Button";
 import { useDictionary } from "@/lib/i18n/client";
+import { profileShareCopy } from "@/lib/i18n/copy/profile-share";
 import type { OpenToOption } from "@/lib/open-to";
 
 /**
@@ -21,7 +22,7 @@ export default function ProfileShareDialog({
   username: string;
   openTo: OpenToOption[];
 }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ profileShare: profileShareCopy });
   const t = dictionary.profileShare;
   const titleId = useId();
   const [open, setOpen] = useState(false);

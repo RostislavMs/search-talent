@@ -2,9 +2,10 @@
 
 import { Button } from "@/components/ui/Button";
 import { useDictionary, useLocalizedHref } from "@/lib/i18n/client";
+import { navCopy } from "@/lib/i18n/copy/nav";
 
 export default function LogoutButton({ className = "" }: { className?: string }) {
-  const dictionary = useDictionary();
+  const dictionary = useDictionary({ nav: navCopy });
   const loginHref = useLocalizedHref("/login");
 
   const handleLogout = async () => {

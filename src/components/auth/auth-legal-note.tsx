@@ -2,13 +2,14 @@
 
 import LocalizedLink from "@/components/ui/localized-link";
 import { useDictionary } from "@/lib/i18n/client";
+import { authCopy } from "@/lib/i18n/copy/auth";
 
 const linkClassName =
   "underline decoration-[color:var(--border)] underline-offset-4 hover:text-[color:var(--foreground)]";
 
 /** Terms/privacy consent line shown inside the auth forms. */
 export default function AuthLegalNote({ className }: { className?: string }) {
-  const legal = useDictionary().auth.legal;
+  const legal = useDictionary({ auth: authCopy }).auth.legal;
 
   return (
     <p
