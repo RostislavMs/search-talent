@@ -396,25 +396,39 @@ describe("projectPayloadSchema – kindMetadata", () => {
     }
   });
 
-  it("accepts valid motion kindMetadata", () => {
+  it("rejects the retired motion kind", () => {
     const result = projectPayloadSchema.safeParse({
       title: "Motion Project",
       kind: "motion",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts animation work as a video project", () => {
+    const result = projectPayloadSchema.safeParse({
+      title: "Logo loop",
+      kind: "video",
       kindMetadata: {
-        motion: {
-          role: "motion_designer",
-          techniques: ["2d"],
-          tools: ["After Effects"],
-          purposes: ["commercial"],
-          durationSeconds: 60,
-          client: "Brand Y",
+        video: {
+          role: "motion",
+          genres: ["motion_design", "logo_animation"],
+          tools: ["After Effects", "Rive"],
+          durationSeconds: 12,
         },
       },
     });
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.kindMetadata.motion?.durationSeconds).toBe(60);
+      expect(result.data.kindMetadata.video?.genres).toEqual([
+        "motion_design",
+        "logo_animation",
+      ]);
+      expect(result.data.kindMetadata.video?.tools).toEqual([
+        "After Effects",
+        "Rive",
+      ]);
     }
   });
 

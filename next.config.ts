@@ -68,6 +68,16 @@ const nextConfig: NextConfig = {
   // option replaces the default list rather than extending it.
   htmlLimitedBots:
     /[\w-]+-Google|Google-[\w-]+|Chrome-Lighthouse|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti|googleweblight|GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-User|Claude-SearchBot|anthropic-ai|PerplexityBot|Perplexity-User|Amazonbot|Bytespider|meta-externalagent|meta-externalfetcher|cohere-ai|MistralAI-User|Applebot-Extended|DuckAssistBot|TelegramBot|AhrefsBot|SemrushBot/i,
+  redirects() {
+    return [
+      // The "motion" project type was merged into "video".
+      {
+        source: "/:locale(uk|en)/projects/type/motion",
+        destination: "/:locale/projects/type/video",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

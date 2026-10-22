@@ -18,19 +18,34 @@ export type GithubImportPayload = {
 type Props = {
   /** Called when the user picks a repo and we resolved its details. */
   onImport: (payload: GithubImportPayload) => void;
+  /** The repository this project is already linked to, if any. */
+  linkedName?: string | null;
+  /** Removes the link (applied when the project is saved). */
+  onUnlink?: () => void;
+  /**
+   * Another source this project is already linked to. A project has one
+   * source, so the picker stays closed until that one is unlinked.
+   */
+  blockedBy?: { source: string; name: string } | null;
   /** Optional URL to land on after OAuth (defaults to the new-project page). */
   returnTo?: string;
 };
 
 /**
  * Compact panel that lets the project-form caller pick a GitHub repo
- * and pre-fill the form. Three states:
+ * and pre-fill the form. States:
+ *   - blocked → the project already has another source; unlink it first.
  *   - not connected → "Connect GitHub" CTA.
  *   - connected, no pick → list of repositories with search.
- *   - picked → fetch details, hand them to the parent, collapse.
+ *   - picked → fetch details, hand them to the parent, collapse; the panel
+ *     then names the linked repo, offers to pick another or to unlink.
+ * Same layout and actions as ProviderResourceImporter (GitLab).
  */
 export default function GithubRepoImporter({
   onImport,
+  linkedName = null,
+  onUnlink,
+  blockedBy = null,
   returnTo = "/projects/new",
 }: Props) {
   const dictionary = useDictionary({ githubIntegration: githubIntegrationCopy });
@@ -119,19 +134,48 @@ export default function GithubRepoImporter({
     return null;
   }
 
+  if (blockedBy) {
+    return (
+      <div className="rounded-2xl border border-dashed app-border p-4">
+        <p className="text-sm font-medium text-[color:var(--foreground)]">
+          {dict.importTitle}
+        </p>
+        <p className="mt-0.5 text-xs app-muted">
+          {dict.blockedBy
+            .replace(/\{source\}/g, blockedBy.source)
+            .replace("{name}", blockedBy.name)}
+        </p>
+      </div>
+    );
+  }
+
+  const unlinkButton =
+    linkedName && onUnlink ? (
+      <Button size="sm" variant="ghost" onClick={onUnlink}>
+        {dict.unlink}
+      </Button>
+    ) : null;
+
   if (!integration) {
     return (
       <div className="rounded-2xl border border-dashed app-border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium text-[color:var(--foreground)]">
               {dict.importTitle}
             </p>
-            <p className="mt-0.5 text-xs app-muted">{dict.notConnectedHint}</p>
+            <p className="mt-0.5 truncate text-xs app-muted">
+              {linkedName
+                ? dict.linkedTo.replace("{name}", linkedName)
+                : dict.notConnectedHint}
+            </p>
           </div>
-          <Button size="sm" onClick={startConnect}>
-            {dict.connect}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {unlinkButton}
+            <Button size="sm" onClick={startConnect}>
+              {dict.connect}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -140,17 +184,26 @@ export default function GithubRepoImporter({
   return (
     <div className="rounded-2xl border app-border p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-medium text-[color:var(--foreground)]">
             {dict.importTitle}
           </p>
-          <p className="mt-0.5 text-xs app-muted">
-            {dict.connectedAs.replace("{login}", integration.githubLogin)}
+          <p className="mt-0.5 truncate text-xs app-muted">
+            {linkedName
+              ? dict.linkedTo.replace("{name}", linkedName)
+              : dict.connectedAs.replace("{login}", integration.githubLogin)}
           </p>
         </div>
-        <Button size="sm" variant="secondary" onClick={togglePanel}>
-          {open ? dict.hideRepos : dict.pickRepo}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {unlinkButton}
+          <Button size="sm" variant="secondary" onClick={togglePanel}>
+            {open
+              ? dict.hideRepos
+              : linkedName
+                ? dict.pickAnotherRepo
+                : dict.pickRepo}
+          </Button>
+        </div>
       </div>
 
       {open ? (

@@ -21,10 +21,6 @@ import {
   designDeliverables,
   designRoles,
   designTools,
-  motionPurposes,
-  motionRoles,
-  motionTechniques,
-  motionTools,
   photoCameraBrands,
   photoEditingTools,
   photoGenres,
@@ -535,52 +531,6 @@ export const projectPayloadSchema = z
                 return Math.round(parsed);
               }),
             reportUrl: optionalUrl("report URL"),
-            client: optionalText("Client", 160),
-          })
-          .partial()
-          .optional(),
-        motion: z
-          .object({
-            role: z
-              .union([
-                z.enum(motionRoles),
-                z.literal(""),
-                z.null(),
-                z.undefined(),
-              ])
-              .transform((value) =>
-                value && (motionRoles as readonly string[]).includes(value)
-                  ? (value as (typeof motionRoles)[number])
-                  : null,
-              ),
-            techniques: z
-              .array(z.enum(motionTechniques))
-              .max(20, "Too many techniques")
-              .default([])
-              .transform((values) => [...new Set(values)]),
-            tools: z
-              .array(z.enum(motionTools))
-              .max(20, "Too many tools")
-              .default([])
-              .transform((values) => [...new Set(values)]),
-            purposes: z
-              .array(z.enum(motionPurposes))
-              .max(20, "Too many purposes")
-              .default([])
-              .transform((values) => [...new Set(values)]),
-            durationSeconds: z
-              .union([z.number(), z.string(), z.null(), z.undefined()])
-              .transform((value) => {
-                if (value === null || value === undefined || value === "") {
-                  return null;
-                }
-                const parsed = Number(value);
-                if (!Number.isFinite(parsed) || parsed <= 0) {
-                  return null;
-                }
-                return Math.min(Math.floor(parsed), 24 * 60 * 60);
-              }),
-            previewUrl: optionalUrl("preview URL"),
             client: optionalText("Client", 160),
           })
           .partial()

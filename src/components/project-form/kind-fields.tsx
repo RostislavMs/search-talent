@@ -15,9 +15,6 @@ import {
   getWritingFormatLabel,
   getWritingTopicLabel,
   getWritingLanguageLabel,
-  getMotionRoleLabel,
-  getMotionTechniqueLabel,
-  getMotionPurposeLabel,
   getQaRoleLabel,
   getQaTestTypeLabel,
   getQaMethodologyLabel,
@@ -41,10 +38,6 @@ import {
   designDeliverables,
   designRoles,
   designTools,
-  motionPurposes,
-  motionRoles,
-  motionTechniques,
-  motionTools,
   writingFormats,
   writingLanguages,
   writingRoles,
@@ -84,11 +77,6 @@ import {
   type DesignKindMetadata,
   type DesignRole,
   type DesignTool,
-  type MotionKindMetadata,
-  type MotionPurpose,
-  type MotionRole,
-  type MotionTechnique,
-  type MotionTool,
   type PhotoCameraBrand,
   type PhotoEditingTool,
   type PhotoGenre,
@@ -1046,107 +1034,6 @@ export function QaDetailsFields({
         onChange={(next) => update("reportUrl", next || null)}
         invalidMessage={dictionary.forms.invalidUrl}
       />
-    </section>
-  );
-}
-
-export function MotionDetailsFields({
-  dictionary,
-  value,
-  durationInput,
-  onChange,
-  onDurationInputChange,
-}: {
-  dictionary: Pick<Dictionary, "forms">;
-  value: MotionKindMetadata;
-  durationInput: string;
-  onChange: (next: MotionKindMetadata) => void;
-  onDurationInputChange: (next: string) => void;
-}) {
-  const update = <K extends keyof MotionKindMetadata>(
-    field: K,
-    next: MotionKindMetadata[K],
-  ) => {
-    onChange({ ...value, [field]: next });
-  };
-
-  return (
-    <section className="space-y-5 rounded-2xl border app-border p-5">
-      <header>
-        <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
-          {dictionary.forms.motionSectionTitle}
-        </h3>
-      </header>
-
-      <UrlField
-        id="motion-preview-url"
-        label={dictionary.forms.motionPreviewUrlLabel}
-        description={dictionary.forms.motionPreviewUrlHint}
-        placeholder={dictionary.forms.motionPreviewUrlPlaceholder}
-        value={value.previewUrl ?? ""}
-        onChange={(next) => update("previewUrl", next || null)}
-        invalidMessage={dictionary.forms.invalidUrl}
-      />
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field label={dictionary.forms.motionRoleLabel} htmlFor="motion-role">
-          <FormSelect
-            name="motion-role"
-            value={value.role || ""}
-            onChange={(next) =>
-              update("role", (next as MotionRole) || null)
-            }
-            placeholder={dictionary.forms.motionRolePlaceholder}
-            options={motionRoles.map((role) => ({
-              value: role,
-              label: getMotionRoleLabel(role, dictionary),
-            }))}
-          />
-        </Field>
-
-      </div>
-
-      <Field label={dictionary.forms.motionTechniquesLabel}>
-        <ChipToggleGroup<MotionTechnique>
-          options={motionTechniques}
-          value={value.techniques}
-          onChange={(next) => update("techniques", next)}
-          getLabel={(item) => getMotionTechniqueLabel(item, dictionary)}
-        />
-      </Field>
-
-      <Field label={dictionary.forms.motionToolsLabel}>
-        <ChipToggleGroup<MotionTool>
-          options={motionTools}
-          value={value.tools}
-          onChange={(next) => update("tools", next)}
-          getLabel={(item) => item}
-        />
-      </Field>
-
-      <Field label={dictionary.forms.motionPurposesLabel}>
-        <ChipToggleGroup<MotionPurpose>
-          options={motionPurposes}
-          value={value.purposes}
-          onChange={(next) => update("purposes", next)}
-          getLabel={(item) => getMotionPurposeLabel(item, dictionary)}
-        />
-      </Field>
-
-      <Field
-        label={dictionary.forms.motionDurationLabel}
-        htmlFor="motion-duration"
-        description={dictionary.forms.motionDurationHint}
-      >
-        <input
-          id="motion-duration"
-          type="text"
-          placeholder={dictionary.forms.motionDurationPlaceholder}
-          className="app-input"
-          value={durationInput}
-          onChange={(event) => onDurationInputChange(event.target.value)}
-        />
-      </Field>
     </section>
   );
 }

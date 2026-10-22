@@ -15,7 +15,9 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getMarketingContent } from "@/lib/marketing-content";
 import {
   getProjectKindLabel,
+  isPublicProjectKind,
   normalizeProjectKind,
+  type PublicProjectKind,
 } from "@/lib/projects";
 import { buildItemListSchema, buildMetadata, getSiteUrl, toBcp47 } from "@/lib/seo";
 import { notFound } from "next/navigation";
@@ -93,10 +95,13 @@ export default async function LocalizedProjectsPage({
 
   const typeItems = kindCounts
     .map((entry) => ({ kind: normalizeProjectKind(entry.kind), count: entry.count }))
-    .filter((entry) => entry.kind && entry.count >= 1)
+    .filter(
+      (entry): entry is { kind: PublicProjectKind; count: number } =>
+        isPublicProjectKind(entry.kind) && entry.count >= 1,
+    )
     .sort((left, right) => right.count - left.count)
     .map((entry) => ({
-      label: getProjectKindLabel(entry.kind!, dictionary),
+      label: getProjectKindLabel(entry.kind, dictionary),
       href: `/projects/type/${entry.kind}`,
       count: entry.count,
     }));

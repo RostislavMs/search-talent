@@ -7,9 +7,6 @@ import type {
   DesignDeliverable,
   DesignRole,
   DesignTool,
-  MotionPurpose,
-  MotionRole,
-  MotionTechnique,
   PhotoGenre,
   PhotoMedium,
   PhotoRole,
@@ -231,6 +228,12 @@ export function getVideoGenreLabel(genre: VideoGenre, dictionary: Pick<Dictionar
       return dictionary.forms.videoGenreTrailer;
     case "animation":
       return dictionary.forms.videoGenreAnimation;
+    case "motion_design":
+      return dictionary.forms.videoGenreMotionDesign;
+    case "logo_animation":
+      return dictionary.forms.videoGenreLogoAnimation;
+    case "ui_animation":
+      return dictionary.forms.videoGenreUiAnimation;
     default:
       return genre;
   }
@@ -432,100 +435,6 @@ export function getWritingLanguageLabel(
       return dictionary.forms.writingLanguageCs;
     case "multi":
       return dictionary.forms.writingLanguageMulti;
-    default:
-      return value;
-  }
-}
-
-export function getMotionRoleLabel(role: MotionRole, dictionary: Pick<Dictionary, "forms">) {
-  switch (role) {
-    case "motion_designer":
-      return dictionary.forms.motionRoleMotionDesigner;
-    case "animator":
-      return dictionary.forms.motionRoleAnimator;
-    case "character_animator":
-      return dictionary.forms.motionRoleCharacterAnimator;
-    case "art_director":
-      return dictionary.forms.motionRoleArtDirector;
-    case "illustrator":
-      return dictionary.forms.motionRoleIllustrator;
-    case "compositor":
-      return dictionary.forms.motionRoleCompositor;
-    case "fx_artist":
-      return dictionary.forms.motionRoleFxArtist;
-    case "lead":
-      return dictionary.forms.motionRoleLead;
-    default:
-      return role;
-  }
-}
-
-export function getMotionTechniqueLabel(
-  value: MotionTechnique,
-  dictionary: Pick<Dictionary, "forms">,
-) {
-  switch (value) {
-    case "2d":
-      return dictionary.forms.motionTechnique2d;
-    case "3d":
-      return dictionary.forms.motionTechnique3d;
-    case "mixed":
-      return dictionary.forms.motionTechniqueMixed;
-    case "frame_by_frame":
-      return dictionary.forms.motionTechniqueFrameByFrame;
-    case "character":
-      return dictionary.forms.motionTechniqueCharacter;
-    case "kinetic_typography":
-      return dictionary.forms.motionTechniqueKineticTypography;
-    case "infographic":
-      return dictionary.forms.motionTechniqueInfographic;
-    case "particle_fx":
-      return dictionary.forms.motionTechniqueParticleFx;
-    case "rotoscope":
-      return dictionary.forms.motionTechniqueRotoscope;
-    case "motion_capture":
-      return dictionary.forms.motionTechniqueMotionCapture;
-    case "cell_animation":
-      return dictionary.forms.motionTechniqueCellAnimation;
-    case "stop_motion":
-      return dictionary.forms.motionTechniqueStopMotion;
-    case "isometric":
-      return dictionary.forms.motionTechniqueIsometric;
-    default:
-      return value;
-  }
-}
-
-export function getMotionPurposeLabel(value: MotionPurpose, dictionary: Pick<Dictionary, "forms">) {
-  switch (value) {
-    case "logo_reveal":
-      return dictionary.forms.motionPurposeLogoReveal;
-    case "explainer":
-      return dictionary.forms.motionPurposeExplainer;
-    case "intro_outro":
-      return dictionary.forms.motionPurposeIntroOutro;
-    case "commercial":
-      return dictionary.forms.motionPurposeCommercial;
-    case "social_media":
-      return dictionary.forms.motionPurposeSocialMedia;
-    case "app_animation":
-      return dictionary.forms.motionPurposeAppAnimation;
-    case "lottie_animation":
-      return dictionary.forms.motionPurposeLottieAnimation;
-    case "ui_animation":
-      return dictionary.forms.motionPurposeUiAnimation;
-    case "opener":
-      return dictionary.forms.motionPurposeOpener;
-    case "music_video":
-      return dictionary.forms.motionPurposeMusicVideo;
-    case "title_sequence":
-      return dictionary.forms.motionPurposeTitleSequence;
-    case "game_animation":
-      return dictionary.forms.motionPurposeGameAnimation;
-    case "education":
-      return dictionary.forms.motionPurposeEducation;
-    case "broadcast":
-      return dictionary.forms.motionPurposeBroadcast;
     default:
       return value;
   }

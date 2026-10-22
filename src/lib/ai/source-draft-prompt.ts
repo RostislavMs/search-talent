@@ -8,6 +8,8 @@ import {
   AI_README_CHAR_LIMIT,
   AI_SOURCE_DESCRIPTION_LIMIT,
 } from "@/lib/constants/ai";
+import { buildDetailsPromptSection } from "@/lib/ai/project-details-draft";
+import type { ProjectKind } from "@/lib/projects";
 
 /**
  * Pure prompt construction for the provider-import draft. Mirrors
@@ -32,6 +34,8 @@ export type SourceDraftPromptInput = {
   authorLogin: string | null;
   locale: "uk" | "en";
   existing: Partial<SourceDraftFields>;
+  /** The project kind; adds its details section and the technology tags. */
+  kind?: ProjectKind | null;
 };
 
 export function buildSourceDraftSystemInstruction(
@@ -60,7 +64,7 @@ function line(label: string, value: string | null | undefined): string | null {
 }
 
 export function buildSourceDraftPrompt(input: SourceDraftPromptInput): string {
-  const { provider, resource, authorLogin, existing } = input;
+  const { provider, resource, authorLogin, existing, kind } = input;
   const providerLabel = getProviderIntegrationDescriptor(provider).label;
 
   const facts = [
@@ -104,6 +108,10 @@ export function buildSourceDraftPrompt(input: SourceDraftPromptInput): string {
       "",
       `The author already wrote these fields, so return an empty string for each of them: ${alreadyFilled.join(", ")}.`,
     );
+  }
+
+  if (kind !== undefined) {
+    sections.push("", buildDetailsPromptSection(kind));
   }
 
   sections.push(

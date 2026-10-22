@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const { provider, ref, locale, existing } = parsed.data;
+  const { provider, ref, locale, existing, kind } = parsed.data;
   const adapter = getProviderAdapter(provider);
 
   if (!adapter.refPattern.test(ref)) {
@@ -92,6 +92,7 @@ export async function POST(request: Request) {
       authorLogin: integration?.external_login ?? null,
       locale,
       existing,
+      kind,
     });
 
     void logAiUsage(supabase, {

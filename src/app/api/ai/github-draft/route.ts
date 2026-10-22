@@ -87,6 +87,7 @@ export async function POST(request: Request) {
       authorLogin: integration.github_login,
       locale: parsed.data.locale,
       existing: parsed.data.existing,
+      kind: parsed.data.kind,
     });
 
     void logAiUsage(supabase, {

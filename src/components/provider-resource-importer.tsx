@@ -22,6 +22,11 @@ type Props = {
   provider: ProviderIntegrationId;
   /** The resource this project is already linked to, if any. */
   linkedName: string | null;
+  /**
+   * Another source this project is already linked to. A project has one
+   * source, so the picker stays closed until that one is unlinked.
+   */
+  blockedBy?: { source: string; name: string } | null;
   onImport: (payload: ProviderImportPayload) => void;
   onUnlink: () => void;
   /** Where to land after the OAuth round-trip. */
@@ -31,8 +36,9 @@ type Props = {
 /**
  * Connect-and-import panel for one provider inside the project wizard.
  *
- * Four states, mirroring the GitHub importer:
+ * Five states, mirroring the GitHub importer:
  *   not configured → nothing;
+ *   blocked        → the project already has another source; unlink it first;
  *   not connected  → "Connect <provider>";
  *   connected      → a filterable list of what the account owns;
  *   linked         → what it is linked to, with an unlink action.
@@ -40,6 +46,7 @@ type Props = {
 export default function ProviderResourceImporter({
   provider,
   linkedName,
+  blockedBy = null,
   onImport,
   onUnlink,
   returnTo = "/projects/new",
@@ -152,21 +159,48 @@ export default function ProviderResourceImporter({
     return null;
   }
 
+  if (blockedBy) {
+    return (
+      <div className="rounded-2xl border border-dashed app-border p-4">
+        <p className="text-sm font-medium text-[color:var(--foreground)]">
+          {dict.importTitle.replace("{provider}", descriptor.label)}
+        </p>
+        <p className="mt-0.5 text-xs app-muted">
+          {dict.blockedBy
+            .replace(/\{source\}/g, blockedBy.source)
+            .replace("{name}", blockedBy.name)
+            .replace("{provider}", descriptor.label)}
+        </p>
+      </div>
+    );
+  }
+
+  const unlinkButton = linkedName ? (
+    <Button size="sm" variant="ghost" onClick={onUnlink}>
+      {dict.unlink}
+    </Button>
+  ) : null;
+
   if (!integration) {
     return (
       <div className="rounded-2xl border border-dashed app-border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium text-[color:var(--foreground)]">
               {dict.importTitle.replace("{provider}", descriptor.label)}
             </p>
-            <p className="mt-0.5 text-xs app-muted">
-              {dict.notConnectedHint.replace("{provider}", descriptor.label)}
+            <p className="mt-0.5 truncate text-xs app-muted">
+              {linkedName
+                ? dict.linkedTo.replace("{name}", linkedName)
+                : dict.notConnectedHint.replace("{provider}", descriptor.label)}
             </p>
           </div>
-          <Button size="sm" onClick={startConnect}>
-            {dict.connect.replace("{provider}", descriptor.label)}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {unlinkButton}
+            <Button size="sm" onClick={startConnect}>
+              {dict.connect.replace("{provider}", descriptor.label)}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -186,11 +220,7 @@ export default function ProviderResourceImporter({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {linkedName ? (
-            <Button size="sm" variant="ghost" onClick={onUnlink}>
-              {dict.unlink}
-            </Button>
-          ) : null}
+          {unlinkButton}
           <Button size="sm" variant="secondary" onClick={togglePanel}>
             {open
               ? dict.hidePicker

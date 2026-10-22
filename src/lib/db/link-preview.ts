@@ -11,6 +11,7 @@ import { toPlainText } from "@/lib/plain-text";
 import { formatScore } from "@/lib/plural";
 import {
   getProjectKindLabel,
+  isPublicProjectKind,
   normalizeProjectKind,
   parseProjectPath,
 } from "@/lib/projects";
@@ -293,7 +294,7 @@ async function getProjectPreview(
 
   return {
     kind: "project",
-    eyebrow: projectKind
+    eyebrow: isPublicProjectKind(projectKind)
       ? getProjectKindLabel(projectKind, dictionary)
       : dictionary.linkPreview.project,
     title: project.title,

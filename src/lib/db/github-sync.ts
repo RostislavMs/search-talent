@@ -3,10 +3,32 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getIntegrationForUser } from "@/lib/db/github-integrations";
 import { fetchRepoFullDetail } from "@/lib/integrations/github";
-import { mapRepoToProjectColumns } from "@/lib/integrations/github-mapping";
+import {
+  githubUnlinkedColumns,
+  mapRepoToProjectColumns,
+} from "@/lib/integrations/github-mapping";
 import type { GithubProjectStats } from "@/lib/constants/github";
 
-export { mapRepoToProjectColumns };
+export { githubUnlinkedColumns, mapRepoToProjectColumns };
+
+/**
+ * The column patch for linking a project to a GitHub repository on create or
+ * update: a fresh snapshot of the repo. Null when the owner's GitHub is not
+ * connected or the repo is unreachable — the link is then not stored, and the
+ * project saves with what the form had.
+ */
+export async function buildGithubLinkColumns(
+  supabase: SupabaseClient,
+  userId: string,
+  fullName: string,
+  current: Parameters<typeof mapRepoToProjectColumns>[1],
+): Promise<ReturnType<typeof mapRepoToProjectColumns> | null> {
+  const integration = await getIntegrationForUser(supabase, userId);
+  if (!integration) return null;
+
+  const detail = await fetchRepoFullDetail(integration.access_token, fullName);
+  return detail ? mapRepoToProjectColumns(detail, current) : null;
+}
 
 export type SyncProjectResult =
   | { ok: true; syncedAt: string; stats: GithubProjectStats; techStack: string[] }

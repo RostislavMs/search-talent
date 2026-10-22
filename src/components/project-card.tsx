@@ -4,6 +4,7 @@ import OptimizedImage from "@/components/ui/optimized-image";
 import {
   buildProjectPath,
   getProjectKindLabel,
+  isPublicProjectKind,
   normalizeProjectKind,
 } from "@/lib/projects";
 import { formatScore } from "@/lib/plural";
@@ -77,7 +78,9 @@ export default function ProjectCard({
       ? formatScore(project.score, dictionary.common)
       : dictionary.common.fresh;
   const kind = normalizeProjectKind(project.kind);
-  const kindLabel = kind ? getProjectKindLabel(kind, dictionary) : null;
+  const kindLabel = isPublicProjectKind(kind)
+    ? getProjectKindLabel(kind, dictionary)
+    : null;
 
   const isMasonry = variant === "masonry";
   const isFeatured = variant === "featured";

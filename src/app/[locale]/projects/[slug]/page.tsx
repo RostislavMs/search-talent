@@ -49,14 +49,17 @@ import {
   safeJsonLd,
   toBcp47,
 } from "@/lib/seo";
-import { getProjectKindLabel, normalizeProjectKind } from "@/lib/projects";
+import {
+  getProjectKindLabel,
+  isPublicProjectKind,
+  normalizeProjectKind,
+} from "@/lib/projects";
 import { toPlainTextWithBreaks } from "@/lib/plain-text";
 import { formatScore } from "@/lib/plural";
 import {
   isAudioKindMetadataEmpty,
   isCodeKindMetadataEmpty,
   isDesignKindMetadataEmpty,
-  isMotionKindMetadataEmpty,
   isPhotoKindMetadataEmpty,
   isQaKindMetadataEmpty,
   isThreeDKindMetadataEmpty,
@@ -65,7 +68,6 @@ import {
   normalizeAudioKindMetadata,
   normalizeCodeKindMetadata,
   normalizeDesignKindMetadata,
-  normalizeMotionKindMetadata,
   normalizePhotoKindMetadata,
   normalizeQaKindMetadata,
   normalizeThreeDKindMetadata,
@@ -79,7 +81,6 @@ import ProjectPhotoDetails from "@/components/project-photo-details";
 import ProjectThreeDDetails from "@/components/project-three-d-details";
 import ProjectAudioDetails from "@/components/project-audio-details";
 import ProjectQaDetails from "@/components/project-qa-details";
-import ProjectMotionDetails from "@/components/project-motion-details";
 import ProjectWritingDetails from "@/components/project-writing-details";
 import ProjectSourcePanel from "@/components/project-source-panel";
 import ProviderSyncButton from "@/components/provider-sync-button";
@@ -252,7 +253,8 @@ export default async function PublicProjectPage({
   const projectKind = normalizeProjectKind(
     (project as { kind?: string | null }).kind,
   );
-  const kindLabel = projectKind
+  // "Other" says nothing to a visitor, so it gets no tile.
+  const kindLabel = isPublicProjectKind(projectKind)
     ? getProjectKindLabel(projectKind, dictionary)
     : null;
   const designMeta =
@@ -318,15 +320,6 @@ export default async function PublicProjectPage({
       : null;
   const showQaDetails =
     qaMeta !== null && !isQaKindMetadataEmpty(qaMeta);
-  const motionMeta =
-    projectKind === "motion"
-      ? normalizeMotionKindMetadata(
-          (project as { kind_metadata?: { motion?: unknown } | null })
-            .kind_metadata?.motion ?? null,
-        )
-      : null;
-  const showMotionDetails =
-    motionMeta !== null && !isMotionKindMetadataEmpty(motionMeta);
   const writingMeta =
     projectKind === "writing"
       ? normalizeWritingKindMetadata(
@@ -738,10 +731,6 @@ export default async function PublicProjectPage({
 
             {showQaDetails && qaMeta ? (
               <ProjectQaDetails dictionary={dictionary} meta={qaMeta} />
-            ) : null}
-
-            {showMotionDetails && motionMeta ? (
-              <ProjectMotionDetails dictionary={dictionary} meta={motionMeta} />
             ) : null}
 
             {showWritingDetails && writingMeta ? (

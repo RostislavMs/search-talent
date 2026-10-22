@@ -11,7 +11,7 @@ import {
 } from "@/lib/articles";
 import { buildCompanyPath } from "@/lib/companies";
 import { getSectionVisibility } from "@/lib/db/section-visibility";
-import { normalizeProjectKind } from "@/lib/projects";
+import { isPublicProjectKind, normalizeProjectKind } from "@/lib/projects";
 import { JOBS_PATH, buildVacancyPath } from "@/lib/vacancies";
 import { createLocalePath, locales, type Locale } from "@/lib/i18n/config";
 import {
@@ -207,7 +207,7 @@ export async function getSitemapEntries(id: SitemapId): Promise<SitemapEntry[]> 
     return items
       .filter(
         (item) =>
-          normalizeProjectKind(item.kind) !== null &&
+          isPublicProjectKind(normalizeProjectKind(item.kind)) &&
           item.count >= MIN_PROJECT_TYPE_ITEMS_FOR_PAGE,
       )
       .flatMap((item) =>
