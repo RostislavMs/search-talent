@@ -205,7 +205,7 @@ function getThemeStyle(presentation: ProfilePresentation) {
     // itself — not the background colour — so changing the profile background
     // never recolours button/badge text (e.g. the "Edit profile" button).
     "--brand-foreground": getReadableTextColor(accent),
-    "--brand-ring": withAlpha(accent, 0.34),
+    "--brand-ring": accent,
     "--ring": accent,
     "--brand-hero": `linear-gradient(135deg, ${accent} 0%, color-mix(in srgb, ${accent} 70%, #000) 100%)`,
   } as CSSProperties & Record<`--${string}`, string>;
@@ -728,7 +728,7 @@ function ProfileArticleCard({
   return (
     <LocalizedLink
       href={`/articles/${article.slug}`}
-      className="group block h-full overflow-hidden rounded-panel app-card transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group block h-full overflow-hidden rounded-panel app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)]"
     >
       <div className="relative aspect-[16/10] bg-[color:var(--surface-muted)]">
         {article.cover_image_url ? (

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { buttonStyles } from "@/components/ui/button-styles";
+import { buttonStyles, countBadge } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import { apiFetch } from "@/lib/api-client";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -74,7 +74,7 @@ export default function MessagesNavLink({
       {count > 0 ? (
         <span
           aria-hidden="true"
-          className="absolute -top-1 -right-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white"
+          className={countBadge}
         >
           {count > 99 ? "99+" : count}
         </span>

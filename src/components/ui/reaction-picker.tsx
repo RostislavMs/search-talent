@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
+import { pressable } from "@/components/ui/button-styles";
 import {
   REACTION_EMOJIS,
   type ReactionEmoji,
@@ -167,7 +168,7 @@ export default function ReactionPicker({
             "inline-flex cursor-pointer items-center rounded-full border transition-colors",
             pillSizes,
             entry.reactedByMe
-              ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--foreground)]"
+              ? "border-[color:var(--brand-strong)] bg-[color:var(--brand-soft)] text-[color:var(--foreground)]"
               : "app-border app-panel text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",
             pending === entry.emoji ? "opacity-60" : "",
           ].join(" ")}
@@ -191,7 +192,7 @@ export default function ReactionPicker({
           aria-expanded={pickerOpen}
           aria-label={dict.addReaction}
           className={[
-            "inline-flex cursor-pointer items-center justify-center rounded-full border app-border app-panel text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)] transition-colors",
+            `inline-flex cursor-pointer items-center justify-center rounded-full border app-border app-panel text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)] ${pressable}`,
             size === "sm" ? "h-7 w-7 text-xs" : "h-8 w-8 text-sm",
           ].join(" ")}
         >
@@ -243,7 +244,7 @@ export default function ReactionPicker({
                   aria-label={dict.toggleAria.replace("{emoji}", emoji)}
                   className={[
                     "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-lg transition-transform hover:scale-110",
-                    mine ? "bg-[color:var(--accent-soft)]" : "",
+                    mine ? "bg-[color:var(--brand-soft)]" : "",
                   ].join(" ")}
                 >
                   <span aria-hidden="true">{emoji}</span>

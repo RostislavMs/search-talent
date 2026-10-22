@@ -31,7 +31,7 @@ export default function CreatorCard({
   return (
     <LocalizedLink
       href={`/u/${creator.username}`}
-      className="group block rounded-3xl app-card p-5 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl"
+      className="group block rounded-3xl app-card p-5 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)]"
     >
       <div className="flex items-start gap-4">
         <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-2xl border app-border app-surface-muted shadow-sm">

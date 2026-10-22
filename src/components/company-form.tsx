@@ -531,7 +531,7 @@ export default function CompanyForm({
           onChange={(event) => update("description", event.target.value)}
           className="px-4 py-3 text-sm leading-6"
         />
-        <p className={`${HINT_CLASS} text-right`} aria-live="polite">
+        <p className={`${HINT_CLASS} text-right tabular-nums`} aria-live="polite">
           {ui.characters
             .replace("{count}", String(form.description.length))
             .replace("{max}", String(COMPANY_LIMITS.descriptionMax))}

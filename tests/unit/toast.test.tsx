@@ -34,15 +34,27 @@ async function advance(ms: number) {
   });
 }
 
-// React derives onMouseEnter/onMouseLeave from mouseover/mouseout, so those are
-// the events to fire — a raw "mouseenter" never reaches the handler. userEvent
-// is avoided here because its pointer sequence deadlocks against fake timers.
+// React derives onPointerEnter/onPointerLeave from pointerover/pointerout, so
+// those are the events to fire — a raw "pointerenter" never reaches the
+// handler. jsdom has no PointerEvent, so `pointerType` is stamped onto a plain
+// event. userEvent is avoided here because its pointer sequence deadlocks
+// against fake timers.
+function firePointer(
+  element: HTMLElement,
+  type: "pointerover" | "pointerout",
+  pointerType: "mouse" | "touch",
+) {
+  const event = new MouseEvent(type, { bubbles: true, cancelable: true });
+  Object.defineProperty(event, "pointerType", { value: pointerType });
+  fireEvent(element, event);
+}
+
 function hover(element: HTMLElement) {
-  fireEvent.mouseOver(element);
+  firePointer(element, "pointerover", "mouse");
 }
 
 function unhover(element: HTMLElement) {
-  fireEvent.mouseOut(element);
+  firePointer(element, "pointerout", "mouse");
 }
 
 describe("ToastProvider", () => {
@@ -89,6 +101,16 @@ describe("ToastProvider", () => {
     expect(screen.getByText("Saved")).toBeInTheDocument();
 
     await advance(500 + EXIT_MS);
+    expect(screen.queryByText("Saved")).not.toBeInTheDocument();
+  });
+
+  it("does not pause on a touch, which never sends a matching leave", async () => {
+    renderToast();
+
+    await advance(3000);
+    firePointer(screen.getByText("Saved"), "pointerover", "touch");
+
+    await advance(2000 + EXIT_MS);
     expect(screen.queryByText("Saved")).not.toBeInTheDocument();
   });
 });

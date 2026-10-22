@@ -21,7 +21,7 @@ vi.mock("@/components/ui/localized-link", () => ({
     </a>
   ),
 }));
-vi.mock("@/components/ui/button-styles", () => ({ buttonStyles: () => "" }));
+vi.mock("@/components/ui/button-styles", () => ({ buttonStyles: () => "", countBadge: "" }));
 vi.mock("@/lib/format-relative-time", () => ({ formatRelativeTime: () => "just now" }));
 vi.mock("@/lib/notifications-presentation", () => ({
   buildNotificationHref: (item: NotificationItem) => `/n/${item.id}`,

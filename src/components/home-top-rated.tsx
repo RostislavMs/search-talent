@@ -150,7 +150,7 @@ export default function HomeTopRated({
               <LocalizedLink
                 key={creator.id}
                 href={`/u/${creator.username}`}
-                className={`group rounded-2xl border app-border bg-[color:var(--surface)] p-4 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-4 ${
+                className={`group rounded-2xl border app-border bg-[color:var(--surface)] p-4 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] sm:rounded-panel sm:p-4 ${
                   !showFreshCreators && index < 2 ? "lg:col-span-2" : ""
                 }`}
               >
@@ -256,7 +256,7 @@ export default function HomeTopRated({
               // its own on top — links cannot nest.
               <article
                 key={project.id}
-                className="group relative overflow-hidden rounded-2xl border app-border bg-[color:var(--surface)] p-0 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-panel sm:p-3"
+                className="group relative overflow-hidden rounded-2xl border app-border bg-[color:var(--surface)] p-0 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] sm:rounded-panel sm:p-3"
               >
                 <div className="flex flex-col gap-3 md:grid md:grid-cols-[12rem_minmax(0,1fr)] md:items-stretch md:gap-4">
                   <div className="relative h-44 w-full overflow-hidden rounded-none border-0 app-border bg-[color:var(--surface-muted)] sm:h-52 sm:rounded-2xl sm:border md:h-full md:min-h-[8.5rem]">

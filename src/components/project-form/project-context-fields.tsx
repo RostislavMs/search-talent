@@ -91,7 +91,7 @@ export default function ProjectContextFields({
           <label className="flex cursor-pointer items-start gap-2 text-sm text-[color:var(--foreground)] md:col-span-2">
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 cursor-pointer accent-[color:var(--accent)]"
+              className="mt-0.5 h-4 w-4 cursor-pointer accent-[color:var(--brand-strong)]"
               checked={value.clientNda}
               onChange={(event) => onChange("clientNda", event.target.checked)}
             />
@@ -182,7 +182,7 @@ export default function ProjectContextFields({
             <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-[color:var(--foreground)]">
               <input
                 type="checkbox"
-                className="mt-0.5 h-4 w-4 cursor-pointer accent-[color:var(--accent)]"
+                className="mt-0.5 h-4 w-4 cursor-pointer accent-[color:var(--brand-strong)]"
                 checked={value.budgetPublic}
                 disabled={!value.budgetAmount}
                 onChange={(event) => onChange("budgetPublic", event.target.checked)}

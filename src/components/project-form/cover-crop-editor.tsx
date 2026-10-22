@@ -398,7 +398,7 @@ export default function CoverCropEditor({
             step={0.01}
             value={zoom}
             onChange={(event) => setZoom(Number(event.target.value))}
-            className="h-1.5 flex-1 cursor-pointer accent-[color:var(--accent)]"
+            className="h-1.5 flex-1 cursor-pointer accent-[color:var(--brand-strong)]"
             aria-label={dict.coverEditorZoom}
           />
           <button

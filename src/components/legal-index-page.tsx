@@ -38,7 +38,7 @@ export default function LegalIndexPage({
           <LocalizedLink
             key={card.href}
             href={card.href}
-            className="rounded-hero app-card p-6 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl"
+            className="rounded-hero app-card p-6 transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)]"
           >
             <h2 className="font-display text-xl font-semibold tracking-tight text-[color:var(--foreground)]">
               {card.title}

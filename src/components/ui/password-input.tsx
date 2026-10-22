@@ -29,7 +29,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           ref={ref}
           type={visible ? "text" : "password"}
           className={[
-            "w-full rounded-2xl border app-border bg-[color:var(--surface)] p-3 pr-12 text-[color:var(--foreground)]",
+            "app-input pr-12",
             inputClassName,
           ]
             .filter(Boolean)

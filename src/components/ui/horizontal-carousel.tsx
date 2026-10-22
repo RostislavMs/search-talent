@@ -227,7 +227,7 @@ export default function HorizontalCarousel({
                 aria-selected={isActive}
                 aria-label={`${index + 1} / ${itemCount}`}
                 onClick={() => scrollToIndex(index)}
-                className={`h-2 cursor-pointer rounded-full transition-all ${
+                className={`h-2 cursor-pointer rounded-full transition-[width,background-color] ${
                   isActive
                     ? "w-6 bg-[color:var(--foreground)]"
                     : "w-2 bg-[color:var(--foreground)]/30"

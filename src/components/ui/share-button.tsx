@@ -344,7 +344,7 @@ export default function ShareButton({
             ) : (
               <>
                 <div
-                  className="fixed inset-0 z-[110] bg-[rgba(2,6,23,0.55)]"
+                  className="fixed inset-0 z-[110] touch-none bg-[rgba(2,6,23,0.55)]"
                   aria-hidden="true"
                   onClick={() => setIsOpen(false)}
                 />
@@ -355,7 +355,7 @@ export default function ShareButton({
                   aria-modal="true"
                   aria-label={t.panelTitle}
                   className={cx(
-                    "fixed left-1/2 top-1/2 z-[120] max-h-[90vh] w-[min(92vw,22rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto",
+                    "fixed left-1/2 top-1/2 z-[120] max-h-[90dvh] w-[min(92vw,22rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto",
                     panelClassName,
                   )}
                 >

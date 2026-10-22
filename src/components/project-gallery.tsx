@@ -241,9 +241,9 @@ function EmbedModal({
   // Other providers keep a clean aspect box.
   const frameStyle =
     embed.provider === "instagram"
-      ? { width: "min(420px, 95vw)", height: "85vh" }
+      ? { width: "min(420px, 95vw)", height: "85dvh" }
       : embed.orientation === "portrait"
-        ? { height: "85vh", aspectRatio: 9 / 16 }
+        ? { height: "85dvh", aspectRatio: 9 / 16 }
         : { width: "min(56rem, 95vw)", aspectRatio: 16 / 9 };
 
   return (
@@ -361,7 +361,7 @@ export default function ProjectGallery({
             alt=""
             width={1600}
             height={1200}
-            className={`max-h-[90vh] max-w-[90vw] rounded-3xl object-contain ${
+            className={`max-h-[90dvh] max-w-[90vw] rounded-3xl object-contain ${
               allowDownloads ? "" : "pointer-events-none select-none"
             }`}
             draggable={allowDownloads}

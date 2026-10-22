@@ -15,6 +15,16 @@ function buildClientCookieAttributes(maxAge: number) {
     .join("; ");
 }
 
+/**
+ * Colour the browser paints its own toolbar with (`<meta name="theme-color">`,
+ * honoured by Chrome on Android). Each theme's `--surface`, the sticky
+ * header's background, so the bar and the header read as one strip.
+ */
+export const themeChromeColors = {
+  light: "#ffffff",
+  dark: "#0d1726",
+} as const;
+
 export function applyThemeToDocument(theme: "light" | "dark") {
   if (typeof document === "undefined") {
     return;
@@ -22,6 +32,9 @@ export function applyThemeToDocument(theme: "light" | "dark") {
 
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", themeChromeColors[theme]);
 }
 
 export function persistThemePreference(theme: "light" | "dark") {

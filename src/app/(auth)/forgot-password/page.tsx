@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
                   id="forgot-email"
                   type="email"
                   placeholder="name@example.com"
-                  className="rounded-2xl border app-border bg-[color:var(--surface)] p-3 text-[color:var(--foreground)]"
+                  className="app-input"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);

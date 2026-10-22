@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { pressable } from "@/components/ui/button-styles";
 
 // Shared component used in two modes:
 //   • client pages pass `onPageChange` → interactive <button> controls;
@@ -51,12 +52,12 @@ function buildPages(
 }
 
 const arrowBase =
-  "inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors";
+  `inline-flex h-9 w-9 items-center justify-center rounded-full ${pressable}`;
 const arrowEnabled =
   "text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]";
 const arrowDisabled = "app-muted opacity-40";
 const pageBase =
-  "inline-flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-sm transition-colors";
+  `inline-flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-sm tabular-nums ${pressable}`;
 
 const PrevIcon = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">

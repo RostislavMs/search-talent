@@ -24,7 +24,7 @@
      over --surface-muted, where the previous #6d7d91 landed at 3.83:1 and
      failed WCAG AA. This value is 4.68:1 there and 5.14:1 on --surface. */
   --soft-foreground: #5f6f83;
-  --ring: #94a3b8;
+  --ring: #64748b; /* 4.8:1 on --surface — a focus ring needs 3:1 */
   --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
   --scrollbar-track: rgba(215, 224, 234, 0.55);
   --scrollbar-thumb: rgba(82, 98, 119, 0.42);
@@ -41,7 +41,7 @@
   --brand-soft: #fef3c7;
   --brand-on-soft: #92400e;
   --brand-foreground: #18181b;
-  --brand-ring: rgba(245, 158, 11, 0.32);
+  --brand-ring: #a85d05; /* same as --brand-ink: 5:1 on --surface */
   --brand-hero: linear-gradient(
     145deg,
     rgba(15, 23, 42, 0.98) 0%,
@@ -79,6 +79,17 @@
   --tracking-eyebrow: 0.2em;
 }
 
+/* Motion curves for UI. These replace Tailwind's own `ease-out` and
+   `ease-in-out`, which start too slowly — the first frames, the ones the eye is
+   on, barely move — so every `ease-out` / `ease-in-out` utility and every
+   `var(--ease-*)` in this file gets the stronger curve. Enter and exit use
+   `ease-out`; something sliding from one spot to another on screen uses
+   `ease-in-out`. The long marketing reveals below keep their own curves. */
+@theme {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
 html[data-theme="dark"] {
   --background: #020817;
   --foreground: #e5edf7;
@@ -104,7 +115,7 @@ html[data-theme="dark"] {
   --brand-soft: #422006;
   --brand-on-soft: #fde68a;
   --brand-foreground: #18181b;
-  --brand-ring: rgba(251, 191, 36, 0.4);
+  --brand-ring: #fbbf24;
   --brand-hero: linear-gradient(
     145deg,
     rgba(15, 23, 42, 0.98) 0%,
@@ -187,24 +198,28 @@ body {
   background: transparent;
 }
 
-a,
-button,
-input,
-textarea,
-select {
-  transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    color 180ms ease,
-    box-shadow 180ms ease;
-}
-
-/* Tailwind v4's Preflight dropped the `cursor: pointer` that v3 put on buttons,
-   which is why controls across the site showed the default arrow unless the
-   component happened to add the utility itself (the language tabs, among many).
-   Restored once here for every button-shaped control, and deliberately inside
-   `@layer base` so an explicit `cursor-*` utility on a component still wins. */
+/* Element defaults live in `@layer base` so a component's own utilities still
+   win. Unlayered CSS beats every layered rule regardless of specificity, so
+   when the transition below sat outside the layer it overrode each
+   `transition-*` / `duration-*` utility on links and buttons — the card hover
+   lifts snapped instead of moving. */
 @layer base {
+  a,
+  button,
+  input,
+  textarea,
+  select {
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  /* Tailwind v4's Preflight dropped the `cursor: pointer` that v3 put on
+     buttons, which is why controls across the site showed the default arrow
+     unless the component happened to add the utility itself (the language
+     tabs, among many). Restored once here for every button-shaped control. */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [role="tab"]:not([aria-disabled="true"]) {
@@ -214,16 +229,73 @@ select {
   button:disabled {
     cursor: not-allowed;
   }
+
+  /* A long-press on a phone selects a button's label instead of pressing it. */
+  button,
+  [role="button"],
+  [role="tab"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* No double-tap-to-zoom wait on anything that is tapped. */
+  a,
+  button,
+  summary,
+  label,
+  [role="button"],
+  [role="tab"] {
+    touch-action: manipulation;
+  }
+
+  /* Long Ukrainian words leave single-word last lines in headings and orphans
+     in body copy; the browser rebalances both. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p,
+  li,
+  figcaption {
+    text-wrap: pretty;
+  }
 }
 
+/* Reduced motion means no movement, not no feedback: transforms and keyframe
+   motion stop, while colour, border, shadow and opacity changes keep their
+   transition so state changes still read. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-property:
+      color, background-color, border-color, outline-color,
+      text-decoration-color, fill, stroke, opacity, box-shadow !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* iOS Safari zooms the page into any field whose text is under 16px and never
+   zooms back out. On touch screens the small sizes go up to 16px on the field
+   itself: `text-xs` / `text-sm` read `--text-xs` / `--text-sm`, so redefining
+   the tokens here only moves fields that asked for a small size, and desktop
+   keeps its compact inputs. Unlayered on purpose — it must beat the editors'
+   `text-[15px]` utility. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    --text-xs: 1rem;
+    --text-sm: 1rem;
+  }
+
+  .rich-text-editor {
+    font-size: 1rem;
   }
 }
 
@@ -688,6 +760,16 @@ select {
   text-shadow: 0 0 12px rgba(252, 211, 77, 0.28);
 }
 
+/* ---------------------------------------------------------------------------
+ * Component classes (`.app-card` … `.app-select-empty`).
+ *
+ * Inside `@layer components` so a utility on the same element wins, as it does
+ * everywhere else in Tailwind. Outside any layer these rules beat every utility
+ * regardless of specificity: `app-muted hover:text-…`, `app-border
+ * focus:border-…`, `app-card hover:border-…` and `app-input w-20` all rendered
+ * as if the utility were not there.
+ * --------------------------------------------------------------------------- */
+@layer components {
 .app-card {
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
   background: color-mix(in srgb, var(--surface) 82%, transparent);
@@ -761,19 +843,28 @@ select {
   color: var(--soft-foreground);
 }
 
-.app-input:hover {
-  border-color: color-mix(in srgb, var(--foreground) 16%, var(--border));
+/* Raw `:hover` in this file sits behind `(hover: hover)`, the same condition
+   Tailwind v4 puts on its `hover:` variant — otherwise a tap on a phone leaves
+   the hover state stuck on until the next tap elsewhere. */
+@media (hover: hover) {
+  .app-input:hover {
+    border-color: color-mix(in srgb, var(--foreground) 16%, var(--border));
+  }
 }
 
+/* The border carries the focus state at full `--ring` strength: the soft halo
+   alone is ~1.2:1 against the page, far under the 3:1 a focus indicator needs. */
 .app-input:focus-visible {
-  border-color: color-mix(in srgb, var(--foreground) 24%, var(--border));
+  border-color: var(--ring);
   box-shadow:
     0 0 0 4px color-mix(in srgb, var(--foreground) 10%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.app-input:disabled {
+.app-input:disabled,
+.app-textarea:disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .app-input[type="date"] {
@@ -791,8 +882,10 @@ select {
   filter: var(--calendar-icon-filter);
 }
 
-.app-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
+@media (hover: hover) {
+  .app-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
 }
 
 .app-input[type="number"] {
@@ -829,12 +922,14 @@ select {
   color: var(--soft-foreground);
 }
 
-.app-textarea:hover {
-  border-color: color-mix(in srgb, var(--foreground) 16%, var(--border));
+@media (hover: hover) {
+  .app-textarea:hover {
+    border-color: color-mix(in srgb, var(--foreground) 16%, var(--border));
+  }
 }
 
 .app-textarea:focus-visible {
-  border-color: color-mix(in srgb, var(--foreground) 24%, var(--border));
+  border-color: var(--ring);
   box-shadow:
     0 0 0 4px color-mix(in srgb, var(--foreground) 10%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -865,12 +960,14 @@ select {
     transform 180ms ease;
 }
 
-.app-checkbox:hover {
-  border-color: color-mix(in srgb, var(--foreground) 18%, var(--border));
+@media (hover: hover) {
+  .app-checkbox:hover {
+    border-color: color-mix(in srgb, var(--foreground) 18%, var(--border));
+  }
 }
 
 .app-checkbox:focus-visible {
-  border-color: color-mix(in srgb, var(--foreground) 24%, var(--border));
+  border-color: var(--ring);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--foreground) 10%, transparent);
 }
 
@@ -885,7 +982,7 @@ select {
 
 .app-checkbox:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.6;
 }
 
 .app-select-trigger {
@@ -920,8 +1017,10 @@ select {
   font-size: 0.875rem;
 }
 
-.app-select-trigger:hover {
-  border-color: color-mix(in srgb, var(--foreground) 16%, var(--border));
+@media (hover: hover) {
+  .app-select-trigger:hover {
+    border-color: color-mix(in srgb, var(--foreground) 16%, var(--border));
+  }
 }
 
 .app-select-trigger[data-open="true"] {
@@ -934,7 +1033,7 @@ select {
 }
 
 .app-select-trigger:focus-visible {
-  border-color: color-mix(in srgb, var(--foreground) 24%, var(--border));
+  border-color: var(--ring);
   box-shadow:
     0 0 0 4px color-mix(in srgb, var(--foreground) 10%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -942,13 +1041,13 @@ select {
 
 .app-select-trigger:disabled {
   cursor: not-allowed;
-  opacity: 0.65;
+  opacity: 0.6;
 }
 
 .app-select-chevron {
   color: var(--soft-foreground);
   transition:
-    transform 180ms ease,
+    transform 200ms var(--ease-out),
     color 180ms ease;
 }
 
@@ -1070,9 +1169,14 @@ select {
   cursor: pointer;
 }
 
-.app-select-option:hover,
 .app-select-option:focus-visible {
   background: color-mix(in srgb, var(--surface-muted) 84%, transparent);
+}
+
+@media (hover: hover) {
+  .app-select-option:hover {
+    background: color-mix(in srgb, var(--surface-muted) 84%, transparent);
+  }
 }
 
 .app-select-option[data-selected="true"] {
@@ -1099,6 +1203,7 @@ select {
   padding: 0.95rem 1rem;
   font-size: 0.92rem;
   color: var(--muted-foreground);
+}
 }
 
 /*
@@ -1349,14 +1454,16 @@ select {
    accent treatment `MentionText` gives mentions in comments, so a mention reads
    the same whether it sits in a comment or in an article. */
 .rich-text-renderer a.rich-text-mention {
-  color: var(--accent);
+  color: var(--brand-ink);
   font-weight: 600;
   text-decoration: none;
 }
 
-.rich-text-renderer a.rich-text-mention:hover {
-  text-decoration: underline;
-  text-decoration-color: currentColor;
+@media (hover: hover) {
+  .rich-text-renderer a.rich-text-mention:hover {
+    text-decoration: underline;
+    text-decoration-color: currentColor;
+  }
 }
 
 .rich-text-editor figure,
@@ -1540,8 +1647,10 @@ select {
   user-select: none;
 }
 
-.rich-text-renderer summary:hover {
-  color: var(--rich-text-accent, var(--foreground));
+@media (hover: hover) {
+  .rich-text-renderer summary:hover {
+    color: var(--rich-text-accent, var(--foreground));
+  }
 }
 
 /* GitHub README rendered inside the project page's insights card (see
@@ -1762,14 +1871,17 @@ select {
 }
 
 .header-nav-indicator {
-  will-change: transform, width;
+  will-change: transform;
 }
 
+/* Navigation is clicked many times a session, so the pill stays inside the
+   300ms UI budget; it slides between two spots on screen, hence ease-in-out.
+   The link labels change colour over the same 250ms (see header-nav). */
 .header-nav-indicator--animated {
   transition:
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    width 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 220ms ease-out;
+    transform 250ms var(--ease-in-out),
+    width 250ms var(--ease-in-out),
+    opacity 200ms var(--ease-out);
 }
 
 @media (prefers-reduced-motion: reduce) {

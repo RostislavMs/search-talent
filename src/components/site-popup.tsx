@@ -168,7 +168,7 @@ export default function SitePopup({ popup }: SitePopupProps) {
   return (
     <div
       className={[
-        "fixed inset-0 z-[60] flex items-center justify-center px-4 py-6 transition-opacity duration-200",
+        "fixed inset-0 z-[60] flex items-center justify-center px-4 py-6 transition-opacity duration-200 ease-out",
         "bg-[color:var(--foreground)]/45 backdrop-blur-sm",
         entered ? "opacity-100" : "opacity-0",
       ].join(" ")}
@@ -183,7 +183,7 @@ export default function SitePopup({ popup }: SitePopupProps) {
         aria-modal="true"
         aria-label={title || copy.regionLabel}
         className={[
-          "app-card relative w-full max-w-md rounded-hero p-6 text-left shadow-2xl transition-all duration-200 sm:p-8",
+          "app-card relative w-full max-w-md rounded-hero p-6 text-left shadow-2xl transition-[translate,scale,opacity] duration-200 ease-out sm:p-8",
           entered
             ? "translate-y-0 scale-100 opacity-100"
             : "translate-y-3 scale-95 opacity-0",

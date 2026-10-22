@@ -167,7 +167,7 @@ export default function TopicComposer({
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder={ui.composerTitlePlaceholder}
                 maxLength={180}
-                className="mt-2 w-full rounded-xl border app-border bg-[color:var(--surface-muted)] px-4 py-3 text-base text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+                className="mt-2 w-full rounded-xl border app-border bg-[color:var(--surface-muted)] px-4 py-3 text-base text-[color:var(--foreground)] placeholder:text-[color:var(--soft-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
               />
             </div>
 

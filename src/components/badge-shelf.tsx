@@ -363,7 +363,7 @@ export default function BadgeShelf({
           }}
         >
           <div
-            className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-panel border app-border shadow-[0_28px_90px_rgba(2,6,23,0.6)]"
+            className="flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-panel border app-border shadow-[0_28px_90px_rgba(2,6,23,0.6)]"
             style={{
               background: "var(--surface)",
               color: "var(--foreground)",
@@ -405,7 +405,7 @@ export default function BadgeShelf({
               </button>
             </div>
 
-            <ul className="flex-1 space-y-3 overflow-y-auto p-5 sm:p-6">
+            <ul className="flex-1 space-y-3 overflow-y-auto overscroll-contain p-5 sm:p-6">
               {badges.map((entry) => {
                 const { badge, earned, tier, awardedAt } = entry;
                 const { name, description } = getBadgeLabel(badge, locale);

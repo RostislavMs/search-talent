@@ -123,7 +123,7 @@ export default function ProfileCompletenessButton({
           }}
         >
           <div
-            className="flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-panel border app-border shadow-[0_28px_90px_rgba(2,6,23,0.6)]"
+            className="flex max-h-[88dvh] w-full max-w-xl flex-col overflow-hidden rounded-panel border app-border shadow-[0_28px_90px_rgba(2,6,23,0.6)]"
             style={{
               background: "var(--surface)",
               color: "var(--foreground)",
@@ -174,7 +174,7 @@ export default function ProfileCompletenessButton({
               </button>
             </div>
 
-            <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
+            <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-6">
               {missing.length > 0 ? (
                 <section>
                   <h3 className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
