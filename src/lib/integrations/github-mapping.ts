@@ -4,6 +4,28 @@ import type {
 } from "@/lib/constants/github";
 
 /**
+ * The column patch for a project unlinked from its GitHub repository: the
+ * link, the repo snapshot and the GitHub-only narrative go. tech_stack stays —
+ * once the link is gone it doubles as the author's own technology list.
+ */
+export const githubUnlinkedColumns = {
+  github_repo_id: null,
+  github_full_name: null,
+  github_default_branch: null,
+  github_synced_at: null,
+  github_stats: null,
+  github_readme: null,
+  github_role: null,
+  github_contribution: null,
+  github_motivation: null,
+  github_tech_decisions: null,
+  github_learnings: null,
+  github_showcase_notes: null,
+  github_production_usage: null,
+  github_auto_sync: false,
+} as const;
+
+/**
  * Pure mapping: GitHub repository → the column patch we write to the
  * `projects` table. Kept free of the `server-only` import so it can be
  * unit-tested without touching the database layer.

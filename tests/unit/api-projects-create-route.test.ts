@@ -19,9 +19,7 @@ vi.mock("@/lib/projects", async (importOriginal) => ({
   generateUniqueProjectSlug: vi.fn(async () => "unique-slug"),
 }));
 vi.mock("@/lib/rich-text", () => ({ sanitizeRichTextHtml: (s: string) => s }));
-vi.mock("@/lib/db/github-integrations", () => ({ getIntegrationForUser: vi.fn(async () => null) }));
-vi.mock("@/lib/integrations/github", () => ({ fetchRepoFullDetail: vi.fn(async () => null) }));
-vi.mock("@/lib/db/github-sync", () => ({ mapRepoToProjectColumns: vi.fn(() => ({})) }));
+vi.mock("@/lib/db/github-sync", () => ({ buildGithubLinkColumns: vi.fn(async () => null) }));
 vi.mock("@/lib/db/publish-events", () => ({ dispatchPublishSideEffects: vi.fn() }));
 vi.mock("@/lib/db/moderation-actions", () => ({
   readAutoModerationReason: vi.fn(async () => "flagged reason"),

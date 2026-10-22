@@ -348,7 +348,6 @@ search-talent/
 | POST | `/api/projects/[id]/pin` | Pin/unpin |
 | POST | `/api/projects/[id]/comments` | Threaded comments |
 | POST | `/api/projects/[id]/sync-github` | Refresh from GitHub repo |
-| POST | `/api/projects/[id]/unlink-github` | Detach GitHub link |
 | POST | `/api/vote` | Project up/down votes |
 
 ### Articles

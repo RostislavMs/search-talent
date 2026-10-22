@@ -19,7 +19,6 @@ export const projectKinds = [
   "video",
   "photo",
   "3d",
-  "motion",
   "audio",
   "qa",
   "writing",
@@ -35,6 +34,20 @@ export function normalizeProjectKind(value: unknown): ProjectKind | null {
     : null;
 }
 
+// "other" is a fallback for the author, not something a visitor browses by:
+// it has no landing page, no filter option and no label on cards.
+export type PublicProjectKind = Exclude<ProjectKind, "other">;
+
+export const publicProjectKinds = projectKinds.filter(
+  (kind): kind is PublicProjectKind => kind !== "other",
+);
+
+export function isPublicProjectKind(
+  kind: ProjectKind | null | undefined,
+): kind is PublicProjectKind {
+  return Boolean(kind) && kind !== "other";
+}
+
 type ProjectKindLabelDictionary = {
   forms: {
     projectKindCode: string;
@@ -42,7 +55,6 @@ type ProjectKindLabelDictionary = {
     projectKindVideo: string;
     projectKindPhoto: string;
     projectKind3d: string;
-    projectKindMotion: string;
     projectKindAudio: string;
     projectKindQa: string;
     projectKindWriting: string;
@@ -65,8 +77,6 @@ export function getProjectKindLabel(
       return dictionary.forms.projectKindPhoto;
     case "3d":
       return dictionary.forms.projectKind3d;
-    case "motion":
-      return dictionary.forms.projectKindMotion;
     case "audio":
       return dictionary.forms.projectKindAudio;
     case "qa":
@@ -77,6 +87,52 @@ export function getProjectKindLabel(
       return dictionary.forms.projectKindOther;
     default:
       return kind;
+  }
+}
+
+type ProjectKindHintDictionary = {
+  forms: {
+    projectKindHintCode: string;
+    projectKindHintDesign: string;
+    projectKindHintVideo: string;
+    projectKindHintPhoto: string;
+    projectKindHint3d: string;
+    projectKindHintAudio: string;
+    projectKindHintQa: string;
+    projectKindHintWriting: string;
+    projectKindHintOther: string;
+  };
+};
+
+/**
+ * One or two plain sentences on what belongs to a kind. Shown under the
+ * kind picker in the project form and under the title of the kind's page.
+ */
+export function getProjectKindHint(
+  kind: ProjectKind,
+  dictionary: ProjectKindHintDictionary,
+) {
+  switch (kind) {
+    case "code":
+      return dictionary.forms.projectKindHintCode;
+    case "design":
+      return dictionary.forms.projectKindHintDesign;
+    case "video":
+      return dictionary.forms.projectKindHintVideo;
+    case "photo":
+      return dictionary.forms.projectKindHintPhoto;
+    case "3d":
+      return dictionary.forms.projectKindHint3d;
+    case "audio":
+      return dictionary.forms.projectKindHintAudio;
+    case "qa":
+      return dictionary.forms.projectKindHintQa;
+    case "writing":
+      return dictionary.forms.projectKindHintWriting;
+    case "other":
+      return dictionary.forms.projectKindHintOther;
+    default:
+      return "";
   }
 }
 

@@ -361,6 +361,11 @@ export const videoTools = [
   "Cinema 4D",
   "Blender",
   "Houdini",
+  "Cavalry",
+  "Rive",
+  "Toon Boom Harmony",
+  "Adobe Animate",
+  "Moho",
   "Audition",
   "Pro Tools",
   "Logic Pro",
@@ -396,6 +401,9 @@ export const videoGenres = [
   "advertising",
   "trailer",
   "animation",
+  "motion_design",
+  "logo_animation",
+  "ui_animation",
 ] as const;
 
 export type VideoGenre = (typeof videoGenres)[number];
@@ -1163,130 +1171,6 @@ export function isQaKindMetadataEmpty(value: QaKindMetadata): boolean {
 }
 
 // =====================================================================
-// Motion graphics
-// =====================================================================
-
-export const motionRoles = [
-  "motion_designer",
-  "animator",
-  "character_animator",
-  "art_director",
-  "illustrator",
-  "compositor",
-  "fx_artist",
-  "lead",
-] as const;
-
-export type MotionRole = (typeof motionRoles)[number];
-
-export const motionTechniques = [
-  "2d",
-  "3d",
-  "mixed",
-  "frame_by_frame",
-  "character",
-  "kinetic_typography",
-  "infographic",
-  "particle_fx",
-  "rotoscope",
-  "motion_capture",
-  "cell_animation",
-  "stop_motion",
-  "isometric",
-] as const;
-
-export type MotionTechnique = (typeof motionTechniques)[number];
-
-export const motionTools = [
-  "After Effects",
-  "Cinema 4D",
-  "Blender",
-  "Houdini",
-  "Cavalry",
-  "Lottie",
-  "Spine",
-  "Rive",
-  "Toon Boom Harmony",
-  "Adobe Animate",
-  "TVPaint",
-  "Moho",
-  "Procreate Dreams",
-  "Nuke",
-  "Fusion",
-  "Other",
-] as const;
-
-export type MotionTool = (typeof motionTools)[number];
-
-export const motionPurposes = [
-  "logo_reveal",
-  "explainer",
-  "intro_outro",
-  "commercial",
-  "social_media",
-  "app_animation",
-  "lottie_animation",
-  "ui_animation",
-  "opener",
-  "music_video",
-  "title_sequence",
-  "game_animation",
-  "education",
-  "broadcast",
-] as const;
-
-export type MotionPurpose = (typeof motionPurposes)[number];
-
-export type MotionKindMetadata = {
-  role: MotionRole | null;
-  techniques: MotionTechnique[];
-  tools: MotionTool[];
-  purposes: MotionPurpose[];
-  durationSeconds: number | null;
-  previewUrl: string | null;
-  client: string | null;
-};
-
-export function createEmptyMotionKindMetadata(): MotionKindMetadata {
-  return {
-    role: null,
-    techniques: [],
-    tools: [],
-    purposes: [],
-    durationSeconds: null,
-    previewUrl: null,
-    client: null,
-  };
-}
-
-export function normalizeMotionKindMetadata(value: unknown): MotionKindMetadata {
-  if (!isRecord(value)) {
-    return createEmptyMotionKindMetadata();
-  }
-  return {
-    role: pickEnum(value.role, motionRoles),
-    techniques: pickEnumArray(value.techniques, motionTechniques),
-    tools: pickEnumArray(value.tools, motionTools),
-    purposes: pickEnumArray(value.purposes, motionPurposes),
-    durationSeconds: pickPositiveInt(value.durationSeconds, 24 * 60 * 60),
-    previewUrl: normalizeOptionalString(value.previewUrl, 2048),
-    client: normalizeOptionalString(value.client, 160),
-  };
-}
-
-export function isMotionKindMetadataEmpty(value: MotionKindMetadata): boolean {
-  return (
-    !value.role &&
-    value.techniques.length === 0 &&
-    value.tools.length === 0 &&
-    value.purposes.length === 0 &&
-    value.durationSeconds === null &&
-    !value.previewUrl &&
-    !value.client
-  );
-}
-
-// =====================================================================
 // Writing / docs
 // =====================================================================
 
@@ -1454,7 +1338,6 @@ export type ProjectKindMetadata = {
   threeD?: ThreeDKindMetadata;
   audio?: AudioKindMetadata;
   qa?: QaKindMetadata;
-  motion?: MotionKindMetadata;
   writing?: WritingKindMetadata;
   // Kind-agnostic: how long the project took, in hours (supports fractions
   // like 2.5). Lives at the top level so every kind can surface it without a
@@ -1525,12 +1408,6 @@ export function normalizeProjectKindMetadata(
     const qa = normalizeQaKindMetadata(value.qa);
     if (!isQaKindMetadataEmpty(qa)) {
       result.qa = qa;
-    }
-  }
-  if (kind === "motion" || isRecord(value.motion)) {
-    const motion = normalizeMotionKindMetadata(value.motion);
-    if (!isMotionKindMetadataEmpty(motion)) {
-      result.motion = motion;
     }
   }
   if (kind === "writing" || isRecord(value.writing)) {

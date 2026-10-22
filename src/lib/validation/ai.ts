@@ -2,6 +2,13 @@ import { z } from "zod";
 import { GITHUB_PROJECT_ROLES } from "@/lib/constants/github";
 import { providerIntegrationIds } from "@/lib/constants/provider-integrations";
 import { isLocale } from "@/lib/i18n/config";
+import { projectKinds } from "@/lib/projects";
+
+/**
+ * The project kind the draft is for. Present (even as null) → the draft also
+ * fills the kind's details and the technology tags; absent → the story only.
+ */
+const draftKindSchema = z.enum(projectKinds).nullable().optional();
 
 /**
  * Body for `POST /api/ai/github-draft`. The server re-fetches the
@@ -32,6 +39,7 @@ export const githubDraftPayloadSchema = z.object({
       learnings: z.string().max(1500).optional(),
       showcaseNotes: z.string().max(1500).optional(),
       productionUsage: z.string().max(500).optional(),
+      description: z.string().max(5000).optional(),
       projectRole: z.string().max(160).optional(),
       problem: z.string().max(5000).optional(),
       solution: z.string().max(5000).optional(),
@@ -40,6 +48,7 @@ export const githubDraftPayloadSchema = z.object({
     .partial()
     .optional()
     .default({}),
+  kind: draftKindSchema,
 });
 
 export type GithubDraftPayload = z.infer<typeof githubDraftPayloadSchema>;
@@ -72,6 +81,7 @@ export const sourceDraftPayloadSchema = z.object({
     .partial()
     .optional()
     .default({}),
+  kind: draftKindSchema,
 });
 
 export type SourceDraftPayload = z.infer<typeof sourceDraftPayloadSchema>;

@@ -4,9 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { dbRateLimit } from "@/lib/rate-limit";
 import { projectPayloadSchema } from "@/lib/validation/project";
 import { parseJsonRequest } from "@/lib/validation/request";
-import { getIntegrationForUser } from "@/lib/db/github-integrations";
-import { fetchRepoFullDetail } from "@/lib/integrations/github";
-import { mapRepoToProjectColumns } from "@/lib/db/github-sync";
+import { buildGithubLinkColumns } from "@/lib/db/github-sync";
 import { buildProjectSourceColumns } from "@/lib/db/provider-sync";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { readAutoModerationReason } from "@/lib/db/moderation-actions";
@@ -57,21 +55,13 @@ export async function POST(request: Request) {
   // saves with whatever fields the user filled manually.
   let githubColumns: Record<string, unknown> = {};
   if (payload.githubFullName) {
-    const integration = await getIntegrationForUser(supabase, user.id);
-    if (integration) {
-      const detail = await fetchRepoFullDetail(
-        integration.access_token,
-        payload.githubFullName,
-      );
-      if (detail) {
-        githubColumns = mapRepoToProjectColumns(detail, {
-          description: payload.description,
-          project_status: payload.projectStatus,
-          team_size: payload.teamSize,
-          started_on: payload.startedOn,
-        });
-      }
-    }
+    githubColumns =
+      (await buildGithubLinkColumns(supabase, user.id, payload.githubFullName, {
+        description: payload.description,
+        project_status: payload.projectStatus,
+        team_size: payload.teamSize,
+        started_on: payload.startedOn,
+      })) ?? {};
   }
 
   // Same snapshot-on-create for the generic providers (GitLab).

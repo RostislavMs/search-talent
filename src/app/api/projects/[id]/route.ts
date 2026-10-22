@@ -6,6 +6,7 @@ import { parseJsonRequest } from "@/lib/validation/request";
 import { isPublicModerationStatus } from "@/lib/moderation";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
 import { buildProjectSourceColumns } from "@/lib/db/provider-sync";
+import { buildGithubLinkColumns, githubUnlinkedColumns } from "@/lib/db/github-sync";
 import { normalizeProjectSourceLink } from "@/lib/constants/provider-integrations";
 import { readAutoModerationReason } from "@/lib/db/moderation-actions";
 import { getRequestLocale } from "@/lib/i18n/server";
@@ -36,7 +37,7 @@ export async function PATCH(
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "id, owner_id, slug, moderation_status, followers_notified_at, source_integration",
+      "id, owner_id, slug, moderation_status, followers_notified_at, source_integration, github_full_name",
     )
     .eq("id", id)
     .maybeSingle();
@@ -86,6 +87,23 @@ export async function PATCH(
         )) ?? { source_integration: null });
   }
 
+  // GitHub link, by the same rule: the form sends the repository it wants
+  // (null to unlink), and an unchanged one costs no trip to GitHub.
+  const existingGithub: string | null = project.github_full_name ?? null;
+  let githubColumns: Record<string, unknown> = {};
+
+  if (payload.githubFullName && payload.githubFullName !== existingGithub) {
+    githubColumns =
+      (await buildGithubLinkColumns(supabase, user.id, payload.githubFullName, {
+        description: payload.description,
+        project_status: payload.projectStatus,
+        team_size: payload.teamSize,
+        started_on: payload.startedOn,
+      })) ?? {};
+  } else if (!payload.githubFullName && existingGithub) {
+    githubColumns = { ...githubUnlinkedColumns };
+  }
+
   // Row, skills, co-authors, budget (removed when the form sends none) and
   // company pages in one transaction. The database screens the text of a
   // published project: a flagged edit takes an approved project down (an
@@ -98,6 +116,7 @@ export async function PATCH(
       slug: nextSlug,
       status: payload.status,
       ...sourceColumns,
+      ...githubColumns,
     },
     skillIds: payload.skillIds,
     budget: payload.budget,

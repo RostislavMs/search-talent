@@ -26,11 +26,16 @@ vi.mock("@/lib/db/save-project", async (importOriginal) => ({
   saveProject: vi.fn(),
   notifyProjectSaved: vi.fn(async () => undefined),
 }));
+vi.mock("@/lib/db/github-sync", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/db/github-sync")>()),
+  buildGithubLinkColumns: vi.fn(async () => null),
+}));
 
 import { PATCH, DELETE } from "@/app/api/projects/[id]/route";
 import { generateUniqueProjectSlug } from "@/lib/projects";
 import { notifyProjectSaved, saveProject } from "@/lib/db/save-project";
 import { dispatchPublishSideEffects } from "@/lib/db/publish-events";
+import { buildGithubLinkColumns } from "@/lib/db/github-sync";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_ID = "99999999-9999-4999-8999-999999999999";
@@ -153,6 +158,45 @@ describe("PATCH /api/projects/[id] — owner-only edit", () => {
     const body = await (await PATCH(patchReq(), params())).json();
     expect(body).toMatchObject({ autoRemoved: true, moderationReason: "flagged reason" });
     expect(vi.mocked(dispatchPublishSideEffects)).not.toHaveBeenCalled();
+  });
+
+  it("links a GitHub repository picked in the form", async () => {
+    setMock(authUser, (table) => (table === "projects" ? { data: existingProject } : {}));
+    vi.mocked(buildGithubLinkColumns).mockResolvedValueOnce({
+      github_repo_id: 7,
+      github_full_name: "me/repo",
+    } as never);
+
+    await PATCH(patchReq({ ...payload, githubFullName: "me/repo" }), params());
+
+    expect(buildGithubLinkColumns).toHaveBeenCalledOnce();
+    expect(saveInput().row).toMatchObject({ github_repo_id: 7, github_full_name: "me/repo" });
+  });
+
+  it("leaves an unchanged GitHub link alone", async () => {
+    setMock(authUser, (table) =>
+      table === "projects" ? { data: { ...existingProject, github_full_name: "me/repo" } } : {},
+    );
+
+    await PATCH(patchReq({ ...payload, githubFullName: "me/repo" }), params());
+
+    expect(buildGithubLinkColumns).not.toHaveBeenCalled();
+    expect(saveInput().row).not.toHaveProperty("github_repo_id");
+  });
+
+  it("unlinks GitHub when the form no longer has a repository", async () => {
+    setMock(authUser, (table) =>
+      table === "projects" ? { data: { ...existingProject, github_full_name: "me/repo" } } : {},
+    );
+
+    await PATCH(patchReq({ ...payload, githubFullName: null }), params());
+
+    expect(saveInput().row).toMatchObject({
+      github_repo_id: null,
+      github_full_name: null,
+      github_contribution: null,
+      github_auto_sync: false,
+    });
   });
 
   it("400 with the database message when the save fails", async () => {

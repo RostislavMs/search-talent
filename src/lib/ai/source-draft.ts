@@ -17,8 +17,15 @@ import {
   normalizeSourceDraft,
   type SourceDraftFields,
 } from "@/lib/ai/source-draft-prompt";
+import {
+  getDetailDraftFields,
+  normalizeDetailsDraft,
+  type DetailsDraft,
+} from "@/lib/ai/project-details-draft";
+import { detailDraftProperties } from "@/lib/ai/project-details-schema";
+import type { ProjectKind } from "@/lib/projects";
 
-export type SourceDraftResult = SourceDraftFields;
+export type SourceDraftResult = SourceDraftFields & Partial<DetailsDraft>;
 
 export type SourceDraftRequest = {
   provider: ProviderIntegrationId;
@@ -27,40 +34,51 @@ export type SourceDraftRequest = {
   authorLogin: string | null;
   locale: "uk" | "en";
   /** Fields the author already wrote. Skipped in the prompt and on apply. */
-  existing: Partial<SourceDraftResult>;
+  existing: Partial<SourceDraftFields>;
+  /**
+   * The project kind. When given, the draft also fills that kind's details
+   * (architecture, language, license…) and the technology tags.
+   */
+  kind?: ProjectKind | null;
 };
 
-const RESPONSE_SCHEMA: GeminiSchema = {
-  type: GeminiType.OBJECT,
-  properties: {
-    description: {
-      type: GeminiType.STRING,
-      description:
-        "A short blurb for the project card: what this is, in 1-2 sentences. No marketing tone.",
-    },
-    projectRole: {
-      type: GeminiType.STRING,
-      description:
-        "A short job-title-style label of the author's role on this project, e.g. 'Motion designer' or '3D artist'. Free-form, shown on the project card.",
-    },
-    problem: {
-      type: GeminiType.STRING,
-      description:
-        "What task or brief this project answered. 1-3 short paragraphs. Empty string if the input doesn't support it.",
-    },
-    solution: {
-      type: GeminiType.STRING,
-      description:
-        "The author's narrative of HOW they approached and made it — process, tools, decisions. Do NOT paste the source text verbatim; write it in the author's voice. 1-3 short paragraphs.",
-    },
-    results: {
-      type: GeminiType.STRING,
-      description:
-        "Concrete outcomes: metrics, audience, what changed. Empty string unless the input supports specific claims.",
-    },
+const BASE_PROPERTIES: Record<string, GeminiSchema> = {
+  description: {
+    type: GeminiType.STRING,
+    description:
+      "A short blurb for the project card: what this is, in 1-2 sentences. No marketing tone.",
   },
-  required: ["description", "projectRole", "problem", "solution", "results"],
+  projectRole: {
+    type: GeminiType.STRING,
+    description:
+      "A short job-title-style label of the author's role on this project, e.g. 'Motion designer' or '3D artist'. Free-form, shown on the project card.",
+  },
+  problem: {
+    type: GeminiType.STRING,
+    description:
+      "What task or brief this project answered. 1-3 short paragraphs. Empty string if the input doesn't support it.",
+  },
+  solution: {
+    type: GeminiType.STRING,
+    description:
+      "The author's narrative of HOW they approached and made it — process, tools, decisions. Do NOT paste the source text verbatim; write it in the author's voice. 1-3 short paragraphs.",
+  },
+  results: {
+    type: GeminiType.STRING,
+    description:
+      "Concrete outcomes: metrics, audience, what changed. Empty string unless the input supports specific claims.",
+  },
 };
+
+function buildResponseSchema(kind: ProjectKind | null | undefined): GeminiSchema {
+  const extra = kind === undefined ? [] : getDetailDraftFields(kind);
+
+  return {
+    type: GeminiType.OBJECT,
+    properties: { ...BASE_PROPERTIES, ...detailDraftProperties(extra) },
+    required: [...Object.keys(BASE_PROPERTIES), ...extra.map((field) => field.key)],
+  };
+}
 
 /**
  * Drafts the project narrative from an imported provider resource. Same
@@ -71,25 +89,40 @@ const RESPONSE_SCHEMA: GeminiSchema = {
 export async function generateSourceDraft(
   input: SourceDraftRequest,
 ): Promise<GeminiJsonResult<SourceDraftResult>> {
-  const result = await callGeminiJson<{
-    description?: string;
-    projectRole?: string;
-    problem?: string;
-    solution?: string;
-    results?: string;
-  }>({
+  const result = await callGeminiJson<
+    Parameters<typeof normalizeSourceDraft>[0] & Record<string, unknown>
+  >({
     prompt: buildSourceDraftPrompt(input),
     systemInstruction: buildSourceDraftSystemInstruction(input.locale),
-    responseSchema: RESPONSE_SCHEMA,
+    responseSchema: buildResponseSchema(input.kind),
     model: GEMINI_DEFAULT_MODEL,
     temperature: 0.7,
-    // Five fields instead of GitHub's eleven, but Cyrillic still costs ~3×
-    // per character, so keep a comfortable ceiling.
-    maxOutputTokens: 4096,
+    // Five story fields instead of GitHub's twelve, but Cyrillic still costs
+    // ~3× per character; the kind details and technology tags add a little.
+    maxOutputTokens: 5120,
   });
 
-  return {
-    ...result,
-    data: normalizeSourceDraft(result.data),
-  };
+  const { resource } = input;
+  const data: SourceDraftResult = normalizeSourceDraft(result.data);
+
+  if (input.kind !== undefined) {
+    const stat = (key: string) =>
+      resource.stats.find((entry) => entry.key === key)?.value ?? null;
+
+    Object.assign(
+      data,
+      normalizeDetailsDraft(input.kind, result.data, {
+        languages: (stat("languages") ?? "")
+          .split(",")
+          .map((language) => language.trim())
+          .filter(Boolean),
+        license: stat("license"),
+        sourceText: [resource.description, resource.url, resource.homepageUrl, resource.longText]
+          .filter(Boolean)
+          .join("\n"),
+      }),
+    );
+  }
+
+  return { ...result, data };
 }

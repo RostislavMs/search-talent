@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
+import GuideSection from "@/components/guide-section";
 import JsonLd from "@/components/json-ld";
 import DiscoveryPageSkeleton from "@/components/skeletons/discovery-page-skeleton";
 import { getProjectKindDirectory } from "@/lib/db/marketing";
 import { getDiscoverySeed } from "@/lib/db/search";
 import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getProjectKindGuide } from "@/lib/project-kind-guides";
 import {
+  getProjectKindHint,
   getProjectKindLabel,
+  isPublicProjectKind,
   normalizeProjectKind,
-  projectKinds,
-  type ProjectKind,
+  publicProjectKinds,
+  type PublicProjectKind,
 } from "@/lib/projects";
 import { buildItemListSchema, buildMetadata, getSiteUrl, toBcp47 } from "@/lib/seo";
 import { notFound } from "next/navigation";
@@ -21,11 +25,15 @@ const DiscoveryPage = dynamic(() => import("@/components/discovery-page"), {
 
 export const revalidate = 21600;
 
+// Every kind is pre-built; anything else (including "other", which has no
+// page) is a 404 without an on-demand render.
+export const dynamicParams = false;
+
 const MIN_PROJECTS_FOR_TYPE_PAGE = 3;
 
 export async function generateStaticParams() {
   return locales.flatMap((locale) =>
-    projectKinds.map((kind) => ({ locale, type: kind })),
+    publicProjectKinds.map((kind) => ({ locale, type: kind })),
   );
 }
 
@@ -40,7 +48,7 @@ async function getRouteParams(
 
   const kind = normalizeProjectKind(type);
 
-  if (!kind) {
+  if (!isPublicProjectKind(kind)) {
     notFound();
   }
 
@@ -50,7 +58,7 @@ async function getRouteParams(
   };
 }
 
-async function getKindCount(kind: ProjectKind) {
+async function getKindCount(kind: PublicProjectKind) {
   const directory = await getProjectKindDirectory();
   return directory.find((item) => item.kind === kind)?.count ?? 0;
 }
@@ -62,23 +70,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, kind } = await getRouteParams(params);
   const dictionary = getDictionary(locale);
-  const label = getProjectKindLabel(kind, dictionary);
+  const guide = getProjectKindGuide(locale, kind);
   const count = await getKindCount(kind);
-
-  const title =
-    locale === "uk"
-      ? `Проєкти типу «${label}» — портфоліо`
-      : `${label} Projects & Portfolios`;
-  const description =
-    locale === "uk"
-      ? `Публічні проєкти у форматі «${label}» на SearchTalent. Реальні роботи, технології та автори.`
-      : `Public ${label.toLowerCase()} projects on SearchTalent. Real work, technologies, and creators.`;
 
   return buildMetadata({
     locale,
     pathname: `/projects/type/${kind}`,
-    title,
-    description,
+    title: guide.seoTitle,
+    description: getProjectKindHint(kind, dictionary),
     noindex: count < MIN_PROJECTS_FOR_TYPE_PAGE,
   });
 }
@@ -91,6 +90,7 @@ export default async function ProjectsByTypePage({
   const { locale, kind } = await getRouteParams(params);
   const dictionary = getDictionary(locale);
   const label = getProjectKindLabel(kind, dictionary);
+  const guide = getProjectKindGuide(locale, kind);
 
   const seed = await getDiscoverySeed({
     scope: "projects",
@@ -101,14 +101,8 @@ export default async function ProjectsByTypePage({
   const initial = seed.results;
 
   const hero = {
-    title:
-      locale === "uk"
-        ? `Проєкти типу «${label}»`
-        : `${label} projects`,
-    subtitle:
-      locale === "uk"
-        ? `Публічні проєкти у форматі «${label}».`
-        : `Public ${label.toLowerCase()} projects.`,
+    title: guide.title,
+    subtitle: getProjectKindHint(kind, dictionary),
   };
 
   const siteUrl = getSiteUrl().replace(/\/$/, "");
@@ -141,6 +135,17 @@ export default async function ProjectsByTypePage({
         initialProjects={initial?.projects}
         initialTotals={initial?.totals}
       />
+
+      <div className="mt-6 sm:mt-8">
+        <GuideSection
+          title={guide.guideTitle}
+          blocks={guide.blocks}
+          action={{
+            label: guide.addProjectLabel,
+            href: `/projects/new?kind=${kind}`,
+          }}
+        />
+      </div>
     </main>
   );
 }

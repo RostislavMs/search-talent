@@ -38,7 +38,7 @@ import {
 import {
   getProjectKindLabel,
   normalizeProjectKind,
-  projectKinds,
+  publicProjectKinds,
   projectStatuses,
   type ProjectKind,
   type ProjectStatus,
@@ -1385,7 +1385,7 @@ export default function DiscoveryPage({
                         onChange={(value) =>
                           setProjectKindFilter(normalizeProjectKind(value) ?? "")
                         }
-                        options={projectKinds.map((kind) => ({
+                        options={publicProjectKinds.map((kind) => ({
                           value: kind,
                           label: getProjectKindLabel(kind, dictionary),
                         }))}

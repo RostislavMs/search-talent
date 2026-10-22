@@ -7,7 +7,10 @@ import {
 import {
   AI_PROJECT_FIELD_LIMITS,
   AI_README_CHAR_LIMIT,
+  AI_SOURCE_DESCRIPTION_LIMIT,
 } from "@/lib/constants/ai";
+import { buildDetailsPromptSection } from "@/lib/ai/project-details-draft";
+import type { ProjectKind } from "@/lib/projects";
 
 /**
  * Pure prompt construction. Lives in its own module (no `server-only`
@@ -24,6 +27,7 @@ export type GithubDraftFields = {
   showcaseNotes: string;
   productionUsage: string;
   // Standard project narrative (Steps 1 + 3)
+  description: string;
   projectRole: string;
   problem: string;
   solution: string;
@@ -35,6 +39,8 @@ export type GithubDraftPromptInput = {
   authorLogin: string | null;
   locale: "uk" | "en";
   existing: Partial<GithubDraftFields>;
+  /** The project kind; adds its details section and the technology tags. */
+  kind?: ProjectKind | null;
 };
 
 export function buildGithubDraftSystemInstruction(
@@ -57,7 +63,7 @@ export function buildGithubDraftSystemInstruction(
 }
 
 export function buildGithubDraftPrompt(input: GithubDraftPromptInput): string {
-  const { repo, authorLogin, existing } = input;
+  const { repo, authorLogin, existing, kind } = input;
   const readme = (repo.readme || "").slice(0, AI_README_CHAR_LIMIT);
 
   const topLanguages = repo.languageBreakdown
@@ -83,6 +89,8 @@ export function buildGithubDraftPrompt(input: GithubDraftPromptInput): string {
     existingNotes.push(`- showcaseNotes: ${existing.showcaseNotes}`);
   if (existing.productionUsage)
     existingNotes.push(`- productionUsage: ${existing.productionUsage}`);
+  if (existing.description)
+    existingNotes.push(`- description: ${existing.description}`);
   if (existing.projectRole)
     existingNotes.push(`- projectRole: ${existing.projectRole}`);
   if (existing.problem) existingNotes.push(`- problem: ${existing.problem}`);
@@ -124,10 +132,12 @@ export function buildGithubDraftPrompt(input: GithubDraftPromptInput): string {
     `- learnings: <= ${GITHUB_FIELD_LIMITS.learnings} chars`,
     `- showcaseNotes: <= ${GITHUB_FIELD_LIMITS.showcaseNotes} chars`,
     `- productionUsage: <= ${GITHUB_FIELD_LIMITS.productionUsage} chars`,
+    `- description: <= ${AI_SOURCE_DESCRIPTION_LIMIT} chars (a short blurb for the project card: what this is, 1-2 sentences, no marketing tone)`,
     `- projectRole: <= ${AI_PROJECT_FIELD_LIMITS.projectRole} chars (a short job-title-style label, e.g. "Lead full-stack engineer")`,
     `- problem: <= ${AI_PROJECT_FIELD_LIMITS.problem} chars (what real-world problem this project addresses, 1-3 paragraphs)`,
     `- solution: <= ${AI_PROJECT_FIELD_LIMITS.solution} chars (the author's narrative of how the project solves it, NOT a verbatim README dump, 1-3 paragraphs)`,
     `- results: <= ${AI_PROJECT_FIELD_LIMITS.results} chars (concrete outcomes, metrics, who benefits; empty string if no signal in the input)`,
+    ...(kind === undefined ? [] : ["", buildDetailsPromptSection(kind)]),
   ].join("\n");
 }
 
@@ -140,6 +150,7 @@ export function normalizeGithubDraft(raw: {
   learnings?: string;
   showcaseNotes?: string;
   productionUsage?: string;
+  description?: string;
   projectRole?: string;
   problem?: string;
   solution?: string;
@@ -166,6 +177,7 @@ export function normalizeGithubDraft(raw: {
       raw.productionUsage,
       GITHUB_FIELD_LIMITS.productionUsage,
     ),
+    description: cap(raw.description, AI_SOURCE_DESCRIPTION_LIMIT),
     projectRole: cap(raw.projectRole, AI_PROJECT_FIELD_LIMITS.projectRole),
     problem: cap(raw.problem, AI_PROJECT_FIELD_LIMITS.problem),
     solution: cap(raw.solution, AI_PROJECT_FIELD_LIMITS.solution),

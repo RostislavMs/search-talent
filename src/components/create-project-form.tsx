@@ -39,6 +39,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { compressImageFile } from "@/lib/image-compression";
 import {
   buildProjectPath,
+  getProjectKindHint,
   getProjectKindLabel,
   isProjectTimelineFieldEditable,
   projectKinds,
@@ -49,10 +50,20 @@ import {
   type ProjectVisibilityStatus,
 } from "@/lib/projects";
 import {
+  mergeImportedSkills,
+  mergeImportedValues,
+  type ImportedProjectValues,
+} from "@/lib/project-import";
+import { countBlankFields, fillBlankFields } from "@/lib/project-ai-draft";
+import {
+  DRAFT_CODE_DETAIL_KEYS,
+  DRAFT_QA_DETAIL_KEYS,
+  type DraftDetails,
+} from "@/lib/ai/project-details-draft";
+import {
   normalizeAudioKindMetadata,
   normalizeCodeKindMetadata,
   normalizeDesignKindMetadata,
-  normalizeMotionKindMetadata,
   normalizePhotoKindMetadata,
   normalizeQaKindMetadata,
   normalizeThreeDKindMetadata,
@@ -61,7 +72,6 @@ import {
   type AudioKindMetadata,
   type CodeKindMetadata,
   type DesignKindMetadata,
-  type MotionKindMetadata,
   type PhotoKindMetadata,
   type ProjectKindMetadata,
   type QaKindMetadata,
@@ -107,7 +117,6 @@ import {
   AudioDetailsFields,
   CodeDetailsFields,
   DesignDetailsFields,
-  MotionDetailsFields,
   PhotoDetailsFields,
   QaDetailsFields,
   ThreeDDetailsFields,
@@ -119,6 +128,7 @@ import ProviderResourceImporter, {
 } from "@/components/provider-resource-importer";
 import SourceAiDraft, {
   type SourceDraftFieldValues,
+  type SourceDraftResult,
 } from "@/components/project-form/source-ai-draft";
 import VideoCoverPicker from "@/components/project-form/video-cover-picker";
 import CoverCropEditor from "@/components/project-form/cover-crop-editor";
@@ -132,7 +142,7 @@ import { toPlainText } from "@/lib/plain-text";
 const MAX_NON_PHOTO_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_PHOTO_IMAGE_BYTES = 25 * 1024 * 1024;
 // Video projects upload showreels and extras as primary content. Other
-// kinds (design, code, motion, etc.) might attach a short clip but rarely
+// kinds (design, code, 3D, etc.) might attach a short clip but rarely
 // need anything over 100 MB.
 const MAX_NON_VIDEO_VIDEO_BYTES = 100 * 1024 * 1024;
 const MAX_VIDEO_KIND_VIDEO_BYTES = 400 * 1024 * 1024;
@@ -218,8 +228,6 @@ type ProjectFormState = {
   audioMeta: AudioKindMetadata;
   audioDurationInput: string;
   qaMeta: QaKindMetadata;
-  motionMeta: MotionKindMetadata;
-  motionDurationInput: string;
   writingMeta: WritingKindMetadata;
   /**
    * The provider resource this project is imported from (e.g. a GitLab
@@ -256,7 +264,61 @@ type SourceDraftTarget =
   | "role"
   | "problem"
   | "solution"
-  | "results";
+  | "results"
+  | "githubContribution"
+  | "githubMotivation"
+  | "githubTechDecisions"
+  | "githubLearnings"
+  | "githubShowcaseNotes"
+  | "githubProductionUsage";
+
+const STORY_DRAFT_TARGETS = [
+  "description",
+  "role",
+  "problem",
+  "solution",
+  "results",
+] as const satisfies readonly SourceDraftTarget[];
+
+const GITHUB_DRAFT_TARGETS = [
+  "githubContribution",
+  "githubMotivation",
+  "githubTechDecisions",
+  "githubLearnings",
+  "githubShowcaseNotes",
+  "githubProductionUsage",
+] as const satisfies readonly SourceDraftTarget[];
+
+/** The kind details and technology tags an AI draft may add. */
+type AiDraftExtras = {
+  details?: DraftDetails;
+  technologies?: string[];
+};
+
+/** What /api/ai/github-draft proposes for a linked repository. */
+type GithubAiDraft = AiDraftExtras & {
+  role: GithubProjectRole | null;
+  contribution: string;
+  motivation: string;
+  techDecisions: string;
+  learnings: string;
+  showcaseNotes: string;
+  productionUsage: string;
+  description: string;
+  projectRole: string;
+  problem: string;
+  solution: string;
+  results: string;
+};
+
+/** What /api/ai/source-draft proposes for a linked provider resource. */
+type ProviderAiDraft = AiDraftExtras & SourceDraftFieldValues;
+
+/** An AI draft in the form's own terms, whichever source it came from. */
+type FormAiDraft = AiDraftExtras & {
+  texts: Partial<Pick<ProjectFormState, SourceDraftTarget>>;
+  githubRole?: GithubProjectRole | null;
+};
 
 /** The subset of a source link the form owns and sends back on save. */
 type ProjectSourceRequest = Pick<
@@ -346,12 +408,6 @@ function getInitialFormState(
       ? formatVideoDuration(project.kind_metadata.audio.durationSeconds)
       : "",
     qaMeta: normalizeQaKindMetadata(project?.kind_metadata?.qa ?? null),
-    motionMeta: normalizeMotionKindMetadata(
-      project?.kind_metadata?.motion ?? null,
-    ),
-    motionDurationInput: project?.kind_metadata?.motion?.durationSeconds
-      ? formatVideoDuration(project.kind_metadata.motion.durationSeconds)
-      : "",
     writingMeta: normalizeWritingKindMetadata(
       project?.kind_metadata?.writing ?? null,
     ),
@@ -1247,20 +1303,6 @@ export default function CreateProjectForm({
                   client: form.qaMeta.client,
                 }
               : undefined,
-          motion:
-            form.kind === "motion"
-              ? {
-                  role: form.motionMeta.role,
-                  techniques: form.motionMeta.techniques,
-                  tools: form.motionMeta.tools,
-                  purposes: form.motionMeta.purposes,
-                  durationSeconds: parseVideoDurationInput(
-                    form.motionDurationInput,
-                  ),
-                  previewUrl: form.motionMeta.previewUrl,
-                  client: form.motionMeta.client,
-                }
-              : undefined,
           writing:
             form.kind === "writing"
               ? {
@@ -1290,13 +1332,20 @@ export default function CreateProjectForm({
         skillIds,
         coAuthorUserIds: coAuthors.map((option) => option.userId),
         githubFullName,
-        githubRole: form.githubRole || null,
-        githubContribution: form.githubContribution,
-        githubMotivation: form.githubMotivation,
-        githubTechDecisions: form.githubTechDecisions,
-        githubLearnings: form.githubLearnings,
-        githubShowcaseNotes: form.githubShowcaseNotes,
-        githubProductionUsage: form.githubProductionUsage,
+        // The GitHub-only texts go with the link: after an unlink the form
+        // keeps them (picking the repo again brings them back), but they are
+        // not saved without a repository.
+        ...(githubFullName
+          ? {
+              githubRole: form.githubRole || null,
+              githubContribution: form.githubContribution,
+              githubMotivation: form.githubMotivation,
+              githubTechDecisions: form.githubTechDecisions,
+              githubLearnings: form.githubLearnings,
+              githubShowcaseNotes: form.githubShowcaseNotes,
+              githubProductionUsage: form.githubProductionUsage,
+            }
+          : {}),
         githubDisplayOptions: form.githubDisplayOptions,
         githubAutoSync: form.githubAutoSync,
         allowDownloads: form.allowDownloads,
@@ -1318,104 +1367,102 @@ export default function CreateProjectForm({
     [form, timeline, skillIds, coAuthors, companies, githubFullName],
   );
 
+  // What the last import (GitHub or a provider) wrote into the form, so the
+  // next one replaces that and nothing the author typed — see
+  // lib/project-import.ts. Kept across an unlink: picking the other source
+  // afterwards must not inherit the first one's title and links.
+  const lastImportRef = useRef<{
+    values: ImportedProjectValues<ProjectFormState>;
+    skillIds: number[];
+  }>({ values: {}, skillIds: [] });
+
+  // Writes an import into the form: the shared fields, plus the technology
+  // tags the skills catalogue already knows (the tag list is a curated
+  // taxonomy, not free text).
+  const applyImportedFields = useCallback(
+    (
+      values: ImportedProjectValues<ProjectFormState>,
+      tags: string[],
+      extra: Partial<ProjectFormState> = {},
+    ) => {
+      const previous = lastImportRef.current;
+
+      setForm((prev) => ({
+        ...prev,
+        ...mergeImportedValues(prev, values, previous.values),
+        ...extra,
+      }));
+
+      const lookup = new Map(
+        metaSkills.map((skill) => [skill.name.toLowerCase(), skill.id]),
+      );
+      const matched = tags.flatMap((tag) => {
+        const id = lookup.get(tag.toLowerCase());
+        return id ? [id] : [];
+      });
+      const merged = mergeImportedSkills(skillIds, matched, previous.skillIds);
+      setSkillIds(merged.skillIds);
+
+      lastImportRef.current = { values, skillIds: merged.added };
+    },
+    [metaSkills, skillIds],
+  );
+
   const applyGithubImport = useCallback(
     ({ repo }: GithubImportPayload) => {
       setGithubFullName(repo.fullName);
-
-      const startedOn = repo.createdAt
-        ? repo.createdAt.slice(0, 10)
-        : "";
-      const archivedStatus: ProjectStatus | "" = repo.isArchived
-        ? "completed"
-        : "";
 
       // README is intentionally NOT copied into `solution` — it lives
       // in its own `github_readme` column and renders as a collapsible
       // "Project README" card on the project page. Solution is for the
       // author's voice, set via the AI draft or manual edit.
-      setForm((prev) => ({
-        ...prev,
-        title: prev.title || repo.name,
-        description: prev.description || repo.description || "",
-        projectUrl: prev.projectUrl || repo.homepage || "",
-        repositoryUrl: prev.repositoryUrl || repo.htmlUrl,
-        startedOn: prev.startedOn || startedOn,
-        teamSize:
-          prev.teamSize ||
-          (repo.contributorsCount > 0
-            ? String(repo.contributorsCount)
-            : ""),
-        projectStatus: prev.projectStatus || archivedStatus,
-      }));
-
-      // Merge GitHub topics into the technology tags (deduped, only if
-      // the catalogue already contains a matching skill).
-      if (repo.topics.length > 0 && metaSkills.length > 0) {
-        const lookup = new Map(
-          metaSkills.map((skill) => [skill.name.toLowerCase(), skill.id]),
-        );
-        const matched: number[] = [];
-        for (const topic of repo.topics) {
-          const id = lookup.get(topic.toLowerCase());
-          if (id) matched.push(id);
-        }
-        if (matched.length > 0) {
-          setSkillIds((prev) =>
-            Array.from(new Set([...prev, ...matched])),
-          );
-        }
-      }
+      applyImportedFields(
+        {
+          title: repo.name,
+          description: repo.description || "",
+          projectUrl: repo.homepage || "",
+          repositoryUrl: repo.htmlUrl,
+          startedOn: repo.createdAt ? repo.createdAt.slice(0, 10) : "",
+          teamSize:
+            repo.contributorsCount > 0 ? String(repo.contributorsCount) : "",
+          projectStatus: repo.isArchived ? "completed" : "",
+        },
+        repo.topics,
+      );
 
       toast.success(dictionary.githubIntegration.importApplied);
     },
-    [dictionary.githubIntegration.importApplied, metaSkills, toast],
+    [applyImportedFields, dictionary.githubIntegration.importApplied, toast],
   );
 
-  // Applies an imported provider resource (GitLab project) to the form. Same rule as
-  // the GitHub import: only blank fields are filled, so a re-import never
-  // overwrites what the author already wrote.
+  // Applies an imported provider resource (GitLab project) to the form, by
+  // the same rule as the GitHub import.
   const applyProviderImport = useCallback(
     ({ provider, resource }: ProviderImportPayload) => {
-      setForm((prev) => ({
-        ...prev,
-        title: prev.title || resource.name,
-        description: prev.description || resource.description || "",
-        repositoryUrl: prev.repositoryUrl || resource.url,
-        projectUrl: prev.projectUrl || resource.homepageUrl || "",
-        startedOn:
-          prev.startedOn ||
-          (resource.createdAt ? resource.createdAt.slice(0, 10) : ""),
-        teamSize:
-          prev.teamSize ||
-          (resource.teamSize && resource.teamSize > 0
-            ? String(resource.teamSize)
-            : ""),
-        projectStatus:
-          prev.projectStatus || (resource.archived ? "completed" : ""),
-        sourceIntegration: {
-          provider,
-          ref: resource.ref,
-          externalId: resource.externalId,
-          name: resource.name,
-          url: resource.url,
+      applyImportedFields(
+        {
+          title: resource.name,
+          description: resource.description || "",
+          repositoryUrl: resource.url,
+          projectUrl: resource.homepageUrl || "",
+          startedOn: resource.createdAt ? resource.createdAt.slice(0, 10) : "",
+          teamSize:
+            resource.teamSize && resource.teamSize > 0
+              ? String(resource.teamSize)
+              : "",
+          projectStatus: resource.archived ? "completed" : "",
         },
-      }));
-
-      // Provider tags (languages, topics) only stick when the skills catalogue
-      // already knows them — the tag list is a curated taxonomy, not free text.
-      if (resource.tags.length > 0 && metaSkills.length > 0) {
-        const lookup = new Map(
-          metaSkills.map((skill) => [skill.name.toLowerCase(), skill.id]),
-        );
-        const matched: number[] = [];
-        for (const tag of resource.tags) {
-          const id = lookup.get(tag.toLowerCase());
-          if (id) matched.push(id);
-        }
-        if (matched.length > 0) {
-          setSkillIds((prev) => Array.from(new Set([...prev, ...matched])));
-        }
-      }
+        resource.tags,
+        {
+          sourceIntegration: {
+            provider,
+            ref: resource.ref,
+            externalId: resource.externalId,
+            name: resource.name,
+            url: resource.url,
+          },
+        },
+      );
 
       toast.success(
         dictionary.providerIntegrations.importApplied.replace(
@@ -1424,41 +1471,174 @@ export default function CreateProjectForm({
         ),
       );
     },
-    [dictionary.providerIntegrations.importApplied, metaSkills, toast],
+    [applyImportedFields, dictionary.providerIntegrations.importApplied, toast],
   );
 
   /**
-   * Writes an AI draft into the form. Blank fields only — the author's own
-   * words are never replaced. Returns the count so the panel can report it.
+   * Writes an AI draft into the form: the story, the kind's details and the
+   * technology tags. Blank fields only — nothing the author wrote or picked is
+   * replaced. Reports how many fields it filled and how many blank story
+   * fields the draft had nothing for, so the panel can say so.
    */
   const applySourceDraft = useCallback(
-    (draft: SourceDraftFieldValues) => {
-      const targets: Array<[SourceDraftTarget, string]> = [
-        ["description", draft.description],
-        ["role", draft.projectRole],
-        ["problem", draft.problem],
-        ["solution", draft.solution],
-        ["results", draft.results],
-      ];
+    (draft: FormAiDraft): { applied: number; missed: number } => {
+      const texts = fillBlankFields(form, draft.texts);
+      const role =
+        draft.githubRole && !form.githubRole ? { githubRole: draft.githubRole } : {};
+      const code =
+        form.kind === "code" ? fillBlankFields(form.codeMeta, draft.details?.code) : null;
+      const qa = form.kind === "qa" ? fillBlankFields(form.qaMeta, draft.details?.qa) : null;
 
-      const patch: Partial<Record<SourceDraftTarget, string>> = {};
+      // Tags only join when the skills catalogue knows them, and only add.
+      const lookup = new Map(
+        metaSkills.map((skill) => [skill.name.toLowerCase(), skill.id]),
+      );
+      const newSkillIds = Array.from(
+        new Set(
+          (draft.technologies ?? []).flatMap((name) => {
+            const id = lookup.get(name.toLowerCase());
+            return id && !skillIds.includes(id) ? [id] : [];
+          }),
+        ),
+      );
 
-      for (const [field, value] of targets) {
-        if (form[field].trim().length === 0 && value.trim().length > 0) {
-          patch[field] = value;
-        }
-      }
-
-      const applied = Object.keys(patch).length;
+      const applied =
+        texts.filled +
+        Object.keys(role).length +
+        (code?.filled ?? 0) +
+        (qa?.filled ?? 0) +
+        (newSkillIds.length > 0 ? 1 : 0);
 
       if (applied > 0) {
-        setForm((prev) => ({ ...prev, ...patch }));
+        setForm((prev) => ({
+          ...prev,
+          ...texts.patch,
+          ...role,
+          ...(code ? { codeMeta: { ...prev.codeMeta, ...code.patch } } : {}),
+          ...(qa ? { qaMeta: { ...prev.qaMeta, ...qa.patch } } : {}),
+        }));
       }
 
-      return applied;
+      if (newSkillIds.length > 0) {
+        setSkillIds((prev) => Array.from(new Set([...prev, ...newSkillIds])));
+      }
+
+      return { applied, missed: texts.missed };
     },
-    [form],
+    [form, metaSkills, skillIds],
   );
+
+  // The "Draft with AI" panel under the import panels, for whichever source the
+  // project is linked to. A GitHub repo also drafts the GitHub-only fields.
+  const generateSourceDraft = useCallback(async (): Promise<SourceDraftResult> => {
+    const link = form.sourceIntegration;
+    const kind = form.kind || null;
+
+    // Nothing left to fill: say so without spending a request.
+    const blank =
+      countBlankFields(
+        form,
+        githubFullName
+          ? [...STORY_DRAFT_TARGETS, ...GITHUB_DRAFT_TARGETS]
+          : STORY_DRAFT_TARGETS,
+      ) +
+      (githubFullName && !form.githubRole ? 1 : 0) +
+      (kind === "code" ? countBlankFields(form.codeMeta, DRAFT_CODE_DETAIL_KEYS) : 0) +
+      (kind === "qa" ? countBlankFields(form.qaMeta, DRAFT_QA_DETAIL_KEYS) : 0);
+
+    if (blank === 0) {
+      return { ok: true, outcome: "all_filled" };
+    }
+
+    let draft: FormAiDraft;
+
+    if (githubFullName) {
+      const result = await apiFetch<{ draft: GithubAiDraft }>("/api/ai/github-draft", {
+        method: "POST",
+        body: {
+          fullName: githubFullName,
+          locale: router.locale,
+          kind,
+          existing: {
+            role: form.githubRole || null,
+            contribution: form.githubContribution,
+            motivation: form.githubMotivation,
+            techDecisions: form.githubTechDecisions,
+            learnings: form.githubLearnings,
+            showcaseNotes: form.githubShowcaseNotes,
+            productionUsage: form.githubProductionUsage,
+            description: form.description,
+            projectRole: form.role,
+            problem: form.problem,
+            solution: form.solution,
+            results: form.results,
+          },
+        },
+      });
+
+      if (!result.ok) {
+        return { ok: false, error: result.error || null };
+      }
+
+      const github = result.data.draft;
+      draft = {
+        texts: {
+          description: github.description,
+          role: github.projectRole,
+          problem: github.problem,
+          solution: github.solution,
+          results: github.results,
+          githubContribution: github.contribution,
+          githubMotivation: github.motivation,
+          githubTechDecisions: github.techDecisions,
+          githubLearnings: github.learnings,
+          githubShowcaseNotes: github.showcaseNotes,
+          githubProductionUsage: github.productionUsage,
+        },
+        githubRole: github.role,
+        details: github.details,
+        technologies: github.technologies,
+      };
+    } else if (link) {
+      const result = await apiFetch<{ draft: ProviderAiDraft }>("/api/ai/source-draft", {
+        method: "POST",
+        body: {
+          provider: link.provider,
+          ref: link.ref,
+          locale: router.locale,
+          kind,
+          existing: {
+            description: form.description,
+            projectRole: form.role,
+            problem: form.problem,
+            solution: form.solution,
+            results: form.results,
+          },
+        },
+      });
+
+      if (!result.ok) {
+        return { ok: false, error: result.error || null };
+      }
+
+      const provider = result.data.draft;
+      draft = {
+        texts: {
+          description: provider.description,
+          role: provider.projectRole,
+          problem: provider.problem,
+          solution: provider.solution,
+          results: provider.results,
+        },
+        details: provider.details,
+        technologies: provider.technologies,
+      };
+    } else {
+      return { ok: false, error: null };
+    }
+
+    return { ok: true, outcome: "drafted", ...applySourceDraft(draft) };
+  }, [applySourceDraft, form, githubFullName, router.locale]);
 
   const clearProviderImport = useCallback(
     (provider: ProviderIntegrationId) => {
@@ -1489,24 +1669,15 @@ export default function CreateProjectForm({
     [],
   );
 
+  // Same as unlinking a provider: the link goes from the form at once and from
+  // the project on save (the server then clears the repo snapshot and the
+  // GitHub-only fields). Picking the repo again before saving brings them back.
   const handleGithubUnlink = useCallback(() => {
     setGithubFullName(null);
-    setForm((prev) => ({
-      ...prev,
-      githubRole: "",
-      githubContribution: "",
-      githubMotivation: "",
-      githubTechDecisions: "",
-      githubLearnings: "",
-      githubShowcaseNotes: "",
-      githubProductionUsage: "",
-      githubAutoSync: false,
-      githubDisplayOptions: { ...DEFAULT_GITHUB_DISPLAY_OPTIONS },
-    }));
-    // Move user away from the now-gone "GitHub" step.
-    setStep(1);
-    toast.success(dictionary.githubIntegration.unlinkedMessage);
-  }, [dictionary.githubIntegration.unlinkedMessage, toast]);
+    toast.success(
+      dictionary.providerIntegrations.unlinkedMessage.replace("{provider}", "GitHub"),
+    );
+  }, [dictionary.providerIntegrations.unlinkedMessage, toast]);
 
   const handleSave = useCallback(
     async (mode: SaveMode) => {
@@ -1939,13 +2110,12 @@ export default function CreateProjectForm({
             update={update}
             updateDisplayOption={updateGithubDisplayOption}
             githubFullName={githubFullName}
-            projectId={project?.id || null}
             importReturnTo={importReturnTo}
-            onGithubImport={isEditMode ? undefined : applyGithubImport}
-            onUnlinked={handleGithubUnlink}
+            onGithubImport={applyGithubImport}
+            onGithubUnlink={handleGithubUnlink}
             onProviderImport={applyProviderImport}
             onProviderUnlink={clearProviderImport}
-            onApplySourceDraft={applySourceDraft}
+            onGenerateSourceDraft={generateSourceDraft}
           />
         )}
 
@@ -2360,6 +2530,11 @@ function StepBasics({
             label: getProjectKindLabel(kind, dictionary),
           }))}
         />
+        {form.kind ? (
+          <p className="mt-2 text-xs leading-5 app-muted">
+            {getProjectKindHint(form.kind, dictionary)}
+          </p>
+        ) : null}
       </Field>
 
       <Field label={dictionary.forms.projectRole} htmlFor="project-role">
@@ -2397,28 +2572,65 @@ type StepSpecificsProps = {
     value: GithubDisplayOptions[K],
   ) => void;
   githubFullName: string | null;
-  projectId: string | null;
   /** Where the GitHub / GitLab connect flow brings the person back to. */
   importReturnTo: string;
-  onGithubImport?: (payload: GithubImportPayload) => void;
-  onUnlinked: () => void;
+  onGithubImport: (payload: GithubImportPayload) => void;
+  onGithubUnlink: () => void;
   onProviderImport: (payload: ProviderImportPayload) => void;
   onProviderUnlink: (provider: ProviderIntegrationId) => void;
-  /** Applies an AI draft to blank fields; returns how many it filled. */
-  onApplySourceDraft: (draft: SourceDraftFieldValues) => number;
+  /** Drafts the narrative fields from the linked source with AI. */
+  onGenerateSourceDraft: () => Promise<SourceDraftResult>;
 };
 
-// Kind-aware fields, preceded by the connect-and-import panels for whichever
-// providers cover this discipline (GitLab for code/QA).
-// GitHub keeps its own panel inside the code branch, so the import options end
-// up next to each other.
+// The source of the project, then the kind-aware fields.
+//
+// GitHub and the providers (GitLab) work the same way: an import panel that
+// names the linked source and offers "pick another" and "unlink" (applied on
+// save), and under the panels one "Draft with AI" for whichever source is
+// linked. A project has one source: while it is linked, every other panel says
+// so and stays closed until that link is removed. A linked source stays on
+// screen even when the kind no longer offers it, so it can always be unlinked.
+// The GitHub-only fields (contribution, what to show, auto-sync) come last.
 function StepSpecifics(props: StepSpecificsProps) {
-  const { form, onProviderImport, onProviderUnlink } = props;
-  const providers = getProviderIntegrationsForKind(form.kind);
+  const {
+    dictionary,
+    form,
+    update,
+    updateDisplayOption,
+    githubFullName,
+    importReturnTo,
+    onGithubImport,
+    onGithubUnlink,
+    onProviderImport,
+    onProviderUnlink,
+    onGenerateSourceDraft,
+  } = props;
   const link = form.sourceIntegration;
+  const linkLabel = link ? getProviderIntegrationDescriptor(link.provider).label : null;
+  const providers = getProviderIntegrationsForKind(form.kind);
+
+  if (link && !providers.some((descriptor) => descriptor.id === link.provider)) {
+    providers.push(getProviderIntegrationDescriptor(link.provider));
+  }
+
+  const showGithub = form.kind === "code" || Boolean(githubFullName);
+  const linkedSource = githubFullName ? "GitHub" : linkLabel;
 
   return (
     <div className="space-y-6">
+      {showGithub ? (
+        <GithubRepoImporter
+          onImport={onGithubImport}
+          linkedName={githubFullName}
+          onUnlink={onGithubUnlink}
+          blockedBy={
+            link && linkLabel
+              ? { source: linkLabel, name: link.name || link.ref }
+              : null
+          }
+          returnTo={importReturnTo}
+        />
+      ) : null}
       {providers.map((descriptor) => (
         <ProviderResourceImporter
           key={descriptor.id}
@@ -2428,26 +2640,34 @@ function StepSpecifics(props: StepSpecificsProps) {
               ? link.name || link.ref
               : null
           }
+          blockedBy={
+            githubFullName
+              ? { source: "GitHub", name: githubFullName }
+              : link && linkLabel && link.provider !== descriptor.id
+                ? { source: linkLabel, name: link.name || link.ref }
+                : null
+          }
           onImport={onProviderImport}
           onUnlink={() => onProviderUnlink(descriptor.id)}
-          returnTo={props.importReturnTo}
+          returnTo={importReturnTo}
         />
       ))}
-      {link ? (
+      {linkedSource ? (
         <SourceAiDraft
-          provider={link.provider}
-          ref_={link.ref}
-          existing={{
-            description: form.description,
-            projectRole: form.role,
-            problem: form.problem,
-            solution: form.solution,
-            results: form.results,
-          }}
-          onApply={props.onApplySourceDraft}
+          key={githubFullName ?? `${link?.provider}:${link?.ref}`}
+          sourceLabel={linkedSource}
+          onGenerate={onGenerateSourceDraft}
         />
       ) : null}
       <KindSpecificFields {...props} />
+      {githubFullName ? (
+        <GithubDetailsFields
+          dictionary={dictionary}
+          form={form}
+          update={update}
+          updateDisplayOption={updateDisplayOption}
+        />
+      ) : null}
     </div>
   );
 }
@@ -2456,12 +2676,6 @@ function KindSpecificFields({
   dictionary,
   form,
   update,
-  updateDisplayOption,
-  githubFullName,
-  projectId,
-  importReturnTo,
-  onGithubImport,
-  onUnlinked,
 }: StepSpecificsProps) {
   if (!form.kind) {
     return (
@@ -2484,9 +2698,6 @@ function KindSpecificFields({
   if (form.kind === "code") {
     return (
       <div className="space-y-6">
-        {onGithubImport ? (
-          <GithubRepoImporter onImport={onGithubImport} returnTo={importReturnTo} />
-        ) : null}
         <UrlField
           id="project-repository-url"
           label={dictionary.forms.repositoryUrl}
@@ -2500,17 +2711,6 @@ function KindSpecificFields({
           value={form.codeMeta}
           onChange={(next) => update("codeMeta", next)}
         />
-        {githubFullName ? (
-          <StepGithub
-            dictionary={dictionary}
-            form={form}
-            update={update}
-            updateDisplayOption={updateDisplayOption}
-            githubFullName={githubFullName}
-            projectId={projectId}
-            onUnlinked={onUnlinked}
-          />
-        ) : null}
       </div>
     );
   }
@@ -2569,18 +2769,6 @@ function KindSpecificFields({
     );
   }
 
-  if (form.kind === "motion") {
-    return (
-      <MotionDetailsFields
-        dictionary={dictionary}
-        value={form.motionMeta}
-        durationInput={form.motionDurationInput}
-        onChange={(next) => update("motionMeta", next)}
-        onDurationInputChange={(next) => update("motionDurationInput", next)}
-      />
-    );
-  }
-
   if (form.kind === "writing") {
     return (
       <WritingDetailsFields
@@ -2598,16 +2786,16 @@ function KindSpecificFields({
   );
 }
 
-function StepGithub({
+// The GitHub-only part of a project linked to a repository: the author's
+// notes on their part in it, what the project page shows from the repo, and
+// auto-sync. Linking, unlinking and the AI draft live with the import panels.
+function GithubDetailsFields({
   dictionary,
   form,
   update,
   updateDisplayOption,
-  githubFullName,
-  projectId,
-  onUnlinked,
 }: {
-  dictionary: Pick<Dictionary, "aiDraft" | "coAuthors" | "common" | "dashboardProjects" | "forms" | "githubIntegration" | "providerIntegrations">;
+  dictionary: Pick<Dictionary, "forms" | "githubIntegration">;
   form: ProjectFormState;
   update: <K extends keyof ProjectFormState>(
     field: K,
@@ -2617,23 +2805,8 @@ function StepGithub({
     key: K,
     value: GithubDisplayOptions[K],
   ) => void;
-  githubFullName: string;
-  projectId: string | null;
-  onUnlinked: () => void;
 }) {
   const dict = dictionary.githubIntegration;
-  const aiDict = dictionary.aiDraft;
-  const router = useLocalizedRouter();
-  const [confirmingUnlink, setConfirmingUnlink] = useState(false);
-  const [unlinking, setUnlinking] = useState(false);
-  const [unlinkError, setUnlinkError] = useState<string | null>(null);
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiMessage, setAiMessage] = useState<
-    | { kind: "ok"; appliedCount: number }
-    | { kind: "info"; reason: "all_filled" }
-    | { kind: "error"; message: string }
-    | null
-  >(null);
 
   const roleOptions = useMemo(
     () =>
@@ -2643,122 +2816,6 @@ function StepGithub({
       })),
     [dict.roles],
   );
-
-  const generateAiDraft = async () => {
-    setAiGenerating(true);
-    setAiMessage(null);
-
-    const result = await apiFetch<{
-      draft: {
-        role: GithubProjectRole | null;
-        contribution: string;
-        motivation: string;
-        techDecisions: string;
-        learnings: string;
-        showcaseNotes: string;
-        productionUsage: string;
-        projectRole: string;
-        problem: string;
-        solution: string;
-        results: string;
-      };
-      details?: string;
-    }>("/api/ai/github-draft", {
-      method: "POST",
-      body: {
-        fullName: githubFullName,
-        locale: router.locale,
-        existing: {
-          role: form.githubRole || null,
-          contribution: form.githubContribution,
-          motivation: form.githubMotivation,
-          techDecisions: form.githubTechDecisions,
-          learnings: form.githubLearnings,
-          showcaseNotes: form.githubShowcaseNotes,
-          productionUsage: form.githubProductionUsage,
-          projectRole: form.role,
-          problem: form.problem,
-          solution: form.solution,
-          results: form.results,
-        },
-      },
-    });
-
-    setAiGenerating(false);
-
-    if (!result.ok) {
-      setAiMessage({
-        kind: "error",
-        message: result.error || aiDict.error,
-      });
-      return;
-    }
-
-    const draft = result.data.draft;
-
-    // Apply only to empty fields — never overwrite the user's text.
-    let applied = 0;
-    if (!form.githubRole && draft.role) {
-      update("githubRole", draft.role);
-      applied += 1;
-    }
-    const setIfEmpty = <K extends keyof ProjectFormState>(
-      field: K,
-      value: string,
-    ) => {
-      if (typeof form[field] === "string" && (form[field] as string).trim().length === 0 && value.trim().length > 0) {
-        update(field, value as ProjectFormState[K]);
-        applied += 1;
-      }
-    };
-    setIfEmpty("githubContribution", draft.contribution);
-    setIfEmpty("githubMotivation", draft.motivation);
-    setIfEmpty("githubTechDecisions", draft.techDecisions);
-    setIfEmpty("githubLearnings", draft.learnings);
-    setIfEmpty("githubShowcaseNotes", draft.showcaseNotes);
-    setIfEmpty("githubProductionUsage", draft.productionUsage);
-    // Standard project narrative fields (Steps 1 + 3).
-    setIfEmpty("role", draft.projectRole);
-    setIfEmpty("problem", draft.problem);
-    setIfEmpty("solution", draft.solution);
-    setIfEmpty("results", draft.results);
-
-    setAiMessage(
-      applied === 0
-        ? { kind: "info", reason: "all_filled" }
-        : { kind: "ok", appliedCount: applied },
-    );
-  };
-
-  const requestUnlink = () => {
-    setUnlinkError(null);
-    setConfirmingUnlink(true);
-  };
-
-  const cancelUnlink = () => {
-    setConfirmingUnlink(false);
-  };
-
-  const performUnlink = async () => {
-    setUnlinking(true);
-    setUnlinkError(null);
-
-    if (projectId) {
-      const result = await apiFetch(
-        `/api/projects/${projectId}/unlink-github`,
-        { method: "POST" },
-      );
-      if (!result.ok) {
-        setUnlinking(false);
-        setUnlinkError(result.error || dict.unlinkError);
-        return;
-      }
-    }
-
-    setUnlinking(false);
-    setConfirmingUnlink(false);
-    onUnlinked();
-  };
 
   const togglesGroup: Array<{
     key: keyof GithubDisplayOptions;
@@ -2775,95 +2832,15 @@ function StepGithub({
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border app-border bg-[color:var(--surface-muted)] p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-eyebrow app-soft">
-              {dict.linkedHeader}
-            </p>
-            <a
-              href={`https://github.com/${githubFullName}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-block break-all text-sm font-semibold text-[color:var(--foreground)] hover:underline"
-            >
-              {githubFullName}
-            </a>
-          </div>
-          {!confirmingUnlink ? (
-            <button
-              type="button"
-              onClick={requestUnlink}
-              className="cursor-pointer rounded-full app-panel px-3 py-1.5 text-xs font-medium app-soft transition-colors hover:bg-[color:var(--surface)] hover:text-[color:var(--foreground)]"
-            >
-              {dict.unlink}
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => void performUnlink()}
-                disabled={unlinking}
-                className="cursor-pointer rounded-full bg-rose-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-rose-600 disabled:opacity-60"
-              >
-                {unlinking ? dict.unlinking : dict.confirmUnlink}
-              </button>
-              <button
-                type="button"
-                onClick={cancelUnlink}
-                disabled={unlinking}
-                className="cursor-pointer rounded-full app-panel px-3 py-1.5 text-xs font-medium app-soft transition-colors hover:bg-[color:var(--surface)]"
-              >
-                {dict.cancel}
-              </button>
-            </div>
-          )}
-        </div>
-        {confirmingUnlink ? (
-          <p className="mt-2 text-xs app-muted">{dict.unlinkConfirm}</p>
-        ) : null}
-        {unlinkError ? (
-          <p role="alert" className="mt-2 text-xs text-rose-500">
-            {unlinkError}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="rounded-2xl border border-dashed app-border p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-[color:var(--foreground)]">
-              ✨ {aiDict.title}
-            </p>
-            <p className="mt-0.5 text-xs app-muted">{aiDict.description}</p>
-          </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => void generateAiDraft()}
-            disabled={aiGenerating}
-          >
-            {aiGenerating ? aiDict.generating : aiDict.button}
-          </Button>
-        </div>
-
-        {aiMessage?.kind === "error" ? (
-          <p role="alert" className="mt-2 text-xs text-rose-500">
-            {aiMessage.message}
-          </p>
-        ) : null}
-        {aiMessage?.kind === "ok" ? (
-          <p role="status" className="mt-2 text-xs text-emerald-600">
-            {aiDict.applied.replace("{count}", String(aiMessage.appliedCount))}
-          </p>
-        ) : null}
-        {aiMessage?.kind === "info" ? (
-          <p role="status" className="mt-2 text-xs app-muted">
-            {aiDict.allFilled}
-          </p>
-        ) : null}
-      </div>
+    <section className="space-y-5 rounded-2xl border app-border p-5">
+      <header>
+        <h3 className="font-display text-base font-semibold tracking-tight text-[color:var(--foreground)]">
+          {dictionary.forms.stepGithubTitle}
+        </h3>
+        <p className="mt-1 text-xs app-muted">
+          {dictionary.forms.stepGithubDescription}
+        </p>
+      </header>
 
       <Field label={dict.roleLabel}>
         <FormSelect
@@ -3020,7 +2997,7 @@ function StepGithub({
         </label>
         <p className="mt-1 ml-6 text-xs app-muted">{dict.autoSyncHint}</p>
       </fieldset>
-    </div>
+    </section>
   );
 }
 

@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getProjectKindGuide } from "@/lib/project-kind-guides";
 import {
   buildProjectPath,
   generateUniqueProjectSlug,
+  getProjectKindHint,
   getProjectKindLabel,
   isProjectTimelineFieldEditable,
+  isPublicProjectKind,
   normalizeProjectKind,
   normalizeProjectPayload,
   normalizeProjectVisibilityStatus,
   parseProjectPath,
   projectKinds,
+  publicProjectKinds,
   slugify,
 } from "@/lib/projects";
 
@@ -94,6 +99,10 @@ describe("normalizeProjectKind", () => {
     expect(normalizeProjectKind("")).toBeNull();
   });
 
+  it("no longer knows the motion kind (merged into video)", () => {
+    expect(normalizeProjectKind("motion")).toBeNull();
+  });
+
   it("returns null for non-string values", () => {
     expect(normalizeProjectKind(null)).toBeNull();
     expect(normalizeProjectKind(42)).toBeNull();
@@ -109,7 +118,6 @@ describe("getProjectKindLabel", () => {
       projectKindVideo: "Video",
       projectKindPhoto: "Photo",
       projectKind3d: "3D",
-      projectKindMotion: "Motion",
       projectKindAudio: "Audio",
       projectKindQa: "QA",
       projectKindWriting: "Writing",
@@ -123,11 +131,51 @@ describe("getProjectKindLabel", () => {
     expect(getProjectKindLabel("video", mockDictionary)).toBe("Video");
     expect(getProjectKindLabel("photo", mockDictionary)).toBe("Photo");
     expect(getProjectKindLabel("3d", mockDictionary)).toBe("3D");
-    expect(getProjectKindLabel("motion", mockDictionary)).toBe("Motion");
     expect(getProjectKindLabel("audio", mockDictionary)).toBe("Audio");
     expect(getProjectKindLabel("qa", mockDictionary)).toBe("QA");
     expect(getProjectKindLabel("writing", mockDictionary)).toBe("Writing");
     expect(getProjectKindLabel("other", mockDictionary)).toBe("Other");
+  });
+});
+
+describe("public project kinds", () => {
+  it("leaves out only the 'other' fallback", () => {
+    expect(publicProjectKinds).toEqual(
+      projectKinds.filter((kind) => kind !== "other"),
+    );
+    expect(publicProjectKinds).not.toContain("other");
+  });
+
+  it("treats 'other' and a missing kind as not public", () => {
+    expect(isPublicProjectKind("other")).toBe(false);
+    expect(isPublicProjectKind(null)).toBe(false);
+    expect(isPublicProjectKind(undefined)).toBe(false);
+    expect(isPublicProjectKind("video")).toBe(true);
+  });
+});
+
+describe("getProjectKindHint", () => {
+  it("has a non-empty hint for every kind in both locales", () => {
+    for (const locale of ["uk", "en"] as const) {
+      const dictionary = getDictionary(locale);
+      for (const kind of projectKinds) {
+        expect(getProjectKindHint(kind, dictionary).length).toBeGreaterThan(20);
+      }
+    }
+  });
+});
+
+describe("getProjectKindGuide", () => {
+  it("has a title, three blocks and a list of tips for every public kind", () => {
+    for (const locale of ["uk", "en"] as const) {
+      for (const kind of publicProjectKinds) {
+        const guide = getProjectKindGuide(locale, kind);
+        expect(guide.title).not.toBe("");
+        expect(guide.seoTitle).not.toBe("");
+        expect(guide.blocks).toHaveLength(3);
+        expect(guide.blocks[1].items?.length).toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 });
 

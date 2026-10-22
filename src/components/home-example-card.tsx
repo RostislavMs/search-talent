@@ -5,7 +5,7 @@ import OptimizedImage from "@/components/ui/optimized-image";
 import type { HeroExamplePortfolio } from "@/lib/home-example";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { withAlpha } from "@/lib/profile-presentation";
-import { getProjectKindLabel } from "@/lib/projects";
+import { getProjectKindLabel, isPublicProjectKind } from "@/lib/projects";
 import { getSiteUrl } from "@/lib/seo";
 import { hostFromUrl } from "@/lib/view-tracking";
 
@@ -173,14 +173,12 @@ export default function HomeExampleCard({
                       />
                     </div>
                     <div className="px-1.5 py-1">
-                      {cover.kind ? (
+                      {isPublicProjectKind(cover.kind) ? (
                         <p
                           className="truncate text-[8px] font-semibold uppercase tracking-eyebrow"
                           style={{ color: theme.muted }}
                         >
-                          {/* "Відео / монтаж" → "Відео": the full label does
-                              not fit a thumbnail-sized card. */}
-                          {getProjectKindLabel(cover.kind, dictionary).split("/")[0].trim()}
+                          {getProjectKindLabel(cover.kind, dictionary)}
                         </p>
                       ) : null}
                       <p className="font-display truncate text-[10px] font-semibold">

@@ -13,7 +13,6 @@ vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => null) }));
 vi.mock("@/lib/db/github-sync", () => ({ syncProjectFromGitHub: vi.fn() }));
 
 import { POST as pinPost, DELETE as pinDelete } from "@/app/api/projects/[id]/pin/route";
-import { POST as unlinkPost } from "@/app/api/projects/[id]/unlink-github/route";
 import { POST as syncPost } from "@/app/api/projects/[id]/sync-github/route";
 import { rateLimit } from "@/lib/rate-limit";
 import { syncProjectFromGitHub } from "@/lib/db/github-sync";
@@ -63,22 +62,6 @@ describe("projects/[id]/pin", () => {
     const res = await pinDelete(req(), params());
     expect(res.status).toBe(200);
     expect((await res.json()).pinned).toBe(false);
-  });
-});
-
-describe("projects/[id]/unlink-github", () => {
-  it("401 when unauthenticated", async () => {
-    setMock(null);
-    expect((await unlinkPost(req(), params())).status).toBe(401);
-  });
-
-  it("clears the github_* columns for the owner", async () => {
-    const mock = setMock(authUser, () => ({ error: null }));
-    const res = await unlinkPost(req(), params());
-    expect(res.status).toBe(200);
-    const update = mock.calls.find((c) => c.table === "projects" && c.verb === "update");
-    expect((update?.payload as { github_full_name: null }).github_full_name).toBeNull();
-    expect((update?.payload as { github_auto_sync: boolean }).github_auto_sync).toBe(false);
   });
 });
 

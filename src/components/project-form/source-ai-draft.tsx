@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { apiFetch } from "@/lib/api-client";
-import {
-  getProviderIntegrationDescriptor,
-  type ProviderIntegrationId,
-} from "@/lib/constants/provider-integrations";
-import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
+import { useDictionary } from "@/lib/i18n/client";
 import { aiDraftCopy } from "@/lib/i18n/copy/ai-draft";
 import { providerIntegrationsCopy } from "@/lib/i18n/copy/provider-integrations";
 
@@ -19,35 +14,36 @@ export type SourceDraftFieldValues = {
   results: string;
 };
 
+export type SourceDraftResult =
+  /** Every field the draft could fill is already filled; nothing was asked. */
+  | { ok: true; outcome: "all_filled" }
+  /** `missed`: blank story fields the source said too little about. */
+  | { ok: true; outcome: "drafted"; applied: number; missed: number }
+  | { ok: false; error: string | null };
+
 type Props = {
-  provider: ProviderIntegrationId;
-  ref_: string;
-  /** What the author has already written — never overwritten. */
-  existing: SourceDraftFieldValues;
-  /** Called with the fields the draft filled in. */
-  onApply: (draft: SourceDraftFieldValues) => number;
+  /** The linked source, e.g. "GitHub" or "GitLab". */
+  sourceLabel: string;
+  /** Asks the model for a draft and writes it into the blank fields. */
+  onGenerate: () => Promise<SourceDraftResult>;
 };
 
 /**
- * "Draft with AI" for a project imported from a provider. The same deal as the
- * GitHub draft: the model reads what the platform gave us (title, description,
- * tags, metrics, and the long text, e.g. a README) and proposes the narrative
- * fields. Only blanks are filled.
+ * "Draft with AI" for a project imported from a source (a GitHub repository,
+ * a GitLab project). The model reads what the source gave us — description,
+ * README, languages, tags — and proposes the story, the kind's details and the
+ * technology tags. Only blanks are filled. The panel says up front that the
+ * model can be wrong and fills less when the source says little, and after a
+ * run it tells which of those happened. One panel for every source, so the
+ * form reads the same whichever one the author picked.
  */
-export default function SourceAiDraft({
-  provider,
-  ref_,
-  existing,
-  onApply,
-}: Props) {
+export default function SourceAiDraft({ sourceLabel, onGenerate }: Props) {
   const dictionary = useDictionary({ aiDraft: aiDraftCopy, providerIntegrations: providerIntegrationsCopy });
   const dict = dictionary.aiDraft;
-  const router = useLocalizedRouter();
   const [generating, setGenerating] = useState(false);
   const [message, setMessage] = useState<
-    | { kind: "ok"; appliedCount: number }
-    | { kind: "info" }
-    | { kind: "error"; message: string }
+    | { kind: "status"; text: string }
+    | { kind: "error"; text: string }
     | null
   >(null);
 
@@ -55,23 +51,30 @@ export default function SourceAiDraft({
     setGenerating(true);
     setMessage(null);
 
-    const result = await apiFetch<{ draft: SourceDraftFieldValues }>(
-      "/api/ai/source-draft",
-      {
-        method: "POST",
-        body: { provider, ref: ref_, locale: router.locale, existing },
-      },
-    );
+    const result = await onGenerate();
 
     setGenerating(false);
 
     if (!result.ok) {
-      setMessage({ kind: "error", message: result.error || dict.error });
+      setMessage({ kind: "error", text: result.error || dict.error });
       return;
     }
 
-    const applied = onApply(result.data.draft);
-    setMessage(applied === 0 ? { kind: "info" } : { kind: "ok", appliedCount: applied });
+    if (result.outcome === "all_filled") {
+      setMessage({ kind: "status", text: dict.allFilled });
+      return;
+    }
+
+    const count = String(result.applied);
+    setMessage({
+      kind: "status",
+      text:
+        result.applied === 0
+          ? dict.noSignal
+          : result.missed > 0
+            ? dict.appliedPartial.replace("{count}", count)
+            : dict.applied.replace("{count}", count),
+    });
   };
 
   return (
@@ -84,7 +87,7 @@ export default function SourceAiDraft({
           <p className="mt-0.5 text-xs app-muted">
             {dictionary.providerIntegrations.aiDraftHint.replace(
               "{provider}",
-              getProviderIntegrationDescriptor(provider).label,
+              sourceLabel,
             )}
           </p>
         </div>
@@ -105,11 +108,7 @@ export default function SourceAiDraft({
             message.kind === "error" ? "text-rose-500" : "app-muted"
           }`}
         >
-          {message.kind === "error"
-            ? message.message
-            : message.kind === "info"
-              ? dict.allFilled
-              : dict.applied.replace("{count}", String(message.appliedCount))}
+          {message.text}
         </p>
       ) : null}
     </section>

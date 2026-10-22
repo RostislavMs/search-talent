@@ -4,7 +4,7 @@ export const providerIntegrationsCopy = {
     gitlabDescription:
       "Import a repository as a project, with stats that stay current.",
     aiDraftHint:
-      "The AI reads what {provider} gave us — title, tags, metrics and the long text — and drafts the empty narrative fields.",
+      "AI reads the description, README, languages and tags from {provider} and fills the empty fields: the story, the project details and the technologies. It can be wrong, and when the source says little it fills less — check the result.",
     connect: "Connect {provider}",
     disconnect: "Disconnect",
     disconnecting: "Disconnecting…",
@@ -20,6 +20,8 @@ export const providerIntegrationsCopy = {
     linkedTo: "Linked to {name}",
     pickResource: "Pick from {provider}",
     pickAnother: "Pick another",
+    blockedBy:
+      "Already linked to {source}: {name}. A project has one source — unlink {source} first to import from {provider}.",
     hidePicker: "Hide",
     unlink: "Unlink",
     filterPlaceholder: "Filter…",
@@ -51,7 +53,7 @@ export const providerIntegrationsCopy = {
     gitlabDescription:
       "Імпортуйте репозиторій як проєкт — статистика оновлюється сама.",
     aiDraftHint:
-      "ШІ читає те, що дав {provider} — назву, теги, метрики й довгий текст — і пропонує чернетки для порожніх полів опису.",
+      "ШІ прочитає з {provider} опис, README, мови й теги та заповнить порожні поля: історію проєкту, деталі й технології. Він може помилятися, а коли даних мало — заповнить не все, тож перевірте результат.",
     connect: "Підключити {provider}",
     disconnect: "Відключити",
     disconnecting: "Відключення…",
@@ -66,7 +68,9 @@ export const providerIntegrationsCopy = {
     connectedAs: "Підключено як {login}",
     linkedTo: "Пов’язано з {name}",
     pickResource: "Вибрати з {provider}",
-    pickAnother: "Вибрати інше",
+    pickAnother: "Вибрати інший",
+    blockedBy:
+      "Проєкт уже пов’язаний з {source}: {name}. В одного проєкту одне джерело — щоб імпортувати з {provider}, спершу відв’яжіть {source}.",
     hidePicker: "Сховати",
     unlink: "Відв’язати",
     filterPlaceholder: "Фільтр…",

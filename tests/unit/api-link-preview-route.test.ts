@@ -247,7 +247,7 @@ describe("GET /api/link-preview", () => {
     expect(preview).toMatchObject({
       kind: "project",
       // Same eyebrow the project cards show site-wide, not a preview-only label.
-      eyebrow: "Design (UI / UX / brand)",
+      eyebrow: "Design",
       title: "Design system",
       subtitle: "By Ada",
       // Stored HTML is flattened before it reaches the card.
