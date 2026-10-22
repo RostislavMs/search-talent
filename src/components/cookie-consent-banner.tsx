@@ -134,7 +134,7 @@ export default function CookieConsentBanner({
             role="dialog"
             aria-modal="true"
             aria-labelledby="cookie-settings-title"
-            className="mx-auto w-full max-w-xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-2xl"
+            className="mx-auto w-full max-w-xl max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-hero border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-2xl"
           >
             <div className="relative">
               <div className="pr-10">
@@ -251,7 +251,7 @@ export default function CookieConsentBanner({
 
       {showBanner && (
         <div className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-6 sm:pb-4">
-          <section className="mx-auto flex max-h-[calc(100dvh-1.5rem)] max-w-3xl flex-col gap-2.5 overflow-y-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3.5 shadow-2xl sm:gap-3">
+          <section className="mx-auto flex max-h-[calc(100dvh-1.5rem)] max-w-3xl flex-col gap-2.5 overflow-y-auto overscroll-contain rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3.5 shadow-2xl sm:gap-3">
             <p className="text-xs leading-5 app-muted">
               {dictionary.cookieConsent.title}{" "}
               <LocalizedLink

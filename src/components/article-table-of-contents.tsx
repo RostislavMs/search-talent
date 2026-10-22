@@ -299,7 +299,7 @@ export default function ArticleTableOfContents({
   if (variant === "mobile") {
     return (
       <details className="group rounded-panel app-card">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-xs font-semibold uppercase tracking-eyebrow app-soft [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none select-none items-center justify-between gap-3 p-5 text-xs font-semibold uppercase tracking-eyebrow app-soft [&::-webkit-details-marker]:hidden">
           {title}
           <svg
             aria-hidden

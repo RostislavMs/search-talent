@@ -233,7 +233,7 @@ export default function NotificationsList({
                         "flex items-start gap-3 rounded-2xl border app-border bg-[color:var(--surface)] p-3",
                         item.readAt
                           ? ""
-                          : "ring-1 ring-[color:var(--accent)]/40",
+                          : "ring-1 ring-[color:var(--brand-strong)]/40",
                       ].join(" ")}
                     >
                       <LocalizedLink

@@ -22,7 +22,7 @@ export default function GlobalError({
             "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
           background: "#0f172a",
           color: "#f8fafc",
-          minHeight: "100vh",
+          minHeight: "100svh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

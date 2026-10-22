@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { pressable } from "@/components/ui/button-styles";
 
 // Compact like / views / comments chips shared by the article and poll
 // interaction bars. Icon + number only, so the whole stats + reactions row fits
@@ -102,9 +103,9 @@ export function LikeChip({
       aria-label={`${label}: ${count}`}
       className={[
         chipBase,
-        "cursor-pointer transition-colors",
+        `cursor-pointer ${pressable}`,
         liked
-          ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--foreground)]"
+          ? "border-[color:var(--brand-strong)] bg-[color:var(--brand-soft)] text-[color:var(--foreground)]"
           : "app-border app-panel text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",
         disabled ? "opacity-60" : "",
       ].join(" ")}

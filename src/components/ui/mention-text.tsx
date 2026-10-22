@@ -61,7 +61,7 @@ export default function MentionText({ body, className }: MentionTextProps) {
             // `components/link-preview-provider`) — who a @mention refers to is
             // exactly the question a reader has mid-sentence.
             data-link-preview=""
-            className="font-semibold text-[color:var(--accent)] hover:underline"
+            className="font-semibold text-[color:var(--brand-ink)] hover:underline"
           >
             @{segment.username}
           </LocalizedLink>

@@ -13,7 +13,7 @@ import LanguageSwitcher from "@/components/language-switcher";
 import MessagesNavLink, { type MessagesNavLinkCopy } from "@/components/messages-nav-link";
 import NotificationsBell from "@/components/notifications-bell";
 import ThemeToggle from "@/components/theme-toggle";
-import { buttonStyles } from "@/components/ui/button-styles";
+import { buttonStyles, pressable } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { stripLocaleFromPathname } from "@/lib/i18n/config";
@@ -324,7 +324,7 @@ export default function SiteHeader({
   // bordered inactive state (no 1px shift on toggle).
   const menuTriggerClasses = (active: boolean) =>
     [
-      "inline-flex cursor-pointer list-none items-center justify-center rounded-full border p-1 transition-colors duration-200 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
+      `inline-flex cursor-pointer list-none select-none items-center justify-center rounded-full border p-1 ${pressable} [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]`,
       active
         ? "border-transparent bg-[color:var(--foreground)] text-[color:var(--background)]"
         : "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",
@@ -341,7 +341,7 @@ export default function SiteHeader({
   // the active background and the text flips to the background colour.
   const communityTriggerClasses = (active: boolean) =>
     [
-      "relative z-10 inline-flex cursor-pointer list-none items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors duration-300 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
+      "relative z-10 inline-flex cursor-pointer list-none select-none items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors duration-250 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
       active
         ? "text-[color:var(--background)]"
         : "text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]",
@@ -350,7 +350,7 @@ export default function SiteHeader({
   // style so they line up with the notifications bell.
   const mobileTriggerClasses = (active: boolean) =>
     [
-      "inline-flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border transition-colors duration-200 [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
+      `inline-flex h-11 w-11 cursor-pointer list-none select-none items-center justify-center rounded-full border ${pressable} [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]`,
       active
         ? "border-transparent bg-[color:var(--foreground)] text-[color:var(--background)]"
         : "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",

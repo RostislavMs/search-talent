@@ -135,7 +135,7 @@ export default function HeaderNav({
               linkRefs.current[i] = el;
             }}
             className={[
-              "relative z-10 rounded-full px-3 py-2 text-sm font-medium transition-colors duration-300",
+              "relative z-10 rounded-full px-3 py-2 text-sm font-medium transition-colors duration-250",
               isActive
                 ? "text-[color:var(--background)]"
                 : "text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]",

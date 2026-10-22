@@ -100,7 +100,7 @@ function ActivityChart({
                     title={`${entry.label}: ${v}`}
                   >
                     <div
-                      className={`absolute inset-x-0 bottom-0 rounded-t-lg ${entry.color} transition-all`}
+                      className={`absolute inset-x-0 bottom-0 rounded-t-lg ${entry.color} transition-[height]`}
                       style={{ height: `${height}%` }}
                     />
                   </div>

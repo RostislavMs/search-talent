@@ -991,7 +991,8 @@ export default function DiscoveryPage({
           <input
             type="text"
             placeholder={pageUi.placeholder}
-            className="mt-5 w-full rounded-2xl border app-border bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--foreground)] outline-none transition placeholder:app-muted focus:border-[color:var(--foreground)] sm:text-base"
+            enterKeyHint="search"
+            className="mt-5 w-full rounded-2xl border app-border bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--foreground)] outline-none transition placeholder:text-[color:var(--soft-foreground)] focus:border-[color:var(--foreground)] sm:text-base"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
@@ -1044,6 +1045,7 @@ export default function DiscoveryPage({
           <input
             type="text"
             placeholder={pageUi.placeholder}
+            enterKeyHint="search"
             className="mt-3 w-full rounded-xl border border-white/15 bg-white/90 px-3 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-slate-900 sm:mt-4 sm:rounded-2xl sm:px-4 sm:py-4 sm:text-base"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -1187,7 +1189,7 @@ export default function DiscoveryPage({
                         event.target.value ? Number(event.target.value) : null,
                       )
                     }
-                    className="w-full rounded-xl border app-border bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
+                    className="w-full rounded-xl border app-border bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--soft-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-strong)]"
                   />
                   <span className="text-sm app-muted">—</span>
                   <input
@@ -1201,7 +1203,7 @@ export default function DiscoveryPage({
                         event.target.value ? Number(event.target.value) : null,
                       )
                     }
-                    className="w-full rounded-xl border app-border bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
+                    className="w-full rounded-xl border app-border bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--soft-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-strong)]"
                   />
                 </div>
               </div>
@@ -1458,7 +1460,7 @@ export default function DiscoveryPage({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") saveCurrentSearch();
                   }}
-                  className="w-full rounded-xl border app-border bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
+                  className="w-full rounded-xl border app-border bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--soft-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-strong)]"
                 />
                 <button
                   type="button"
@@ -1488,7 +1490,7 @@ export default function DiscoveryPage({
                       <button
                         type="button"
                         onClick={() => deleteSavedSearch(search.id)}
-                        className="shrink-0 cursor-pointer text-sm app-muted opacity-0 transition hover:text-red-500 group-hover:opacity-100 group-focus-within:opacity-100"
+                        className="shrink-0 cursor-pointer text-sm app-muted opacity-0 transition hover:text-red-500 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
                         aria-label="Delete"
                       >
                         &times;

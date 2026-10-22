@@ -728,7 +728,7 @@ export default function ConversationThread({
         </div>
       ) : null}
 
-      <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         {hasOlder ? (
           <div className="mb-4 text-center">
             <Button variant="ghost" size="sm" disabled={loadingOlder} onClick={() => void loadOlder()}>
@@ -1047,7 +1047,7 @@ export default function ConversationThread({
             {tooLong ? (
               <p className="text-xs text-rose-600 dark:text-rose-400">{copy.errors.too_long}</p>
             ) : trimmed.length > MESSAGE_MAX_LENGTH - 500 ? (
-              <p className="text-xs app-soft">
+              <p className="text-xs tabular-nums app-soft">
                 {copy.composer.counter.replace("{count}", String(trimmed.length)).replace("{max}", String(MESSAGE_MAX_LENGTH))}
               </p>
             ) : null}

@@ -197,7 +197,7 @@ export default function PollQuestionBuilder({
 
             <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_12rem]">
               <input
-                className="app-input w-full bg-[color:var(--surface)]"
+                className="app-input w-full"
                 placeholder={ui.promptPlaceholder}
                 value={question.prompt}
                 disabled={locked}
@@ -232,7 +232,7 @@ export default function PollQuestionBuilder({
                     onChange={(event) =>
                       patchQuestion(question.id, { ratingMin: Number(event.target.value) })
                     }
-                    className="app-input w-20 bg-[color:var(--surface)]"
+                    className="app-input w-20"
                   />
                 </label>
                 <label className="flex items-center gap-2 text-sm app-muted">
@@ -246,7 +246,7 @@ export default function PollQuestionBuilder({
                     onChange={(event) =>
                       patchQuestion(question.id, { ratingMax: Number(event.target.value) })
                     }
-                    className="app-input w-20 bg-[color:var(--surface)]"
+                    className="app-input w-20"
                   />
                 </label>
               </div>
@@ -255,7 +255,7 @@ export default function PollQuestionBuilder({
                 {question.options.map((option) => (
                   <div key={option.id} className="flex items-center gap-2">
                     <input
-                      className="app-input w-full bg-[color:var(--surface)]"
+                      className="app-input w-full"
                       placeholder={ui.optionPlaceholder}
                       value={option.label}
                       disabled={locked}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
 import ConsentedAnalytics from "@/components/consented-analytics";
 import HydrationCleanupScript from "@/components/hydration-cleanup-script";
@@ -10,8 +10,23 @@ import {
 } from "@/lib/cookie-consent";
 import { defaultLocale, isLocale, localeCookieName } from "@/lib/i18n/config";
 import { getMetadataBase } from "@/lib/seo";
-import { isTheme, themeCookieName } from "@/lib/theme";
+import { getThemeFromCookies, isTheme, themeCookieName } from "@/lib/theme";
+import { themeChromeColors } from "@/lib/theme-client";
 import "./globals.css";
+
+export async function generateViewport(): Promise<Viewport> {
+  const theme = await getThemeFromCookies();
+
+  return {
+    // Same theme the page renders with; `applyThemeToDocument` keeps it in
+    // step when the reader flips the toggle.
+    themeColor: themeChromeColors[theme],
+    // Android otherwise lays the keyboard over the page without resizing it,
+    // so the 100dvh messages layout keeps its height and the composer ends up
+    // behind the keyboard.
+    interactiveWidget: "resizes-content",
+  };
+}
 
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
@@ -66,10 +81,13 @@ export default async function RootLayout({
           content="-W2K0yXTapxiAm15YJGOXbyi0Wm0CQP1ktEJjDFXYaY"
         />
       </head>
-      <body className="min-h-screen" suppressHydrationWarning>
+      {/* `svh`, not `vh`: on a phone 100vh is the height with the browser bar
+          collapsed, so a full-height page came out one toolbar taller than the
+          screen — the messages view scrolled as a whole. */}
+      <body className="min-h-svh" suppressHydrationWarning>
         {/* The animated web background lives only on the sign-in screens and
             the 404 and error pages — see components/interactive-background. */}
-        <div className="relative flex min-h-screen flex-col">{children}</div>
+        <div className="relative flex min-h-svh flex-col">{children}</div>
         {/* Plerdy now renders inside ConsentedAnalytics, behind the same
             analytics-consent gate as the other measurement tools. */}
         <ConsentedAnalytics

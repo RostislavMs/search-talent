@@ -2178,7 +2178,7 @@ function StepHeader({
               disabled={!isClickable}
               className={`group flex w-full flex-col gap-0.5 rounded-xl border p-2.5 text-left transition sm:gap-1 sm:rounded-2xl sm:p-3 ${
                 isActive
-                  ? "border-[color:var(--accent)] bg-[color:var(--surface)] shadow-sm"
+                  ? "border-[color:var(--brand-strong)] bg-[color:var(--surface)] shadow-sm"
                   : isCompleted
                     ? "app-border bg-[color:var(--surface-muted)]"
                     : "app-border bg-transparent"
@@ -2993,7 +2993,7 @@ function StepGithub({
                 onChange={(event) =>
                   updateDisplayOption(toggle.key, event.target.checked)
                 }
-                className="h-4 w-4 cursor-pointer accent-[color:var(--accent)]"
+                className="h-4 w-4 cursor-pointer accent-[color:var(--brand-strong)]"
               />
               <span className="text-sm text-[color:var(--foreground)]">
                 {toggle.label}
@@ -3012,7 +3012,7 @@ function StepGithub({
             type="checkbox"
             checked={form.githubAutoSync}
             onChange={(event) => update("githubAutoSync", event.target.checked)}
-            className="h-4 w-4 cursor-pointer accent-[color:var(--accent)]"
+            className="h-4 w-4 cursor-pointer accent-[color:var(--brand-strong)]"
           />
           <span className="text-sm text-[color:var(--foreground)]">
             {dict.autoSyncLabel}
@@ -3322,7 +3322,7 @@ function StepMedia({
             type="checkbox"
             checked={allowDownloads}
             onChange={(event) => onToggleAllowDownloads(event.target.checked)}
-            className="mt-0.5 h-4 w-4 cursor-pointer accent-[color:var(--accent)]"
+            className="mt-0.5 h-4 w-4 cursor-pointer accent-[color:var(--brand-strong)]"
           />
           <span className="text-sm text-[color:var(--foreground)]">
             {dictionary.forms.allowDownloadsLabel}
@@ -3479,7 +3479,7 @@ function StepMedia({
                     isDragging ? "opacity-50" : ""
                   } ${
                     isOver
-                      ? "ring-2 ring-[color:var(--accent)] ring-offset-2 ring-offset-[color:var(--background)]"
+                      ? "ring-2 ring-[color:var(--brand-strong)] ring-offset-2 ring-offset-[color:var(--background)]"
                       : ""
                   }`}
                 >

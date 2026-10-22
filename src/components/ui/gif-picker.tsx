@@ -209,14 +209,14 @@ export default function GifPicker({
       {open && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/50 sm:hidden"
+            className="fixed inset-0 z-40 touch-none bg-black/50 sm:hidden"
             aria-hidden="true"
             onClick={() => setOpen(false)}
           />
           <div
             role="dialog"
             aria-label={dict.addGif}
-            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-t-2xl border-t app-border bg-[color:var(--surface)] shadow-xl sm:absolute sm:inset-x-auto sm:bottom-full sm:left-0 sm:mb-2 sm:max-h-96 sm:w-80 sm:rounded-2xl sm:border"
+            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70dvh] flex-col overflow-hidden rounded-t-2xl border-t app-border bg-[color:var(--surface)] shadow-xl sm:absolute sm:inset-x-auto sm:bottom-full sm:left-0 sm:mb-2 sm:max-h-96 sm:w-80 sm:rounded-2xl sm:border"
           >
           <div
             aria-hidden="true"
@@ -228,7 +228,7 @@ export default function GifPicker({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={dict.searchPlaceholder}
-              className="w-full rounded-lg border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+              className="w-full rounded-lg border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--soft-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
             />
             <div className="flex gap-1.5 overflow-x-auto pb-0.5">
               {CATEGORIES.map((category) => {
@@ -241,7 +241,7 @@ export default function GifPicker({
                     className={[
                       "inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors",
                       active
-                        ? "bg-[color:var(--accent-soft)] text-[color:var(--foreground)]"
+                        ? "bg-[color:var(--brand-soft)] text-[color:var(--foreground)]"
                         : "app-soft hover:bg-[color:var(--surface-muted)]",
                     ].join(" ")}
                   >
@@ -253,7 +253,7 @@ export default function GifPicker({
             </div>
           </div>
 
-          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto p-2">
+          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
             {loading && gifs.length === 0 ? (
               <p className="py-6 text-center text-xs app-muted">
                 {dict.searching}

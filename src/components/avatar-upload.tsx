@@ -341,7 +341,7 @@ export default function AvatarUpload({
         type="button"
         onClick={() => setModalOpen(true)}
         aria-label={editorUi.changePhoto}
-        className="group relative block h-20 w-20 shrink-0 cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--surface)]"
+        className="group relative block h-20 w-20 shrink-0 cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--surface)]"
       >
         <span className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border app-border bg-[color:var(--surface-muted)] text-2xl font-semibold text-[color:var(--foreground)] transition-shadow group-hover:shadow-[0_10px_30px_rgba(2,6,23,0.25)]">
           {avatarUrl ? (
@@ -381,7 +381,7 @@ export default function AvatarUpload({
         </span>
 
         {/* Always-visible affordance so the avatar reads as editable. */}
-        <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[color:var(--surface)] bg-[color:var(--accent)] text-white shadow-sm transition-transform group-hover:scale-105">
+        <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[color:var(--surface)] bg-[color:var(--brand-strong)] text-white shadow-sm transition-transform group-hover:scale-105">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -464,7 +464,7 @@ export default function AvatarUpload({
                     onChange={(event) =>
                       onZoomChange(Number(event.target.value))
                     }
-                    className="h-1.5 w-full cursor-pointer accent-[color:var(--accent)]"
+                    className="h-1.5 w-full cursor-pointer accent-[color:var(--brand-strong)]"
                     aria-label={editorUi.zoom}
                   />
                   <button
@@ -529,8 +529,8 @@ export default function AvatarUpload({
                   onDrop={onDrop}
                   className={`mt-5 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed px-6 py-10 text-center transition-colors ${
                     dragActive
-                      ? "border-[color:var(--accent)] bg-[color:var(--surface-muted)]"
-                      : "app-border bg-[color:var(--surface-muted)] hover:border-[color:var(--accent)]"
+                      ? "border-[color:var(--brand-strong)] bg-[color:var(--surface-muted)]"
+                      : "app-border bg-[color:var(--surface-muted)] hover:border-[color:var(--brand-strong)]"
                   }`}
                 >
                   <svg
@@ -553,7 +553,7 @@ export default function AvatarUpload({
                   </p>
                   <p className="text-xs app-muted">
                     {editorUi.dropOr}{" "}
-                    <span className="font-medium text-[color:var(--accent)] underline">
+                    <span className="font-medium text-[color:var(--brand-ink)] underline">
                       {editorUi.browse}
                     </span>
                   </p>

@@ -51,7 +51,7 @@ export default function PollCard({
   return (
     <LocalizedLink
       href={`/polls/${poll.slug}`}
-      className="group block overflow-hidden rounded-hero app-card transition hover:-translate-y-0.5 hover:shadow-xl"
+      className="group block overflow-hidden rounded-hero app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)]"
     >
       {poll.coverImageUrl && (
         <div className="relative aspect-video bg-[color:var(--surface-muted)]">

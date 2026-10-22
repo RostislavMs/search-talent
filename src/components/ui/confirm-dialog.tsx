@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import type { ButtonVariant } from "@/components/ui/button-styles";
 
@@ -31,6 +31,33 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const titleId = useId();
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  // Move focus into the dialog and lock the page behind it; on close, hand
+  // focus back to whatever opened it. Keyed on `open` alone so a parent that
+  // re-creates its callbacks every render does not bounce focus around.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const opener =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // Cancel, not confirm: most of these guard something destructive, and a
+    // stray Enter should land on the harmless choice.
+    cancelRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (opener?.isConnected) {
+        opener.focus();
+      }
+    };
+  }, [open]);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -55,7 +82,7 @@ export default function ConfirmDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(2,6,23,0.55)] px-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="confirm-dialog-title"
+      aria-labelledby={titleId}
       onClick={(event) => {
         if (event.target === event.currentTarget && !pending) {
           onCancel();
@@ -64,7 +91,7 @@ export default function ConfirmDialog({
     >
       <div className="w-full max-w-md rounded-panel border app-border bg-[color:var(--surface)] p-6 text-left shadow-[0_28px_90px_rgba(2,6,23,0.4)]">
         <h2
-          id="confirm-dialog-title"
+          id={titleId}
           className="font-display text-left text-lg font-semibold tracking-tight text-[color:var(--foreground)]"
         >
           {title}
@@ -80,7 +107,12 @@ export default function ConfirmDialog({
         ) : null}
 
         <div className="mt-6 flex flex-wrap justify-end gap-2">
-          <Button variant="ghost" onClick={onCancel} disabled={pending}>
+          <Button
+            ref={cancelRef}
+            variant="ghost"
+            onClick={onCancel}
+            disabled={pending}
+          >
             {cancelLabel}
           </Button>
           <Button

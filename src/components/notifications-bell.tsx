@@ -8,7 +8,7 @@ import {
   NOTIFICATIONS_POLL_INTERVAL_MS,
   type NotificationItem,
 } from "@/lib/constants/notifications";
-import { buttonStyles } from "@/components/ui/button-styles";
+import { buttonStyles, countBadge } from "@/components/ui/button-styles";
 import LocalizedLink from "@/components/ui/localized-link";
 import { useDictionary, useLocalizedRouter } from "@/lib/i18n/client";
 import { notificationsCopy } from "@/lib/i18n/copy/notifications";
@@ -195,7 +195,7 @@ export default function NotificationsBell({
       {unreadCount > 0 ? (
         <span
           aria-hidden="true"
-          className="absolute -top-1 -right-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white"
+          className={countBadge}
         >
           {unreadCount > 99 ? "99+" : unreadCount}
         </span>
@@ -263,7 +263,7 @@ export default function NotificationsBell({
         {unreadCount > 0 ? (
           <span
             aria-hidden="true"
-            className="absolute -top-1 -right-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white"
+            className={countBadge}
           >
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
@@ -347,7 +347,7 @@ export default function NotificationsBell({
                     {!item.readAt ? (
                       <span
                         aria-hidden="true"
-                        className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[color:var(--accent)]"
+                        className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[color:var(--brand-strong)]"
                       />
                     ) : null}
                   </LocalizedLink>

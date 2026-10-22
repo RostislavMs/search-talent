@@ -123,9 +123,9 @@ const VARIANT_STYLES: Record<
     ),
   },
   info: {
-    accent: "border-l-[color:var(--accent)]",
+    accent: "border-l-[color:var(--brand-strong)]",
     icon: "bg-[color:var(--surface-muted)] text-[color:var(--foreground)]",
-    ring: "text-[color:var(--accent)]",
+    ring: "text-[color:var(--brand-strong)]",
     iconPath: (
       <path
         strokeLinecap="round"
@@ -226,14 +226,27 @@ function ToastItem({
     <div
       role={toast.variant === "error" ? "alert" : "status"}
       aria-live={toast.variant === "error" ? "assertive" : "polite"}
-      onMouseEnter={pauseCountdown}
-      onMouseLeave={resumeCountdown}
+      // Mouse only: on a touch screen a tap fires the enter event with no
+      // matching leave, so the toast would stay paused until the next tap
+      // somewhere else.
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") pauseCountdown();
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType === "mouse") resumeCountdown();
+      }}
       // onFocus/onBlur bubble in React, so tabbing to the close button pauses
       // the countdown the same way hovering does.
       onFocus={pauseCountdown}
       onBlur={resumeCountdown}
-      className={`pointer-events-auto w-full max-w-xs rounded-2xl border border-l-4 app-border bg-[color:var(--surface)] px-3.5 py-2.5 text-sm shadow-[0_20px_60px_rgba(2,6,23,0.35)] backdrop-blur transition-all duration-300 ease-out ${styles.accent} ${
-        shown ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0"
+      // Enters from the edge it is pinned to: the stack sits top-centre on a
+      // phone, so the toast drops in a few pixels; from `sm` up it is pinned
+      // right and slides in from that side. A transition rather than keyframes,
+      // so a toast dismissed mid-entrance turns around from where it is.
+      className={`pointer-events-auto w-full max-w-xs rounded-2xl border border-l-4 app-border bg-[color:var(--surface)] px-3.5 py-2.5 text-sm shadow-[0_20px_60px_rgba(2,6,23,0.35)] backdrop-blur transition-[translate,opacity] duration-300 ease-out ${styles.accent} ${
+        shown
+          ? "translate-x-0 translate-y-0 opacity-100"
+          : "-translate-y-2 opacity-0 sm:translate-x-[120%] sm:translate-y-0"
       }`}
     >
       <div className="flex items-start gap-3">

@@ -157,7 +157,7 @@ export default function VideoCoverPicker({
               step={0.1}
               value={time}
               onChange={(event) => handleScrub(Number(event.target.value))}
-              className="h-1.5 flex-1 cursor-pointer accent-[color:var(--accent)]"
+              className="h-1.5 flex-1 cursor-pointer accent-[color:var(--brand-strong)]"
               aria-label={dict.videoCoverPickerTitle}
             />
             <span className="w-12 text-right tabular-nums text-xs app-soft">

@@ -129,7 +129,7 @@ export default function MessageComposeForm({
       {tooLong ? (
         <p className="text-xs text-rose-600 dark:text-rose-400">{copy.errors.too_long}</p>
       ) : trimmed.length > MESSAGE_MAX_LENGTH - 500 ? (
-        <p className="text-xs app-soft">
+        <p className="text-xs tabular-nums app-soft">
           {copy.composer.counter.replace("{count}", String(trimmed.length)).replace("{max}", String(MESSAGE_MAX_LENGTH))}
         </p>
       ) : null}

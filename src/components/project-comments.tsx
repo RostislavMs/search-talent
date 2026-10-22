@@ -244,7 +244,7 @@ function CommentItem({
               onChange={onReplyBodyChange}
               placeholder={dictionary.projectComments.replyPlaceholder}
               rows={2}
-              className="w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+              className="w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] px-3 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--soft-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
             />
             {replyMediaUrl ? (
               <div className="relative inline-block">
@@ -475,7 +475,7 @@ export default function ProjectComments({
             placeholder={dictionary.projectComments.placeholder}
             rows={3}
             maxLength={4000}
-            className="w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-[color:var(--foreground)] placeholder:app-muted focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+            className="w-full resize-none rounded-xl border app-border bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--soft-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
           />
           {mediaUrl ? (
             <div className="relative inline-block">

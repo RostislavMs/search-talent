@@ -511,7 +511,7 @@ export default function PollComposer({
             <div className="space-y-2">
               <label className="text-sm font-medium text-[color:var(--foreground)]">{ui.title}</label>
               <input
-                className="app-input w-full bg-[color:var(--surface-muted)]"
+                className="app-input w-full"
                 placeholder={ui.titlePlaceholder}
                 value={current.title}
                 onChange={(event) => updateActive({ title: event.target.value })}
@@ -564,7 +564,7 @@ export default function PollComposer({
                 id="poll-closes-at"
                 type="datetime-local"
                 aria-label={ui.closesAt}
-                className="app-input w-full bg-[color:var(--surface-muted)]"
+                className="app-input w-full"
                 value={closesAtLocal}
                 onChange={(event) => setClosesAtLocal(event.target.value)}
               />

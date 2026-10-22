@@ -153,7 +153,7 @@ export default function DeleteAccountSection({ email }: { email: string }) {
           </p>
           <div className="mt-5">
             <Button
-              variant="primary"
+              variant="danger"
               onClick={() => {
                 setError(null);
                 setCode("");
@@ -161,7 +161,6 @@ export default function DeleteAccountSection({ email }: { email: string }) {
                 setStep("confirm");
                 setOpen(true);
               }}
-              className="bg-rose-600! text-white! hover:opacity-90!"
             >
               {t.openButton}
             </Button>
@@ -242,10 +241,9 @@ export default function DeleteAccountSection({ email }: { email: string }) {
                     {t.cancel}
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="danger"
                     onClick={() => void requestCode()}
                     disabled={pending}
-                    className="bg-rose-600! text-white! hover:opacity-90!"
                   >
                     {pending ? t.sendingCode : t.sendCode}
                   </Button>
@@ -308,10 +306,9 @@ export default function DeleteAccountSection({ email }: { email: string }) {
                       {t.cancel}
                     </Button>
                     <Button
-                      variant="primary"
+                      variant="danger"
                       onClick={() => void confirmDelete()}
                       disabled={pending}
-                      className="bg-rose-600! text-white! hover:opacity-90!"
                     >
                       {pending ? t.deleting : t.confirmDelete}
                     </Button>

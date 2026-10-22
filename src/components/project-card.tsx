@@ -185,7 +185,7 @@ export default function ProjectCard({
   return (
     <LocalizedLink
       href={buildProjectPath(project.id, project.slug)}
-      className={`group h-full overflow-hidden rounded-3xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl ${
+      className={`group h-full overflow-hidden rounded-3xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] ${
         isFeatured
           ? "flex flex-col md:grid md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
           : isCase
@@ -226,7 +226,7 @@ function ProjectGalleryCard({
   return (
     <LocalizedLink
       href={buildProjectPath(project.id, project.slug)}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] hover:shadow-xl sm:rounded-3xl"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)] sm:rounded-3xl"
     >
       <div
         className={`relative bg-[color:var(--surface-muted)] ${

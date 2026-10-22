@@ -2051,6 +2051,9 @@ export default function ProfileForm({
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.username}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.username}
           onChange={(e) => update("username", e.target.value)}
         />
@@ -3173,12 +3176,20 @@ export default function ProfileForm({
           <input
             className="app-input"
             placeholder={dictionary.forms.contactEmail}
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             value={form.contact_email}
             onChange={(e) => update("contact_email", e.target.value)}
           />
           <input
             className="app-input"
             placeholder={dictionary.forms.telegram}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             value={form.telegram_username}
             onChange={(e) => update("telegram_username", e.target.value)}
           />
@@ -3213,60 +3224,100 @@ export default function ProfileForm({
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.website}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.website}
           onChange={(e) => update("website", e.target.value)}
         />
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.github}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.github}
           onChange={(e) => update("github", e.target.value)}
         />
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.twitter}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.twitter}
           onChange={(e) => update("twitter", e.target.value)}
         />
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.linkedin}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.linkedin}
           onChange={(e) => update("linkedin", e.target.value)}
         />
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.behance}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.behance}
           onChange={(e) => update("behance", e.target.value)}
         />
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.dribbble}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.dribbble}
           onChange={(e) => update("dribbble", e.target.value)}
         />
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.artstation}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.artstation}
           onChange={(e) => update("artstation", e.target.value)}
         />
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.vimeo}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.vimeo}
           onChange={(e) => update("vimeo", e.target.value)}
         />
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.youtube}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.youtube}
           onChange={(e) => update("youtube", e.target.value)}
         />
         <input
           className="app-input w-full"
           placeholder={dictionary.forms.instagram}
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.instagram}
           onChange={(e) => update("instagram", e.target.value)}
         />

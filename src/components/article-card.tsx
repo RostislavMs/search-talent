@@ -66,7 +66,7 @@ export default function ArticleCard({
   return (
     <LocalizedLink
       href={`/${section}/${article.slug}`}
-      className="group flex h-full flex-col overflow-hidden rounded-hero app-card transition hover:-translate-y-0.5 hover:shadow-xl"
+      className="group flex h-full flex-col overflow-hidden rounded-hero app-card transition hover:-translate-y-0.5 hover:border-[color:var(--foreground)]"
     >
       {(article.coverImageUrl || article.heroVideoUrl) && (
         <div className="relative aspect-video bg-[color:var(--surface-muted)]">

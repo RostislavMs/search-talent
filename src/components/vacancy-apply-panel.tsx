@@ -266,7 +266,7 @@ export default function VacancyApplyPanel({
         aria-modal="true"
         aria-labelledby={titleId}
         onSubmit={submit}
-        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-panel border app-border bg-[color:var(--surface)] text-left text-[color:var(--foreground)] shadow-[0_28px_90px_rgba(2,6,23,0.4)]"
+        className="flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-panel border app-border bg-[color:var(--surface)] text-left text-[color:var(--foreground)] shadow-[0_28px_90px_rgba(2,6,23,0.4)]"
       >
         <div className="flex items-start justify-between gap-4 border-b app-border p-5">
           <h2 id={titleId} className="min-w-0 break-words font-display text-lg font-semibold tracking-tight">
@@ -285,7 +285,7 @@ export default function VacancyApplyPanel({
           </button>
         </div>
 
-        <div className="flex-1 space-y-6 overflow-y-auto overflow-x-hidden p-5">
+        <div className="flex-1 space-y-6 overflow-y-auto overflow-x-hidden overscroll-contain p-5">
           {/* A fieldset is min-content wide by default: without min-w-0 a long
               project title stretches it past the dialog instead of truncating. */}
           <fieldset className="min-w-0">
@@ -341,7 +341,7 @@ export default function VacancyApplyPanel({
               onChange={(event) => setMessage(event.target.value)}
             />
             {message.length >= APPLICATION_LIMITS.messageMax * 0.8 ? (
-              <p className="mt-1 text-right text-xs app-soft" aria-live="polite">
+              <p className="mt-1 text-right text-xs tabular-nums app-soft" aria-live="polite">
                 {t.messageCounter
                   .replace("{count}", String(message.length))
                   .replace("{max}", String(APPLICATION_LIMITS.messageMax))}

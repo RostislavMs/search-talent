@@ -142,12 +142,15 @@ export default function RadialActions({
           const desktop = arcOffset(index, actions.length, DESKTOP_ARC, DESKTOP_RADIUS);
 
           return (
+            // Opens on hover, so it runs often: a short, firm ease-out with no
+            // overshoot, starting at 90% rather than half size so the pills
+            // read as fanning out of the trigger, not popping into existence.
             <span
               key={action.href}
-              className={`absolute left-1/2 top-1/2 z-20 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none ${
+              className={`absolute left-1/2 top-1/2 z-20 transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none ${
                 open
                   ? "opacity-100 transform-[translate(calc(var(--tx-m)-50%),calc(var(--ty-m)-50%))_scale(1)] sm:transform-[translate(calc(var(--tx)-50%),calc(var(--ty)-50%))_scale(1)]"
-                  : "pointer-events-none opacity-0 transform-[translate(-50%,-50%)_scale(0.5)]"
+                  : "pointer-events-none opacity-0 transform-[translate(-50%,-50%)_scale(0.9)]"
               }`}
               style={
                 {

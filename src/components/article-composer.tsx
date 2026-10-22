@@ -712,7 +712,7 @@ export default function ArticleComposer({
                 {ui.title}
               </label>
               <input
-                className="app-input w-full bg-[color:var(--surface-muted)]"
+                className="app-input w-full"
                 placeholder={ui.titlePlaceholder}
                 value={current.title}
                 onChange={(event) => updateActive({ title: event.target.value })}
@@ -758,7 +758,7 @@ export default function ArticleComposer({
                 <InfoHint label={ui.slugTooltipLabel}>{ui.slugTooltip}</InfoHint>
               </div>
               <input
-                className="app-input w-full bg-[color:var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="app-input w-full disabled:cursor-not-allowed disabled:opacity-60"
                 placeholder={ui.slugPlaceholder}
                 value={slug}
                 disabled={isPublished}
@@ -875,8 +875,8 @@ export default function ArticleComposer({
                   className={cx(
                     "flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-[1.15rem] border border-dashed px-4 text-center transition-colors",
                     coverDragActive
-                      ? "border-[color:var(--accent)] bg-[color:var(--surface)]"
-                      : "app-border hover:border-[color:var(--accent)] hover:bg-[color:var(--surface)]",
+                      ? "border-[color:var(--brand-strong)] bg-[color:var(--surface)]"
+                      : "app-border hover:border-[color:var(--brand-strong)] hover:bg-[color:var(--surface)]",
                   )}
                 >
                   <svg

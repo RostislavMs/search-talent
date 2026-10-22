@@ -354,7 +354,7 @@ export default function ProfileContactButton({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex max-h-[88vh] w-full max-w-md flex-col overflow-hidden rounded-panel border app-border bg-[color:var(--surface)] text-left text-[color:var(--foreground)] shadow-[0_28px_90px_rgba(2,6,23,0.4)]"
+        className="flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-panel border app-border bg-[color:var(--surface)] text-left text-[color:var(--foreground)] shadow-[0_28px_90px_rgba(2,6,23,0.4)]"
       >
         <div className="flex items-start justify-between gap-4 border-b app-border p-5">
           <div className="min-w-0">
@@ -387,7 +387,7 @@ export default function ProfileContactButton({
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+        <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain p-5">
           {messagingBlock}
 
           {channels.length === 0 && !messagingIsOffered(messaging) ? (
