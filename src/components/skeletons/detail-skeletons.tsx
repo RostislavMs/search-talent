@@ -364,11 +364,10 @@ export function ProfileSkeleton() {
                   <Skeleton className="h-7 w-28 rounded-full" />
                   <Skeleton className="h-7 w-24 rounded-full" />
                 </div>
-                {/* Visitors see earned badges only, so the shelf is often short. */}
+                {/* Badges are text chips; many profiles have none or one or two. */}
                 <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-4">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <Skeleton key={index} className="h-8 w-8 rounded-full" />
-                  ))}
+                  <Skeleton className="h-6 w-28 rounded-full sm:h-7" />
+                  <Skeleton className="h-6 w-24 rounded-full sm:h-7" />
                 </div>
               </div>
 

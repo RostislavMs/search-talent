@@ -420,16 +420,17 @@ function getCopy(locale: Locale): GuideCopy {
         ],
       },
       badges: {
-        title: "Бонус від бейджів",
+        title: "Бонус від відзнак",
         description:
-          "Бейджі не випадкові: у кожного чіткий критерій, і нараховується він автоматично, щойно ви його виконали. Разом вони дають щонайбільше +5 балів, тож фармити їх немає сенсу.",
+          "Відзнаки не випадкові: у кожної чіткий критерій, і даються вони автоматично, щойно ви його виконали. Разом вони дають щонайбільше +5 балів, тож гнатися за ними немає сенсу.",
         bullets: [
           "За творчість — перший опублікований проєкт, статті, регулярні публікації.",
           "За участь — коментарі, реакції та підписники, які у вас з'явилися.",
-          "За визнання — топ-10 місяця, топ-100 за весь час, проєкт місяця.",
-          "За профіль — заповнений профіль, підтверджений email, підключений GitHub.",
-          "Частина бейджів має три рівні: критерій той самий, поріг вищий.",
-          "Натисніть на іконку бейджа у профілі — там точний критерій і ваш прогрес.",
+          "За визнання — топ-10 місяця, топ-100 за весь час, проєкт місяця. Їх дають, лише коли в рейтингу змагається достатньо людей.",
+          "За профіль — заповнений профіль, підтверджена пошта, підключений GitHub.",
+          "Частина відзнак має три рівні: наприклад, 10+, 25+ і 50+ робіт.",
+          "Відзнаки за перші кроки, як-от перший проєкт чи підтверджена пошта, бачите лише ви.",
+          "Натисніть на відзнаку в профілі, щоб побачити, за що її дають. У своєму профілі ви бачите й прогрес до наступного рівня.",
         ],
         Icon: MedalIcon,
       },
@@ -467,7 +468,7 @@ function getCopy(locale: Locale): GuideCopy {
       outro: {
         title: "Найкоротший шлях до високого рейтингу",
         description:
-          "Опублікуйте 5-10 проєктів із медіа, описом і реальною роллю — це найбільша частина балу. Заповніть профіль, щоб цим роботам був контекст. Далі просто будьте в спільноті: підписуйтесь, коментуйте чесно. Бейджі з'являться самі, щойно ви виконаєте їхні критерії.",
+          "Опублікуйте 5-10 проєктів із медіа, описом і реальною роллю — це найбільша частина балу. Заповніть профіль, щоб цим роботам був контекст. Далі просто будьте в спільноті: підписуйтесь, коментуйте чесно. Відзнаки з'являться самі, щойно ви виконаєте їхні критерії.",
       },
     };
   }
@@ -660,10 +661,11 @@ function getCopy(locale: Locale): GuideCopy {
       bullets: [
         "For creating — your first published project, articles, publishing regularly.",
         "For taking part — the comments, reactions, and followers you've gathered.",
-        "For recognition — the monthly top-10, the all-time top-100, project of the month.",
+        "For recognition — the monthly top-10, the all-time top-100, project of the month. These are given only once enough people compete in the ranking.",
         "For the profile — a completed profile, a verified email, a connected GitHub.",
-        "Some badges have three tiers: same criterion, higher threshold.",
-        "Click a badge icon on a profile — it shows the exact criterion and your progress.",
+        "Some badges have three levels: for example, 10+, 25+ and 50+ works.",
+        "Badges for first steps, like a first project or a verified email, are visible only to you.",
+        "Click a badge on a profile to see what it's for. On your own profile you also see your progress to the next level.",
       ],
       Icon: MedalIcon,
     },

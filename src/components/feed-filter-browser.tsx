@@ -269,8 +269,7 @@ export default function FeedFilterBrowser({
                         onChange={setCategory}
                         placeholder={ui.allCategories}
                         className="w-full"
-                        triggerClassName="w-full border-white/12 bg-white/96 text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.14)]"
-                        dropdownClassName="bg-white text-slate-900"
+                        triggerClassName="w-full"
                         options={categoryOptions}
                       />
                     </div>
@@ -283,8 +282,7 @@ export default function FeedFilterBrowser({
                         value={sort}
                         onChange={setSort}
                         className="w-full"
-                        triggerClassName="w-full border-white/12 bg-white/96 text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.14)]"
-                        dropdownClassName="bg-white text-slate-900"
+                        triggerClassName="w-full"
                         options={[
                           { value: "recent", label: ui.recent },
                           { value: "popular", label: ui.popular },
