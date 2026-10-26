@@ -297,7 +297,6 @@ export default function PublicProfileShowcase({
       : experienceLabel;
   const ratingChip =
     typeof profileRating === "number" ? formatScore(profileRating, dictionary.common) : null;
-  const heroBadges = isOwner ? badges : badges.filter((entry) => entry.earned);
   // Hiding the contacts block (Visibility → Contacts) hides the channels, but
   // not writing on the site: the button stays while a message can go.
   const canContact =
@@ -550,10 +549,16 @@ export default function PublicProfileShowcase({
                     </span>
                   </p>
                 )}
-                {heroBadges.length > 0 && (
-                  <div className={`mt-3 sm:mt-4 ${presentation.heroAlignment === "center" ? "flex justify-center" : ""}`}>
-                    <BadgeShelf badges={heroBadges} locale={locale} maxVisible={HERO_BADGES_VISIBLE} maxVisibleMobile={HERO_BADGES_VISIBLE_MOBILE} />
-                  </div>
+                {(isOwner || badges.length > 0) && (
+                  <BadgeShelf
+                    badges={badges}
+                    isOwner={isOwner}
+                    // Icons are read, not filled: the author's accent pushed to
+                    // read on their palette. The default hero is always dark,
+                    // where the plain brand colour already reads.
+                    accentColor={followSiteTheme ? "var(--brand)" : "var(--brand-ink)"}
+                    className={`mt-3 sm:mt-4 ${presentation.heroAlignment === "center" ? "justify-center" : ""}`}
+                  />
                 )}
               </div>
 
@@ -656,9 +661,6 @@ function getPreferredContactMethodLabel(value: string | null, dictionary: Dictio
       return value;
   }
 }
-
-const HERO_BADGES_VISIBLE = 5;
-const HERO_BADGES_VISIBLE_MOBILE = 4;
 
 /**
  * Projects or articles on the profile: an optional featured card on top, then

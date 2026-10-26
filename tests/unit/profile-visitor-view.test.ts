@@ -10,6 +10,12 @@ import {
 function ownerData(moderationStatus = "approved"): PublicProfilePageData {
   return {
     profile: { username: "olena", moderation_status: moderationStatus },
+    // The owner gets the whole catalog with progress.
+    badges: [
+      { badge: { key: "prolific", publicOnProfile: true }, earned: true, tier: 1, progress: 12 },
+      { badge: { key: "verified_email", publicOnProfile: false }, earned: true, tier: 1, progress: null },
+      { badge: { key: "loved", publicOnProfile: true }, earned: false, tier: 0, progress: 40 },
+    ],
     contact: { hasEmail: true, hasPhone: true, email: "olena@example.com", phone: "+380000000000" },
     salary: { amount: "2000", currency: "usd" },
     hourlyRate: null,
@@ -41,6 +47,10 @@ describe("profile visitor view", () => {
     expect(data.contact).toEqual({ hasEmail: true, hasPhone: true, email: null, phone: null });
     // Shown to everyone already, so it stays.
     expect(data.salary).toEqual({ amount: "2000", currency: "usd" });
+    // Only earned public badges, without the owner's counts.
+    expect(data.badges).toEqual([
+      { badge: { key: "prolific", publicOnProfile: true }, earned: true, tier: 1, progress: null },
+    ]);
   });
 
   it("says when guests can't see the page at all", () => {

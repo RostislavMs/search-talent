@@ -39,7 +39,7 @@ export const faqPageCopy = {
       },
       {
         q: "What are badges and how do I earn them?",
-        a: "Badges appear on their own when you reach something: a first project, a complete profile, a place in the top. Tap a badge on your profile to see its criterion.",
+        a: "Badges appear on their own when you reach something: a first project, 10+ published works, a place in the top. Tap a badge on a profile to see what it's for. Badges for first steps are visible only to you.",
       },
       {
         q: "Can I export my profile?",
@@ -98,8 +98,8 @@ export const faqPageCopy = {
         a: "Рейтинг дивиться, наскільки повно описані ваші роботи й профіль і як на них реагують люди. Кілька випадкових лайків не піднімуть слабку роботу. Докладніше — у гайді по рейтингу.",
       },
       {
-        q: "Що таке бейджі і як їх отримати?",
-        a: "Бейджі з'являються самі, коли ви чогось досягли: перший проєкт, заповнений профіль, місце в топі. Критерій видно, якщо натиснути на бейдж у профілі.",
+        q: "Що таке відзнаки і як їх отримати?",
+        a: "Відзнаки з'являються самі, коли ви чогось досягли: перший проєкт, 10+ опублікованих робіт, місце в топі. Натисніть на відзнаку в профілі, щоб побачити, за що її дають. Відзнаки за перші кроки бачите лише ви.",
       },
       {
         q: "Чи можна експортувати профіль?",

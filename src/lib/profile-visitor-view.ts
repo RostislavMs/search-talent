@@ -1,3 +1,4 @@
+import { getPublicBadges } from "@/lib/badge-display";
 import type { PublicProfilePageData } from "@/lib/db/public";
 import { isPublicModerationStatus } from "@/lib/moderation";
 
@@ -16,12 +17,14 @@ export function isProfileVisitorViewRequested(value: string | string[] | undefin
 /**
  * The owner's page data turned into what a guest who hasn't signed in gets:
  * no owner buttons, no email or phone (guests open those through "Contact"),
- * no own vote, follow or bookmark. Salary and the hourly rate already reach
- * the page only when shown to everyone, and so does the author's look.
+ * no own vote, follow or bookmark, only the earned badges meant for the public
+ * profile. Salary and the hourly rate already reach the page only when shown
+ * to everyone, and so does the author's look.
  */
 export function toProfileVisitorView(data: PublicProfilePageData): PublicProfilePageData {
   return {
     ...data,
+    badges: getPublicBadges(data.badges).map((entry) => ({ ...entry, progress: null })),
     contact: { ...data.contact, email: null, phone: null },
     voteSummary: { ...data.voteSummary, currentVote: null },
     isAuthenticated: false,

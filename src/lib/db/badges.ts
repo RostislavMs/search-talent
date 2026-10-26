@@ -23,7 +23,13 @@ type BadgeRow = {
   rarity: string;
   sort_order: number;
   tier_thresholds: number[] | null;
+  tier_names_en: string[] | null;
+  tier_names_uk: string[] | null;
+  public_on_profile: boolean | null;
 };
+
+const BADGE_COLUMNS =
+  "id, key, name_en, name_uk, description_en, description_uk, category, emoji, rarity, sort_order, tier_thresholds, tier_names_en, tier_names_uk, public_on_profile";
 
 type UserBadgeRow = {
   badge_id: number;
@@ -45,6 +51,9 @@ function mapBadgeRow(row: BadgeRow): BadgeDefinition {
     rarity: row.rarity as BadgeRarity,
     sortOrder: row.sort_order,
     tierThresholds: row.tier_thresholds ?? [1],
+    tierNamesEn: row.tier_names_en,
+    tierNamesUk: row.tier_names_uk,
+    publicOnProfile: row.public_on_profile ?? true,
   };
 }
 
@@ -62,9 +71,7 @@ export async function listBadgeCatalog(
 ): Promise<BadgeDefinition[]> {
   const { data } = await supabase
     .from("badges")
-    .select(
-      "id, key, name_en, name_uk, description_en, description_uk, category, emoji, rarity, sort_order, tier_thresholds",
-    )
+    .select(BADGE_COLUMNS)
     .order("sort_order", { ascending: true });
 
   return ((data || []) as BadgeRow[]).map(mapBadgeRow);
@@ -80,17 +87,7 @@ export async function listUserBadges(
 ): Promise<UserBadge[]> {
   const { data } = await supabase
     .from("user_badges")
-    .select(
-      `
-      badge_id,
-      tier,
-      awarded_at,
-      badges (
-        id, key, name_en, name_uk, description_en, description_uk,
-        category, emoji, rarity, sort_order, tier_thresholds
-      )
-    `,
-    )
+    .select(`badge_id, tier, awarded_at, badges (${BADGE_COLUMNS})`)
     .eq("user_id", userId)
     .order("awarded_at", { ascending: false });
 
@@ -111,9 +108,8 @@ export async function listUserBadges(
 
 /**
  * Returns every badge in the catalog joined with the user's progress.
- * Earned badges come first (most recent award up top); locked badges keep
- * their sort_order. Used by the public profile shelf so visitors can see
- * both earned achievements and the rest of the catalog as motivation.
+ * Earned badges come first, then locked ones; both in sort_order, which
+ * ranks badges by weight (the hero shows the first few earned).
  */
 export async function listBadgesWithProgress(
   supabase: SupabaseClient,
@@ -136,22 +132,31 @@ export async function listBadgesWithProgress(
         earned: true,
         tier: entry.tier,
         awardedAt: entry.awardedAt,
+        progress: null,
       };
     }
-    return { badge, earned: false, tier: 0, awardedAt: null };
+    return { badge, earned: false, tier: 0, awardedAt: null, progress: null };
   });
 
   merged.sort((a, b) => {
     if (a.earned !== b.earned) return a.earned ? -1 : 1;
-    if (a.earned && b.earned) {
-      const left = a.awardedAt ? Date.parse(a.awardedAt) : 0;
-      const right = b.awardedAt ? Date.parse(b.awardedAt) : 0;
-      return right - left;
-    }
     return a.badge.sortOrder - b.badge.sortOrder;
   });
 
   return merged;
+}
+
+/**
+ * The signed-in user's own counts behind the tiered badges, keyed by badge
+ * key. Needs the viewer's session client: the database answers only for the
+ * caller. Empty when signed out or on error.
+ */
+export async function getOwnBadgeProgress(
+  supabase: SupabaseClient,
+): Promise<Partial<Record<BadgeKey, number>>> {
+  const { data, error } = await supabase.rpc("my_badge_progress");
+  if (error || !data || typeof data !== "object") return {};
+  return data as Partial<Record<BadgeKey, number>>;
 }
 
 /**

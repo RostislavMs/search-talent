@@ -53,6 +53,15 @@ export type BadgeDefinition = {
    * badge (earned at the first threshold). Length 3 = full progression.
    */
   tierThresholds: number[];
+  /** One name per tier ("10+ робіт", "25+ робіт", …); null for single-tier. */
+  tierNamesEn: string[] | null;
+  tierNamesUk: string[] | null;
+  /**
+   * False for milestones that only mean something to the owner (first
+   * project, confirmed email…): they stay in the owner's list, not on the
+   * public profile.
+   */
+  publicOnProfile: boolean;
 };
 
 export type UserBadge = {
@@ -64,14 +73,19 @@ export type UserBadge = {
 
 /**
  * A badge plus whether the user has earned it. `tier` is 0 when locked,
- * 1-3 once earned. Used by the profile shelf to show both earned and
- * locked badges so the catalog stays visible as motivation.
+ * 1-3 once earned. The owner sees the whole catalog (locked ones as
+ * motivation); visitors get only the earned public ones.
  */
 export type BadgeWithProgress = {
   badge: BadgeDefinition;
   earned: boolean;
   tier: number;
   awardedAt: string | null;
+  /**
+   * Owner only: the current count behind a tiered badge (works, reactions,
+   * days on the platform…), so the next level can say how far it is.
+   */
+  progress: number | null;
 };
 
 export const MAX_BADGE_TIER = 3;

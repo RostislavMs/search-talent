@@ -1,6 +1,6 @@
 import { isPublicModerationStatus } from "@/lib/moderation";
-import { listBadgesWithProgress } from "@/lib/db/badges";
-import type { BadgeWithProgress } from "@/lib/constants/badges";
+import { getOwnBadgeProgress, listBadgesWithProgress } from "@/lib/db/badges";
+import type { BadgeKey, BadgeWithProgress } from "@/lib/constants/badges";
 import {
   getProfileCompletenessBreakdown,
   type ProfileCompletenessBreakdown,
@@ -560,6 +560,7 @@ async function loadPublicProfilePageData(
     bookmarkResponse,
     followResponse,
     badges,
+    badgeProgress,
     viewerSettingsResponse,
     privateDetailsResponse,
     projectRatings,
@@ -661,6 +662,11 @@ async function loadPublicProfilePageData(
           .maybeSingle()
       : Promise.resolve({ data: null }),
     listBadgesWithProgress(dataClient, typedProfile.user_id),
+    // How far the owner is from the next level; the database answers only for
+    // the signed-in caller, so it goes through the session client.
+    isOwner
+      ? getOwnBadgeProgress(supabase)
+      : Promise.resolve<Partial<Record<BadgeKey, number>>>({}),
     // The viewer's own preference for whether other people's profiles render
     // with their custom theming. Only needed when browsing someone else.
     user && !isOwner
@@ -844,7 +850,14 @@ async function loadPublicProfilePageData(
         created_at: article.created_at,
       };
     }),
-    badges,
+    // The owner gets the whole catalog with progress; visitors only what was
+    // earned and is meant for the public profile.
+    badges: isOwner
+      ? badges.map((entry) => ({
+          ...entry,
+          progress: badgeProgress[entry.badge.key] ?? null,
+        }))
+      : badges.filter((entry) => entry.earned && entry.badge.publicOnProfile),
     completeness,
     contact: privateDetails.contact,
     salary: privateDetails.salary,
